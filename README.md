@@ -6,10 +6,10 @@
 
 | Site | Component | Version |
 |---|---|---|
-| ChatGPT | Clock userscript | 3.7.2 |
-| ChatGPT | Status userscript | 6.5.2 |
+| ChatGPT | Clock userscript | 3.7.3 |
+| ChatGPT | Status userscript | 6.5.3 |
 | ChatGPT | Organization Mapper userscript | 1.3.2 |
-| ChatGPT | Stylus UserCSS | 7.2.0 |
+| ChatGPT | Stylus UserCSS | 7.3.0 |
 | Google Calendar | Companion userscript | 1.3.7 |
 | Google Calendar | Stylus UserCSS | 1.2.2 |
 
@@ -19,4 +19,4 @@ Security rules: keep personal dates/location/credentials in a **separate, local-
 
 SHA256 hashes of published files: [SHA256.json](SHA256.json).
 
-**Current release (2026-11-22):** ChatGPT Simple Flat Vivid v7.2.0. See [release notes](docs/RELEASE_v7.2.0_KO.md). GitHub readback, JS syntax, CSS syntax and local profile tests passed; live Chrome v7.2 rendering and update installation still require confirmation. Previous Calendar Stylus manual update test was successful; previous Tampermonkey Mapper version 1.3.2 was verified installed.
+**Current test release (2026-11-22):** ChatGPT Vivid Neon Readability v7.3.0. [Release notes](docs/RELEASE_v7.3.0_KO.md). Previous release: [Flat Vivid v7.2.0](docs/RELEASE_v7.2.0_KO.md). User screenshots identified v7.2 readability and toggle regressions. v7.3 restores the pre-v7 high-contrast palette, adds minimal-width date/weather, two-line brand, and a clickable ALL/ONLY control. Script parse, simulated widths and simulated UI click tests passed; actual Chrome/ChatGPT DOM verification is pending.
