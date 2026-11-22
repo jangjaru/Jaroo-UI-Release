@@ -1,0 +1,1589 @@
+/* ==UserStyle==
+@name         Jaroo ChatGPT Dracula Neon
+@namespace    jaroo.chatgpt.dracula
+@version      6.8.6
+@description  Jaroo's Company managed style, restored from the approved working baseline.
+@author       Jaroo
+@license      UNLICENSED
+@updateURL    https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/chatgpt/theme.user.css
+==/UserStyle== */
+
+@-moz-document domain("chatgpt.com") {
+
+/* Jaroo Syntax Spectrum + Minimal J v6.8.3: full CSS based on v6.8.1.
+   The approved new vector mark lives in Clock JS v3.5.3 Shadow DOM.
+   Header counter visuals are rendered by Status JS inside Clock Shadow DOM.
+   All sidebar colors, role markers, select frames and RUN/DONE pulses retained. */
+
+/* =====================================================================
+   JAROO'S COMPANY · CLASSIC GOLD v6.7.9 · SMOOTH DONE GLOW
+   Full Stylus replacement · apply ONLY to chatgpt.com.
+
+   Restore the pre-Semantic v5.0 chat colors and orange project capsules.
+   Special case: representative office (대표실) = flat hot pink + white text.
+   The gold glow is static; no new animation, polling, script or remote asset.
+
+   Preserve v6.0 text/flex safeguards, priority markers, gentle selected-title
+   glow, Light Runner frame, response/table styling and native usage arc.
+   Status badges require the paired synchronized status script.
+   Sidebar Clock v3.5.3 adds Minimal J; Mapper v1.3 is unchanged.
+   Replace the existing theme; do not append to another active version.
+   ===================================================================== */
+
+/* 01. PALETTE */
+:root {
+  --da-heading-1: #8BE9FD;
+  --da-heading-2: #BD93F9;
+  --da-heading-3: #FFB86C;
+  --da-body: #D5D9E2;
+  --da-bold: #FFFFFF;
+  --da-italic: #FF79C6;
+  --da-link: #8BE9FD;
+  --da-inline-code: #50FA7B;
+  --da-marker: #BD93F9;
+  --da-project-bg: #FF9F1C;
+  --da-project-text: #282A36;
+  --da-chat: #FFFFFF;
+  --da-star: #A4FF66;
+  --da-circle: #63E6FF;
+  --da-user-border: #FFD166;
+  --da-user-text: #FFD166;
+  --da-ok: #50FA7B;
+  --da-warning: #FFB86C;
+  --da-insight: #F1FA8C;
+}
+
+/* 02. FONT FAMILY — baseline section does not load fonts. */
+
+/* 03. HEADINGS — authored assistant replies ONLY, never Work panels. */
+[data-message-author-role="assistant"] :is(h1, h2),
+[data-message-author-role="assistant"] :is(h1, h2) * {
+  color: var(--da-heading-1) !important;
+}
+[data-message-author-role="assistant"] :is(h3, h4),
+[data-message-author-role="assistant"] :is(h3, h4) * {
+  color: var(--da-heading-2) !important;
+}
+[data-message-author-role="assistant"] :is(h5, h6),
+[data-message-author-role="assistant"] :is(h5, h6) * {
+  color: var(--da-heading-3) !important;
+}
+
+[data-message-author-role="assistant"] :is(h1, h2):not([style*="color:"]) :is(span, strong, b),
+[data-message-author-role="assistant"] :is(h1, h2):not([style*="color:"]) {
+  -webkit-text-fill-color: var(--da-heading-1) !important;
+}
+[data-message-author-role="assistant"] :is(h3, h4):not([style*="color:"]) :is(span, strong, b),
+[data-message-author-role="assistant"] :is(h3, h4):not([style*="color:"]) {
+  -webkit-text-fill-color: var(--da-heading-2) !important;
+}
+[data-message-author-role="assistant"] :is(h5, h6):not([style*="color:"]) :is(span, strong, b),
+[data-message-author-role="assistant"] :is(h5, h6):not([style*="color:"]) {
+  -webkit-text-fill-color: var(--da-heading-3) !important;
+}
+[data-message-author-role="assistant"] :is(h1, h2) {
+  padding-bottom: 0.35em !important;
+  border-bottom: 1px solid rgba(139, 233, 253, 0.24) !important;
+}
+[data-message-author-role="assistant"] :is(h3, h4) {
+  border-left: 3px solid rgba(189, 147, 249, 0.85) !important;
+  padding-left: 10px !important;
+}
+
+/* 04. TYPOGRAPHIC FOUNDATION — avoid duplicate body overrides. */
+:root {
+  --jaroo-prose-color: #D5D9E2;
+  --jaroo-prose-weight: 350; 
+  --jaroo-emphasis-color: #FFFFFF;
+  --jaroo-emphasis-weight: 100; 
+}
+
+[data-message-author-role="assistant"] {
+  color: var(--jaroo-prose-color) !important;
+}
+
+
+[data-message-author-role="assistant"] :is(.markdown, .prose)
+  :is(p, li, dd, dt):not([style*="color:"]):not([data-d-weight]) {
+  color: var(--jaroo-prose-color) !important;
+  font-weight: var(--jaroo-prose-weight) !important;
+}
+
+
+[data-message-author-role="assistant"] :is(strong, b):not(
+  [style*="color:"],
+  :is(h1, h2, h3, h4, h5, h6) *
+) {
+  color: var(--jaroo-emphasis-color) !important;
+  -webkit-text-fill-color: var(--jaroo-emphasis-color) !important;
+  font-weight: var(--jaroo-emphasis-weight) !important;
+}
+
+
+[data-message-author-role="assistant"] :is(h1, h2) :is(strong, b) {
+  color: var(--da-heading-1) !important;
+  -webkit-text-fill-color: var(--da-heading-1) !important;
+}
+[data-message-author-role="assistant"] :is(h3, h4) :is(strong, b) {
+  color: var(--da-heading-2) !important;
+  -webkit-text-fill-color: var(--da-heading-2) !important;
+}
+[data-message-author-role="assistant"] :is(h5, h6) :is(strong, b) {
+  color: var(--da-heading-3) !important;
+  -webkit-text-fill-color: var(--da-heading-3) !important;
+}
+
+/* 05. TEXT ACCENTS */
+[data-message-author-role="assistant"] em {
+  color: var(--da-italic) !important;
+}
+[data-message-author-role="assistant"] a {
+  color: var(--da-link) !important;
+}
+[data-message-author-role="assistant"] :is(ul, ol) > li::marker {
+  color: var(--da-marker) !important;
+}
+[data-message-author-role="assistant"] :not(pre) > code {
+  color: var(--da-inline-code) !important;
+}
+
+/* 06. READING COMFORT — no change to overall application layout */
+[data-message-author-role="assistant"] :is(p, li, blockquote) {
+  line-height: 1.66;
+}
+[data-message-author-role="assistant"] p[component="text"] {
+  line-height: 1.66;
+}
+[data-message-author-role="assistant"] :is(.markdown, .prose) p + p {
+  margin-top: 0.55em;
+}
+
+/* 07. TABLE STYLING is consolidated in section 29 (v4.6). */
+
+/* 08. QUOTES & EXPLICIT STATUS — semantic colors only when marked */
+[data-message-author-role="assistant"] blockquote {
+  border-left: 3px solid var(--da-heading-2) !important;
+  background-color: rgba(189, 147, 249, 0.075);
+  border-radius: 0 8px 8px 0;
+  padding: 11px 15px;
+}
+[data-message-author-role="assistant"] mark {
+  color: var(--da-insight) !important;
+  background-color: rgba(241, 250, 140, 0.12) !important;
+  border-radius: 3px;
+  padding: 0 2px;
+}
+[data-message-author-role="assistant"] input[type="checkbox"] {
+  accent-color: var(--da-ok);
+}
+
+
+/* 09. LIGHT RUNNER v5.0 — selected chat only.
+   • 2.5px gradient frame, always INSIDE row bounds
+   • one brighter, faster circulating white-hot runner
+   • explicit responsive right gutter to prevent clipping on resize
+   • no change to RUN/DONE detection, links, or native sidebar actions
+
+   Actual ChatGPT DOM may change: selectors are based on known row markers.
+   Use only ONE Stylus theme for chatgpt.com.
+*/
+
+@property --jaroo-light-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+:root {
+  --jaroo-neon-purple: #8B5CF6;
+  --jaroo-neon-pink: #FF79C6;
+  --jaroo-neon-orange: #FFB86C;
+  --jaroo-light-runner-speed: 1.65s;
+  --jaroo-selected-border-width: 2.5px;
+  --jaroo-selected-side-gutter: 11px;
+  /* Calmer than v4.7: precise glyph outline, restrained halo. */
+  --jaroo-selected-title-glow:
+    0 0 2px rgba(236,244,255,.24),
+    0 0 4px color-mix(in srgb,currentColor 24%,transparent);
+}
+
+:is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
+  a[href*="/c/"] {
+  border-radius: 6px !important;
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  transition: color 120ms ease !important;
+}
+:is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
+  a[href*="/c/"]::before {
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+:is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"]) {
+  position: relative !important;
+  isolation: isolate;
+}
+
+/* The row itself, not the title link, owns the frame.
+   Reserve a physical gutter from the clipping edge. For narrow sidebars,
+   limit only the selected row's width; the rest of the list is untouched. */
+:is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"] {
+  box-sizing: border-box !important;
+  inline-size: calc(100% - var(--jaroo-selected-side-gutter)) !important;
+  max-inline-size: calc(100% - var(--jaroo-selected-side-gutter)) !important;
+  min-inline-size: 0 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  z-index: 2 !important;
+}
+
+:is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"] a[href*="/c/"] {
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  padding-inline-start: 0 !important;
+}
+
+/* Use insets INSIDE the selected row. Never negative insets:
+   negative offsets were the main cause of cut-off strokes at small widths. */
+:is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"]::before,
+:is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"]::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 2px !important;
+  /* The status script measures the selected badge's actual row-relative edge.
+     Only the frame moves: its inner stroke stops 1px before the badge.
+     No badge (or no measurement) keeps the original 2px frame inset. */
+  left: max(2px, var(--jaroo-selected-frame-left, 2px)) !important;
+  padding: var(--jaroo-selected-border-width) !important;
+  box-sizing: border-box !important;
+  border-radius: 7px !important;
+  pointer-events: none !important;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0) !important;
+  -webkit-mask-composite: xor !important;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0) !important;
+  mask-composite: exclude !important;
+}
+
+/* Base rail — clearer 2.5px line without an oversized outer haze. */
+:is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"]::before {
+  z-index: 0 !important;
+  background: linear-gradient(102deg,
+    var(--jaroo-neon-purple) 0%,
+    var(--jaroo-neon-pink) 50%,
+    var(--jaroo-neon-orange) 100%) !important;
+  filter: drop-shadow(0 0 3px rgba(189,147,249,.8))
+          drop-shadow(0 0 5px rgba(255,121,198,.48)) !important;
+}
+
+/* Hot runner: wider luminous leading segment, white center, strong bloom.
+   Only one row animates; animation never scales the frame or alters layout. */
+:is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"]::after {
+  z-index: 1 !important;
+  background: conic-gradient(from var(--jaroo-light-angle) at 50% 50%,
+    transparent 0deg,
+    transparent 280deg,
+    rgba(139,92,246,.15) 288deg,
+    #BD93F9 298deg,
+    #FF79C6 309deg,
+    #FFFDFC 318deg,
+    #FFFFFF 325deg,
+    #FFCE8E 332deg,
+    #FFB86C 343deg,
+    rgba(255,184,108,.15) 352deg,
+    transparent 359deg,
+    transparent 360deg) !important;
+  filter: drop-shadow(0 0 6px rgba(255,121,198,.91)) !important;
+  animation: jaroo-light-runner var(--jaroo-light-runner-speed) linear infinite !important;
+}
+
+/* Do not let the frame cover links, title text, or RUN/DONE badges. */
+:is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"] > div:first-child {
+  position: relative !important;
+  z-index: 2 !important;
+  min-inline-size: 0 !important;
+  background: transparent !important;
+  background-image: none !important;
+}
+
+@keyframes jaroo-light-runner {
+  to { --jaroo-light-angle: 360deg; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"]::after { animation: none !important; }
+}
+
+/* 10. CLASSIC CHAT COLORS — exact v5.0 role palette.
+   Keep v6 text targeting, weights and opt-in priority marks.
+   Project colors no longer encode departments. Chat names are not changed.
+   RUN/DONE keep their separate existing status colors. */
+:root {
+  --jaroo-role-neutral: #FFFFFF;
+  --jaroo-role-lead: #A4FF66;
+  --jaroo-role-manage: #63E6FF;
+  --jaroo-role-produce: #63E6FF;
+  --jaroo-role-plan: #D2A6FF;
+  --jaroo-role-action: #FF79C6;
+  --jaroo-role-archive: #7D8290;
+  --jaroo-role-stopped: #FF5555;
+  --jaroo-priority-core: #FFD57A;
+  --jaroo-priority-important: #DDD0F3;
+  --jaroo-priority-urgent: #FF9AA8;
+}
+:is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
+  a[href*="/c/"] {
+  --jaroo-title-color: var(--jaroo-role-neutral);
+  --jaroo-title-weight: 420;
+  --jaroo-title-selected-weight: 690;
+  --jaroo-title-glow: none;
+  --jaroo-title-decoration: none;
+  color: var(--jaroo-title-color) !important;
+  -webkit-text-fill-color: var(--jaroo-title-color) !important;
+  font-weight: var(--jaroo-title-weight) !important;
+  text-shadow: none !important;
+}
+:is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
+  a[href*="/c/"]:is([aria-label^="☆"],[aria-label^="★"]) {
+  --jaroo-title-color: var(--jaroo-role-lead);
+  --jaroo-title-weight: 430;
+  --jaroo-title-selected-weight: 690;
+}
+:is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
+  a[href*="/c/"][aria-label^="○"] {
+  --jaroo-title-color: var(--jaroo-role-manage);
+}
+:is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
+  a[href*="/c/"][aria-label^="●"] {
+  --jaroo-title-color: var(--jaroo-role-produce);
+  --jaroo-title-weight: 420;
+}
+:is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
+  a[href*="/c/"]:is([aria-label^="▷"],[aria-label^="▶"]) {
+  --jaroo-title-color: var(--jaroo-role-plan);
+}
+:is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
+  a[href*="/c/"]:is([aria-label^=">"],[aria-label^="›"]) {
+  --jaroo-title-color: var(--jaroo-role-action);
+}
+
+/* A fixed, non-animated mark is opt-in, independent from the RUN/DONE badge.
+   Examples: '● 제안서 제작 [핵심]', '○ 검토 [중요]', '> 보완 [긴급]'. */
+:is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
+  a[href*="/c/"][aria-label*="[중요]"] {
+  --jaroo-priority-mark: "◇";
+  --jaroo-priority-color: var(--jaroo-priority-important);
+  --jaroo-title-weight: 420;
+  --jaroo-title-selected-weight: 690;
+}
+:is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
+  a[href*="/c/"][aria-label*="[핵심]"] {
+  --jaroo-priority-mark: "◆";
+  --jaroo-priority-color: var(--jaroo-priority-core);
+  --jaroo-title-weight: 430;
+  --jaroo-title-selected-weight: 700;
+}
+:is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
+  a[href*="/c/"][aria-label*="[긴급]"] {
+  --jaroo-priority-mark: "!";
+  --jaroo-priority-color: var(--jaroo-priority-urgent);
+}
+:is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
+  a[href*="/c/"][aria-label*="[중요]"][aria-label*="[긴급]"] {
+  --jaroo-priority-mark: "◇ !";
+}
+:is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
+  a[href*="/c/"][aria-label*="[핵심]"][aria-label*="[긴급]"] {
+  --jaroo-priority-mark: "◆ !";
+}
+:is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
+  a[href*="/c/"]:is([aria-label*="[핵심]"],[aria-label*="[중요]"],[aria-label*="[긴급]"]) {
+  display: flex !important;
+  align-items: center !important;
+  min-inline-size: 0 !important;
+  column-gap: 5px !important;
+}
+:is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
+  a[href*="/c/"]:is([aria-label*="[핵심]"],[aria-label*="[중요]"],[aria-label*="[긴급]"])::after {
+  content: var(--jaroo-priority-mark) !important;
+  position: static !important;
+  display: inline-flex !important;
+  flex: 0 0 auto !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  min-inline-size: 20px !important;
+  block-size: 19px !important;
+  margin-inline: 3px 4px !important;
+  padding-inline: 4px !important;
+  color: var(--jaroo-priority-color) !important;
+  -webkit-text-fill-color: var(--jaroo-priority-color) !important;
+  background: #30313F !important;
+  border: 1px solid currentColor !important;
+  border-radius: 4px !important;
+  font: 700 11px/1 "Pretendard",sans-serif !important;
+  letter-spacing: .1px !important;
+  white-space: nowrap !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  pointer-events: none !important;
+  animation: none !important;
+  transform: none !important;
+}
+
+/* Lifecycle names are quieter. They do NOT alter response RUN/DONE status. */
+:is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
+  a[href*="/c/"][aria-label^="[완료]"] {
+  --jaroo-title-color: var(--jaroo-role-archive);
+  --jaroo-title-weight: 420;
+  --jaroo-title-selected-weight: 660;
+  --jaroo-title-decoration: line-through;
+}
+:is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
+  a[href*="/c/"][aria-label^="[중단]"] {
+  --jaroo-title-color: var(--jaroo-role-stopped);
+  --jaroo-title-weight: 420;
+  --jaroo-title-selected-weight: 660;
+  --jaroo-title-decoration: line-through;
+}
+:is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
+  a[href*="/c/"][aria-label^="[보류]"] {
+  --jaroo-title-color: var(--jaroo-role-neutral);
+  --jaroo-title-weight: 420;
+}
+:is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
+  a[href*="/c/"]:is([aria-label^="[완료]"],[aria-label^="[중단]"])::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* Only title text, not native icons, menus or the JS status badge. */
+:is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
+  a[href*="/c/"] :is([data-thread-title="true"],[data-thread-title="true"] *),
+:is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
+  a[href*="/c/"] > :is(span.truncate,div.truncate,span[dir="auto"]):not(.jaroo-recent-status-badge) {
+  color: var(--jaroo-title-color) !important;
+  -webkit-text-fill-color: var(--jaroo-title-color) !important;
+  font-weight: var(--jaroo-title-weight) !important;
+  font-size: var(--jaroo-sidebar-title-font-size,1rem) !important;
+  text-shadow: var(--jaroo-title-glow) !important;
+  text-decoration-line: var(--jaroo-title-decoration) !important;
+  text-decoration-color: currentColor !important;
+  text-decoration-thickness: 1px !important;
+}
+
+/* 11. SELECTION = current view, not priority. Retain v5 frame geometry. */
+:is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
+  :is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"] a[href*="/c/"] {
+  --jaroo-title-glow: var(--jaroo-selected-title-glow);
+  text-shadow: var(--jaroo-title-glow) !important;
+  font-weight: var(--jaroo-title-selected-weight,550) !important;
+}
+:is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
+  :is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"] a[href*="/c/"]
+  :is([data-thread-title="true"],[data-thread-title="true"] *,span.truncate,div.truncate,span[dir="auto"]):not(.jaroo-recent-status-badge) {
+  text-shadow: var(--jaroo-title-glow) !important;
+  font-weight: var(--jaroo-title-selected-weight,550) !important;
+}
+
+/* 12. CLASSIC ORANGE PROJECT CAPSULES
+   v5.0 colors/shape with v6.0 narrow-width and ellipsis safeguards.
+   Only the project label is painted; the folder icon and row hit area stay native. */
+[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] {
+  --jaroo-project-focus: #FF9F1C;
+}
+[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] [data-marquee-content="true"] {
+  display: inline-block !important;
+  box-sizing: border-box !important;
+  max-inline-size: 100% !important;
+  min-inline-size: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  padding: 4px 10px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: var(--da-project-bg) !important;
+  color: var(--da-project-text) !important;
+  -webkit-text-fill-color: var(--da-project-text) !important;
+  font-size: var(--jaroo-sidebar-title-font-size,1rem) !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+  animation: none !important;
+  filter: none !important;
+}
+[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row]:hover [data-marquee-content="true"] {
+  background: var(--da-project-bg) !important;
+  color: var(--da-project-text) !important;
+  -webkit-text-fill-color: var(--da-project-text) !important;
+}
+[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row]:focus-visible {
+  outline: 2px solid var(--jaroo-project-focus) !important;
+  outline-offset: 2px !important;
+}
+
+/* 13. USER BUBBLE — exact previously tested DOM; no fill */
+div[data-user-message-bubble="true"].bg-user-message {
+  --color-background-user-message: transparent !important;
+  --color-text-user-message: var(--da-user-text) !important;
+  background: none !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+  opacity: 1 !important;
+  border: 2px solid var(--da-user-border) !important;
+  color: var(--da-user-text) !important;
+  -webkit-text-fill-color: var(--da-user-text) !important;
+  font-weight: 600 !important;
+}
+div[data-user-message-bubble="true"].bg-user-message,
+div[data-user-message-bubble="true"].bg-user-message :is(.text-user-message, p, span, strong, b, em, li, a) {
+  color: var(--da-user-text) !important;
+  -webkit-text-fill-color: var(--da-user-text) !important;
+  font-weight: 600 !important;
+  opacity: 1 !important;
+  filter: none !important;
+}
+div[data-user-message-bubble="true"].bg-user-message :is(div, span, p) {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+
+/* 14. SIGNATURE LOGO — native mode controls */
+:root {
+  --jaroo-cyan: #42DDEB;
+  --jaroo-lavender: #C9A3FF;
+  --jaroo-logo-ivory: #F4F2F8;
+  --jaroo-logo-bg: #191B27;
+}
+
+button[aria-label*="현재 모드: ChatGPT" i],
+button[aria-label*="현재 모드: Codex" i] {
+  --jaroo-mode-accent: var(--jaroo-cyan);
+  --jaroo-mode-shadow: rgba(66, 221, 235, 0.30);
+  box-sizing: border-box !important;
+  position: relative !important;
+  isolation: isolate !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  min-height: 46px !important;
+  max-width: 100% !important;
+  padding: 8px 13px 8px 49px !important;
+  border: 2px solid var(--jaroo-mode-accent) !important;
+  border-radius: 12px !important;
+  background-color: var(--jaroo-logo-bg) !important;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%3E%3Cg%20stroke%3D%22%2342DDEB%22%20stroke-width%3D%221.85%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20transform%3D%22rotate%280%2012%2012%29%22%20d%3D%22M9.6%205.2%20C11.9%203.2%2015.2%203.4%2017.1%205.5%20C18.4%206.9%2018.4%208.6%2017.8%2010.1%20L15.6%2013.9%22%2F%3E%3Cpath%20transform%3D%22rotate%2860%2012%2012%29%22%20d%3D%22M9.6%205.2%20C11.9%203.2%2015.2%203.4%2017.1%205.5%20C18.4%206.9%2018.4%208.6%2017.8%2010.1%20L15.6%2013.9%22%2F%3E%3Cpath%20transform%3D%22rotate%28120%2012%2012%29%22%20d%3D%22M9.6%205.2%20C11.9%203.2%2015.2%203.4%2017.1%205.5%20C18.4%206.9%2018.4%208.6%2017.8%2010.1%20L15.6%2013.9%22%2F%3E%3Cpath%20transform%3D%22rotate%28180%2012%2012%29%22%20d%3D%22M9.6%205.2%20C11.9%203.2%2015.2%203.4%2017.1%205.5%20C18.4%206.9%2018.4%208.6%2017.8%2010.1%20L15.6%2013.9%22%2F%3E%3Cpath%20transform%3D%22rotate%28240%2012%2012%29%22%20d%3D%22M9.6%205.2%20C11.9%203.2%2015.2%203.4%2017.1%205.5%20C18.4%206.9%2018.4%208.6%2017.8%2010.1%20L15.6%2013.9%22%2F%3E%3Cpath%20transform%3D%22rotate%28300%2012%2012%29%22%20d%3D%22M9.6%205.2%20C11.9%203.2%2015.2%203.4%2017.1%205.5%20C18.4%206.9%2018.4%208.6%2017.8%2010.1%20L15.6%2013.9%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E") !important;
+  background-position: 12px center !important;
+  background-size: 25px 25px !important;
+  background-repeat: no-repeat !important;
+  color: var(--jaroo-logo-ivory) !important;
+  box-shadow: 0 0 11px var(--jaroo-mode-shadow) !important;
+  animation: none !important;
+  filter: none !important;
+  transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease !important;
+}
+
+button[aria-label*="현재 모드: Codex" i] {
+  --jaroo-mode-accent: var(--jaroo-lavender);
+  --jaroo-mode-shadow: rgba(201, 163, 255, 0.30);
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%3E%3Cg%20stroke%3D%22%23C9A3FF%22%20stroke-width%3D%221.85%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20transform%3D%22rotate%280%2012%2012%29%22%20d%3D%22M9.6%205.2%20C11.9%203.2%2015.2%203.4%2017.1%205.5%20C18.4%206.9%2018.4%208.6%2017.8%2010.1%20L15.6%2013.9%22%2F%3E%3Cpath%20transform%3D%22rotate%2860%2012%2012%29%22%20d%3D%22M9.6%205.2%20C11.9%203.2%2015.2%203.4%2017.1%205.5%20C18.4%206.9%2018.4%208.6%2017.8%2010.1%20L15.6%2013.9%22%2F%3E%3Cpath%20transform%3D%22rotate%28120%2012%2012%29%22%20d%3D%22M9.6%205.2%20C11.9%203.2%2015.2%203.4%2017.1%205.5%20C18.4%206.9%2018.4%208.6%2017.8%2010.1%20L15.6%2013.9%22%2F%3E%3Cpath%20transform%3D%22rotate%28180%2012%2012%29%22%20d%3D%22M9.6%205.2%20C11.9%203.2%2015.2%203.4%2017.1%205.5%20C18.4%206.9%2018.4%208.6%2017.8%2010.1%20L15.6%2013.9%22%2F%3E%3Cpath%20transform%3D%22rotate%28240%2012%2012%29%22%20d%3D%22M9.6%205.2%20C11.9%203.2%2015.2%203.4%2017.1%205.5%20C18.4%206.9%2018.4%208.6%2017.8%2010.1%20L15.6%2013.9%22%2F%3E%3Cpath%20transform%3D%22rotate%28300%2012%2012%29%22%20d%3D%22M9.6%205.2%20C11.9%203.2%2015.2%203.4%2017.1%205.5%20C18.4%206.9%2018.4%208.6%2017.8%2010.1%20L15.6%2013.9%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E") !important;
+}
+
+
+button:is([aria-label*="현재 모드: ChatGPT" i], [aria-label*="현재 모드: Codex" i])::before {
+  content: none !important;
+  display: none !important;
+}
+
+
+button:is([aria-label*="현재 모드: ChatGPT" i], [aria-label*="현재 모드: Codex" i])
+  span:has(> span.sr-only) > svg {
+  display: none !important;
+}
+
+
+button:is([aria-label*="현재 모드: ChatGPT" i], [aria-label*="현재 모드: Codex" i])
+  span:has(> span.sr-only) {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 5px !important;
+  flex: 0 0 auto !important;
+  white-space: nowrap !important;
+  min-height: 27px !important;
+  position: relative !important;
+  padding-left: 0 !important;
+  border-left: 0 !important;
+}
+
+button:is([aria-label*="현재 모드: ChatGPT" i], [aria-label*="현재 모드: Codex" i])
+  span:has(> span.sr-only)::before,
+button:is([aria-label*="현재 모드: ChatGPT" i], [aria-label*="현재 모드: Codex" i])
+  span:has(> span.sr-only)::after {
+  display: inline-block !important;
+  flex: 0 0 auto !important;
+  font-size: 17px !important;
+  line-height: 24px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.25px !important;
+  text-decoration: none !important;
+  text-shadow: none !important;
+  background: none !important;
+  background-image: none !important;
+  -webkit-background-clip: border-box !important;
+  background-clip: border-box !important;
+  animation: none !important;
+  transform: none !important;
+}
+
+button:is([aria-label*="현재 모드: ChatGPT" i], [aria-label*="현재 모드: Codex" i])
+  span:has(> span.sr-only)::before {
+  content: "Jaroo's" !important;
+  color: var(--jaroo-logo-ivory) !important;
+  -webkit-text-fill-color: var(--jaroo-logo-ivory) !important;
+}
+button[aria-label*="현재 모드: ChatGPT" i]
+  span:has(> span.sr-only)::after {
+  content: "Company" !important;
+  color: var(--jaroo-cyan) !important;
+  -webkit-text-fill-color: var(--jaroo-cyan) !important;
+}
+button[aria-label*="현재 모드: Codex" i]
+  span:has(> span.sr-only)::after {
+  content: "Company" !important;
+  color: var(--jaroo-lavender) !important;
+  -webkit-text-fill-color: var(--jaroo-lavender) !important;
+}
+
+
+button:is([aria-label*="현재 모드: ChatGPT" i], [aria-label*="현재 모드: Codex" i]) > * {
+  position: relative;
+  z-index: 1;
+}
+button:is([aria-label*="현재 모드: ChatGPT" i], [aria-label*="현재 모드: Codex" i]):hover {
+  background-color: #202432 !important;
+  box-shadow: 0 0 15px var(--jaroo-mode-shadow) !important;
+}
+button:is([aria-label*="현재 모드: ChatGPT" i], [aria-label*="현재 모드: Codex" i]):focus-visible {
+  outline: 2px solid var(--jaroo-mode-accent) !important;
+  outline-offset: 3px !important;
+}
+
+
+/* 19. READING SYSTEM — TextBase */
+[data-message-author-role="assistant"] p[data-d-text-flow][data-d-component="text"]:not(
+  [data-user-message-bubble="true"] *,
+  .bg-user-message *,
+  [data-message-author-role="user"] *,
+  [contenteditable="true"] *,
+  [role="textbox"] *,
+  #stage-sidebar *,
+  #stage-slideover-sidebar *,
+  [data-testid="sidebar"] *,
+  aside *, nav *, header *, button *,
+  [role="dialog"] *, [role="menu"] *,
+  [data-d-weight="bold"], [data-d-weight="semibold"],
+  [data-d-text-weight="bold"], [data-d-text-weight="semibold"],
+  [style*="color:"]
+) {
+  --text-base-color: var(--jaroo-prose-color) !important;
+  color: var(--jaroo-prose-color) !important;
+  -webkit-text-fill-color: var(--jaroo-prose-color) !important;
+  font-weight: var(--jaroo-prose-weight) !important;
+}
+
+
+[data-message-author-role="assistant"] p[data-d-text-flow][data-d-component="text"]:not(
+  [data-user-message-bubble="true"] *, .bg-user-message *,
+  [data-message-author-role="user"] *,
+  [contenteditable="true"] *, [role="textbox"] *,
+  #stage-sidebar *, #stage-slideover-sidebar *,
+  [data-testid="sidebar"] *, aside *, nav *, header *,
+  button *, [role="dialog"] *, [role="menu"] *,
+  [data-d-weight="bold"], [data-d-weight="semibold"],
+  [data-d-text-weight="bold"], [data-d-text-weight="semibold"],
+  [style*="color:"]
+) span:not(
+  strong *, b *, em *, i *, a *, code *, pre *, mark *,
+  [data-d-weight="bold"], [data-d-weight="semibold"],
+  [data-d-text-weight="bold"], [data-d-text-weight="semibold"],
+  [style*="color:"], [data-d-color], [data-d-tone]
+) {
+  --text-base-color: var(--jaroo-prose-color) !important;
+  color: var(--jaroo-prose-color) !important;
+  -webkit-text-fill-color: var(--jaroo-prose-color) !important;
+  font-weight: var(--jaroo-prose-weight) !important;
+}
+
+
+[data-message-author-role="assistant"] p[data-d-text-flow][data-d-component="text"] :is(strong, b):not([style*="color:"]),
+[data-message-author-role="assistant"] p[data-d-text-flow][data-d-component="text"] :is(strong, b):not([style*="color:"]) span:not([style*="color:"]),
+[data-message-author-role="assistant"] p[data-d-text-flow][data-d-component="text"] span:is(
+  [data-d-weight="bold"], [data-d-weight="semibold"],
+  [data-d-text-weight="bold"], [data-d-text-weight="semibold"]
+):not([style*="color:"]) {
+  --text-base-color: var(--jaroo-emphasis-color) !important;
+  color: var(--jaroo-emphasis-color) !important;
+  -webkit-text-fill-color: var(--jaroo-emphasis-color) !important;
+  font-weight: var(--jaroo-emphasis-weight) !important;
+}
+
+
+[data-message-author-role="assistant"] :is(h1, h2, h3, h4, h5, h6)[data-d-component="text"],
+[data-message-author-role="assistant"] :is(h1, h2, h3, h4, h5, h6)[data-d-component="text"] > span {
+  font-weight: 700 !important;
+}
+
+
+[data-message-author-role="assistant"] p[data-d-text-flow][data-d-component="text"] :is(a, a span) {
+  color: var(--da-link) !important;
+  -webkit-text-fill-color: var(--da-link) !important;
+}
+[data-message-author-role="assistant"] p[data-d-text-flow][data-d-component="text"] :is(em, em span, i, i span) {
+  color: var(--da-italic) !important;
+  -webkit-text-fill-color: var(--da-italic) !important;
+}
+[data-message-author-role="assistant"] p[data-d-text-flow][data-d-component="text"] :is(code, code span) {
+  color: var(--da-inline-code) !important;
+  -webkit-text-fill-color: var(--da-inline-code) !important;
+}
+
+
+[data-message-author-role="assistant"] p[data-d-text-flow][data-d-component="text"] [style*="color:"] {
+  -webkit-text-fill-color: currentColor !important;
+}
+
+
+/* 20. THREAD FRAME — Work safe */
+body :is(#thread, [data-testid="conversation-panel"], [data-testid="conversation-thread"]) {
+  outline: none !important;
+  outline-offset: 0 !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+body :is(#thread, [data-testid="conversation-panel"], [data-testid="conversation-thread"]):is(
+  :focus, :focus-visible, :focus-within
+) {
+  outline: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+
+/* 21. READING RHYTHM */
+:root {
+  --jaroo-reading-leading: 1.68;
+  --jaroo-reading-list-gap: 0.18em;
+}
+
+
+body p[data-d-text-flow][data-d-component="text"]:not(
+  [data-user-message-bubble="true"] *, .bg-user-message *,
+  [data-message-author-role="user"] *,
+  [contenteditable="true"] *, [role="textbox"] *,
+  #stage-sidebar *, #stage-slideover-sidebar *,
+  [data-testid="sidebar"] *, aside *, nav *, header *,
+  button *, [role="dialog"] *, [role="menu"] *
+) {
+  line-height: var(--jaroo-reading-leading) !important;
+  text-wrap: pretty;
+}
+
+
+[data-message-author-role="assistant"] :is(.markdown, .prose) :is(p, li) {
+  line-height: var(--jaroo-reading-leading);
+}
+
+[data-message-author-role="assistant"] :is(.markdown, .prose)
+  :is(ul, ol) > li + li {
+  margin-block-start: var(--jaroo-reading-list-gap);
+}
+
+
+[data-message-author-role="assistant"] :is(h1, h2, h3, h4, h5, h6) {
+  line-height: 1.36;
+  text-wrap: balance;
+}
+
+
+/* Table text color/weight is defined in section 29. */
+
+
+[data-message-author-role="assistant"] :is(.markdown, .prose)
+  a:is(:hover, :focus-visible) {
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+
+[data-message-author-role="assistant"] :is(.markdown, .prose)
+  pre :is(code, .hljs) {
+  line-height: 1.55;
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  :is(#stage-sidebar, #stage-slideover-sidebar,
+      [data-testid="sidebar"], aside) a[href*="/c/"] {
+    transition: none !important;
+  }
+}
+
+
+/* 22. TABLE LAYOUT — assistant replies only */
+body [data-message-author-role="assistant"] :is(div, figure, section):has(> table),
+body [data-message-author-role="assistant"] :is(div, figure, section):has(> :is(div, figure, section) > table) {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+
+
+body [data-message-author-role="assistant"] :is(div, figure, section):has(> table) {
+  overflow-x: auto !important;
+  overscroll-behavior-x: contain;
+}
+
+
+body [data-message-author-role="assistant"] table {
+  display: table !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: none !important;
+  table-layout: auto !important;
+}
+body [data-message-author-role="assistant"] table:has(tr > :nth-child(5)) {
+  min-width: max(100%, 740px) !important;
+}
+body [data-message-author-role="assistant"] table:has(tr > :nth-child(8)) {
+  min-width: max(100%, 1040px) !important;
+}
+body [data-message-author-role="assistant"] table:has(tr > :nth-child(11)) {
+  min-width: max(100%, 1220px) !important;
+}
+body [data-message-author-role="assistant"] table :is(th, td) {
+  box-sizing: border-box;
+  white-space: normal !important;
+  word-break: normal !important;
+  overflow-wrap: break-word;
+  vertical-align: top;
+}
+body [data-message-author-role="assistant"] table :is(th, td) > :is(p, span, div):not([role="button"], .sr-only) {
+  max-width: 100%;
+  white-space: normal !important;
+  word-break: normal !important;
+  overflow-wrap: break-word;
+}
+body [data-message-author-role="assistant"] table th {
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+}
+
+
+body [data-message-author-role="assistant"] :is([role="table"], [data-d-component="table"]) {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+
+
+/* 24. RESPONSIVE TEXT */
+body [data-message-author-role="assistant"] :is(
+  .markdown, .prose, [data-d-component="text"]
+) {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  box-sizing: border-box;
+}
+
+
+body [data-message-author-role="assistant"] :is(p, li, blockquote) {
+  overflow-wrap: break-word;
+}
+
+
+body [data-message-author-role="assistant"] :is(img, video) {
+  max-inline-size: 100%;
+  height: auto;
+}
+
+
+/* 25. SIDEBAR TYPOGRAPHY */
+:root {
+  --jaroo-sidebar-title-font-size: 1rem;
+}
+
+
+:is(#stage-sidebar, #stage-slideover-sidebar, [data-testid="sidebar"], aside)
+  a[href*="/c/"],
+:is(#stage-sidebar, #stage-slideover-sidebar, [data-testid="sidebar"], aside)
+  a[href*="/c/"] :is(span, p, div, [data-marquee-content="true"]) {
+  font-size: var(--jaroo-sidebar-title-font-size) !important;
+}
+
+
+[data-sidebar-project-kind="local"]
+  [data-app-action-sidebar-project-row]
+  [data-marquee-content="true"] {
+  font-size: var(--jaroo-sidebar-title-font-size) !important;
+}
+
+
+/* 27. ASSISTANT BODY SIZE */
+:root {
+  --jaroo-chat-body-font-size: calc(1rem + 3px);
+}
+
+
+body [data-message-author-role="assistant"]
+  :is(
+    p[data-d-text-flow][data-d-component="text"],
+    .markdown p, .prose p,
+    .markdown li, .prose li
+  ):not(:is(
+    #stage-sidebar *, #stage-slideover-sidebar *,
+    [data-testid="sidebar"] *, aside *, nav *, header *,
+    button *, [role="dialog"] *, [role="menu"] *,
+    [role="textbox"] *, [contenteditable="true"] *,
+    [data-user-message-bubble="true"] *,
+    [data-message-author-role="user"] *,
+    pre *, code *, table *, [role="table"] *,
+    [data-d-component="table"] *
+  )) {
+  font-size: var(--jaroo-chat-body-font-size) !important;
+}
+
+
+/* 28. NEUTRAL ANSWER ACCENTS */
+[data-message-author-role="assistant"] {
+  --da-heading-1: #F4F2F8;
+  --da-link: #E4E8EF;
+}
+
+
+[data-message-author-role="assistant"] :is(h1, h2) {
+  border-bottom-color: rgba(244, 242, 248, 0.20) !important;
+}
+
+
+[data-message-author-role="assistant"] :is(.markdown, .prose) a,
+[data-message-author-role="assistant"] p[data-d-text-flow][data-d-component="text"] a {
+  color: var(--da-link) !important;
+  -webkit-text-fill-color: var(--da-link) !important;
+  text-decoration-line: underline;
+  text-decoration-color: rgba(228, 232, 239, 0.52);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+
+[data-message-author-role="assistant"] :is(
+  p[data-d-text-flow][data-d-component="text"],
+  .markdown p, .prose p
+) :is(
+  [style*="#8be9fd" i], [style*="#42ddeb" i],
+  [style*="rgb(139, 233, 253)" i],
+  [style*="rgb(66, 221, 235)" i]
+):not(a, a *, code, code *, pre, pre *) {
+  color: var(--jaroo-prose-color) !important;
+  -webkit-text-fill-color: var(--jaroo-prose-color) !important;
+}
+
+
+/* 29. ANSWER TABLES — v4.6: 19px PARITY + CLEAR STRUCTURE.
+   Applies only within actual assistant messages / conversation thread hosts.
+   Normal Chat + structured DIL/ARIA table structures; never global Work shell.
+   Do not resize buttons, icons, editable controls, code blocks or avatars. */
+:root {
+  --jaroo-answer-table-font-size: 19px;
+  --jaroo-table-text: #E5EAF3;
+  --jaroo-table-heading: #F5F6FF;
+  --jaroo-table-border: rgba(139,233,253,.40);
+  --jaroo-table-grid: rgba(160,172,197,.23);
+  --jaroo-table-grid-soft: rgba(160,172,197,.15);
+  --jaroo-table-header-bg: #343D52;
+  --jaroo-table-zebra: rgba(139,233,253,.035);
+  --jaroo-table-hover: rgba(139,233,253,.085);
+}
+
+/* Scope to chat answer hosts. The DOM may use native table, role=table, or
+   data-d-component=table. No unscoped 'body table' or table element resets. */
+:is([data-message-author-role="assistant"],
+    #thread,
+    [data-testid="conversation-panel"],
+    [data-testid="conversation-thread"],
+    [data-testid^="conversation-turn"])
+  :is(table, [role="table"], [data-d-component="table"]) {
+  --jaroo-table-inherited-size: var(--jaroo-answer-table-font-size);
+  box-sizing: border-box !important;
+  font-family: "Pretendard", sans-serif !important;
+  font-size: var(--jaroo-answer-table-font-size) !important;
+  line-height: 1.52 !important;
+  color: var(--jaroo-table-text) !important;
+  -webkit-text-fill-color: var(--jaroo-table-text) !important;
+  border: 1.5px solid var(--jaroo-table-border) !important;
+  border-radius: 9px !important;
+  background-color: rgba(24,29,42,.12) !important;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Native HTML table: keep the horizontal-scroll and responsive rules in §22. */
+:is([data-message-author-role="assistant"], #thread,
+    [data-testid="conversation-panel"], [data-testid="conversation-thread"],
+    [data-testid^="conversation-turn"]) table {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Table cell and header font size follows plain assistant prose (19px).
+   Native cells and DIL/ARIA cells receive the same treatment. */
+:is([data-message-author-role="assistant"], #thread,
+    [data-testid="conversation-panel"], [data-testid="conversation-thread"],
+    [data-testid^="conversation-turn"])
+  :is(table, [role="table"], [data-d-component="table"])
+  :is(th, td, [role="cell"], [role="columnheader"], [role="rowheader"],
+      [data-d-component="table-cell"]) {
+  box-sizing: border-box !important;
+  font-family: "Pretendard", sans-serif !important;
+  font-size: var(--jaroo-answer-table-font-size) !important;
+  line-height: 1.52 !important;
+  color: var(--jaroo-table-text) !important;
+  -webkit-text-fill-color: var(--jaroo-table-text) !important;
+  font-weight: 400 !important;
+  padding: 11px 14px !important;
+  vertical-align: middle !important;
+  border-bottom: 1px solid var(--jaroo-table-grid) !important;
+  border-inline-end: 1px solid var(--jaroo-table-grid-soft) !important;
+  overflow-wrap: break-word !important;
+  word-break: normal !important;
+}
+
+/* Nested TextBase spans and utility classes override inherited cell sizing,
+   so explicitly normalize text-bearing descendants, but not interactions. */
+:is([data-message-author-role="assistant"], #thread,
+    [data-testid="conversation-panel"], [data-testid="conversation-thread"],
+    [data-testid^="conversation-turn"])
+  :is(table, [role="table"], [data-d-component="table"])
+  :is(th, td, [role="cell"], [role="columnheader"], [role="rowheader"],
+      [data-d-component="table-cell"])
+  :is(p, span, div, small, a, label, strong, b, em, i, li,
+      [data-d-component="text"], [data-d-text-flow]):not(:is(
+      button, button *, [role="button"], [role="button"] *,
+      input, textarea, select, [contenteditable="true"],
+      [contenteditable="true"] *, svg, svg *, pre, pre *, code, code *
+  )) {
+  font-size: var(--jaroo-answer-table-font-size) !important;
+  line-height: 1.52 !important;
+}
+
+/* Preserve semantic emphasis (old Thin 100 prose rule must not flatten tables). */
+:is([data-message-author-role="assistant"], #thread,
+    [data-testid="conversation-panel"], [data-testid="conversation-thread"],
+    [data-testid^="conversation-turn"])
+  :is(table, [role="table"], [data-d-component="table"])
+  :is(strong, b, [data-d-weight="bold"], [data-d-weight="semibold"],
+      [data-d-text-weight="bold"], [data-d-text-weight="semibold"]) {
+  font-weight: 650 !important;
+}
+
+/* Native table headers, accessible headers, and DIL-marked header cells. */
+:is([data-message-author-role="assistant"], #thread,
+    [data-testid="conversation-panel"], [data-testid="conversation-thread"],
+    [data-testid^="conversation-turn"])
+  :is(table, [role="table"], [data-d-component="table"])
+  :is(th, [role="columnheader"], [role="rowheader"],
+      [data-d-component="table-cell"][data-header="true"]) {
+  background: var(--jaroo-table-header-bg) !important;
+  color: var(--jaroo-table-heading) !important;
+  -webkit-text-fill-color: var(--jaroo-table-heading) !important;
+  font-size: var(--jaroo-answer-table-font-size) !important;
+  font-weight: 650 !important;
+  border-bottom: 1.5px solid rgba(139,233,253,.44) !important;
+}
+
+/* Nested header text gets the same header white. */
+:is([data-message-author-role="assistant"], #thread,
+    [data-testid="conversation-panel"], [data-testid="conversation-thread"],
+    [data-testid^="conversation-turn"])
+  :is(table, [role="table"], [data-d-component="table"])
+  :is(th, [role="columnheader"], [role="rowheader"],
+      [data-d-component="table-cell"][data-header="true"])
+  :is(p, span, div, strong, b, [data-d-component="text"]) {
+  color: var(--jaroo-table-heading) !important;
+  -webkit-text-fill-color: var(--jaroo-table-heading) !important;
+  font-weight: 650 !important;
+}
+
+/* Alternating rows, subtle enough for long 30+ row proposal tables. */
+:is([data-message-author-role="assistant"], #thread,
+    [data-testid="conversation-panel"], [data-testid="conversation-thread"],
+    [data-testid^="conversation-turn"])
+  table tbody tr:nth-child(even) > :is(td,th) {
+  background-color: var(--jaroo-table-zebra) !important;
+}
+:is([data-message-author-role="assistant"], #thread,
+    [data-testid="conversation-panel"], [data-testid="conversation-thread"],
+    [data-testid^="conversation-turn"])
+  :is([role="table"], [data-d-component="table"])
+  :is([role="row"], [data-d-component="table-row"]):nth-child(even)
+  > :is([role="cell"],[data-d-component="table-cell"]) {
+  background-color: var(--jaroo-table-zebra) !important;
+}
+:is([data-message-author-role="assistant"], #thread,
+    [data-testid="conversation-panel"], [data-testid="conversation-thread"],
+    [data-testid^="conversation-turn"])
+  table tbody tr:hover > td {
+  background-color: var(--jaroo-table-hover) !important;
+}
+
+/* Avoid double end borders at the last row/last column. */
+:is([data-message-author-role="assistant"], #thread,
+    [data-testid="conversation-panel"], [data-testid="conversation-thread"],
+    [data-testid^="conversation-turn"])
+  table tr > :is(td,th):last-child {
+  border-inline-end: 0 !important;
+}
+:is([data-message-author-role="assistant"], #thread,
+    [data-testid="conversation-panel"], [data-testid="conversation-thread"],
+    [data-testid^="conversation-turn"])
+  table tbody tr:last-child > td {
+  border-bottom: 0 !important;
+}
+
+/* HTML table's normal text color never inherits the selected cyan neon title.
+   Leave links/emphasis to existing Dracula semantic rules when appropriate. */
+:is([data-message-author-role="assistant"], #thread,
+    [data-testid="conversation-panel"], [data-testid="conversation-thread"],
+    [data-testid^="conversation-turn"])
+  :is(table, [role="table"], [data-d-component="table"])
+  :is(a, em) {
+  -webkit-text-fill-color: currentColor !important;
+}
+
+
+/* 29A. DEEP TABLE TEXT PARITY — v4.7
+   Why: newer ChatGPT table widgets assign smaller font sizes on text descendants
+   (often through utility classes). A 19px root/cell alone does not override
+   those independent sizes. This scope intentionally includes descendant divs,
+   spans and TextBase labels, but never icons, controls, code or inputs.
+   Applies only to conversation/assistant content, not the Work application shell.
+   The original table HTML/ARIA structure must be reachable by Stylus CSS;
+   closed Shadow DOM or cross-origin iframe content cannot be styled here.
+*/
+:is(
+  [data-message-author-role="assistant"],
+  [data-testid^="conversation-turn"],
+  [data-testid="conversation-thread"],
+  [data-testid="conversation-panel"],
+  #thread
+) :is(
+  table,
+  [role="table"],
+  [role="grid"],
+  [data-d-component="table"],
+  [data-d-component="data-table"]
+) {
+  font-size: var(--jaroo-answer-table-font-size) !important;
+  line-height: 1.52 !important;
+}
+
+/* All nested text receives the same calculated size as ordinary prose.
+   Excludes buttons, editable controls, code blocks, SVG/icon descendants. */
+:is(
+  [data-message-author-role="assistant"],
+  [data-testid^="conversation-turn"],
+  [data-testid="conversation-thread"],
+  [data-testid="conversation-panel"],
+  #thread
+) :is(
+  table,
+  [role="table"],
+  [role="grid"],
+  [data-d-component="table"],
+  [data-d-component="data-table"]
+) :not(:is(
+  button, button *,
+  [role="button"], [role="button"] *,
+  [contenteditable="true"], [contenteditable="true"] *,
+  input, textarea, select, option,
+  pre, pre *, code, code *,
+  svg, svg *, canvas, img, video,
+  [role="img"], [role="img"] *
+)) {
+  font-size: var(--jaroo-answer-table-font-size) !important;
+  line-height: 1.52 !important;
+}
+
+/* Also support table widgets where cells are authored as ARIA grid cells. */
+:is(
+  [data-message-author-role="assistant"],
+  [data-testid^="conversation-turn"],
+  [data-testid="conversation-thread"],
+  [data-testid="conversation-panel"],
+  #thread
+) :is(
+  table, [role="table"], [role="grid"],
+  [data-d-component="table"], [data-d-component="data-table"]
+) :is(
+  th, td, [role="gridcell"], [role="columnheader"], [role="rowheader"],
+  [role="cell"], [data-d-component="table-cell"]
+) {
+  font-size: var(--jaroo-answer-table-font-size) !important;
+  padding: 10px 14px !important;
+  border-bottom: 1px solid var(--jaroo-table-grid) !important;
+  border-inline-end: 1px solid var(--jaroo-table-grid-soft) !important;
+}
+
+/* Explicit table typography does not override authored header contrast. */
+:is(
+  [data-message-author-role="assistant"],
+  [data-testid^="conversation-turn"],
+  [data-testid="conversation-thread"],
+  [data-testid="conversation-panel"],
+  #thread
+) :is(
+  table, [role="table"], [role="grid"],
+  [data-d-component="table"], [data-d-component="data-table"]
+) :is(th, [role="columnheader"], [role="rowheader"],
+      [data-d-component="table-cell"][data-header="true"]) {
+  font-weight: 650 !important;
+  background-color: var(--jaroo-table-header-bg) !important;
+  color: var(--jaroo-table-heading) !important;
+  -webkit-text-fill-color: var(--jaroo-table-heading) !important;
+}
+
+/* 30. REPRESENTATIVE OFFICE GOLD + ORIGINAL STRATEGY ORANGE
+   Exact markers come from the existing Mapper v1.3 (v1.2 also knows both).
+   No broad name matches or :has() scanning; no per-department color tokens.
+   CEO capsule uses flat hot pink with no extra glow or embossing. */
+:root {
+  /* Variable names retained for compatibility; CEO now uses an electric
+     sapphire/cyan identity, strategy uses executive violet. Other teams
+     intentionally keep the existing classic orange project tags. */
+  /* Representative Office — same flat capsule treatment as standard teams. */
+  --jaroo-ceo-gold-fill: #FF319E;
+  --jaroo-ceo-gold-text: #FFFFFF;
+  --jaroo-ceo-gold-glow: none;
+  --jaroo-strategy-base: #765BE8;
+  --jaroo-strategy-text: #FFFFFF;
+}
+[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row][data-jaroo-org="ceo"] {
+  --jaroo-project-focus: #FF319E;
+}
+[data-sidebar-project-kind="local"]
+  [data-app-action-sidebar-project-row][data-jaroo-org="ceo"] [data-marquee-content="true"],
+[data-sidebar-project-kind="local"]
+  [data-app-action-sidebar-project-row][data-jaroo-org="ceo"]:hover [data-marquee-content="true"] {
+  background: var(--jaroo-ceo-gold-fill) !important;
+  color: var(--jaroo-ceo-gold-text) !important;
+  -webkit-text-fill-color: var(--jaroo-ceo-gold-text) !important;
+  font-weight: 700 !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+  animation: none !important;
+}
+[data-sidebar-project-kind="local"]
+  [data-app-action-sidebar-project-row][data-jaroo-org="strategy"] [data-marquee-content="true"],
+[data-sidebar-project-kind="local"]
+  [data-app-action-sidebar-project-row][data-jaroo-org="strategy"]:hover [data-marquee-content="true"] {
+  background: var(--jaroo-strategy-base) !important;
+  color: var(--jaroo-strategy-text) !important;
+  -webkit-text-fill-color: var(--jaroo-strategy-text) !important;
+  font-weight: 600 !important;
+  box-shadow: 0 0 0 1px rgba(192,174,255,.55), 0 0 8px rgba(126,96,248,.28) !important;
+}
+[data-sidebar-project-kind="local"]
+  [data-app-action-sidebar-project-row][data-jaroo-org="strategy"]:hover [data-marquee-content="true"] {
+  box-shadow: 0 0 0 1px rgba(203,183,255,.70), 0 0 10px rgba(127,89,247,.36) !important;
+}
+
+/* 30A. GLOBAL PRETENDARD — text-bearing HTML only. */
+html, body,
+body :is(div, span, p, a, button, input, textarea, select, option,
+  label, small, li, ul, ol, h1, h2, h3, h4, h5, h6, strong, b,
+  em, i, section, article, main, aside, nav, header, footer,
+  pre, code, table, thead, tbody, tr, th, td, blockquote,
+  [contenteditable="true"]) {
+  font-family: "Pretendard", sans-serif !important;
+}
+
+/* 31. SYNCHRONIZED STATUS PRESENTATION v6.7.9 · FAST RUN / SMOOTH DONE GLOW.
+   The paired script publishes the effective display state per conversation:
+   data-jaroo-effective-status="working" -> RUN; "done" -> DONE;
+   missing, empty or any other value -> no replacement badge.
+   Native data-sidebar-indicator attributes are never overwritten.
+   The row and dock share amber » RUN / green ✓ DONE, periods and compact styling.
+   RUN keeps its .28s blink; DONE breathes from 18% to 100% halo in 1.8s.
+   A registered numeric property smoothly drives the important shadows. */
+/* Registered in the document stylesheet so the sidebar, quick list and
+   clock Shadow DOM share continuous numeric interpolation. The number is
+   local to each animated badge; text/check/count inherit its text-shadow.
+   Fixed blur radii; only halo alpha changes. Text, border and opacity stay on. */
+@property --jaroo-done-wave {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+
+:root {
+  --jaroo-status-css-version: "6.8.2";
+  --jaroo-run-color: #FFB86C;
+  --jaroo-done-color: #50FA7B;
+  --jaroo-run-period: .28s;
+  --jaroo-done-period: 1.8s;
+  --jaroo-badge-width: 56px;
+  --jaroo-badge-title-gap: 0.5em;
+}
+
+/* An unrecognized/missing effective state always leaves this span hidden. */
+[data-jaroo-native-row="true"] .jaroo-native-badge {
+  display: none !important;
+  position: absolute !important;
+  left: 6px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 6 !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 3px !important;
+  box-sizing: border-box !important;
+  width: var(--jaroo-badge-width) !important;
+  height: 23px !important;
+  padding: 0 4px !important;
+  margin: 0 !important;
+  border: 1.5px solid currentColor !important;
+  border-radius: 5px !important;
+  background: #242631 !important;
+  color: var(--jaroo-run-color) !important;
+  font: 900 11px/1 "Pretendard", sans-serif !important;
+  letter-spacing: .2px !important;
+  white-space: nowrap !important;
+  -webkit-text-fill-color: currentColor !important;
+  text-shadow: none !important;
+  opacity: 1;
+  animation: none !important;
+  pointer-events: none !important;
+  user-select: none !important;
+  /* DONE varies halo alpha smoothly; blur radii and base visibility stay fixed. */
+}
+[data-jaroo-native-row="true"] .jaroo-native-badge::before {
+  content: none !important;
+  flex: 0 0 auto !important;
+  color: inherit !important;
+  -webkit-text-fill-color: currentColor !important;
+  font: inherit !important;
+  text-shadow: inherit !important;
+  opacity: 1 !important;
+  animation: none !important;
+}
+[data-jaroo-native-row="true"] .jaroo-native-badge::after {
+  content: none !important;
+  display: inline-block !important;
+  order: -1 !important;
+  flex: 0 0 9px !important;
+  width: 9px !important;
+  box-sizing: border-box !important;
+  text-align: center !important;
+  color: inherit !important;
+  font: 900 14px/1 "Pretendard", sans-serif !important;
+  -webkit-text-fill-color: currentColor !important;
+  text-shadow: inherit !important;
+  opacity: 1 !important;
+  pointer-events: none !important;
+}
+
+/* Only unknown row structures use an absolute badge and reserved row inset.
+   Known title hosts use the inline layout below with no reserved badge gap. */
+[data-jaroo-native-row="true"]:is([data-jaroo-effective-status="working"],[data-jaroo-effective-status="done"]):not([data-jaroo-badge-layout="inline"]):has(> .jaroo-native-badge) {
+  position: relative !important;
+  box-sizing: border-box !important;
+  min-width: 0 !important;
+  min-inline-size: 0 !important;
+  padding-left: calc(6px + var(--jaroo-badge-width) + var(--jaroo-badge-title-gap)) !important;
+}
+/* The native title link can retain its own start inset after row padding.
+   Normalize only the known title path of a row with an active status badge. */
+[data-jaroo-native-row="true"]:is([data-jaroo-effective-status="working"],[data-jaroo-effective-status="done"]):has(.jaroo-native-badge)
+  [data-thread-title-trigger="true"],
+[data-jaroo-native-row="true"]:is([data-jaroo-effective-status="working"],[data-jaroo-effective-status="done"]):has(.jaroo-native-badge)
+  [data-thread-title-trigger="true"] > a[href*="/c/"] {
+  padding-inline-start: 0 !important;
+  margin-inline-start: 0 !important;
+  text-indent: 0 !important;
+}
+/* The badge and title are adjacent flex items in the same native host.
+   Include the sidebar root for specificity: priority links otherwise add a
+   5px gap, and the general sidebar typography otherwise enlarges nested spans.
+   These overrides set layout/font only; status color rules remain authoritative. */
+:is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)
+  [data-jaroo-native-row="true"]:is([data-jaroo-effective-status="working"],[data-jaroo-effective-status="done"])[data-jaroo-badge-layout="inline"][data-jaroo-badge-host="true"],
+:is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)
+  [data-jaroo-native-row="true"]:is([data-jaroo-effective-status="working"],[data-jaroo-effective-status="done"])[data-jaroo-badge-layout="inline"] [data-jaroo-badge-host="true"] {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 0 !important;
+  column-gap: 0 !important;
+  min-width: 0 !important;
+  min-inline-size: 0 !important;
+}
+:is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)
+  [data-jaroo-native-row="true"]:is([data-jaroo-effective-status="working"],[data-jaroo-effective-status="done"])[data-jaroo-badge-layout="inline"] .jaroo-native-badge {
+  position: static !important;
+  inset: auto !important;
+  transform: none !important;
+  flex: 0 0 var(--jaroo-badge-width) !important;
+  align-self: center !important;
+  order: 0 !important;
+  margin: 0 !important;
+  font-size: 11px !important;
+}
+:is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)
+  [data-jaroo-native-row="true"]:is([data-jaroo-effective-status="working"],[data-jaroo-effective-status="done"])[data-jaroo-badge-layout="inline"][data-jaroo-badge-host="true"] > .jaroo-native-badge + :is(a[href*="/c/"],[data-thread-title],span.truncate,div.truncate,[data-marquee-text]),
+:is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)
+  [data-jaroo-native-row="true"]:is([data-jaroo-effective-status="working"],[data-jaroo-effective-status="done"])[data-jaroo-badge-layout="inline"] [data-jaroo-badge-host="true"] > .jaroo-native-badge + :is(a[href*="/c/"],[data-thread-title],span.truncate,div.truncate,[data-marquee-text]) {
+  min-width: 0 !important;
+  min-inline-size: 0 !important;
+  padding-inline-start: 0 !important;
+  margin-inline-start: var(--jaroo-badge-title-gap) !important;
+  text-indent: 0 !important;
+}
+
+[data-jaroo-native-row="true"]:is([data-jaroo-effective-status="working"],[data-jaroo-effective-status="done"]):has(.jaroo-native-badge) .jaroo-native-badge {
+  display: inline-flex !important;
+}
+[data-jaroo-native-row="true"][data-jaroo-effective-status="working"] .jaroo-native-badge::before {
+  content: "RUN" !important;
+}
+[data-jaroo-native-row="true"][data-jaroo-effective-status="done"] .jaroo-native-badge::before {
+  content: "DONE" !important;
+}
+[data-jaroo-native-row="true"][data-jaroo-effective-status="working"] .jaroo-native-badge {
+  color: var(--jaroo-run-color) !important;
+  border-color: currentColor !important;
+  text-shadow: 0 0 3px rgba(255,184,108,.95), 0 0 8px rgba(255,184,108,.72) !important;
+  box-shadow: inset 0 0 6px rgba(255,184,108,.18), 0 0 5px rgba(255,184,108,.95), 0 0 12px rgba(255,184,108,.55), 0 0 18px rgba(255,184,108,.22) !important;
+  animation: jaroo-run-neon-v67 var(--jaroo-run-period) steps(1,end) infinite !important;
+}
+[data-jaroo-native-row="true"][data-jaroo-effective-status="done"] .jaroo-native-badge {
+  color: var(--jaroo-done-color) !important;
+  border-color: currentColor !important;
+  --jaroo-text-glow: 0 0 2px rgba(80,250,123,var(--jaroo-done-wave,1)), 0 0 6px rgba(80,250,123,var(--jaroo-done-wave,1)), 0 0 12px rgba(80,250,123,calc(var(--jaroo-done-wave,1)*.95));
+  --jaroo-box-glow: inset 0 0 6px rgba(80,250,123,calc(var(--jaroo-done-wave,1)*.35)), 0 0 4px rgba(80,250,123,var(--jaroo-done-wave,1)), 0 0 12px rgba(80,250,123,calc(var(--jaroo-done-wave,1)*.95)), 0 0 22px rgba(80,250,123,calc(var(--jaroo-done-wave,1)*.65));
+  text-shadow: var(--jaroo-text-glow) !important;
+  box-shadow: var(--jaroo-box-glow) !important;
+  opacity: 1 !important;
+  animation: jaroo-done-neon-v67 var(--jaroo-done-period,1.8s) ease-in-out infinite !important;
+}
+[data-jaroo-native-row="true"][data-jaroo-effective-status="working"] .jaroo-native-badge::after {
+  content: "»" !important;
+  animation: jaroo-run-sprint-v67 var(--jaroo-run-period) linear infinite !important;
+}
+[data-jaroo-native-row="true"][data-jaroo-effective-status="done"] .jaroo-native-badge::after {
+  content: "✓" !important;
+  font-size: 12px !important;
+  animation: none !important;
+}
+@keyframes jaroo-run-neon-v67 {
+  0%,49.999% { opacity: 1; }
+  50%,100% { opacity: .25; }
+}
+@keyframes jaroo-done-neon-v67 {
+  0%,100% { --jaroo-done-wave: .18; }
+  50% { --jaroo-done-wave: 1; }
+}
+@keyframes jaroo-run-sprint-v67 {
+  from { transform: translateX(-1px); }
+  to { transform: translateX(2px); }
+}
+html[data-jaroo-status-hidden="true"] [data-jaroo-native-row="true"] .jaroo-native-badge,
+html[data-jaroo-status-hidden="true"] [data-jaroo-native-row="true"] .jaroo-native-badge::after {
+  animation-play-state: paused !important;
+}
+
+
+/* The script marks ONLY a verified empty leading spacer, never an icon,
+   link, button or title. Removing this spacer preserves the title's width.
+   Re-check structural exclusions in CSS in case the native row is reused. */
+[data-jaroo-native-row="true"]:is([data-jaroo-effective-status="working"],[data-jaroo-effective-status="done"]):has(.jaroo-native-badge)
+  [data-jaroo-native-leading="true"]:not(:is(a, button, input, textarea, select, option, summary, label, audio, video, iframe, [role="button"], [role="link"], [contenteditable="true"], [tabindex], [data-thread-title], [data-thread-title-trigger], [data-marquee-content], .jaroo-native-badge)):not(:has(:is(a, button, input, textarea, select, option, summary, label, audio, video, iframe, [role="button"], [role="link"], [contenteditable="true"], [tabindex], [data-thread-title], [data-thread-title-trigger], [data-marquee-content], .jaroo-native-badge))):not(:is(svg, img, canvas, [role="status"], [data-loading-indicator])):not(:has(svg, img, canvas, [role="status"], [data-loading-indicator])) {
+  display: none !important;
+}
+
+/* The script marks the exact native spinner/dot, never its text/control
+   container. Clip only its paint; keep its native state and layout intact.
+   Hide only when BOTH a local native indicator and an effective badge exist.
+   A peer state alone cannot hide a local icon. These protections also reject
+   a marked node containing a title/control. */
+[data-jaroo-native-row="true"]:is([data-jaroo-effective-status="working"],[data-jaroo-effective-status="done"]):is([data-sidebar-indicator="working"],[data-sidebar-indicator="unread"]):has(.jaroo-native-badge)
+  [data-jaroo-native-hidden="true"]:not(:is(a, button, input, textarea, select, option, summary, label, audio, video, iframe, [role="button"], [role="link"], [contenteditable="true"], [tabindex], [data-thread-title], [data-thread-title-trigger], [data-marquee-content], .jaroo-native-badge)):not(:has(:is(a, button, input, textarea, select, option, summary, label, audio, video, iframe, [role="button"], [role="link"], [contenteditable="true"], [tabindex], [data-thread-title], [data-thread-title-trigger], [data-marquee-content], .jaroo-native-badge))) {
+  clip-path: inset(50%) !important;
+}
+[data-jaroo-native-row="true"]:is([data-jaroo-effective-status="working"],[data-jaroo-effective-status="done"]):is([data-sidebar-indicator="working"],[data-sidebar-indicator="unread"]):has(.jaroo-native-badge)
+  [data-jaroo-native-hidden="true"]:not(:is(a, button, input, textarea, select, option, summary, label, audio, video, iframe, [role="button"], [role="link"], [contenteditable="true"], [tabindex], [data-thread-title], [data-thread-title-trigger], [data-marquee-content], .jaroo-native-badge)):not(:has(:is(a, button, input, textarea, select, option, summary, label, audio, video, iframe, [role="button"], [role="link"], [contenteditable="true"], [tabindex], [data-thread-title], [data-thread-title-trigger], [data-marquee-content], .jaroo-native-badge))),
+[data-jaroo-native-row="true"]:is([data-jaroo-effective-status="working"],[data-jaroo-effective-status="done"]):is([data-sidebar-indicator="working"],[data-sidebar-indicator="unread"]):has(.jaroo-native-badge)
+  [data-jaroo-native-hidden="true"]:not(:is(a, button, input, textarea, select, option, summary, label, audio, video, iframe, [role="button"], [role="link"], [contenteditable="true"], [tabindex], [data-thread-title], [data-thread-title-trigger], [data-marquee-content], .jaroo-native-badge)):not(:has(:is(a, button, input, textarea, select, option, summary, label, audio, video, iframe, [role="button"], [role="link"], [contenteditable="true"], [tabindex], [data-thread-title], [data-thread-title-trigger], [data-marquee-content], .jaroo-native-badge))) * {
+  animation-play-state: paused !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-jaroo-native-row="true"][data-jaroo-effective-status] .jaroo-native-badge,
+  [data-jaroo-native-row="true"][data-jaroo-effective-status] .jaroo-native-badge::after {
+    animation: none !important;
+  }
+}
+
+/* 32. NATIVE USAGE CIRCLE — NO custom meter, percent, requests or polling.
+   Only real SVG progress arcs are recolored when the progress is a separate
+   SVG element. If the control renders as one inseparable icon, a small warm
+   halo applies to the native SVG without fabricating a percentage. */
+:is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
+  :is(button,[role="button"]):is(
+    [aria-label*="사용량"], [aria-label*="usage" i],
+    [aria-label*="weekly limit" i], [title*="사용량"],
+    [title*="usage" i], [data-testid*="usage" i]
+  ) svg {
+  filter: drop-shadow(0 0 2px rgba(255,159,28,.48)) !important;
+}
+
+:is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
+  :is(button,[role="button"]):is(
+    [aria-label*="사용량"], [aria-label*="usage" i],
+    [aria-label*="weekly limit" i], [title*="사용량"],
+    [title*="usage" i], [data-testid*="usage" i]
+  ) svg :is(circle,path):is([stroke-dasharray],[data-progress],[style*="stroke-dasharray"]) {
+  stroke: #FF9F1C !important;
+  filter: drop-shadow(0 0 3px rgba(255,159,28,.78)) !important;
+}
+
+
+/* Unlabeled generic SVG icons intentionally left native: no broad recoloring. */
+
+/* Non-project chats use the unified 09/11 rules above. */
+
+}
