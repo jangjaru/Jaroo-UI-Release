@@ -1,15 +1,15 @@
 /* ==UserStyle==
 @name         Jaroo ChatGPT Dracula Neon
 @namespace    jaroo.chatgpt.dracula
-@version      6.8.6
-@description  Jaroo's Company managed style, restored from the approved working baseline.
+@version      7.2.0
+@description  Jaroo's Company · Simple Flat Vivid v7.2 · cursive logo, neon badges, compact Life Clock
 @author       Jaroo
 @license      UNLICENSED
 @updateURL    https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/chatgpt/theme.user.css
 ==/UserStyle== */
 
 @-moz-document domain("chatgpt.com") {
-
+/* Jaroo's Company · Flat Vivid v7.2.0 — original neon status restored, cursive brand, unified pill labels. */
 /* Jaroo Syntax Spectrum + Minimal J v6.8.3: full CSS based on v6.8.1.
    The approved new vector mark lives in Clock JS v3.5.3 Shadow DOM.
    Header counter visuals are rendered by Status JS inside Clock Shadow DOM.
@@ -1586,4 +1586,230 @@ html[data-jaroo-status-hidden="true"] [data-jaroo-native-row="true"] .jaroo-nati
 
 /* Non-project chats use the unified 09/11 rules above. */
 
+
+/* ============================================================================
+   JAROO'S COMPANY · SIMPLE FLAT VIVID v7.0
+   Clean layer over the verified v6.8.5 baseline. ChatGPT only.
+   Rules: dark solid surfaces, one vivid tone per role, clear text and borders,
+   ZERO gradients for Jaroo-owned components, restrained emphasis only on selection.
+   Status logic, DOM event handling, native page controls are not changed here.
+   ============================================================================ */
+:root {
+  --jaroo-v7-pink:    #FF3FA4;
+  --jaroo-v7-purple:  #9B70FF;
+  --jaroo-v7-cyan:    #24C2E8;
+  --jaroo-v7-orange:  #FFAB32;
+  --jaroo-v7-green:   #47EC84;
+  --jaroo-v7-lavender:#D69BF4;
+  --jaroo-v7-base:    #151925;
+  --jaroo-v7-surface: #1D2230;
+  --jaroo-v7-line:    #394152;
+  --jaroo-v7-text:    #F4F7FC;
+  --jaroo-v7-muted:   #A7B2C6;
+
+  /* Existing tokens remain the integration contract. */
+  --da-heading-1:var(--jaroo-v7-cyan);
+  --da-heading-2:var(--jaroo-v7-purple);
+  --da-heading-3:var(--jaroo-v7-orange);
+  --da-body:#D9E0EC;
+  --da-italic:var(--jaroo-v7-pink);
+  --da-link:var(--jaroo-v7-cyan);
+  --da-inline-code:var(--jaroo-v7-green);
+  --da-marker:var(--jaroo-v7-purple);
+  --da-project-bg:var(--jaroo-v7-orange);
+  --da-project-text:var(--jaroo-v7-base);
+  --da-star:var(--jaroo-v7-green);
+  --da-circle:var(--jaroo-v7-cyan);
+  --da-user-border:var(--jaroo-v7-orange);
+  --da-user-text:var(--jaroo-v7-orange);
+  --da-ok:var(--jaroo-v7-green);
+  --da-warning:var(--jaroo-v7-orange);
+  --da-insight:var(--jaroo-v7-lavender);
+  --jaroo-prose-color:#D9E0EC;
+  --jaroo-prose-weight:400;
+  --jaroo-emphasis-weight:650;
+  --jaroo-role-neutral:var(--jaroo-v7-text);
+  --jaroo-role-lead:var(--jaroo-v7-green);
+  --jaroo-role-manage:var(--jaroo-v7-cyan);
+  --jaroo-role-produce:var(--jaroo-v7-lavender);
+  --jaroo-role-plan:var(--jaroo-v7-purple);
+  --jaroo-role-action:var(--jaroo-v7-pink);
+  --jaroo-role-archive:#8892A5;
+  --jaroo-role-stopped:#FF687B;
+  --jaroo-priority-core:var(--jaroo-v7-orange);
+  --jaroo-priority-important:var(--jaroo-v7-lavender);
+  --jaroo-priority-urgent:#FF687B;
+  --jaroo-neon-purple:var(--jaroo-v7-purple);
+  --jaroo-neon-pink:var(--jaroo-v7-pink);
+  --jaroo-neon-orange:var(--jaroo-v7-orange);
+  --jaroo-selected-border-width:2px;
+  --jaroo-selected-title-glow:none;
+  /* Native RUN/DONE indicator colors restored to v6.8.5. */
+  --jaroo-run-color:#FFB86C;
+  --jaroo-done-color:#50FA7B;
+  --jaroo-status-css-version:"7.2.0";
+  --jaroo-ceo-gold-fill:var(--jaroo-v7-pink);
+  --jaroo-ceo-gold-text:#FFFFFF;
+  --jaroo-strategy-base:var(--jaroo-v7-purple);
+  --jaroo-strategy-text:#FFFFFF;
+  --jaroo-cyan:var(--jaroo-v7-cyan);
+  --jaroo-lavender:var(--jaroo-v7-lavender);
+  --jaroo-logo-bg:var(--jaroo-v7-base);
+}
+
+/* Assistant copy: headings/quotes/highlights follow the same six-token set. */
+[data-message-author-role="assistant"] :is(h1,h2) {border-bottom-color:var(--jaroo-v7-line)!important}
+[data-message-author-role="assistant"] :is(h3,h4){border-left-color:var(--jaroo-v7-purple)!important}
+[data-message-author-role="assistant"] blockquote{
+  background:transparent!important;border-left-color:var(--jaroo-v7-purple)!important;
+}
+[data-message-author-role="assistant"] mark{
+  color:var(--jaroo-v7-lavender)!important;
+  background:transparent!important;
+  text-decoration:underline;text-decoration-color:var(--jaroo-v7-lavender);
+  text-underline-offset:3px;
+}
+
+/* Project capsules: exact organization markers from Mapper, not fuzzy text. */
+[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row]{
+  --jaroo-project-fill:#CD7200;
+  --jaroo-project-focus:var(--jaroo-project-fill);
+}
+[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row][data-jaroo-org="ceo"]{--jaroo-project-fill:var(--jaroo-v7-pink)}
+[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row][data-jaroo-org="strategy"]{--jaroo-project-fill:var(--jaroo-v7-purple)}
+[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row][data-jaroo-org="assistant"]{--jaroo-project-fill:#CD7200}
+[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row][data-jaroo-org="sales"]{--jaroo-project-fill:#159357}
+[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row][data-jaroo-org="bd"]{--jaroo-project-fill:#068BB5}
+[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row][data-jaroo-org="proposal"]{--jaroo-project-fill:#9552C8}
+[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row][data-jaroo-org="design"]{--jaroo-project-fill:var(--jaroo-v7-pink)}
+[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row][data-jaroo-org="technical"]{--jaroo-project-fill:#068BB5}
+[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row][data-jaroo-org="people"]{--jaroo-project-fill:#159357}
+[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row][data-jaroo-org="management"]{--jaroo-project-fill:#CD7200}
+[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row][data-jaroo-org="philosophy"]{--jaroo-project-fill:#9552C8}
+
+[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] [data-marquee-content="true"],
+[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row]:hover [data-marquee-content="true"]{
+  background:var(--jaroo-project-fill)!important;
+  background-image:none!important;
+  color:#FFFFFF!important;
+  -webkit-text-fill-color:#FFFFFF!important;
+  padding:4px 9px!important;
+  border:0!important;
+  border-radius:999px!important;
+  box-shadow:none!important;
+  filter:none!important;
+  text-shadow:none!important;
+  font-weight:750!important;
+  transition:none!important;
+}
+[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row][data-jaroo-org] [data-marquee-content="true"],
+[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row][data-jaroo-org]:hover [data-marquee-content="true"]{
+  background:var(--jaroo-project-fill)!important;
+  color:#FFFFFF!important;
+  -webkit-text-fill-color:#FFFFFF!important;
+  box-shadow:none!important;
+}
+[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] svg{
+  color:var(--jaroo-project-fill)!important;
+}
+[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row]:focus-visible{
+  outline-color:var(--jaroo-project-fill)!important;
+}
+
+/* Chat lines use the EXACT same vivid family as project pills. */
+:is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)
+  a[href*="/c/"]{--jaroo-title-glow:none!important;text-decoration:none!important;}
+:is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)
+  a[href*="/c/"]:is(:hover,:focus-visible){text-decoration:none!important;}
+
+/* Active conversation: static pink 2px outline, only one very modest halo. */
+:is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"]::before{
+  background:var(--jaroo-v7-pink)!important;
+  background-image:none!important;
+  filter:drop-shadow(0 0 3px rgba(255,63,164,.32))!important;
+  animation:none!important;
+}
+:is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"]::after{
+  display:none!important;content:none!important;animation:none!important;
+}
+:is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)
+  [data-jaroo-selected="true"] a[href*="/c/"]{
+  --jaroo-title-glow:none!important;
+  text-shadow:none!important;
+}
+
+/* v7.2: Preserve the ORIGINAL native RUN/DONE badge design and animations.
+   The previously introduced v7.0 animation suppression has been removed.
+   Native badge keyframes, halo, text and sprint marker are unchanged. */
+/* The user message remains a simple orange outlined text bubble. */
+div[data-user-message-bubble="true"].bg-user-message{
+  border:1.5px solid var(--jaroo-v7-orange)!important;
+  border-radius:15px!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+
+/* Native mode button: same flat logo language if platform displays it. */
+button:is([aria-label*="현재 모드: ChatGPT" i],[aria-label*="현재 모드: Codex" i]){
+  --jaroo-mode-accent:var(--jaroo-v7-pink);
+  border:2px solid var(--jaroo-mode-accent)!important;
+  background-color:var(--jaroo-v7-base)!important;
+  box-shadow:none!important;
+  border-radius:10px!important;
+  transition:none!important;
+}
+button:is([aria-label*="현재 모드: ChatGPT" i],[aria-label*="현재 모드: Codex" i]):hover{
+  background-color:var(--jaroo-v7-base)!important;
+  box-shadow:none!important;
+}
+button[aria-label*="현재 모드: ChatGPT" i] span:has(> span.sr-only)::after{
+  color:var(--jaroo-v7-pink)!important;-webkit-text-fill-color:var(--jaroo-v7-pink)!important;
+}
+button[aria-label*="현재 모드: Codex" i]{--jaroo-mode-accent:var(--jaroo-v7-lavender)}
+
+/* Intentional, cautious composer accent: only recognized composer wrappers.
+   Unknown/new ChatGPT DOM is left native rather than broken by broad :has(). */
+:is([data-testid="composer"],[data-testid="composer-input"]):has(#prompt-textarea){
+  border:1.5px solid var(--jaroo-v7-pink)!important;
+  border-radius:20px!important;
+  box-shadow:none!important;
+  background-image:none!important;
+}
+:is([data-testid="composer"],[data-testid="composer-input"]):has(#prompt-textarea):focus-within{
+  border-color:var(--jaroo-v7-pink)!important;
+  box-shadow:0 0 0 1px rgba(255,63,164,.35)!important;
+}
+
+/* True sidebar-width density: attributes are written only on the actual
+   sidebar measured by the existing clock ResizeObserver, not on viewport. */
+:is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)[data-jaroo-sidebar-width="narrow"]{
+  --jaroo-badge-width:44px;
+  --jaroo-badge-title-gap:4px;
+  --jaroo-selected-side-gutter:6px;
+}
+:is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)[data-jaroo-sidebar-width="narrow"]
+  [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] [data-marquee-content="true"]{
+  padding:3px 6px!important;
+  font-size:12px!important;
+}
+:is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)[data-jaroo-sidebar-width="narrow"]
+  [data-jaroo-native-row="true"] .jaroo-native-badge{
+  font-size:9px!important;
+  padding:0 2px!important;
+  gap:0!important;
+  height:21px!important;
+}
+:is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)[data-jaroo-sidebar-width="narrow"]
+  [data-jaroo-native-row="true"] :is([data-thread-title="true"],span.truncate,div.truncate){
+  min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+
+@media(prefers-reduced-motion:reduce){
+  [data-jaroo-selected="true"]::before,
+  [data-jaroo-selected="true"]::after,
+  [data-jaroo-native-row="true"] .jaroo-native-badge{
+    animation:none!important;transition:none!important;
+  }
+}
 }
