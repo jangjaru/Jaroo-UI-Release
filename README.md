@@ -6,10 +6,10 @@
 
 | Site | Component | Version |
 |---|---|---|
-| ChatGPT | Clock userscript | 3.7.3 |
-| ChatGPT | Status userscript | 6.5.3 |
+| ChatGPT | Clock userscript | 3.8.1 |
+| ChatGPT | Status userscript | 6.7.0 |
 | ChatGPT | Organization Mapper userscript | 1.3.2 |
-| ChatGPT | Stylus UserCSS | 7.3.0 |
+| ChatGPT | Stylus UserCSS | 8.0.1 |
 | Google Calendar | Companion userscript | 1.3.7 |
 | Google Calendar | Stylus UserCSS | 1.2.2 |
 
@@ -19,4 +19,6 @@ Security rules: keep personal dates/location/credentials in a **separate, local-
 
 SHA256 hashes of published files: [SHA256.json](SHA256.json).
 
-**Current test release (2026-11-22):** ChatGPT Vivid Neon Readability v7.3.0. [Release notes](docs/RELEASE_v7.3.0_KO.md). Previous release: [Flat Vivid v7.2.0](docs/RELEASE_v7.2.0_KO.md). User screenshots identified v7.2 readability and toggle regressions. v7.3 restores the pre-v7 high-contrast palette, adds minimal-width date/weather, two-line brand, and a clickable ALL/ONLY control. Script parse, simulated widths and simulated UI click tests passed; actual Chrome/ChatGPT DOM verification is pending.
+**Current test release (2026-11-23 KST)** — ChatGPT Neo-Brutalist v1.0. The ChatGPT theme, Clock and Status share the new visual design. In the sidebar and status lists, color highlights the chat title itself. The existing browser entries can update in place. Review the [release notes](docs/RELEASE_v8.0.1_KO.md) and [Chrome update guide](docs/INSTALLATION_KO.md). Final acceptance is pending verification in a signed-in Chrome profile.
+
+Previous release: [Vivid Neon Readability v7.3.0](docs/RELEASE_v7.3.0_KO.md).

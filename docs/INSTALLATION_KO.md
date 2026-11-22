@@ -1,43 +1,38 @@
-# 설치 가이드 · Jaroo's Company UI Auto-Update (KO)
+# Chrome 업데이트 및 설치 · Jaroo's Company UI
 
-**배포일: 2026-11-22.** 코드는 공개되어 있지만 개인정보가 포함된 프로필은 **공개하지 않음**.
+**2026-11-23 KST · ChatGPT Neo-Brutalist v1.0**
 
-## 업데이트 구조
-- ChatGPT: Tampermonkey 스크립트 3개(Clock/Status/Mapper), Stylus 1개.
-- Google Calendar: Tampermonkey 스크립트 1개, Stylus 1개.
-- 개인 생년월일·목표일·날씨 위치는 별도 *로컬 전용* Tampermonkey 스크립트 1개.
-- 사용 중인 기존 버전은 **자동으로 교체되지 않음**. 첫 설치만 수동 전환해야 함.
+## 기존 설치에서 업데이트
 
-## 사전 준비
-1. 현재 정상본을 ZIP으로 백업(로컬 안전한 위치), Tampermonkey·Stylus의 기존 항목을 **삭제하지 않음**.
-2. 브라우저의 테스트 프로필 또는 한 대의 PC에서 먼저 실행.
-3. Tampermonkey와 Stylus가 Chrome에서 활성화되어 있고 필요 권한이 허용되는지 확인.
+1. Chrome 테스트 프로필이나 PC 한 대에서 먼저 진행합니다. 이전 정상본이 있다면 ZIP을 로컬에 보관합니다.
+2. Tampermonkey 메뉴에서 **Check for userscript updates**를 실행합니다. 대시보드의 설치 항목에서 **Sidebar Live Clock 3.8.1**과 **Status & Command Center 6.7.0**을 확인합니다.
+3. Stylus 관리 화면에서 **Jaroo ChatGPT Dracula Neon** 항목의 업데이트를 확인하고 **8.0.1**을 적용합니다. 기존 설치에 연결되도록 이 항목 이름을 계속 사용합니다.
+4. ChatGPT를 새로고침합니다. 설치 항목별로 활성 버전이 하나인지, 별도 로컬 프로필이 활성 상태인지 확인합니다. Mapper와 Calendar는 이번 업데이트에서 내려받을 새 버전이 없습니다.
 
-## 설치 순서
-1. 본인에게 전달된 `Jaroo_Local_Profile_v1_PRIVATE_DO_NOT_PUBLISH.user.js`를 **Tampermonkey 대시보드 → 새 스크립트(+)** 창에 붙여넣고 저장. 공개 저장소에 프로필 등록 금지.
-2. 기존 ChatGPT Tampermonkey 3개와 Google Calendar Companion 1개를 **일단 비활성화**(삭제하지 않음).
-3. 아래 `*.user.js` 4개를 **웹 URL에서** 열어 Tampermonkey가 설치 대상으로 인식하면 설치.
-4. 기존 ChatGPT/Calendar Stylus 스타일 2개를 **비활성화**한 후 아래 `*.user.css` 2개를 **웹 URL에서** 열어 Stylus가 설치 대상으로 인식하면 설치. **Check for updates** 체크 상태를 유지.
-5. Chrome에서 ChatGPT와 Google Calendar를 새로고침하여 시간·Life Clock·RUN/DONE·팀 컬러·캘린더 이벤트 색상·월간 더보기 팝업 확인.
-6. Tampermonkey의 스크립트 자동 업데이트 확인 설정 및 Stylus의 업데이트 주기 설정을 확인. **새 버전이 원격에 올라오지 않으면 업데이트되지 않음**.
+## 업데이트 후 확인
 
-## 설치 주소
+- Chrome에 로그인한 상태에서 사이드바를 180~220px, 260~290px, 395~420px로 바꿔 로고, 날짜·날씨, Life Clock의 지표, 긴 프로젝트 이름을 확인합니다.
+- 새 응답을 실행해 채팅 제목이 RUN 동안 청록색으로 표시되고, 미확인 완료 후 노란색으로 바뀌는지 확인합니다. 제목의 역할 기호, 선택 테두리, 제목 링크, RUN/DONE 목록과 ALL/ONLY 전환도 확인합니다.
+- 본문의 표·코드 가로 스크롤, 입력창, 메뉴, Work 패널, 키보드 포커스를 확인합니다. 로컬 프로필이 없는 테스트 프로필에서는 Life Clock 지표가 숨겨지는지 확인합니다.
+
+오프라인 Chromium에서 화면과 기능을 검증했습니다. 실제 로그인 화면, 확장 프로그램 업데이트, 개인 프로필 출력은 Chrome에서 최종 확인해야 합니다.
+
+## 처음 설치하거나 기존 항목이 업데이트되지 않을 때
+
+1. Chrome에서 Tampermonkey와 Stylus를 활성화합니다. 예전 수동 설치본이 있다면 백업하고 비활성화합니다.
+2. 기존의 개인 전용 Tampermonkey 프로필을 그대로 사용합니다. 처음 설정하는 경우 본인에게 제공된 로컬 프로필을 Tampermonkey 대시보드에서 저장합니다. 개인 날짜나 날씨 위치가 들어 있는 파일은 로컬에 보관합니다.
+3. 아래 웹 주소에서 필요한 `*.user.js`를 열고 Tampermonkey 설치 화면을 확인합니다. `*.user.css`는 웹 주소로 열어 Stylus에서 설치하고 업데이트 확인을 활성화합니다.
+4. 해당 사이트를 새로고침합니다. 같은 기능을 하는 이전 설치본과 새 항목이 동시에 활성화되어 있지 않은지 확인합니다.
+
 | 항목 | 설치 URL | 버전 |
 |---|---|---|
-| Clock (Tampermonkey) | [clock.user.js](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/chatgpt/clock.user.js) | 3.7.3 |
-| Status (Tampermonkey) | [status.user.js](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/chatgpt/status.user.js) | 6.5.3 |
+| Clock (Tampermonkey) | [clock.user.js](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/chatgpt/clock.user.js) | 3.8.1 |
+| Status (Tampermonkey) | [status.user.js](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/chatgpt/status.user.js) | 6.7.0 |
 | Mapper (Tampermonkey) | [mapper.user.js](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/chatgpt/mapper.user.js) | 1.3.2 |
-| ChatGPT CSS (Stylus) | [theme.user.css](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/chatgpt/theme.user.css) | 7.3.0 |
+| ChatGPT CSS (Stylus) | [theme.user.css](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/chatgpt/theme.user.css) | 8.0.1 |
 | Calendar Companion (Tampermonkey) | [companion.user.js](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/calendar/companion.user.js) | 1.3.7 |
 | Calendar CSS (Stylus) | [theme.user.css](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/calendar/theme.user.css) | 1.2.2 |
 
-## 주의 사항
-- 로컬 파일(`file://`)에서 UserCSS를 설치하면, Stylus는 로컬 파일 업데이트 경로를 우선할 수 있음. 따라서 CSS는 **반드시 웹 URL로 설치**.
-- 기존 스크립트와 배포판 스크립트가 동시에 켜져 있으면 **중복 실행**될 수 있음.
-- 개인 프로필 없이 Clock을 실행하면 Life Clock이 숨겨지고 날씨에 '지역 설정 필요' 표시 가능.
-- 공개 `raw.githubusercontent.com` 주소는 누구나 소스를 읽을 수 있음.
-- 새 버전은 GitHub 원격에 올린 뒤에만 감지됨. 확장프로그램 자체의 주기/권한에 따라 적용 시점은 달라짐.
-- 실제 각 PC 설치 확인·자동업데이트 트리거·롤백은 아직 검증 전 상태임.
-
 ## 되돌리기
-새 배포판 스크립트·스타일을 비활성화하고, 남겨둔 기존 정상본을 다시 켜면 됨. 복구용 ZIP은 본인에게 제공된 파일을 사용.
+
+테스트 프로필에서 새 버전을 비활성화하고 저장해 둔 이전 정상본을 복구할 수 있습니다. 공개 이전 버전은 [v7.3.0 시점의 커밋](https://github.com/jangjaru/Jaroo-UI-Release/tree/af603c9f929d6e51d71a232b57701116674318c6)에 보관되어 있습니다. 이전 코드로 공개 업데이트를 제공하려면 설치 버전보다 높은 번호로 다시 배포해야 합니다.

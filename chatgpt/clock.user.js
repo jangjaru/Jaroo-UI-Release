@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.7.3
-// @description  Restores handwritten logo, single-line metric headings and right aligned Korean hour units; preserves 7-segment clock and native sidebar mounting
+// @version      3.8.1
+// @description  Neo-Brutalist v1.0 sidebar clock, private Life Clock and native menu bridge
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
 // @grant        none
@@ -15,27 +15,10 @@
 
   // Preserves proven sidebar placement / React re-render recovery from v2.4.
   // v3.6.3: the entire dashboard (brand, life, date/time, status dock) is a normal native-sidebar flow item, never fixed over menus.
-  // V7.2 restores the original Kaushan Script company logotype; other UI uses Pretendard.
   // Sidebar placement and source-menu bridging are inherited unchanged.
   // Counter and status business logic remains owned by Status.
   const RUNTIME_KEY = '__jarooCompanyClockRuntime';
   window[RUNTIME_KEY]?.dispose?.();
-
-  // Chrome may not register a typed custom property declared inside a ShadowRoot.
-  // Without document-wide registration, the conic-gradient angle jumps between
-  // 0deg and 360deg instead of moving smoothly. Register once before rendering.
-  if (typeof CSS !== 'undefined' && typeof CSS.registerProperty === 'function') {
-    try {
-      CSS.registerProperty({
-        name: '--jaroo-brand-light-angle',
-        syntax: '<angle>',
-        inherits: false,
-        initialValue: '0deg'
-      });
-    } catch (_) {
-      // Already registered by an earlier page version; safe to keep using it.
-    }
-  }
 
   const HOST_ID = 'jaroo-clock-overlay-v25'; // Keep existing host ID; avoid duplicate clocks
   const STYLE_ID = 'jaroo-clock-menu-layout-v25';
@@ -45,18 +28,6 @@
   const BRAND_FONT = 23;
   const MAX_BRAND_WIDTH = 620; // wide sidebars expand rather than stopping at 280px
   const EDGE_GUTTER = 12;
-  // Original cursive brand font from v3.6.9, loaded only for logo when allowed.
-  // Browser fallback is Segoe Script/cursive, and no font file is included.
-  const BRAND_FONT_LINK_ID = 'jaroo-brand-kaushan-gfont-v3514';
-  let fontLink = document.getElementById(BRAND_FONT_LINK_ID);
-  if (!fontLink) {
-    fontLink = document.createElement('link');
-    fontLink.id = BRAND_FONT_LINK_ID;
-    fontLink.rel = 'stylesheet';
-    fontLink.href = 'https://fonts.googleapis.com/css2?family=Kaushan+Script&display=swap';
-    fontLink.referrerPolicy = 'no-referrer';
-    document.head.appendChild(fontLink);
-  }
   let lastFolderAlignX = null;
   const LOGO =
     'button[aria-label*="현재 모드: ChatGPT" i], ' +
@@ -109,7 +80,7 @@
     'jaroo-clock-overlay-v23', 'jaroo-clock-menu-layout-v23',
     'jaroo-clock-overlay-v24', 'jaroo-clock-menu-layout-v24',
     HOST_ID, STYLE_ID,
-    'jaroo-clock-space-v2'
+    'jaroo-clock-space-v2', 'jaroo-brand-kaushan-gfont-v3514'
   ]) document.getElementById(id)?.remove();
 
   document.querySelectorAll('.jaroo-clock-space-v2').forEach(el => {
@@ -141,594 +112,296 @@
   shadow.innerHTML = `
     <style>
       :host {
-        --accent: #42DDEB;
         --jaroo-ui-scale: 1;
-        --jaroo-dashboard-gap: calc(11px * var(--jaroo-ui-scale));
+        --clock-ink: var(--jb-ink, #000000);
+        --clock-paper: var(--jb-paper, #F5F0DC);
+        --clock-white: var(--jb-white, #FFFFFF);
+        --clock-teal: var(--jb-teal, #00C2C8);
+        --clock-yellow: var(--jb-yellow, #FFDD00);
+        --clock-magenta: var(--jb-magenta, #FF00FF);
+        --clock-muted: var(--jb-muted, #EAE5D5);
+        --clock-border: var(--jb-border, 3px solid #000000);
+        --clock-border-light: var(--jb-border-light, 2px solid #000000);
+        --clock-shadow: var(--jb-shadow, 4px 4px 0 #000000);
+        --clock-shadow-small: var(--jb-shadow-small, 2px 2px 0 #000000);
+        --clock-radius: var(--jb-radius, 3px);
+        --clock-font: var(--jb-font, "Pretendard Variable", "Pretendard", "Malgun Gothic", system-ui, sans-serif);
+        color: var(--clock-ink);
       }
-      /* All component scales are derived from actual in-flow sidebar width,
-         never from a fixed viewport size or title string length. */
-      :host([data-mode="codex"]) { --accent: #C9A3FF; }
 
-      /* v3.5.17: keep the existing selected-chat-like neon. The glass logo
-         uses exactly two typographic lines with 30% of the former 1cm padding. */
-      @property --jaroo-brand-light-angle {
-        syntax:"<angle>";inherits:false;initial-value:0deg;
-      }
       .fallback-brand {
-        box-sizing:border-box;position:relative;isolation:isolate;
-        display:flex;align-items:center;gap:6px;
-        width:100%;min-width:0;max-width:100%;height:auto;min-height:0;
-        margin:0;padding:.3cm;
-        border:2.5px solid rgba(114,217,255,.92);border-radius:12px;
-        background:#171C2B;
-        box-shadow:0 0 7px rgba(87,233,255,.48),0 0 11px rgba(189,147,249,.38),
-                   0 0 14px rgba(255,184,108,.18),0 2px 9px rgba(0,0,0,.26);
-        color:#F5F5FB;
-        font:400 var(--jaroo-brand-font,28px)/1 "Kaushan Script","Segoe Script",cursive;
-        letter-spacing:0;text-align:left;white-space:nowrap;overflow:hidden;
-        appearance:none;pointer-events:auto;cursor:pointer;user-select:none;
-        transition:border-color 250ms ease,box-shadow 250ms ease;
-        /* A quick inward-and-outward neon breath; dimensions never change. */
-        animation:jaroo-brand-glass-breathe 1.15s ease-in-out infinite;
-      }
-      /* Same high-chroma palette as the selected-chat Light Runner (#BD93F9,
-         #FF79C6, #FFB86C). The ring mask confines *both* lights to the edge. */
-      .fallback-brand::before,.fallback-brand::after{
-        content:"";position:absolute;inset:0;pointer-events:none;
-        box-sizing:border-box;border-radius:inherit;padding:2.5px;
-        -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
-        -webkit-mask-composite:xor;mask-composite:exclude;
-      }
-      .fallback-brand::before{
-        z-index:0;
-        background:linear-gradient(102deg,#45E9FF 0%,#6E8CFF 34%,#985BFF 58%,#FF9A2F 100%);
-        filter:drop-shadow(0 0 3px rgba(79,229,255,.80))
-               drop-shadow(0 0 6px rgba(117,111,255,.55));
-        opacity:.86;
-        animation:jaroo-brand-rim-breathe 1.15s ease-in-out infinite;
-      }
-      /* Animate gradient angle, never the rectangular element itself. This
-         prevents the giant beam crossing the logo's glass center. */
-      .fallback-brand::after{
-        z-index:1;
-        background:conic-gradient(from var(--jaroo-brand-light-angle) at 50% 50%,
-           transparent 0deg,transparent 279deg,
-           rgba(64,214,255,.14) 288deg,#49E7FF 298deg,
-           #6D85FF 309deg,#FFFDFC 318deg,#FFFFFF 325deg,
-           #C06FFF 332deg,#FF9A2F 343deg,
-           rgba(255,154,47,.16) 352deg,transparent 359deg,transparent 360deg);
-        filter:drop-shadow(0 0 6px rgba(94,221,255,.92));
-        animation:jaroo-brand-light-runner 1.65s linear infinite;
-      }
-      .fallback-brand:hover{
-        border-color:#8BE9FD;
-        box-shadow:0 0 12px rgba(87,233,255,.72),0 0 18px rgba(189,147,249,.56),
-                   0 0 18px rgba(255,184,108,.30),0 2px 9px rgba(0,0,0,.26);
-      }
-      .fallback-brand:focus-visible{outline:2px solid #8BE9FD;outline-offset:3px}
-      .fallback-brand > *{position:relative;z-index:2}
-      .brand-word{
-        display:flex;flex-direction:column;justify-content:center;align-items:center;
-        flex:1 1 auto;min-width:0;max-width:100%;
-        white-space:nowrap;overflow-wrap:normal;word-break:keep-all;
-        gap:3px;padding:0;
-      }
-      .brand-title{
-        display:block;flex:0 0 auto;max-width:100%;
-        white-space:nowrap;overflow-wrap:normal;word-break:keep-all;text-align:center;
-        color:#6DEBFF;
-        background:linear-gradient(97deg,#57E9FF 0%,#8BE9FD 31%,#BD93F9 64%,#FFB86C 100%);
-        -webkit-background-clip:text;background-clip:text;
-        -webkit-text-fill-color:transparent;
-        font:580 var(--jaroo-brand-font,28px)/1.08 "Kaushan Script","Segoe Script",cursive;
-        font-synthesis:weight;
-        -webkit-text-stroke:.18px rgba(245,210,255,.34);
-        paint-order:stroke fill;
-        letter-spacing:-.12px;
-        filter:drop-shadow(0 0 2px rgba(69,238,255,.55))
-               drop-shadow(0 0 4px rgba(142,97,255,.46));
-      }
-      .brand-subtitle{
-        display:block;max-width:100%;overflow:visible;
-        white-space:nowrap;overflow-wrap:normal;word-break:keep-all;text-align:center;
-        background:linear-gradient(90deg,#8BE9FD 0%,#BD93F9 55%,#FFB86C 100%);
-        -webkit-background-clip:text;background-clip:text;
-        -webkit-text-fill-color:transparent;
-        font:850 var(--jaroo-brand-subtitle-font,11.2px)/1.12 "Pretendard","Inter",sans-serif;
-        letter-spacing:.07em;text-transform:uppercase;
-        filter:drop-shadow(0 0 2px rgba(109,235,255,.52));
-        opacity:1;
-      }
-      .brand-arrow{
-        display:grid;place-items:center;flex:0 0 13px;width:13px;height:24px;
-        margin-left:auto;color:#ECF5FF;
-      }
-      .brand-arrow svg{display:block;width:13px;height:13px;filter:none}
-      .fallback-brand[aria-expanded="true"] .brand-arrow svg{transform:rotate(180deg)}
-      .fallback-brand[aria-disabled="true"]{cursor:default}
-      .fallback-brand[aria-disabled="true"] .brand-arrow{display:none}
-      :host([data-density="compact"]) .fallback-brand{gap:4px;padding:.3cm}
-      :host([data-density="compact"]) .brand-arrow{width:12px;flex-basis:12px}
-      :host([data-density="stacked-label"]) .fallback-brand{gap:3px;padding:.3cm}
-      :host([data-density="stacked-label"]) .brand-arrow{width:11px;flex-basis:11px}
-      @keyframes jaroo-brand-light-runner{
-        from{--jaroo-brand-light-angle:0deg}
-        to{--jaroo-brand-light-angle:360deg}
-      }
-      /* Slightly faster/sportier pulse: independent of the moving perimeter light. */
-      @keyframes jaroo-brand-glass-breathe{
-        0%,100%{box-shadow:0 0 5px rgba(87,233,255,.46),0 0 9px rgba(189,147,249,.30),0 0 13px rgba(255,184,108,.15),0 2px 9px rgba(0,0,0,.26)}
-        52%{box-shadow:0 0 11px rgba(87,233,255,.78),0 0 17px rgba(189,147,249,.61),0 0 20px rgba(255,184,108,.32),0 2px 9px rgba(0,0,0,.26)}
-      }
-      @keyframes jaroo-brand-rim-breathe{
-        0%,100%{opacity:.68;filter:brightness(.94) drop-shadow(0 0 3px rgba(87,233,255,.52))}
-        52%{opacity:1;filter:brightness(1.24) drop-shadow(0 0 6px rgba(189,147,249,.80))}
-      }
-      .clock{margin-top:var(--jaroo-dashboard-gap)}
-      @media (prefers-reduced-motion: reduce){
-        .fallback-brand,.fallback-brand::before,.fallback-brand::after{
-          animation:none!important;transition:none!important;
-        }
-      }
-      .clock {
         box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        gap: 8px;
         width: 100%;
-        padding: 4px 0 5px;
-        background: transparent;
-        border: none;
-        outline: none;
-        box-shadow: none;
-        font-family: "Pretendard Variable", "Pretendard", "Malgun Gothic", sans-serif;
+        min-width: 0;
+        min-height: 60px;
+        margin: 0;
+        padding: 8px 10px;
+        border: var(--clock-border);
+        border-radius: var(--clock-radius);
+        background: var(--clock-teal);
+        box-shadow: var(--clock-shadow);
+        color: var(--clock-ink);
+        font-family: var(--clock-font);
+        text-align: left;
+        appearance: none;
+        cursor: pointer;
         user-select: none;
       }
-      .clock-content {
-        transform-origin: left top;
-        display:flex;flex-direction:column;align-items:stretch;
-        max-width:100%;border:0;text-decoration:none;
+      .fallback-brand:not([aria-disabled="true"]):hover { background: var(--clock-white); }
+      .fallback-brand:not([aria-disabled="true"]):active { box-shadow: var(--clock-shadow-small); }
+      .fallback-brand:focus-visible {
+        outline: var(--jb-focus, 3px solid #FF00FF);
+        outline-offset: 2px;
       }
-      .clock-line{
-        display:flex;align-items:center;gap:16px;min-height:58px;width:100%;
-        zoom:var(--jaroo-ui-scale);
+      .fallback-brand[aria-disabled="true"] { cursor: default; }
+      .fallback-brand[aria-disabled="true"] .brand-arrow { display: none; }
+
+      .brand-word {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        align-items: flex-start;
+        min-width: 0;
+        gap: 3px;
       }
-      .date-chip{
-        flex:0 0 67px;width:67px;height:58px;border-radius:12px;
-        display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;
-        border:1.4px solid rgba(140,154,182,.34);
-        background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.03));
-        box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 0 0 1px rgba(255,255,255,.03);
+      .brand-title {
+        display: flex;
+        align-items: baseline;
+        gap: .18em;
+        white-space: nowrap;
+        font-size: var(--jaroo-brand-font, 23px);
+        line-height: 1.05;
+        font-weight: 900;
+        letter-spacing: -.045em;
+        text-transform: uppercase;
       }
-      .date-main{color:#EAF1FF;font-size:12px;font-weight:680;line-height:1;white-space:nowrap;letter-spacing:-.02em}
-      .weather-line{display:flex;align-items:center;justify-content:center;gap:2px;max-width:100%;white-space:nowrap;color:#BACBE3}
-      .weather-symbol{font-size:12px;line-height:1;flex:0 0 auto}
-      .weather-label{font:600 9px/1.1 "Pretendard",sans-serif;letter-spacing:-.03em}
-      .weather-line[data-weather="error"] .weather-symbol{color:#9FA8BF}
-      /* CSS seven-segment display: real lit segments, not a text-font approximation.
-         Keep exactly six .digit cells and their 21×38 geometry for Status dock anchoring. */
-      .digital-time{
-        display:flex;align-items:center;flex-wrap:nowrap;
-        height:40px;max-width:100%;margin-top:0;flex:1 1 auto;
-        color:#91F3FF;letter-spacing:0;font-variant-numeric:tabular-nums;
-        animation:jaroo-clock-soft-bloom 4.2s ease-in-out infinite;
+      .brand-subtitle {
+        white-space: nowrap;
+        font-size: max(11px, var(--jaroo-brand-subtitle-font, 11.2px));
+        line-height: 1.15;
+        font-weight: 750;
+        letter-spacing: .015em;
       }
-      .pair{display:inline-flex;align-items:center;gap:0;flex:0 0 auto}
-      .digit{
-        display:inline-block;position:relative;box-sizing:border-box;
-        flex:0 0 21px;width:21px;height:38px;
-        color:#93F3FF;
+      .brand-arrow {
+        display: grid;
+        flex: 0 0 18px;
+        place-items: center;
+        width: 18px;
+        height: 22px;
       }
-      .digit .seg{
-        position:absolute;display:block;box-sizing:border-box;pointer-events:none;
-        background:#74DDEB;opacity:.065;
-        filter:none;
-      }
-      .digit .seg.on{
-        background:linear-gradient(180deg,#D5FFFF 0%,#96F5FF 52%,#67E6F3 100%);
-        opacity:1;
-        box-shadow:0 0 4px rgba(161,252,255,.84),0 0 10px rgba(91,233,253,.75),0 0 17px rgba(63,210,252,.34);
-        filter:drop-shadow(0 0 2.5px rgba(135,248,255,.57));
-      }
-      .seg-a,.seg-g,.seg-d{left:4px;width:13.6px;height:3.7px;clip-path:polygon(13% 0,87% 0,100% 50%,87% 100%,13% 100%,0 50%)}
-      .seg-a{top:1px}.seg-g{top:18px}.seg-d{top:35px}
-      .seg-f,.seg-e,.seg-b,.seg-c{width:3.7px;height:15px;clip-path:polygon(50% 0,100% 11%,100% 89%,50% 100%,0 89%,0 11%)}
-      .seg-f{left:1px;top:3px}.seg-e{left:1px;top:20px}
-      .seg-b{right:1px;top:3px}.seg-c{right:1px;top:20px}
-      .separator{
-        display:inline-flex;align-items:center;justify-content:center;
-        flex:0 0 8px;width:8px;height:38px;margin-inline:4px;
-        color:#B3FAFF;font:600 30px/1 "Consolas",monospace;
-        text-shadow:0 0 6px rgba(115,245,255,.84),0 0 13px rgba(87,223,255,.40);
-      }
-      @keyframes jaroo-clock-soft-bloom{
-        0%,100%{filter:drop-shadow(0 0 1px rgba(76,225,251,.18))}
-        50%{filter:drop-shadow(0 0 3px rgba(92,232,255,.40))}
-      }
-      @media (prefers-reduced-motion: reduce){
-        .digit .seg.on,.separator{box-shadow:none;filter:none;text-shadow:none}
-        .digital-time{animation:none;filter:none}
-      }
-      .life-clock{
-        margin-top:calc(13px * var(--jaroo-ui-scale));
-        padding:calc(10px * var(--jaroo-ui-scale)) calc(10px * var(--jaroo-ui-scale)) calc(11px * var(--jaroo-ui-scale));
-        border-radius:16px;border:1.8px solid rgba(194,132,255,.72);
-        background:linear-gradient(180deg,rgba(21,24,39,.84),rgba(26,31,51,.86));
-        box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 0 8px rgba(191,117,255,.18),0 0 16px rgba(255,121,198,.14);
-        color:#ECF3FF;pointer-events:auto;
-      }
-      .life-head{display:flex;align-items:center;justify-content:space-between;gap:calc(8px * var(--jaroo-ui-scale));margin-bottom:calc(9px * var(--jaroo-ui-scale))}
-      .life-title{display:inline-flex;align-items:center;gap:7px;font:800 max(10px,calc(11.5px * var(--jaroo-ui-scale)))/1 "Pretendard","Inter",sans-serif;letter-spacing:.04em;color:#F3D4FF;text-transform:uppercase}
-      .life-title .ico{font-size:calc(13px * var(--jaroo-ui-scale));filter:drop-shadow(0 0 4px rgba(214,132,255,.55))}
-      .life-sub{font:650 max(9px,calc(10px * var(--jaroo-ui-scale)))/1 "Pretendard","Inter",sans-serif;color:#D9B7FF;opacity:.88}
-      /* Three full-width, compact metrics. The 80-year total moves to LIFE PROGRESS. */
-      .life-grid{display:flex;flex-direction:column;gap:calc(6px * var(--jaroo-ui-scale))}
-      .life-card{
-        min-width:0;padding:calc(8px * var(--jaroo-ui-scale)) calc(10px * var(--jaroo-ui-scale));
-        border-radius:11px;border:1px solid rgba(255,255,255,.09);
-        background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.015));
-        box-shadow:inset 0 1px 0 rgba(255,255,255,.045);
-      }
-      .life-card.retire{background:linear-gradient(100deg,rgba(255,184,108,.115),rgba(255,184,108,.02))}
-      .life-card.work{background:linear-gradient(100deg,rgba(72,201,255,.11),rgba(72,201,255,.02))}
-      .life-card.after{background:linear-gradient(100deg,rgba(128,255,175,.11),rgba(128,255,175,.02))}
-      .life-card-main{display:flex;align-items:center;gap:calc(8px * var(--jaroo-ui-scale));justify-content:space-between;min-width:0}
-      .life-label{
-        display:flex;align-items:center;flex:1 1 auto;min-width:0;
-        font:660 max(9px,calc(10px * var(--jaroo-ui-scale)))/1.2 "Pretendard","Inter",sans-serif;
-        white-space:nowrap;text-align:left;color:#E8EAFF;opacity:.96;
-      }
-      .life-card.retire .life-label{color:#FFC36B}
-      .life-card.work .life-label{color:#73EBFF}
-      .life-card.after .life-label{color:#96FFB1}
-      .life-value{
-        display:block;flex:0 1 auto;max-width:65%;min-width:0;
-        font:500 calc(13.8px * var(--jaroo-ui-scale))/1.2 "Pretendard","Inter",sans-serif;
-        font-variant-numeric:tabular-nums;letter-spacing:-.02em;
-        color:#FBFCFF;white-space:nowrap;text-align:right;overflow:visible;
-      }
-      .life-meta{margin-top:calc(3px * var(--jaroo-ui-scale));
-        font:480 max(8.5px,calc(9px * var(--jaroo-ui-scale)))/1.25 "Pretendard","Inter",sans-serif;
-        color:#AEB9D1;opacity:.91;text-align:left;white-space:nowrap;
-      }
-      .life-progress{margin-top:calc(9px * var(--jaroo-ui-scale));padding-top:calc(8px * var(--jaroo-ui-scale));border-top:1px solid rgba(255,255,255,.07)}
-      .life-progress-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:calc(6px * var(--jaroo-ui-scale))}
-      .life-progress-title{font:800 max(9px,calc(11.2px * var(--jaroo-ui-scale)))/1 "Pretendard","Inter",sans-serif;letter-spacing:.03em;color:#F1D1FF;text-transform:uppercase}
-      .life-progress-scale{font:650 max(8.5px,calc(10px * var(--jaroo-ui-scale)))/1 "Pretendard","Inter",sans-serif;color:#D1C7F9}
-      .life-bar{position:relative;height:calc(9px * var(--jaroo-ui-scale));border-radius:999px;overflow:hidden;background:rgba(255,255,255,.09);box-shadow:inset 0 1px 2px rgba(0,0,0,.35),0 0 0 1px rgba(255,255,255,.04)}
-      .life-bar-fill{height:100%;width:0%;border-radius:inherit;background:linear-gradient(90deg,#B478FF 0%,#FF62C1 54%,#FFC56B 100%);box-shadow:0 0 10px rgba(255,121,198,.35),0 0 18px rgba(180,120,255,.24);transition:width .6s ease}
-      .life-bar-glow{position:absolute;inset:0;border-radius:inherit;pointer-events:none;box-shadow:inset 0 0 8px rgba(255,255,255,.08),0 0 10px rgba(255,121,198,.08);animation:jaroo-life-bar-breathe 1.8s ease-in-out infinite}
-      .life-progress-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:calc(6px * var(--jaroo-ui-scale));margin-top:calc(7px * var(--jaroo-ui-scale));color:#DCE2F2}
-      .life-progress-stat{display:flex;flex-direction:column;align-items:flex-start;min-width:0;gap:calc(3px * var(--jaroo-ui-scale))}
-      .life-progress-stat.remaining{align-items:flex-end}
-      .life-progress-stat span{font:580 max(8.8px,calc(9.6px * var(--jaroo-ui-scale)))/1.1 "Pretendard","Inter",sans-serif;white-space:nowrap}
-      .life-progress-stat strong{font:590 max(10px,calc(12px * var(--jaroo-ui-scale)))/1.1 "Pretendard","Inter",sans-serif;color:#FFF0FE;letter-spacing:-.015em;white-space:nowrap;font-variant-numeric:tabular-nums}
-      :host([data-jaroo-width="narrow"]) .life-head .life-sub{display:none}
-      :host([data-jaroo-width="narrow"]) .life-card-main{display:grid;grid-template-columns:minmax(0,1fr);row-gap:3px}
-      :host([data-jaroo-width="narrow"]) .life-value{max-width:100%;text-align:right}
-      :host([data-jaroo-width="narrow"]) .life-meta{font-size:8.5px}
-      :host([data-jaroo-width="narrow"]) .life-label{font-size:9px}
-      :host([data-jaroo-width="narrow"]) .life-progress-stat span{font-size:8px}
-      :host([data-jaroo-width="narrow"]) .life-progress-stat strong{font-size:9.6px}
-      /* v3.6.6 · Progressive disclosure, NOT uniform minification.
-         The sidebar's physical width drives compact and essential modes.
-         Core metrics/controls have font-size floors; optional context is
-         visually hidden only in the smallest width. */
-      .life-title-short,.life-progress-percent{display:none}
-      :host([data-jaroo-width="narrow"]) .life-title-full{display:none}
-      :host([data-jaroo-width="narrow"]) .life-title-short{display:inline}
-      :host([data-jaroo-width="narrow"]) .life-title{white-space:nowrap;letter-spacing:0}
-      :host([data-jaroo-width="narrow"]) .life-progress-title{white-space:nowrap;font-size:10px;letter-spacing:-.015em}
-      :host([data-jaroo-width="narrow"]) .life-progress-scale{display:none}
-      :host([data-jaroo-width="narrow"]) .life-progress-percent{display:block;white-space:nowrap;font:650 10px/1 "Pretendard",sans-serif;color:#E8C8FF}
-      /* At genuinely minimum width, drop the secondary date/weather tile.
-         Center the legible HH:MM clock; never let glyphs cross the sidebar. */
-      :host([data-jaroo-width="narrow"]) .date-chip{display:none}
-      :host([data-jaroo-width="narrow"]) .clock-line{justify-content:center;gap:0}
-      :host([data-jaroo-width="narrow"]) .digital-time{flex:0 0 auto;max-width:100%}
-      :host([data-jaroo-width="compact"]) .life-sub,
-      :host([data-jaroo-width="narrow"]) .life-sub{display:none}
-      :host([data-jaroo-width="compact"]) .life-title,
-      :host([data-jaroo-width="narrow"]) .life-title{font-size:11.3px;letter-spacing:.015em}
-      :host([data-jaroo-width="compact"]) .life-clock,
-      :host([data-jaroo-width="narrow"]) .life-clock{padding:9px 9px 10px;border-radius:13px}
-      :host([data-jaroo-width="compact"]) .life-head,
-      :host([data-jaroo-width="narrow"]) .life-head{margin-bottom:7px}
-      :host([data-jaroo-width="compact"]) .life-grid,
-      :host([data-jaroo-width="narrow"]) .life-grid{gap:6px}
-      :host([data-jaroo-width="compact"]) .life-card,
-      :host([data-jaroo-width="narrow"]) .life-card{padding:8px 9px}
-      :host([data-jaroo-width="compact"]) .life-label,
-      :host([data-jaroo-width="narrow"]) .life-label{font-size:10.5px}
-      :host([data-jaroo-width="compact"]) .life-value,
-      :host([data-jaroo-width="narrow"]) .life-value{font-weight:560;white-space:nowrap;overflow:visible}
-      :host([data-jaroo-width="compact"]) .life-meta,
-      :host([data-jaroo-width="narrow"]) .life-meta{display:none}
-      :host([data-jaroo-width="compact"]) .life-progress,
-      :host([data-jaroo-width="narrow"]) .life-progress{margin-top:8px;padding-top:7px}
-      :host([data-jaroo-width="compact"]) .life-progress-head,
-      :host([data-jaroo-width="narrow"]) .life-progress-head{margin-bottom:5px}
-      :host([data-jaroo-width="compact"]) .life-progress-title,
-      :host([data-jaroo-width="narrow"]) .life-progress-title{font-size:10.6px}
-      :host([data-jaroo-width="compact"]) .life-progress-scale,
-      :host([data-jaroo-width="narrow"]) .life-progress-scale{font-size:10px}
-      :host([data-jaroo-width="compact"]) .life-progress-meta,
-      :host([data-jaroo-width="narrow"]) .life-progress-meta{display:none}
-      :host([data-jaroo-width="compact"]) .life-bar,
-      :host([data-jaroo-width="narrow"]) .life-bar{height:8px}
-      /* Four-digit HH:MM in narrow modes preserves seven-segment fidelity.
-         Seconds remain in DOM for the clock's original sync behavior. */
-      :host([data-jaroo-width="compact"]) .digital-time>.pair:last-child,
-      :host([data-jaroo-width="narrow"]) .digital-time>.pair:last-child,
-      :host([data-jaroo-width="compact"]) .digital-time>.separator:nth-last-child(2),
-      :host([data-jaroo-width="narrow"]) .digital-time>.separator:nth-last-child(2){display:none}
-      :host([data-jaroo-width="compact"]) .clock-line,
-      :host([data-jaroo-width="narrow"]) .clock-line{zoom:1;gap:11px;min-height:49px}
-      :host([data-jaroo-width="compact"]) .date-chip{width:58px;flex-basis:58px;height:49px;gap:4px}
-      :host([data-jaroo-width="narrow"]) .date-chip{width:49px;flex-basis:49px;height:48px;gap:4px}
-      :host([data-jaroo-width="compact"]) .date-main{font-size:11px}
-      :host([data-jaroo-width="narrow"]) .date-main{font-size:10px}
-      :host([data-jaroo-width="compact"]) .weather-label{font-size:9px}
-      :host([data-jaroo-width="narrow"]) .weather-label{display:none}
-      :host([data-jaroo-width="narrow"]) .weather-symbol{font-size:15px}
-      :host([data-jaroo-width="compact"]) .life-card-main{display:flex;align-items:center;gap:4px}
-      :host([data-jaroo-width="compact"]) .life-value{max-width:70%;font-size:13.8px}
-      :host([data-jaroo-width="narrow"]) .life-card-main{display:grid;grid-template-columns:minmax(0,1fr);gap:3px}
-      :host([data-jaroo-width="narrow"]) .life-value{max-width:100%;font-size:14.5px;text-align:right}
-      /* v3.6.7: minimum-width readability, without touching compact/regular modes.
-         No microscopic two-line logo with a compressed tagline. */
-      :host([data-jaroo-width="narrow"]) .brand-subtitle{display:none}
-      :host([data-jaroo-width="narrow"]) .brand-word{gap:0}
-      :host([data-jaroo-width="narrow"]) .brand-title{
-        display:flex;flex-direction:column;align-items:center;justify-content:center;
-        gap:0;line-height:1;max-width:100%;background:none;
-        -webkit-text-fill-color:initial;filter:none;
-      }
-      :host([data-jaroo-width="narrow"]) .brand-jaroo,
-      :host([data-jaroo-width="narrow"]) .brand-company{
-        display:block;max-width:100%;white-space:nowrap;
-        background:linear-gradient(97deg,#57E9FF 0%,#8BE9FD 32%,#BD93F9 65%,#FFB86C 100%);
-        -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
-        filter:drop-shadow(0 0 3px rgba(69,238,255,.5)) drop-shadow(0 0 4px rgba(142,97,255,.43));
-      }
-      :host([data-jaroo-width="narrow"]) .brand-jaroo{font-size:.93em;line-height:1.12}
-      :host([data-jaroo-width="narrow"]) .brand-company{font-size:1.22em;line-height:1.07}
-      :host([data-jaroo-width="narrow"]) .life-label{
-        font-size:12.1px;font-weight:700;line-height:1.23;letter-spacing:-.015em;
-      }
-      /* Retain HH:MM size and add just one weather symbol at minimum width. */
-      :host([data-jaroo-width="narrow"]) .date-chip{
-        display:flex;width:29px;flex:0 0 29px;height:39px;gap:0;
-        padding:0;justify-content:center;align-items:center;
-        border-radius:9px;
-      }
-      :host([data-jaroo-width="narrow"]) .date-main{display:none}
-      :host([data-jaroo-width="narrow"]) .weather-line{display:flex;justify-content:center;align-items:center;gap:0}
-      :host([data-jaroo-width="narrow"]) .weather-label{display:none!important}
-      :host([data-jaroo-width="narrow"]) .weather-symbol{font-size:17px;line-height:1}
-      :host([data-jaroo-width="narrow"]) .clock-line{justify-content:center;gap:7px}
-      @media (prefers-reduced-motion: reduce){.life-bar-glow{animation:none}}
-      @keyframes jaroo-life-bar-breathe{0%,100%{opacity:.58}50%{opacity:1}}
-      /* JAROO · Vivid Neon Readability v7.3: restore v6 neon identity,
-         with three consistently readable Life Clock cards. */
-      :host { --jaroo-dashboard-gap:10px; }
-      .fallback-brand,
+      .brand-arrow svg { display: block; width: 13px; height: 13px; }
+      .fallback-brand[aria-expanded="true"] .brand-arrow svg { transform: rotate(180deg); }
       :host([data-density="compact"]) .fallback-brand,
-      :host([data-density="stacked-label"]) .fallback-brand{
-        min-height:65px;padding:10px 9px;border:2px solid #8BE9FD;
-        border-radius:12px;background:#171C2B;overflow:hidden;
-        box-shadow:0 0 7px rgba(87,233,255,.70),0 0 15px rgba(189,147,249,.50),
-                   inset 0 0 11px rgba(255,121,198,.09);
-        animation:jaroo-brand-glass-breathe 1.8s ease-in-out infinite;
-      }
-      .fallback-brand::before{
-        background:linear-gradient(95deg,#8BE9FD,#BD93F9 49%,#FF79C6 85%,#FFB86C);
-        opacity:1;filter:drop-shadow(0 0 5px rgba(139,233,253,.85));
-        animation:jaroo-brand-rim-breathe 2.2s ease-in-out infinite;
-      }
-      .fallback-brand::after{opacity:1;animation:jaroo-brand-light-runner 2.2s linear infinite;}
-      .brand-word{align-items:center;justify-content:center;gap:3px;overflow:visible}
-      .brand-title,
-      :host([data-jaroo-width="narrow"]) .brand-title{
-        display:flex;align-items:baseline;justify-content:center;flex-direction:row;
-        gap:.19em;max-width:100%;white-space:nowrap;
-        font:750 var(--jaroo-brand-font,25px)/1.1 "Kaushan Script","Segoe Script",cursive!important;
-        font-synthesis:weight;letter-spacing:-.035em;
-        background:none!important;-webkit-text-fill-color:initial!important;
-        -webkit-text-stroke:.23px rgba(255,255,255,.23);
-        filter:drop-shadow(0 0 5px rgba(189,147,249,.55))!important;
-      }
-      .brand-title .brand-jaroo,
-      :host([data-jaroo-width="narrow"]) .brand-jaroo{
-        color:#8BE9FD!important;-webkit-text-fill-color:#8BE9FD!important;
-        font:inherit!important;filter:drop-shadow(0 0 4px rgba(104,240,255,.88))!important;
-      }
-      .brand-title .brand-company,
-      :host([data-jaroo-width="narrow"]) .brand-company{
-        color:#FF79C6!important;-webkit-text-fill-color:#FF79C6!important;
-        font:inherit!important;filter:drop-shadow(0 0 5px rgba(255,121,198,.90))!important;
-      }
-      .brand-subtitle{
-        text-align:center;color:#DDBBFF;letter-spacing:.07em;
-        filter:drop-shadow(0 0 3px rgba(189,147,249,.66));
-      }
-      .brand-arrow{color:#FFB86C}
-      :host([data-jaroo-width="narrow"]) .fallback-brand{
-        min-height:74px;padding:8px 6px;gap:0;
-      }
-      :host([data-jaroo-width="narrow"]) .brand-word{gap:0}
-      :host([data-jaroo-width="narrow"]) .brand-title,
-      :host([data-jaroo-micro="true"]) .brand-title{
-        flex-direction:column!important;align-items:center;justify-content:center;
-        gap:0!important;line-height:1.04!important;
-      }
-      :host([data-jaroo-width="narrow"]) .brand-title .brand-jaroo,
-      :host([data-jaroo-width="narrow"]) .brand-title .brand-company{line-height:1.08!important}
-      :host([data-jaroo-width="narrow"]) .brand-subtitle{display:none}
-      :host([data-jaroo-micro="true"]) .brand-arrow{display:none!important}
+      :host([data-density="stacked-label"]) .fallback-brand { gap: 5px; padding-inline: 7px; }
 
-      /* Life panel: restored neon outlines, sufficient physical font sizes. */
-      .life-clock,
-      :host([data-jaroo-width="wide"]) .life-clock,
-      :host([data-jaroo-width="compact"]) .life-clock,
-      :host([data-jaroo-width="narrow"]) .life-clock{
-        display:block!important;padding:10px!important;
-        border:1.5px solid #BD93F9;border-radius:13px;
-        background:linear-gradient(160deg,#191C30,#141926 78%);
-        box-shadow:0 0 7px rgba(189,147,249,.22),inset 0 0 10px rgba(189,147,249,.08);
+      .life-clock, .clock-line {
+        box-sizing: border-box;
+        width: 100%;
+        margin-top: 8px;
+        padding: 8px;
+        border: var(--clock-border);
+        border-radius: var(--clock-radius);
+        background: var(--clock-paper);
+        box-shadow: var(--clock-shadow);
+        font-family: var(--clock-font);
       }
-      .life-head{display:flex!important;margin-bottom:8px!important}
-      .life-title{color:#F2D6FF;font-weight:850;font-size:12px!important;letter-spacing:.02em}
-      .life-title .ico{color:#D6A8FF;filter:drop-shadow(0 0 4px rgba(189,147,249,.72))}
-      .life-sub{color:#D8C9F3}
-      .life-grid,
-      :host([data-jaroo-width="wide"]) .life-grid{
-        display:flex!important;flex-direction:column!important;gap:7px!important;
+      .life-head, .life-progress-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 8px;
       }
-      .life-card,
-      :host([data-jaroo-width="compact"]) .life-card,
-      :host([data-jaroo-width="narrow"]) .life-card{
-        display:block!important;min-width:0;border-radius:9px;
-        padding:8px 9px!important;
-        background:linear-gradient(95deg,rgba(255,255,255,.055),rgba(255,255,255,.012))!important;
-        box-shadow:inset 0 0 5px rgba(255,255,255,.035)!important;
+      .life-title, .life-progress-title {
+        font-size: 13px;
+        font-weight: 900;
+        line-height: 1.2;
+        text-transform: uppercase;
       }
-      .life-card.retire{border:1px solid rgba(255,184,108,.82);background:linear-gradient(100deg,rgba(255,184,108,.12),rgba(255,184,108,.015))!important}
-      .life-card.work{border:1px solid rgba(139,233,253,.85);background:linear-gradient(100deg,rgba(139,233,253,.13),rgba(139,233,253,.012))!important}
-      .life-card.after{border:1px solid rgba(80,250,123,.83);background:linear-gradient(100deg,rgba(80,250,123,.11),rgba(80,250,123,.012))!important}
-      .life-card.retire .life-label{color:#FFB86C}
-      .life-card.work .life-label{color:#8BE9FD}
-      .life-card.after .life-label{color:#50FA7B}
-      .life-card-main,
-      :host([data-jaroo-width="wide"]) .life-card-main,
-      :host([data-jaroo-width="compact"]) .life-card-main,
-      :host([data-jaroo-width="narrow"]) .life-card-main{
-        display:grid!important;grid-template-columns:minmax(0,1fr)!important;
-        grid-template-rows:auto auto;gap:5px!important;min-width:0;
+      .life-title { display: flex; align-items: center; gap: 5px; }
+      .life-sub, .life-meta, .life-progress-scale {
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1.2;
       }
-      .life-caption{display:flex;align-items:baseline;gap:7px;min-width:0;overflow:hidden;white-space:nowrap}
-      .life-label,
+      .life-title-short, .life-progress-percent { display: none; }
+
+      .life-grid { display: grid; gap: 6px; }
+      .life-card {
+        display: grid;
+        grid-template-columns: 8px minmax(0, 1fr);
+        min-width: 0;
+        border: var(--clock-border-light);
+        border-radius: var(--clock-radius);
+        background: var(--clock-white);
+        box-shadow: var(--clock-shadow-small);
+      }
+      .life-card::before {
+        content: "";
+        border-inline-end: var(--clock-border-light);
+        background: var(--life-card-accent);
+      }
+      .life-card.retire { --life-card-accent: var(--clock-yellow); }
+      .life-card.work { --life-card-accent: var(--clock-teal); }
+      .life-card.after { --life-card-accent: var(--clock-magenta); }
+      .life-card-main { display: grid; gap: 4px; min-width: 0; padding: 6px 8px; }
+      .life-caption { display: flex; flex-wrap: wrap; gap: 2px 6px; align-items: baseline; }
+      .life-label { font-size: 13px; font-weight: 750; line-height: 1.2; }
+      .life-value {
+        min-width: 0;
+        text-align: right;
+        font-size: 16px;
+        font-weight: 850;
+        line-height: 1.2;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -.025em;
+        white-space: nowrap;
+      }
+      .life-progress {
+        margin-top: 10px;
+        padding-top: 8px;
+        border-top: var(--clock-border-light);
+      }
+      .life-progress-percent { font-size: 12px; font-weight: 850; }
+      .life-bar {
+        box-sizing: border-box;
+        height: 12px;
+        overflow: hidden;
+        border: var(--clock-border-light);
+        background: var(--clock-white);
+      }
+      .life-bar-fill {
+        width: 0%;
+        height: 100%;
+        background: var(--clock-teal);
+        transition: width .2s ease;
+      }
+      .life-progress-meta {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        margin-top: 7px;
+      }
+      .life-progress-stat { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+      .life-progress-stat.remaining { text-align: right; }
+      .life-progress-stat span { font-size: 11px; font-weight: 600; line-height: 1.2; }
+      .life-progress-stat strong {
+        font-size: 13px;
+        font-weight: 800;
+        line-height: 1.2;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .clock { user-select: none; }
+      .clock-content { display: flex; flex-direction: column; }
+      .clock-line {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        min-height: 53px;
+        background: var(--clock-white);
+      }
+      .date-chip {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: center;
+        gap: 4px;
+        min-width: 0;
+        min-height: 40px;
+        padding-inline-end: 6px;
+        border-inline-end: var(--clock-border-light);
+      }
+      .date-main { font-size: 13px; font-weight: 800; line-height: 1.2; white-space: nowrap; }
+      .weather-line { display: flex; align-items: center; gap: 4px; min-width: 0; }
+      .weather-symbol {
+        display: grid;
+        flex: 0 0 14px;
+        place-items: center;
+        width: 14px;
+        height: 14px;
+        background: var(--clock-yellow);
+        font-size: 12px;
+        line-height: 1;
+      }
+      .weather-line[data-weather="error"] .weather-symbol { background: var(--clock-magenta); }
+      .weather-label {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 11px;
+        font-weight: 650;
+      }
+
+      /* Retain the six digit cells and their geometry for clock and dock integrations. */
+      .digital-time { display: flex; flex: 0 0 auto; align-items: center; height: 40px; }
+      .pair { display: inline-flex; flex: 0 0 auto; align-items: center; }
+      .digit { display: inline-block; position: relative; flex: 0 0 21px; width: 21px; height: 38px; }
+      .digit .seg { position: absolute; display: block; pointer-events: none; background: var(--clock-muted); }
+      .digit .seg.on { background: var(--clock-ink); }
+      .seg-a, .seg-g, .seg-d { left: 4px; width: 13.6px; height: 3.7px; }
+      .seg-a { top: 1px; }
+      .seg-g { top: 18px; }
+      .seg-d { top: 35px; }
+      .seg-f, .seg-e, .seg-b, .seg-c { width: 3.7px; height: 15px; }
+      .seg-f { left: 1px; top: 3px; }
+      .seg-e { left: 1px; top: 20px; }
+      .seg-b { right: 1px; top: 3px; }
+      .seg-c { right: 1px; top: 20px; }
+      .separator {
+        display: inline-flex;
+        flex: 0 0 8px;
+        align-items: center;
+        justify-content: center;
+        width: 8px;
+        height: 38px;
+        margin-inline: 4px;
+        font: 800 28px/1 var(--clock-font);
+      }
+
+      :host(:is([data-jaroo-width="compact"], [data-jaroo-width="narrow"])) .digital-time > .pair:last-child,
+      :host(:is([data-jaroo-width="compact"], [data-jaroo-width="narrow"])) .digital-time > .separator:nth-last-child(2),
+      :host(:is([data-jaroo-width="compact"], [data-jaroo-width="narrow"])) .life-sub,
+      :host(:is([data-jaroo-width="compact"], [data-jaroo-width="narrow"])) .life-meta,
+      :host(:is([data-jaroo-width="compact"], [data-jaroo-width="narrow"])) .life-progress-meta,
+      :host(:is([data-jaroo-width="compact"], [data-jaroo-width="narrow"])) .life-progress-scale { display: none; }
+      :host(:is([data-jaroo-width="compact"], [data-jaroo-width="narrow"])) .life-progress-percent { display: block; }
+
+      :host([data-jaroo-width="narrow"]) .brand-title {
+        flex-direction: column;
+        gap: 0;
+        letter-spacing: -.035em;
+      }
+      :host([data-jaroo-width="narrow"]) .brand-subtitle,
+      :host([data-jaroo-width="narrow"]) .life-title-full,
+      :host([data-jaroo-micro="true"]) .brand-arrow { display: none; }
+      :host([data-jaroo-width="narrow"]) .life-title-short { display: inline; }
+      :host([data-jaroo-width="narrow"]) .life-clock { padding: 6px; }
+      :host([data-jaroo-width="narrow"]) .life-card-main { padding-inline: 5px; }
       :host([data-jaroo-width="narrow"]) .life-label,
-      :host([data-jaroo-width="compact"]) .life-label{
-        display:inline-block;flex:0 0 auto;white-space:nowrap;
-        font:820 12.5px/1.24 "Pretendard","Inter",sans-serif!important;
-        opacity:1;letter-spacing:-.026em;
-      }
-      .life-meta,
-      :host([data-jaroo-width="compact"]) .life-meta,
-      :host([data-jaroo-width="narrow"]) .life-meta,
-      :host([data-jaroo-width="wide"]) .life-meta{
-        display:inline-block;flex:0 1 auto;min-width:0;margin:0!important;
-        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-        font:550 10px/1.2 "Pretendard","Inter",sans-serif!important;
-        color:#ABB8D7;opacity:.95;
-      }
-      .life-value,
-      :host([data-jaroo-width="wide"]) .life-value,
-      :host([data-jaroo-width="compact"]) .life-value,
-      :host([data-jaroo-width="narrow"]) .life-value{
-        display:block!important;width:100%!important;max-width:100%!important;
-        justify-self:end!important;text-align:right!important;
-        color:#FFFFFF!important;white-space:nowrap;font-weight:850!important;
-        letter-spacing:-.018em;font-variant-numeric:tabular-nums;
-        text-shadow:0 0 4px rgba(255,255,255,.15);
-      }
-      :host([data-jaroo-width="narrow"]) .life-card.after{display:block!important}
-      .life-progress,
-      :host([data-jaroo-width="wide"]) .life-progress{
-        display:block!important;margin-top:9px!important;padding:9px 0 0!important;
-        border-left:0!important;border-top:1px solid rgba(189,147,249,.3)!important;
-      }
-      .life-progress-title{font-size:11px!important;color:#F0C6FF}
-      .life-progress-scale{color:#D2BEF1}
-      .life-progress-percent{color:#FFB6E7;font-size:11.5px!important;font-weight:800}
-      .life-bar{height:9px;border:0;background:#2E3245;box-shadow:inset 0 1px 2px #0005}
-      .life-bar-fill{border:0;background:linear-gradient(90deg,#BD93F9,#FF79C6)!important;
-        box-shadow:0 0 8px rgba(255,121,198,.7);transition:width .4s ease}
-      .life-progress-meta{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px}
-      .life-progress-stat span{font-size:9.7px;color:#C2C6E3}
-      .life-progress-stat strong{font-size:11px;color:#FFE8F8;font-weight:780}
+      :host([data-jaroo-width="narrow"]) .life-progress-title { font-size: 12px; }
 
-      /* Date and weather remain visible when the sidebar becomes tiny:
-         move the information ABOVE HH:MM instead of deleting it. */
-      .clock{margin-top:8px;padding:0}
-      .clock-line,
-      :host([data-jaroo-width="compact"]) .clock-line,
-      :host([data-jaroo-width="narrow"]) .clock-line{
-        box-sizing:border-box;width:100%;padding:6px 8px;min-height:53px;
-        gap:9px;border:1.5px solid #8BE9FD;border-radius:11px;
-        background:linear-gradient(140deg,#151B2D,#111B27);
-        box-shadow:0 0 5px rgba(139,233,253,.22);
-        zoom:1;
+      :host([data-jaroo-width="narrow"]) .clock-line { flex-direction: column; gap: 5px; padding: 6px; }
+      :host([data-jaroo-width="narrow"]) .date-chip {
+        box-sizing: border-box;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        min-height: 0;
+        padding: 0 0 5px;
+        border: 0;
+        border-bottom: var(--clock-border-light);
       }
-      .date-chip{
-        display:flex;width:71px;flex:0 0 71px;height:45px;gap:5px;
-        border:0;border-right:1px solid rgba(139,233,253,.25);
-        border-radius:0;background:none;box-shadow:none;
-      }
-      .date-main{font-size:12px;color:#ECF5FF;font-weight:750}
-      .weather-line{color:#C0E9FF}
-      .weather-symbol{color:#FFB86C;font-size:13px}
-      .weather-label{font-size:10px;color:#C6E5FC}
-      .digital-time{animation:jaroo-clock-soft-bloom 4.2s ease-in-out infinite}
-      .digit .seg.on{background:linear-gradient(180deg,#D5FFFF,#78E8FF)!important;
-        box-shadow:0 0 5px rgba(161,252,255,.84),0 0 10px rgba(91,233,253,.72)!important}
-      .separator{color:#8BE9FD;text-shadow:0 0 7px rgba(139,233,253,.7)}
+      :host([data-jaroo-width="narrow"]) .date-main { font-size: 12px; }
 
-      :host([data-jaroo-width="compact"]) .life-meta,
-      :host([data-jaroo-width="narrow"]) .life-meta{display:none!important}
-      :host([data-jaroo-width="compact"]) .life-progress-meta,
-      :host([data-jaroo-width="narrow"]) .life-progress-meta{display:none!important}
-      :host([data-jaroo-width="compact"]) .life-sub,
-      :host([data-jaroo-width="narrow"]) .life-sub{display:none!important}
-      :host([data-jaroo-width="compact"]) .life-progress-scale,
-      :host([data-jaroo-width="narrow"]) .life-progress-scale{display:none!important}
-      :host([data-jaroo-width="compact"]) .life-progress-percent,
-      :host([data-jaroo-width="narrow"]) .life-progress-percent{display:block!important}
-      :host([data-jaroo-width="compact"]) .life-label{font-size:12px!important}
-      :host([data-jaroo-width="narrow"]) .life-label{font-size:11.8px!important}
-      :host([data-jaroo-width="narrow"]) .life-clock{padding:7px!important}
-      :host([data-jaroo-width="narrow"]) .life-card{padding:7px 6px!important}
-      :host([data-jaroo-width="narrow"]) .life-grid{gap:6px!important}
-      :host([data-jaroo-width="narrow"]) .life-caption{gap:4px}
-      :host([data-jaroo-width="narrow"]) .life-title{font-size:11.5px!important}
-      :host([data-jaroo-micro="true"]) .life-clock{padding:6px!important}
-      :host([data-jaroo-micro="true"]) .life-card{padding:7px 5px!important}
-      :host([data-jaroo-micro="true"]) .life-value{letter-spacing:-.032em}
-      :host([data-jaroo-width="narrow"]) .clock-line,
-      :host([data-jaroo-micro="true"]) .clock-line{
-        display:flex!important;flex-direction:column!important;
-        align-items:stretch!important;justify-content:center!important;
-        gap:5px!important;padding:6px!important;min-height:75px;
-      }
-      :host([data-jaroo-width="narrow"]) .date-chip,
-      :host([data-jaroo-micro="true"]) .date-chip{
-        display:flex!important;flex-direction:row!important;
-        align-items:center!important;justify-content:space-between!important;
-        width:100%!important;flex:0 0 auto!important;height:20px!important;
-        padding:0 3px!important;gap:4px!important;
-        border:0!important;background:none!important;
-      }
-      :host([data-jaroo-width="narrow"]) .date-main,
-      :host([data-jaroo-micro="true"]) .date-main{
-        display:block!important;flex:0 0 auto!important;font-size:11px!important;
-      }
-      :host([data-jaroo-width="narrow"]) .weather-line,
-      :host([data-jaroo-micro="true"]) .weather-line{
-        display:flex!important;align-items:center!important;gap:3px!important;
-        min-width:0!important;overflow:hidden!important;
-      }
-      :host([data-jaroo-width="narrow"]) .weather-label,
-      :host([data-jaroo-micro="true"]) .weather-label{
-        display:block!important;max-width:100%;overflow:hidden;text-overflow:ellipsis;
-        font-size:9.5px!important;white-space:nowrap;
-      }
-      :host([data-jaroo-width="narrow"]) .weather-symbol,
-      :host([data-jaroo-micro="true"]) .weather-symbol{font-size:12px!important}
-      :host([data-jaroo-width="narrow"]) .digital-time,
-      :host([data-jaroo-micro="true"]) .digital-time{
-        display:flex!important;align-self:center!important;justify-content:center!important;
-        flex:0 0 auto!important;max-width:100%!important;overflow:hidden!important;
-      }
-      @media(prefers-reduced-motion:reduce){
-        .fallback-brand,.fallback-brand::before,.fallback-brand::after,.digital-time{animation:none!important}
+      @media (prefers-reduced-motion: reduce) {
+        .life-bar-fill { transition: none; }
       }
     </style>
     <button class="fallback-brand" type="button" aria-label="Jaroo's Company, A World of My Own">
@@ -758,7 +431,6 @@
         </div>
         <div class="life-bar" aria-hidden="true">
           <div class="life-bar-fill" data-life="progressBar"></div>
-          <div class="life-bar-glow"></div>
         </div>
         <div class="life-progress-meta">
           <div class="life-progress-stat"><span data-life="usedMeta">지나온 시간 · 0%</span><strong data-life="usedHours">0 h</strong></div>
@@ -1290,7 +962,6 @@
     // In narrow mode CSS max-width can reduce the used box below maxWidth.
     // Fit to the actual rendered width, not the optimistic requested width.
     fitBrand(usableWidth);
-    // Date chip and 7-segment glyphs scale together through .clock-line zoom.
     // No transform/height hacks; native document flow determines menu position.
     const content=shadow.querySelector('.clock-content');
     content.style.transform='';content.style.height='';
@@ -1488,7 +1159,7 @@
   }
 
   function folderLeftEdge(sidebar,bounds) {
-    // Folder icon (not the orange name badge or indented chat text) defines x.
+    // The folder icon defines the alignment edge.
     const iconNodes = sidebar.querySelectorAll(
       '[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] svg'
     );
@@ -1609,12 +1280,6 @@
     refresh();
     schedulePlacement();
     document.fonts?.ready.then(() => { if (!disposed) schedulePlacement(); });
-    // Remote Kaushan CSS can load after document.fonts.ready; remeasure once
-    // the original brand font becomes available, without disturbing clock digits.
-    fontLink?.addEventListener('load', () => {
-      if (disposed) return;
-      document.fonts?.load?.('400 24px "Kaushan Script"').then(schedulePlacement).catch(() => schedulePlacement());
-    }, { once: true });
     tickHandle = setInterval(() => { if (!disposed && !document.hidden) refresh(); }, 1000);
     // Rare React-side sidebar replacements are recovered without observing
     // every message mutation on the entire page.
@@ -1650,9 +1315,9 @@
     if (window[RUNTIME_KEY]?.dispose === dispose) delete window[RUNTIME_KEY];
   }
   window[RUNTIME_KEY] = {
-    version: '3.7.3', dispose,
+    version: '3.8.1', dispose,
     diagnostics: () => ({
-      version: '3.7.3', ...placementReport,
+      version: '3.8.1', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
