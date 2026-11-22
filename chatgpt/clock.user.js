@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.7.0
-// @description  Jaroo Life Clock / neon sidebar. Private dates and location are read from local-only profile.
+// @version      3.7.2
+// @description  Restores handwritten logo, single-line metric headings and right aligned Korean hour units; preserves 7-segment clock and native sidebar mounting
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
 // @grant        none
@@ -15,8 +15,7 @@
 
   // Preserves proven sidebar placement / React re-render recovery from v2.4.
   // v3.6.3: the entire dashboard (brand, life, date/time, status dock) is a normal native-sidebar flow item, never fixed over menus.
-  // No bundled font files: optional Google Fonts CSS is linked for Kaushan Script only;
-  // installed Kaushan Script also works, fallback preserves UI when remote font fails.
+  // V7.2 restores the original Kaushan Script company logotype; other UI uses Pretendard.
   // Sidebar placement and source-menu bridging are inherited unchanged.
   // Counter and status business logic remains owned by Status.
   const RUNTIME_KEY = '__jarooCompanyClockRuntime';
@@ -42,10 +41,12 @@
   const STYLE_ID = 'jaroo-clock-menu-layout-v25';
   const SPACER_ATTR = 'data-jaroo-clock-menu';
   const SOURCE_ATTR = 'data-jaroo-brand-source';
-  const MIN_BRAND_FONT = 12;
-  const BRAND_FONT = 28;
+  const MIN_BRAND_FONT = 16;
+  const BRAND_FONT = 23;
   const MAX_BRAND_WIDTH = 620; // wide sidebars expand rather than stopping at 280px
   const EDGE_GUTTER = 12;
+  // Original cursive brand font from v3.6.9, loaded only for logo when allowed.
+  // Browser fallback is Segoe Script/cursive, and no font file is included.
   const BRAND_FONT_LINK_ID = 'jaroo-brand-kaushan-gfont-v3514';
   let fontLink = document.getElementById(BRAND_FONT_LINK_ID);
   if (!fontLink) {
@@ -64,30 +65,20 @@
     '#stage-sidebar, #stage-slideover-sidebar, #slate-sidebar, ' +
     '[data-testid="sidebar"], aside';
 
-  // No personally identifying dates or weather coordinates in release code.
-  // A separate LOCAL (no auto update) userscript provides the profile.
-  // If the profile is not installed, the life cards are hidden instead of
-  // displaying invented dates or fetching from a default location.
+  // Privacy-preserving compatibility with the existing local-only Tampermonkey
+  // profile. Never publish personal dates, locations, or the profile itself.
   const PROFILE = window.__jarooPrivateProfileV1 || null;
   const parseLocalDate = value =>
     typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
       ? new Date(value + 'T00:00:00+09:00') : new Date(NaN);
-  const LIFE = {
-    birth: parseLocalDate(PROFILE?.birthDate),
-    retirement: parseLocalDate(PROFILE?.retirementDate),
-    age80: parseLocalDate(PROFILE?.lifePlanEndDate),
-    workdayStartHour: 9, workdayEndHour: 18, workHoursPerDay: 8
-  };
-  const LIFE_PROFILE_VALID = [LIFE.birth,LIFE.retirement,LIFE.age80]
-    .every(d=>Number.isFinite(d.getTime())) &&
-    LIFE.birth < LIFE.retirement && LIFE.retirement < LIFE.age80;
   const WEATHER = Object.freeze({
-    latitude:Number(PROFILE?.weatherLatitude),
-    longitude:Number(PROFILE?.weatherLongitude),
-    city:typeof PROFILE?.weatherLabel==='string' ? PROFILE.weatherLabel : '',
-    intervalMs:30*60*1000
+    latitude: Number(PROFILE?.weatherLatitude),
+    longitude: Number(PROFILE?.weatherLongitude),
+    city: typeof PROFILE?.weatherLabel === 'string' ? PROFILE.weatherLabel : '',
+    intervalMs: 30*60*1000
   });
-  const WEATHER_PROFILE_VALID = PROFILE && Number.isFinite(WEATHER.latitude) &&
+  const WEATHER_PROFILE_VALID = !!PROFILE &&
+    Number.isFinite(WEATHER.latitude) &&
     Number.isFinite(WEATHER.longitude) &&
     WEATHER.latitude >= -90 && WEATHER.latitude <= 90 &&
     WEATHER.longitude >= -180 && WEATHER.longitude <= 180;
@@ -97,6 +88,18 @@
     weekday: 'short', hour: '2-digit', minute: '2-digit',
     second: '2-digit', hourCycle: 'h23'
   });
+
+  const LIFE = {
+    birth: parseLocalDate(PROFILE?.birthDate),
+    retirement: parseLocalDate(PROFILE?.retirementDate),
+    age80: parseLocalDate(PROFILE?.lifePlanEndDate),
+    workdayStartHour: 9,
+    workdayEndHour: 18,
+    workHoursPerDay: 8
+  };
+  const LIFE_PROFILE_VALID = [LIFE.birth, LIFE.retirement, LIFE.age80]
+    .every(d => Number.isFinite(d.getTime())) &&
+    LIFE.birth < LIFE.retirement && LIFE.retirement < LIFE.age80;
 
   // Remove clocks and spacing left by older versions.
   for (const id of [
@@ -115,6 +118,8 @@
   });
 
   // A separate host survives React re-rendering of the sidebar.
+  // Track only measured sidebar roots; never annotate the whole document.
+  const densitySidebars = new Set();
   const host = document.createElement('div');
   host.id = HOST_ID;
   host.style.cssText =
@@ -501,6 +506,355 @@
       :host([data-jaroo-width="narrow"]) .clock-line{justify-content:center;gap:7px}
       @media (prefers-reduced-motion: reduce){.life-bar-glow{animation:none}}
       @keyframes jaroo-life-bar-breathe{0%,100%{opacity:.58}50%{opacity:1}}
+      /* ============================================================
+         JAROO · SIMPLE FLAT VIVID v7.0 / CLOCK SHADOW TREE
+         Only visual presentation. All existing live calculations and
+         seven-segment digit updates are owned by the original JS.
+         ============================================================ */
+      :host{
+        --v-pink:#FF3FA4;--v-purple:#9B70FF;--v-cyan:#24C2E8;
+        --v-orange:#FFAB32;--v-green:#47EC84;--v-lavender:#D69BF4;
+        --v-base:#151925;--v-line:#394152;--v-text:#F4F7FC;
+        --v-muted:#A7B2C6;--jaroo-dashboard-gap:10px;
+        font-family:"Pretendard", "Malgun Gothic",sans-serif;
+      }
+      :host([data-mode="codex"]){--v-pink:#D69BF4}
+      /* Brand = quiet dark card + a vivid pink edge, never a neon marquee. */
+      .fallback-brand,
+      :host([data-density="compact"]) .fallback-brand,
+      :host([data-density="stacked-label"]) .fallback-brand{
+        min-height:62px;
+        padding:10px 12px;
+        border:2px solid var(--v-pink);
+        border-radius:10px;
+        background:var(--v-base);
+        background-image:none;
+        box-shadow:none;
+        filter:none;
+        animation:none;
+        transition:border-color .12s linear;
+        font-family:"Pretendard",sans-serif;
+      }
+      .fallback-brand::before,.fallback-brand::after{
+        display:none!important;content:none!important;
+        background:none!important;box-shadow:none!important;
+        animation:none!important;filter:none!important;
+      }
+      .fallback-brand:hover{border-color:var(--v-pink);box-shadow:none}
+      .fallback-brand:focus-visible{outline:2px solid var(--v-cyan);outline-offset:2px}
+      .brand-word{align-items:flex-start;gap:5px}
+      .brand-title{
+        display:flex;align-items:center;justify-content:flex-start;
+        max-width:100%;gap:5px;
+        background:none!important;background-image:none!important;
+        color:var(--v-text);-webkit-text-fill-color:var(--v-text);
+        font:800 var(--jaroo-brand-font,22px)/1.05 "Pretendard",sans-serif;
+        letter-spacing:-.035em;
+        filter:none!important;text-shadow:none!important;
+        -webkit-text-stroke:0!important;
+      }
+      .brand-title .brand-jaroo{
+        color:var(--v-text)!important;-webkit-text-fill-color:var(--v-text)!important;
+        background:none!important;filter:none!important;text-shadow:none!important;
+      }
+      .brand-title .brand-company{
+        color:var(--v-pink)!important;-webkit-text-fill-color:var(--v-pink)!important;
+        background:none!important;filter:none!important;text-shadow:none!important;
+      }
+      .brand-subtitle{
+        display:block;max-width:100%;
+        background:none!important;background-image:none!important;
+        color:var(--v-lavender);-webkit-text-fill-color:var(--v-lavender);
+        font:750 var(--jaroo-brand-subtitle-font,10px)/1.15 "Pretendard",sans-serif;
+        text-align:left;letter-spacing:.11em;
+        filter:none!important;text-shadow:none!important;
+      }
+      .brand-arrow{color:var(--v-pink)}
+      .brand-arrow svg{filter:none}
+
+      /* Main life panel: consistent neutral fill, single violet outline. */
+      .life-clock,
+      :host([data-jaroo-width="compact"]) .life-clock,
+      :host([data-jaroo-width="narrow"]) .life-clock{
+        padding:11px;border:1.5px solid var(--v-purple);
+        border-radius:11px;
+        background:var(--v-base);background-image:none;
+        box-shadow:none;filter:none;
+        color:var(--v-text);
+      }
+      .life-title{font-weight:850;letter-spacing:0;color:var(--v-lavender)}
+      .life-title .ico{color:var(--v-purple);filter:none;font-size:13px}
+      .life-sub{color:var(--v-muted);opacity:1}
+      .life-card,
+      :host([data-jaroo-width="compact"]) .life-card,
+      :host([data-jaroo-width="narrow"]) .life-card{
+        padding:9px 10px;
+        border:1.5px solid var(--v-line);border-radius:8px;
+        background:var(--v-base)!important;background-image:none!important;
+        box-shadow:none!important;filter:none!important;
+      }
+      .life-card.retire{border-color:var(--v-orange)}
+      .life-card.work{border-color:var(--v-cyan)}
+      .life-card.after{border-color:var(--v-green)}
+      .life-card.retire .life-label{color:var(--v-orange)}
+      .life-card.work .life-label{color:var(--v-cyan)}
+      .life-card.after .life-label{color:var(--v-green)}
+      .life-label{font-weight:750;font-size:clamp(11px,calc(11.5px * var(--jaroo-ui-scale)),13px);opacity:1}
+      .life-value{font-weight:800;color:var(--v-text);letter-spacing:-.025em}
+      .life-meta{color:var(--v-muted);opacity:1}
+      .life-progress{border-top:1px solid var(--v-line)}
+      .life-progress-title{color:var(--v-lavender);letter-spacing:0}
+      .life-progress-scale,.life-progress-percent{color:var(--v-muted)}
+      .life-bar{
+        height:8px;border:1px solid var(--v-line);border-radius:6px;
+        background:#293041;background-image:none;
+        box-shadow:none;overflow:hidden;
+      }
+      .life-bar-fill{
+        border-radius:5px;background:var(--v-pink);background-image:none;
+        box-shadow:none;filter:none;
+        transition:width .3s linear;
+      }
+      .life-bar-glow{display:none!important;animation:none!important}
+      .life-progress-meta{color:var(--v-muted)}
+      .life-progress-stat strong{color:var(--v-text);font-weight:750}
+
+      /* Cyan outlined date/clock module, flat 7-segment glyphs. */
+      .clock{margin-top:8px;padding:0}
+      .clock-line,
+      :host([data-jaroo-width="compact"]) .clock-line,
+      :host([data-jaroo-width="narrow"]) .clock-line{
+        box-sizing:border-box;
+        gap:8px;padding:5px 7px;min-height:54px;
+        border:1.5px solid var(--v-cyan);border-radius:10px;
+        background:var(--v-base);box-shadow:none;
+      }
+      .date-chip{
+        width:63px;flex-basis:63px;height:42px;
+        border:0;border-right:1px solid var(--v-line);
+        border-radius:0;background:transparent;background-image:none;
+        box-shadow:none;gap:5px;
+      }
+      .date-main{color:var(--v-text)}
+      .weather-line{color:var(--v-muted)}
+      .digital-time{color:var(--v-cyan);animation:none;filter:none}
+      .digit{color:var(--v-cyan)}
+      .digit .seg{background:var(--v-cyan);opacity:.085;filter:none}
+      .digit .seg.on{
+        background:var(--v-cyan);background-image:none;
+        opacity:1;box-shadow:none;filter:none;
+      }
+      .separator{color:var(--v-cyan);text-shadow:none}
+
+      /* Width is computed from the actual rendered sidebar, NOT viewport. */
+      :host([data-jaroo-width="wide"]) .life-clock{
+        display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);
+        column-gap:15px;align-items:start;
+      }
+      :host([data-jaroo-width="wide"]) .life-head{grid-column:1 / -1}
+      :host([data-jaroo-width="wide"]) .life-grid{grid-column:1}
+      :host([data-jaroo-width="wide"]) .life-progress{
+        align-self:center;grid-column:2;margin:0;padding:5px 0 5px 13px;
+        border-top:0;border-left:1px solid var(--v-line);
+      }
+      :host([data-jaroo-width="wide"]) .life-progress-meta{grid-template-columns:1fr;row-gap:13px}
+      :host([data-jaroo-width="wide"]) .life-progress-stat.remaining{align-items:flex-start}
+      :host([data-jaroo-width="wide"]) .life-card-main{
+        flex-wrap:wrap;gap:4px;
+      }
+      :host([data-jaroo-width="wide"]) .life-value{max-width:100%;text-align:left}
+      :host([data-jaroo-width="wide"]) .life-meta{display:block}
+
+      /* COMPACT: retain three totals, remove their explanations first. */
+      :host([data-jaroo-width="compact"]) .life-head{margin-bottom:8px}
+      :host([data-jaroo-width="compact"]) .life-meta{display:none}
+      :host([data-jaroo-width="compact"]) .life-progress-meta{display:none}
+      :host([data-jaroo-width="compact"]) .life-progress-scale{display:none}
+      :host([data-jaroo-width="compact"]) .life-progress-percent{
+        display:block;font-size:11px;font-weight:750;color:var(--v-lavender);
+      }
+
+      /* NARROW: two actionable totals + progress %; secondary future
+         estimate disappears. No numerals are miniaturized into illegibility. */
+      :host([data-jaroo-width="narrow"]) .fallback-brand{min-height:65px;padding:8px 10px}
+      :host([data-jaroo-width="narrow"]) .brand-word{align-items:center;gap:0}
+      :host([data-jaroo-width="narrow"]) .brand-title{
+        display:flex;flex-direction:column;justify-content:center;align-items:center;
+        background:none!important;-webkit-text-fill-color:var(--v-text)!important;
+        font-size:max(15px,var(--jaroo-brand-font,16px));gap:0;line-height:1.1;
+      }
+      :host([data-jaroo-width="narrow"]) .brand-jaroo,
+      :host([data-jaroo-width="narrow"]) .brand-company{
+        background:none!important;background-image:none!important;
+        -webkit-background-clip:border-box!important;background-clip:border-box!important;
+        filter:none!important;white-space:nowrap;
+      }
+      :host([data-jaroo-width="narrow"]) .brand-subtitle{display:none}
+      :host([data-jaroo-width="narrow"]) .life-card.after{display:none}
+      :host([data-jaroo-width="narrow"]) .life-meta{display:none}
+      :host([data-jaroo-width="narrow"]) .life-progress-meta{display:none}
+      :host([data-jaroo-width="narrow"]) .life-progress-percent{
+        display:block;color:var(--v-lavender);font-size:11px;font-weight:800;
+      }
+      :host([data-jaroo-width="narrow"]) .life-label{
+        color:inherit;font-weight:750;font-size:12px;line-height:1.2;
+      }
+      :host([data-jaroo-width="narrow"]) .life-card.retire .life-label{color:var(--v-orange)}
+      :host([data-jaroo-width="narrow"]) .life-card.work .life-label{color:var(--v-cyan)}
+      :host([data-jaroo-width="narrow"]) .life-value{
+        max-width:100%;text-align:right;font-weight:800;font-size:14.5px;
+      }
+      :host([data-jaroo-width="narrow"]) .clock-line{gap:6px;padding:4px 5px;min-height:46px}
+      :host([data-jaroo-width="narrow"]) .date-chip{
+        display:flex;width:25px;flex-basis:25px;height:34px;
+        border-right:1px solid var(--v-line);border-radius:0;
+      }
+      :host([data-jaroo-width="narrow"]) .date-main,
+      :host([data-jaroo-width="narrow"]) .weather-label{display:none!important}
+      :host([data-jaroo-width="narrow"]) .clock-line{justify-content:center}
+      /* Native 7-segment HH:MM geometry remains owned by existing script. */
+      /* EXTRA-SMALL safety below 185px. Text remains readable; only
+         the least important weather glyph and chevron are removed. */
+      :host([data-jaroo-micro="true"]) .brand-arrow{display:none!important}
+      :host([data-jaroo-micro="true"]) .date-chip{display:none!important}
+      :host([data-jaroo-micro="true"]) .clock-line{gap:0;justify-content:center}
+      :host([data-jaroo-micro="true"]) .life-progress-head{
+        flex-wrap:wrap;row-gap:3px;
+      }
+      :host([data-jaroo-micro="true"]) .life-progress-title{font-size:10px}
+      :host([data-jaroo-micro="true"]) .life-progress-percent{font-size:10px}
+      @media(prefers-reduced-motion:reduce){
+        .fallback-brand,.life-bar-fill,.digital-time{animation:none!important;transition:none!important}
+      }
+      /* ===============================================================
+         v7.2 · REFINEMENT · cursive logo + constant single-line metrics
+         Keeps the seven-segment clock CSS exactly as v7.1.
+         =============================================================== */
+      .fallback-brand,
+      :host([data-density="compact"]) .fallback-brand,
+      :host([data-density="stacked-label"]) .fallback-brand{
+        min-height:60px;overflow:hidden;
+        padding:9px 10px;
+      }
+      .brand-word{align-items:center;gap:3px;min-width:0}
+      .brand-title,
+      :host([data-jaroo-width="narrow"]) .brand-title{
+        display:flex;flex-direction:row;align-items:baseline;
+        justify-content:center;gap:.19em;
+        font:580 var(--jaroo-brand-font,22px)/1.1 "Kaushan Script","Segoe Script",cursive!important;
+        letter-spacing:-.025em;
+        -webkit-text-fill-color:initial!important;
+        text-align:center;white-space:nowrap;
+      }
+      .brand-title .brand-jaroo,
+      :host([data-jaroo-width="narrow"]) .brand-jaroo{
+        color:var(--v-cyan)!important;
+        -webkit-text-fill-color:var(--v-cyan)!important;
+        font:inherit!important;line-height:1.1!important;
+        filter:none!important;
+      }
+      .brand-title .brand-company,
+      :host([data-jaroo-width="narrow"]) .brand-company{
+        color:var(--v-pink)!important;
+        -webkit-text-fill-color:var(--v-pink)!important;
+        font:inherit!important;line-height:1.1!important;
+        filter:none!important;
+      }
+      .brand-subtitle{align-self:center;text-align:center}
+      :host([data-jaroo-width="narrow"]) .brand-subtitle{display:none}
+      :host([data-jaroo-width="narrow"]) .brand-title{font-size:var(--jaroo-brand-font,18px)!important}
+      /* At true minimum width, keep each cursive word legible instead of
+         squeezing the full logo onto a too-short single line. */
+      :host([data-jaroo-micro="true"]) .brand-title{
+        flex-direction:column!important;align-items:center;justify-content:center;
+        gap:0!important;line-height:1!important;
+      }
+      :host([data-jaroo-micro="true"]) .fallback-brand{min-height:67px}
+      /* All three metric cards keep the same two-line composition at ANY width.
+         Row one = vivid label + gray descriptor; row two = value right aligned. */
+      .life-clock,
+      :host([data-jaroo-width="wide"]) .life-clock{
+        display:block!important;
+        padding:10px!important;
+      }
+      .life-grid,
+      :host([data-jaroo-width="wide"]) .life-grid{
+        display:flex!important;flex-direction:column!important;
+        gap:6px!important;
+      }
+      .life-head,
+      :host([data-jaroo-width="wide"]) .life-head{display:flex!important;margin-bottom:8px!important}
+      .life-card,
+      :host([data-jaroo-width="compact"]) .life-card,
+      :host([data-jaroo-width="narrow"]) .life-card{
+        display:block!important;min-width:0;
+        padding:7px 9px!important;
+        border-radius:9px;
+      }
+      .life-card-main,
+      :host([data-jaroo-width="wide"]) .life-card-main,
+      :host([data-jaroo-width="compact"]) .life-card-main,
+      :host([data-jaroo-width="narrow"]) .life-card-main{
+        display:grid!important;grid-template-columns:minmax(0,1fr)!important;
+        grid-template-rows:auto auto;row-gap:4px!important;
+        align-items:stretch!important;min-width:0;gap:4px!important;
+      }
+      .life-caption{display:flex;align-items:baseline;gap:7px;min-width:0;max-width:100%;overflow:hidden;white-space:nowrap}
+      .life-label,
+      :host([data-jaroo-width="narrow"]) .life-label{
+        display:inline-block;flex:0 0 auto;min-width:0;
+        line-height:1.2!important;white-space:nowrap;
+        font-size:11px!important;font-weight:750;
+      }
+      .life-meta,
+      :host([data-jaroo-width="compact"]) .life-meta,
+      :host([data-jaroo-width="narrow"]) .life-meta,
+      :host([data-jaroo-width="wide"]) .life-meta{
+        display:inline-block!important;flex:0 1 auto;
+        min-width:0;max-width:100%;overflow:hidden;
+        margin:0!important;text-overflow:ellipsis;white-space:nowrap;
+        color:var(--v-muted)!important;opacity:1;
+        font-size:9px!important;line-height:1.2!important;
+      }
+      .life-value,
+      :host([data-jaroo-width="wide"]) .life-value,
+      :host([data-jaroo-width="compact"]) .life-value,
+      :host([data-jaroo-width="narrow"]) .life-value{
+        display:block!important;justify-self:end!important;
+        width:100%!important;max-width:100%!important;
+        margin:0;text-align:right!important;
+        color:var(--v-text)!important;white-space:nowrap;
+        font-variant-numeric:tabular-nums;letter-spacing:-.025em;
+        font-weight:780!important;
+      }
+      :host([data-jaroo-width="narrow"]) .life-card.after{display:block!important}
+      .life-progress,
+      :host([data-jaroo-width="wide"]) .life-progress{
+        display:block!important;margin-top:9px!important;padding:8px 0 0!important;
+        border-left:0!important;border-top:1px solid var(--v-line)!important;
+      }
+      :host([data-jaroo-width="wide"]) .life-progress-meta{
+        display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+        gap:6px!important;
+      }
+      :host([data-jaroo-width="wide"]) .life-progress-stat.remaining{align-items:flex-end!important}
+      :host([data-jaroo-width="narrow"]) .life-clock{
+        padding:7px!important;
+      }
+      :host([data-jaroo-width="narrow"]) .life-card{
+        padding:6px!important;
+      }
+      :host([data-jaroo-width="narrow"]) .life-caption{gap:4px}
+      :host([data-jaroo-width="narrow"]) .life-label{font-size:9.4px!important}
+      :host([data-jaroo-width="narrow"]) .life-meta{font-size:7.8px!important}
+      :host([data-jaroo-width="compact"]) .life-label{font-size:10.4px!important}
+      :host([data-jaroo-width="compact"]) .life-meta{font-size:8.5px!important}
+      :host([data-jaroo-micro="true"]) .life-clock{padding:6px!important}
+      :host([data-jaroo-micro="true"]) .life-card{padding:5px!important}
+      :host([data-jaroo-micro="true"]) .life-caption{gap:3px}
+      :host([data-jaroo-micro="true"]) .life-label{font-size:8.6px!important}
+      :host([data-jaroo-micro="true"]) .life-meta{font-size:7px!important}
+      :host([data-jaroo-micro="true"]) .life-value{letter-spacing:-.04em}
     </style>
     <button class="fallback-brand" type="button" aria-label="Jaroo's Company, A World of My Own">
       <span class="brand-word"><span class="brand-title"><span class="brand-jaroo">Jaroo's</span> <span class="brand-company">Company</span></span><span class="brand-subtitle">A WORLD OF MY OWN</span></span>
@@ -513,16 +867,13 @@
       </div>
       <div class="life-grid">
         <article class="life-card retire">
-          <div class="life-card-main"><div class="life-label">▣ 은퇴까지</div><div class="life-value" data-life="retireValue">0 h</div></div>
-          <div class="life-meta" data-life="retireMeta">65세 기준</div>
+          <div class="life-card-main"><div class="life-caption"><div class="life-label">▣ 은퇴까지</div><div class="life-meta" data-life="retireMeta" title="65세 기준">65세 기준</div></div><div class="life-value" data-life="retireValue">0 시간</div></div>
         </article>
         <article class="life-card work">
-          <div class="life-card-main"><div class="life-label">⌛ 남은 근무시간</div><div class="life-value" data-life="workValue">0 h</div></div>
-          <div class="life-meta" data-life="workMeta">평일 8시간 기준</div>
+          <div class="life-card-main"><div class="life-caption"><div class="life-label">⌛ 남은 근무시간</div><div class="life-meta" data-life="workMeta" title="평일 8시간 기준">평일 8시간 기준</div></div><div class="life-value" data-life="workValue">0 시간</div></div>
         </article>
         <article class="life-card after">
-          <div class="life-card-main"><div class="life-label">✦ 은퇴 이후</div><div class="life-value" data-life="afterValue">131,496 h</div></div>
-          <div class="life-meta" data-life="afterMeta">65~80세 계획기간</div>
+          <div class="life-card-main"><div class="life-caption"><div class="life-label">✦ 은퇴 이후</div><div class="life-meta" data-life="afterMeta" title="65~80세 계획기간">65~80세 계획기간</div></div><div class="life-value" data-life="afterValue">0 시간</div></div>
         </article>
       </div>
       <div class="life-progress">
@@ -543,7 +894,7 @@
     <div class="clock" role="timer" aria-live="off" aria-label="한국 표준시">
       <div class="clock-content">
         <div class="clock-line">
-          <div class="date-chip" title="날짜 및 설정 지역의 기상 상태 · Open-Meteo">
+          <div class="date-chip" title="날짜 및 설정 지역 현재 기상 상태 · Open-Meteo">
             <span class="date-main"></span>
             <span class="weather-line" data-weather="loading"><span class="weather-symbol" aria-hidden="true">◌</span><span class="weather-label">날씨 조회</span></span>
           </div>
@@ -578,10 +929,9 @@
 
   const lifeCard = shadow.querySelector('.life-clock');
   if (!LIFE_PROFILE_VALID) {
-    lifeCard.style.display='none';
+    lifeCard.style.display = 'none';
     console.warn('[Jaroo Life Clock] Local profile missing or invalid; life times hidden.');
   }
-
   let lifeMountState = 'overlay-reserved-space';
 
   // Digit cells preserve the status dock's .digital-time .digit geometry contract.
@@ -665,7 +1015,7 @@
     }
     return Math.ceil(totalMs/HOUR_MS);
   }
-  const lifeHour = ms => `${TIME_FORMAT.format(Math.max(0,ms))} h`;
+  const lifeHour = ms => `${TIME_FORMAT.format(Math.max(0,ms))} 시간`;
   let lastLifeMinuteKey = '';
   function updateLifeClock(now) {
     if (!LIFE_PROFILE_VALID) return;
@@ -694,7 +1044,7 @@
       ['usedHours',lifeHour(Math.floor(Math.max(0,Math.min(ms,age80Ms)-LIFE.birth.getTime())/HOUR_MS))],
       ['remainingHours',lifeHour(age80Hours)]
     ];
-    for(const [key,val] of values){if(lifeEls[key]?.textContent!==val)lifeEls[key].textContent=val;}
+    for(const [key,val] of values){if(lifeEls[key]?.textContent!==val)lifeEls[key].textContent=val; if(key.endsWith('Meta') && ['retireMeta','workMeta','afterMeta'].includes(key) && lifeEls[key]?.title!==val)lifeEls[key].title=val;}
     const width=`${used.toFixed(1)}%`;
     if(lifeEls.progressBar.style.width!==width)lifeEls.progressBar.style.width=width;
     if(host.isConnected)fitLifeValues();
@@ -722,7 +1072,7 @@
   }
   async function updateWeather() {
     if (!WEATHER_PROFILE_VALID) {
-      if (!disposed) setWeather('◌','지역 설정 필요','error');
+      if (!disposed) setWeather('◌', '지역 설정 필요', 'error');
       return;
     }
     if (disposed || document.hidden || weatherInFlight) return;
@@ -772,12 +1122,15 @@
   function applyResponsiveScale(width, heightAvailable) {
     // v3.6.6 intentionally does not shrink the whole dashboard to 0.53x.
     // The compact mode hides secondary information instead of shrinking type.
-    const mode=width<228 ? 'narrow' : width<285 ? 'compact' : 'regular';
-    const scale=mode==='regular'
-      ? Math.min(1.53,Math.max(1,width/275))
-      : 1;
+    const mode = width < 228 ? 'narrow' : width < 285 ? 'compact' :
+      width < 430 ? 'regular' : 'wide';
+    // Keep physical text sizes stable. Wider sidebars reveal content instead
+    // of scaling every item into oversized dashboard typography.
+    const scale = (mode === 'regular' || mode === 'wide')
+      ? Math.min(1.08, Math.max(1, width / 285)) : 1;
     const value=scale.toFixed(4);
     host.dataset.jarooWidth=mode;
+    host.dataset.jarooMicro = width < 185 ? 'true' : 'false';
     if(host.style.getPropertyValue('--jaroo-ui-scale')!==value){
       host.style.setProperty('--jaroo-ui-scale',value);
     }
@@ -1053,6 +1406,12 @@
     const renderedWidth = Math.floor(host.getBoundingClientRect().width);
     const usableWidth = renderedWidth > 0 ? Math.min(Math.floor(maxWidth), renderedWidth) : Math.floor(maxWidth);
     applyResponsiveScale(usableWidth, sidebar.getBoundingClientRect().height);
+    // This gives Stylus the same measured density as Clock's Shadow DOM.
+    // Attr changes are idempotent and don't mutate native sidebar children.
+    const density = host.dataset.jarooWidth;
+    if (sidebar.getAttribute('data-jaroo-sidebar-width') !== density)
+      sidebar.setAttribute('data-jaroo-sidebar-width', density);
+    densitySidebars.add(sidebar);
     // In narrow mode CSS max-width can reduce the used box below maxWidth.
     // Fit to the actual rendered width, not the optimistic requested width.
     fitBrand(usableWidth);
@@ -1375,16 +1734,12 @@
     refresh();
     schedulePlacement();
     document.fonts?.ready.then(() => { if (!disposed) schedulePlacement(); });
-    const remeasureAfterBrandFont = () => {
-      if (!document.fonts || disposed) return;
-      document.fonts.load('400 28px "Kaushan Script"').then(() => {
-        if (!disposed) schedulePlacement();
-      }).catch(() => { /* Network/CSP may block font: fallback remains usable. */ });
-    };
-    // Link CSS can arrive after the initial document.fonts.ready; remeasure
-    // after its real load instead of assuming the fallback width is final.
-    if (fontLink?.sheet) remeasureAfterBrandFont();
-    else fontLink?.addEventListener('load', remeasureAfterBrandFont, { once:true });
+    // Remote Kaushan CSS can load after document.fonts.ready; remeasure once
+    // the original brand font becomes available, without disturbing clock digits.
+    fontLink?.addEventListener('load', () => {
+      if (disposed) return;
+      document.fonts?.load?.('400 24px "Kaushan Script"').then(schedulePlacement).catch(() => schedulePlacement());
+    }, { once: true });
     tickHandle = setInterval(() => { if (!disposed && !document.hidden) refresh(); }, 1000);
     // Rare React-side sidebar replacements are recovered without observing
     // every message mutation on the entire page.
@@ -1412,20 +1767,23 @@
     document.removeEventListener('DOMContentLoaded', start);
     restoreSource();
     clearSpacing();
+    for (const sidebar of densitySidebars)
+      sidebar.removeAttribute('data-jaroo-sidebar-width');
+    densitySidebars.clear();
     host.remove();
     stylesheet.remove();
     if (window[RUNTIME_KEY]?.dispose === dispose) delete window[RUNTIME_KEY];
   }
   window[RUNTIME_KEY] = {
-    version: '3.6.4', dispose,
+    version: '3.7.2', dispose,
     diagnostics: () => ({
-      version: '3.6.4', ...placementReport,
+      version: '3.7.2', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
       legacyHexJPresent: Boolean(shadow.querySelector('.brand-mark')),
       segmentClock: shadow.querySelectorAll('.digital-time .digit').length === 6,
-      fontLoaded: Boolean(document.fonts && [...document.fonts].some(face => face.family.includes('Kaushan Script') && face.status === 'loaded')),
+      fontLoaded: Boolean(document.fonts?.check?.('12px Pretendard')),
       counterPresent: Boolean(shadow.querySelector('.jaroo-center')),
       weatherStatus: weatherStatus,
       weatherLocation: WEATHER_PROFILE_VALID ? 'configured' : 'unconfigured',
@@ -1435,9 +1793,9 @@
       lifeCardFontWeight: getComputedStyle(lifeEls.retireValue).fontWeight,
       responsiveScale:host.style.getPropertyValue('--jaroo-ui-scale'),
       readableMode:host.dataset.jarooWidth,
-      timeUnit:'h',
+      timeUnit:'시간',
       lifeMetricCount:shadow.querySelectorAll('.life-card').length,
-      weatherLocation:WEATHER_PROFILE_VALID ? 'configured' : 'unconfigured',
+      weatherLocation:WEATHER.city,
       weatherStatus,
       viewport: [innerWidth, innerHeight]
     })
