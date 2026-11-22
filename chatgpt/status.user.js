@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo · Status & Command Center
 // @namespace    jaroo-company.local
-// @version      6.5.2
+// @version      6.5.3
 // @description  Flat Vivid RUN/DONE and ALL/FOCUS switch for sidebar chat view. Read-only presentation filter; native state logic retained.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -15,7 +15,7 @@
   const RUNTIME = '__jarooCommandCenterRuntimeV4';
   window[RUNTIME]?.dispose?.();
   window.__jarooNativeCapture?.stop?.();
-  const VERSION = '6.5.2';
+  const VERSION = '6.5.3';
   const HOVER_MS = 400;
   const ROOTS = '#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]';
   const ARCHIVE = '[data-sidebar-archive-chatgpt-id]';
@@ -42,6 +42,12 @@
   const focusStyle = document.createElement('style');
   focusStyle.id = FOCUS_CSS_ID;
   focusStyle.textContent = `
+    [data-jaroo-focus-fallback="true"] :is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"]){
+      max-height:0!important;min-height:0!important;height:0!important;
+      margin-block:0!important;padding-block:0!important;
+      border-block-width:0!important;overflow:hidden!important;
+      opacity:0!important;pointer-events:none!important;
+    }
     /* Clip without display:none, hidden, inert, or moving React nodes.
        The native ChatGPT status observer must still see its rendered rows. */
     [${FOCUS_MENU_ATTR}="clipped"]{
@@ -1353,6 +1359,31 @@
     padding:15px 4px;color:#A7B2C6;font:550 11px/1.5 "Pretendard",sans-serif;text-align:center;
   }
   .jaroo-focus-help{color:#8793A8;font:500 9px/1.4 "Pretendard",sans-serif}
+  /* v6.5.3: unmistakable active toggle with a usable 38px hit target. */
+  .jaroo-center{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 50px!important;gap:5px!important}
+  .jaroo-center .jaroo-mode-switch{
+    min-height:38px!important;height:46px!important;width:100%!important;
+    cursor:pointer!important;opacity:1!important;
+  }
+  .jaroo-center .jaroo-mode-frame{
+    min-height:38px!important;gap:6px!important;color:#E4D4F7!important;
+  }
+  .jaroo-center .jaroo-mode-caption{font-size:10px!important;color:#F3E5FF!important}
+  .jaroo-center .jaroo-mode-track{width:32px!important;height:16px!important;border:1.4px solid #BD93F9!important}
+  .jaroo-center .jaroo-mode-thumb{width:10px!important;height:10px!important;background:#BD93F9!important}
+  .jaroo-center .jaroo-mode-switch[aria-pressed="true"] .jaroo-mode-thumb{left:18px!important;background:#50FA7B!important}
+  .jaroo-center .jaroo-mode-switch[aria-pressed="true"] .jaroo-mode-caption{color:#50FA7B!important}
+  :host([data-jaroo-micro="true"]) .jaroo-center{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    grid-template-rows:minmax(38px,auto) 32px!important;
+  }
+  :host([data-jaroo-micro="true"]) .jaroo-center .jaroo-mode-switch{
+    grid-column:1 / -1!important;justify-self:end!important;
+    width:84px!important;height:30px!important;min-height:30px!important;
+  }
+  :host([data-jaroo-micro="true"]) .jaroo-center .jaroo-mode-frame{
+    flex-direction:row!important;height:30px!important;min-height:30px!important;
+  }
   :host([data-jaroo-width="compact"]) .jaroo-center,
   :host([data-jaroo-width="narrow"]) .jaroo-center{
     grid-template-columns:minmax(0,1fr) minmax(0,1fr) 42px;gap:5px;
@@ -1535,18 +1566,32 @@
   // navigation branch. We only clip that verified sibling, never move/delete
   // React-owned nodes or synthesize a persistent status-history database.
   function findNativeMenuBranch() {
+    // React can insert New Chat, Dot, pinned lists and portal wrappers between
+    // the Clock host and the actual scrollable project/chat navigation. Do not
+    // assume the native menu is the immediate nextElementSibling.
     const host=document.getElementById('jaroo-clock-overlay-v25');
-    const sibling=host?.nextElementSibling;
-    if (!host?.isConnected || !sibling || !host.parentElement ||
-        !watchedSidebars.some(root => root.contains(host) && root.contains(sibling))) return null;
-    if (sibling.closest('#jaroo-v4-quick-panel') || sibling.id === FOCUS_CSS_ID || sibling === focusList) return null;
-    const evidence=sibling.matches?.(`${ARCHIVE},[data-sidebar-project-kind="local"],[data-app-action-sidebar-project-row]`) ||
-      sibling.querySelector?.(`${ARCHIVE},a[href*="/c/"],[data-sidebar-project-kind="local"],[data-app-action-sidebar-project-row]`);
-    return evidence ? sibling : null;
+    if (!host?.isConnected || !host.parentElement) return null;
+    const root=watchedSidebars.find(sidebar => sidebar.contains(host));
+    if (!root) return null;
+    const evidenceSelector=`${ARCHIVE},[data-sidebar-project-kind="local"]`;
+    for (let node=host.nextElementSibling;node;node=node.nextElementSibling) {
+      if (node===focusList || node.closest('#jaroo-v4-quick-panel')) continue;
+      // A single small button is not the navigation branch. Choose only a
+      // multi-entry container so we cannot accidentally clip New Chat.
+      if (node.matches('button,a,[role="button"]')) continue;
+      const evidence=node.querySelectorAll(evidenceSelector);
+      const chatIds=new Set([...node.querySelectorAll('a[href*="/c/"]')]
+        .map(linkId).filter(validId));
+      if (evidence.length>=2 || chatIds.size>=2) return node;
+    }
+    return null;
   }
   function releaseFocusBranch() {
     if (focusBranch) focusBranch.removeAttribute(FOCUS_MENU_ATTR);
     focusBranch=null;
+    // Do not retain fallback row clipping after switching back to ALL.
+    for(const sidebar of watchedSidebars)
+      sidebar.removeAttribute('data-jaroo-focus-fallback');
   }
   function renderFocusEntries(records) {
     if (!focusEntries?.isConnected) return;
@@ -1594,7 +1639,8 @@
   function syncFocusView(records) {
     const modeButton=dock?.querySelector('[data-jaroo-filter-toggle]');
     const branch=findNativeMenuBranch();
-    const ready=Boolean(modeButton && focusList?.isConnected && branch);
+    // A missing React navigation wrapper must not disable the visible switch.
+    const ready=Boolean(modeButton && focusList?.isConnected);
     if (modeButton) {
       modeButton.disabled=!ready;
       modeButton.setAttribute('aria-pressed',String(ready && focusWanted));
@@ -1611,10 +1657,19 @@
     }
     // Native navigation stays connected and discoverable; it is only clipped.
     if (focusBranch!==branch) releaseFocusBranch();
-    focusBranch=branch;
     renderFocusEntries(records);
     focusList.hidden=false;
-    setAttr(focusBranch,FOCUS_MENU_ATTR,'clipped');
+    if (branch) {
+      focusBranch=branch;
+      setAttr(branch,FOCUS_MENU_ATTR,'clipped');
+    } else {
+      // Fallback when the native navigation structure differs between routes:
+      // hide only visual native chat rows, leaving new-chat, Dot and folders
+      // operable. No native nodes are removed or marked hidden/inert.
+      for(const sidebar of watchedSidebars)
+        if(sidebar.contains(lastDockHost))
+          setAttr(sidebar,'data-jaroo-focus-fallback','true');
+    }
   }
   function renderDock(records) {
     if (!setupDock()) return;
