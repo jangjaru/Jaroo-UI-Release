@@ -11,7 +11,7 @@
 | ChatGPT | Organization Mapper userscript | 1.3.1 |
 | ChatGPT | Stylus UserCSS | 6.8.6 |
 | Google Calendar | Companion userscript | 1.3.7 |
-| Google Calendar | Stylus UserCSS | 1.2.1 |
+| Google Calendar | Stylus UserCSS | 1.2.2 |
 
 Each userscript has Tampermonkey `@updateURL`/`@downloadURL`. Each UserCSS has Stylus `@updateURL`.
 
