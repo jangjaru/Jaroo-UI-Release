@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Jaroo · Status & Command Center
 // @namespace    jaroo-company.local
-// @version      6.3.17
-// @description  Jaroo RUN/DONE and selected frame; updates via pinned release URLs.
+// @version      6.5.2
+// @description  Flat Vivid RUN/DONE and ALL/FOCUS switch for sidebar chat view. Read-only presentation filter; native state logic retained.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
 // @grant        none
@@ -15,7 +15,7 @@
   const RUNTIME = '__jarooCommandCenterRuntimeV4';
   window[RUNTIME]?.dispose?.();
   window.__jarooNativeCapture?.stop?.();
-  const VERSION = '6.3.17';
+  const VERSION = '6.5.2';
   const HOVER_MS = 400;
   const ROOTS = '#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]';
   const ARCHIVE = '[data-sidebar-archive-chatgpt-id]';
@@ -30,6 +30,28 @@
   let hoverTimer = 0, hoveredAnchor = null, tooltip = null, tooltipStyle = null;
   let lastDockHost = null, panelSignature = '', layoutRevision = 0, lastDockAlign = '';
   let observedClock = null, hideLayoutDirty = true;
+  // v6.5: View preference belongs to this browser tab. The chat/status store
+  // remains untouched; only presentation of the native navigation changes.
+  const FOCUS_PREF = 'jaroo:sidebar:run-done-only:v71';
+  let focusWanted = false;
+  try { focusWanted = sessionStorage.getItem(FOCUS_PREF) === 'status'; } catch (_) {}
+  let focusList = null, focusEntries = null, focusBranch = null, focusSignature = '';
+  const FOCUS_MENU_ATTR = 'data-jaroo-focus-native-menu';
+  const FOCUS_CSS_ID = 'jaroo-focus-native-menu-v71';
+  document.getElementById(FOCUS_CSS_ID)?.remove();
+  const focusStyle = document.createElement('style');
+  focusStyle.id = FOCUS_CSS_ID;
+  focusStyle.textContent = `
+    /* Clip without display:none, hidden, inert, or moving React nodes.
+       The native ChatGPT status observer must still see its rendered rows. */
+    [${FOCUS_MENU_ATTR}="clipped"]{
+      height:0!important;min-height:0!important;max-height:0!important;
+      margin-block:0!important;padding-block:0!important;
+      border-block-width:0!important;overflow:hidden!important;visibility:hidden!important;
+      opacity:0!important;pointer-events:none!important;
+    }
+  `;
+  (document.head || document.documentElement).append(focusStyle);
   const iconCache = new Map(), hidePlans = new WeakMap();
   // Selected frame FIT is a paint-only overlay. Native row width, click target,
   // status badges, menu buttons, and typography remain owned by ChatGPT/Stylus.
@@ -1024,7 +1046,7 @@
       generatedFavicon.rel='icon';
       document.head.append(generatedFavicon);
     }
-    if (!iconCache.has(type)) iconCache.set(type, svgData(type==='working'?'#FFB86C':'#50FA7B',type));
+    if (!iconCache.has(type)) iconCache.set(type, svgData(type==='working'?'#FFAB32':'#47EC84',type));
     const href=iconCache.get(type);
     if (generatedFavicon.getAttribute('href') !== href) generatedFavicon.setAttribute('href',href);
   }
@@ -1213,6 +1235,143 @@
     .jaroo-center .jaroo-top-mark,
     .jaroo-center .jaroo-top-word{animation:none!important}
   }
+
+  /* v7.2: The v7.0 static overrides were removed. Keep the original
+     v6.3.16 neon pulse, timeline, glow, and RUN/DONE word treatment. */
+
+  /* ===============================================================
+     v6.5.0 · ALL / RUN+DONE sidebar list toggle, flat vivid
+     =============================================================== */
+  .jaroo-center{
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr) 42px;
+    gap:6px;
+  }
+  .jaroo-center .jaroo-mode-switch{
+    padding:0;min-width:0;width:100%;height:49px;
+    font:700 9px/1 "Pretendard",sans-serif;
+  }
+  .jaroo-center .jaroo-mode-frame{
+    display:flex;align-items:center;justify-content:center;
+    flex-direction:column;gap:4px;width:100%;height:46px;
+    border:0!important;border-radius:0!important;
+    background:transparent!important;color:#A7B2C6;
+    box-sizing:border-box;transition:color .12s ease;
+  }
+  .jaroo-center .jaroo-mode-switch[aria-pressed="true"] .jaroo-mode-frame{
+    color:#24C2E8;
+  }
+  .jaroo-center .jaroo-mode-track{
+    width:28px;height:14px;border:1px solid currentColor;
+    border-radius:100px;position:relative;box-sizing:border-box;
+  }
+  .jaroo-center .jaroo-mode-thumb{
+    position:absolute;left:2px;top:2px;width:8px;height:8px;
+    border-radius:50%;background:currentColor;transition:left .12s ease;
+  }
+  .jaroo-center .jaroo-mode-switch[aria-pressed="true"] .jaroo-mode-thumb{left:16px}
+  .jaroo-center .jaroo-mode-caption{
+    font:800 9px/1 "Pretendard",sans-serif;letter-spacing:.04em;
+  }
+  .jaroo-center .jaroo-mode-switch:hover .jaroo-mode-frame{
+    background:transparent!important;color:#24C2E8;
+  }
+  .jaroo-center .jaroo-mode-switch:disabled{cursor:not-allowed;opacity:.45}
+  .jaroo-center .jaroo-mode-switch:focus-visible{outline:2px solid #24C2E8;outline-offset:2px}
+  .jaroo-focus-list{
+    display:flex;flex-direction:column;gap:8px;
+    min-width:0;padding:10px 8px 9px;margin:8px 0 4px;
+    border:1.5px solid #9B70FF;border-radius:9px;
+    background:#151925;color:#F4F7FC;
+    box-sizing:border-box;font:500 11px/1.35 "Pretendard",sans-serif;
+  }
+  .jaroo-focus-list[hidden]{display:none!important}
+  .jaroo-focus-header{display:flex;align-items:center;justify-content:space-between;gap:5px;min-width:0}
+  .jaroo-focus-header strong{color:#BCA5FF;font:800 11px/1 "Pretendard",sans-serif;white-space:nowrap}
+  .jaroo-focus-header em{font:650 10px/1 "Pretendard",sans-serif;font-style:normal;color:#A7B2C6;white-space:nowrap}
+  .jaroo-focus-entries{display:flex;flex-direction:column;gap:4px;min-height:0;max-height:min(340px,42vh);overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:#526078 transparent}
+  .jaroo-focus-row{
+    display:flex;gap:5px;align-items:center;padding:7px 5px;
+    border:1px solid #333E51;border-radius:6px;background:#1A2030;
+    min-width:0;min-height:32px;box-sizing:border-box;
+    color:#F4F7FC;text-decoration:none;cursor:pointer;
+  }
+  .jaroo-focus-row:hover{background:#212A3B;border-color:#9B70FF}
+  .jaroo-focus-row:focus-visible{outline:2px solid #24C2E8;outline-offset:1px}
+  .jaroo-focus-row[aria-disabled="true"]{opacity:.55;cursor:default}
+  .jaroo-focus-tag{
+    display:inline-flex;align-items:center;justify-content:center;
+    flex:0 0 36px;min-width:0;height:21px;padding:1px;
+    border:1px solid currentColor;border-radius:4px;
+    font:800 9px/1 "Pretendard",sans-serif;box-sizing:border-box;
+    background:transparent;white-space:nowrap;
+  }
+  .jaroo-focus-tag[data-jstatus="working"]{color:#FFAB32}
+  .jaroo-focus-tag[data-jstatus="done"]{color:#47EC84}
+  /* RUN/DONE filtered-chat tags look and pulse like original native badges. */
+  .jaroo-focus-tag[data-jstatus="working"]{
+    color:#FFB86C;
+    background:#242631;
+    text-shadow:0 0 3px rgba(255,184,108,.95),0 0 8px rgba(255,184,108,.72);
+    box-shadow:inset 0 0 6px rgba(255,184,108,.18),0 0 5px rgba(255,184,108,.95),0 0 12px rgba(255,184,108,.55);
+    animation:jaroo-focus-run-breathe .28s steps(1,end) infinite;
+  }
+  .jaroo-focus-tag[data-jstatus="done"]{
+    color:#50FA7B;background:#242631;
+    --jaroo-done-wave:1;
+    text-shadow:0 0 3px rgba(80,250,123,var(--jaroo-done-wave)),0 0 7px rgba(80,250,123,var(--jaroo-done-wave));
+    box-shadow:0 0 4px rgba(80,250,123,var(--jaroo-done-wave)),0 0 12px rgba(80,250,123,var(--jaroo-done-wave));
+    animation:jaroo-focus-done-breathe 1.8s ease-in-out infinite;
+  }
+  @keyframes jaroo-focus-run-breathe{0%,49.999%{opacity:1}50%,100%{opacity:.25}}
+  @keyframes jaroo-focus-done-breathe{0%,100%{--jaroo-done-wave:.18}50%{--jaroo-done-wave:1}}
+  @media(prefers-reduced-motion:reduce){.jaroo-focus-tag{animation:none!important}}
+  /* Only at extreme width: keep 2 readable status buttons on the first
+     row, put borderless filter underneath on the right. No overlapping text. */
+  :host([data-jaroo-micro="true"]) .jaroo-center{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    grid-template-rows:36px 20px;
+    gap:4px;
+  }
+  :host([data-jaroo-micro="true"]) .jaroo-center .jaroo-top-badge{padding-inline:2px}
+  :host([data-jaroo-micro="true"]) .jaroo-center .jaroo-top-mark{display:none}
+  :host([data-jaroo-micro="true"]) .jaroo-center .jaroo-top-word{font-size:10px}
+  :host([data-jaroo-micro="true"]) .jaroo-center .count{font-size:10.5px}
+  :host([data-jaroo-micro="true"]) .jaroo-center .jaroo-mode-switch{
+    grid-column:1 / -1;justify-self:end;width:65px;height:20px;min-height:20px;
+  }
+  :host([data-jaroo-micro="true"]) .jaroo-center .jaroo-mode-frame{
+    height:20px;min-height:20px;flex-direction:row;gap:5px;
+  }
+  :host([data-jaroo-micro="true"]) .jaroo-center .jaroo-mode-track{width:26px}
+  :host([data-jaroo-micro="true"]) .jaroo-center .jaroo-mode-caption{font-size:8px}
+  :host([data-jaroo-micro="true"]) .jaroo-center .jaroo-mode-switch[aria-pressed="true"] .jaroo-mode-thumb{left:14px}
+  .jaroo-focus-name{
+    min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    font:650 11px/1.35 "Pretendard",sans-serif;
+  }
+  .jaroo-focus-empty{
+    padding:15px 4px;color:#A7B2C6;font:550 11px/1.5 "Pretendard",sans-serif;text-align:center;
+  }
+  .jaroo-focus-help{color:#8793A8;font:500 9px/1.4 "Pretendard",sans-serif}
+  :host([data-jaroo-width="compact"]) .jaroo-center,
+  :host([data-jaroo-width="narrow"]) .jaroo-center{
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr) 42px;gap:5px;
+  }
+  :host([data-jaroo-width="compact"]) .jaroo-center .jaroo-mode-switch,
+  :host([data-jaroo-width="narrow"]) .jaroo-center .jaroo-mode-switch{height:36px;min-height:36px}
+  :host([data-jaroo-width="compact"]) .jaroo-center .jaroo-mode-frame,
+  :host([data-jaroo-width="narrow"]) .jaroo-center .jaroo-mode-frame{height:36px;min-height:36px;gap:2px}
+  :host([data-jaroo-width="narrow"]) .jaroo-center .jaroo-top-mark{display:inline-flex;flex-basis:7px;width:7px;font-size:10px}
+  :host([data-jaroo-width="narrow"]) .jaroo-center .jaroo-top-word{font-size:10px}
+  :host([data-jaroo-width="narrow"]) .jaroo-center .count{font-size:11px;margin-left:0}
+  :host([data-jaroo-width="narrow"]) .jaroo-center .jaroo-top-line{gap:2px}
+  :host([data-jaroo-width="narrow"]) .jaroo-focus-list{padding:8px 5px;gap:5px}
+  :host([data-jaroo-width="narrow"]) .jaroo-focus-tag{flex-basis:29px;font-size:8px}
+  :host([data-jaroo-width="narrow"]) .jaroo-focus-name{font-size:10px}
+  :host([data-jaroo-width="narrow"]) .jaroo-focus-help{display:none}
+  @media(prefers-reduced-motion:reduce){
+    .jaroo-center .jaroo-mode-thumb,.jaroo-center .jaroo-mode-frame{transition:none!important}
+  }
   `;
   function alignDockToClock() {
     if(!dock?.isConnected || !lastDockHost?.isConnected) return;
@@ -1229,6 +1388,8 @@
     const shadow = host?.shadowRoot;
     if (!shadow?.querySelector('.clock')) return false;
     if (host===lastDockHost && dock?.isConnected && dockStyle?.isConnected) return true;
+    releaseFocusBranch();
+    focusList?.remove();focusList=null;focusEntries=null;focusSignature='';
     dock?.remove();dockStyle?.remove();
     dockShadow=shadow;lastDockHost=host;lastDockAlign='';
     dockStyle=document.createElement('style');dockStyle.id='jaroo-command-v4-style';dockStyle.textContent=dockCSS;
@@ -1236,9 +1397,31 @@
     dock.innerHTML='<button type="button" class="run" data-jstatus="working" data-active="false" data-digits="1" aria-label="진행 중인 작업 목록">'+
       '<span class="jaroo-top-badge" aria-hidden="true"><span class="jaroo-top-line"><span class="jaroo-top-mark">»</span><span class="jaroo-top-word">RUN</span><span class="count">0</span></span><span class="jaroo-mini-label">진행 중인 작업</span></span></button>'+
       '<button type="button" class="done" data-jstatus="done" data-active="false" data-digits="1" aria-label="확인하지 않은 완료 목록">'+
-      '<span class="jaroo-top-badge" aria-hidden="true"><span class="jaroo-top-line"><span class="jaroo-top-mark">✓</span><span class="jaroo-top-word">DONE</span><span class="count">0</span></span><span class="jaroo-mini-label">확인할 완료</span></span></button>';
+      '<span class="jaroo-top-badge" aria-hidden="true"><span class="jaroo-top-line"><span class="jaroo-top-mark">✓</span><span class="jaroo-top-word">DONE</span><span class="count">0</span></span><span class="jaroo-mini-label">확인할 완료</span></span></button>'+
+      '<button type="button" class="jaroo-mode-switch" data-jaroo-filter-toggle="true" aria-pressed="false" aria-label="RUN·DONE만 보기" title="전체 보기 / RUN·DONE만 보기">'+
+      '<span class="jaroo-mode-frame" aria-hidden="true"><span class="jaroo-mode-track"><span class="jaroo-mode-thumb"></span></span><span class="jaroo-mode-caption">ALL</span></span></button>';
     shadow.append(dockStyle);shadow.querySelector('.clock').after(dock);
+    // Place the live list inside the same responsive Shadow DOM as the clock.
+    focusList=document.createElement('section');
+    focusList.className='jaroo-focus-list';focusList.id='jaroo-focus-list';
+    focusList.hidden=true;focusList.setAttribute('role','region');
+    focusList.setAttribute('aria-label','RUN·DONE 전용 채팅 목록');
+    focusList.innerHTML='<div class="jaroo-focus-header"><strong>RUN · DONE</strong><em class="jaroo-focus-total">0건</em></div>'+ 
+      '<div class="jaroo-focus-entries" role="list"></div>'+
+      '<div class="jaroo-focus-help">DONE은 확인하면 목록에서 자동으로 사라져.</div>';
+    dock.after(focusList);
+    focusEntries=focusList.querySelector('.jaroo-focus-entries');
+    focusSignature='';
     dock.addEventListener('click', e => {
+      const modeButton=e.target.closest('button[data-jaroo-filter-toggle]');
+      if (modeButton && !modeButton.disabled) {
+        focusWanted = !focusWanted;
+        try { sessionStorage.setItem(FOCUS_PREF, focusWanted ? 'status' : 'all'); } catch (_) {}
+        closePanel();
+        syncFocusView(validRecords());
+        scheduleRefresh('filter-toggle');
+        return;
+      }
       const button=e.target.closest('button[data-jstatus]');
       if (!button) return;
       if (panelOpen && panel?.dataset.filter===button.dataset.jstatus) {closePanel();return;}
@@ -1270,7 +1453,39 @@
       @media(prefers-reduced-motion:reduce){#jaroo-v4-quick-panel .tag,#jaroo-v4-quick-panel .tag::before{animation:none!important}}
       #jaroo-v4-quick-panel .name{min-width:0;overflow-wrap:anywhere}
       #jaroo-v4-quick-panel .empty{padding:8px;color:#b9b8c9}
-      #jaroo-v4-title-tip{position:fixed;z-index:2147483401;max-width:min(380px,calc(100vw - 22px));padding:9px 12px;border:1px solid #677089;border-radius:8px;box-shadow:0 8px 25px #0009;background:#303241;color:#f5f5fa;font:12px/1.5 "Pretendard",sans-serif;pointer-events:none;display:none;overflow-wrap:anywhere;box-sizing:border-box}`;
+      #jaroo-v4-title-tip{position:fixed;z-index:2147483401;max-width:min(380px,calc(100vw - 22px));padding:9px 12px;border:1px solid #677089;border-radius:8px;box-shadow:0 8px 25px #0009;background:#303241;color:#f5f5fa;font:12px/1.5 "Pretendard",sans-serif;pointer-events:none;display:none;overflow-wrap:anywhere;box-sizing:border-box}
+      /* v7.0: flat status popover + matching readable color tokens. */
+      #jaroo-v4-quick-panel{
+        border:1.5px solid #9B70FF;border-radius:11px;
+        background:#151925;box-shadow:none;color:#F4F7FC;
+      }
+      #jaroo-v4-quick-panel .dismiss{
+        border:1px solid #394152;border-radius:6px;background:#1D2230;
+        color:#F4F7FC;
+      }
+      #jaroo-v4-quick-panel .dismiss:hover{border-color:#24C2E8}
+      #jaroo-v4-quick-panel a{color:#F4F7FC;border-radius:6px}
+      #jaroo-v4-quick-panel a:hover,
+      #jaroo-v4-quick-panel a:focus-visible{
+        background:#1D2230;outline:1px solid #24C2E8;
+      }
+      #jaroo-v4-quick-panel .tag{
+        background:#151925;border-radius:5px;
+        text-shadow:none!important;box-shadow:none!important;
+        animation:none!important;
+      }
+      #jaroo-v4-quick-panel .tag[data-jstatus="working"],
+      #jaroo-v4-quick-panel .tag[data-jstatus="done"]{
+        background:#151925;text-shadow:none!important;
+        box-shadow:none!important;animation:none!important;
+      }
+      #jaroo-v4-quick-panel .tag::before{animation:none!important;text-shadow:none!important}
+      #jaroo-v4-quick-panel .empty{color:#A7B2C6}
+      #jaroo-v4-title-tip{
+        border:1px solid #9B70FF;border-radius:8px;
+        box-shadow:none;background:#1D2230;color:#F4F7FC;
+      }
+    `;
     document.head.append(css);
     tooltipStyle=css;
     document.body.append(panel);
@@ -1294,7 +1509,7 @@
     if (!records.length) {const empty=document.createElement('div');empty.className='empty';empty.textContent='표시할 상태가 없어.';panel.append(empty);}
     else records.forEach(r => {
       const link=document.createElement('a');link.href=r.href || '#';
-      const token=document.createElement('span');token.className='tag';token.dataset.jstatus=filter;token.style.color=filter==='working'?'#FFB86C':'#50FA7B';token.textContent=filter==='working'?'RUN':'DONE';
+      const token=document.createElement('span');token.className='tag';token.dataset.jstatus=filter;token.style.color=filter==='working'?'#FFAB32':'#47EC84';token.textContent=filter==='working'?'RUN':'DONE';
       const name=document.createElement('span');name.className='name';name.textContent=r.title || `채팅 ${r.id.slice(0,8)}`;
       link.append(token,name);
       if (!r.href) {link.style.opacity='.55';link.title='현재 사이드바에서 위치를 찾을 수 없음';link.setAttribute('aria-disabled','true');}
@@ -1315,6 +1530,91 @@
     panel.style.left=Math.max(8,Math.min(innerWidth-w-8,rect.left))+'px';
     panel.style.top=Math.max(8,Math.min(innerHeight-panel.getBoundingClientRect().height-10,rect.bottom+7))+'px';
     panel.focus({preventScroll:true});
+  }
+  // The Clock script deliberately mounts immediately before the *native*
+  // navigation branch. We only clip that verified sibling, never move/delete
+  // React-owned nodes or synthesize a persistent status-history database.
+  function findNativeMenuBranch() {
+    const host=document.getElementById('jaroo-clock-overlay-v25');
+    const sibling=host?.nextElementSibling;
+    if (!host?.isConnected || !sibling || !host.parentElement ||
+        !watchedSidebars.some(root => root.contains(host) && root.contains(sibling))) return null;
+    if (sibling.closest('#jaroo-v4-quick-panel') || sibling.id === FOCUS_CSS_ID || sibling === focusList) return null;
+    const evidence=sibling.matches?.(`${ARCHIVE},[data-sidebar-project-kind="local"],[data-app-action-sidebar-project-row]`) ||
+      sibling.querySelector?.(`${ARCHIVE},a[href*="/c/"],[data-sidebar-project-kind="local"],[data-app-action-sidebar-project-row]`);
+    return evidence ? sibling : null;
+  }
+  function releaseFocusBranch() {
+    if (focusBranch) focusBranch.removeAttribute(FOCUS_MENU_ATTR);
+    focusBranch=null;
+  }
+  function renderFocusEntries(records) {
+    if (!focusEntries?.isConnected) return;
+    const signature=JSON.stringify(records.map(r=>[r.id,r.status,r.title,r.href,r.run.clock]));
+    if (signature === focusSignature) return;
+    focusSignature=signature;
+    const previousScroll=focusEntries.scrollTop;
+    focusEntries.replaceChildren();
+    if (!records.length) {
+      const empty=document.createElement('div');empty.className='jaroo-focus-empty';
+      empty.textContent='진행 중이거나 확인할 완료가 없어.';
+      focusEntries.append(empty);
+    }
+    for (const record of records) {
+      const href=safePath(record.href || `/c/${record.id}`,record.id);
+      const row=document.createElement('a');row.className='jaroo-focus-row';
+      row.setAttribute('role','listitem');row.href=href || '#';
+      const tag=document.createElement('span');tag.className='jaroo-focus-tag';
+      tag.dataset.jstatus=record.status;
+      tag.textContent=record.status==='working'?'RUN':'DONE';
+      const title=document.createElement('span');title.className='jaroo-focus-name';
+      title.textContent=record.title || `채팅 ${record.id.slice(0,8)}`;
+      row.title=title.textContent;
+      row.append(tag,title);
+      if (!href) {
+        row.setAttribute('aria-disabled','true');
+        row.title='이 채팅의 유효한 주소를 확인하지 못했어.';
+        row.addEventListener('click',event=>event.preventDefault());
+      } else if (record.status === 'done') {
+        // Opening an unread completion from the focus list is an explicit ACK,
+        // equivalent to selecting the same link in the original quick panel.
+        row.addEventListener('click',event=>{
+          if (event.button === 0 && !event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey) {
+            statusBus.acknowledge(record.id,record.run);
+            scheduleRefresh('focus-done-read');
+          }
+        });
+      }
+      focusEntries.append(row);
+    }
+    focusEntries.scrollTop=previousScroll;
+    const badge=focusList?.querySelector('.jaroo-focus-total');
+    if (badge) badge.textContent=`${records.length}건`;
+  }
+  function syncFocusView(records) {
+    const modeButton=dock?.querySelector('[data-jaroo-filter-toggle]');
+    const branch=findNativeMenuBranch();
+    const ready=Boolean(modeButton && focusList?.isConnected && branch);
+    if (modeButton) {
+      modeButton.disabled=!ready;
+      modeButton.setAttribute('aria-pressed',String(ready && focusWanted));
+      const caption=modeButton.querySelector('.jaroo-mode-caption');
+      if (caption) caption.textContent=ready && focusWanted ? 'ONLY' : 'ALL';
+      const label=ready && focusWanted ? 'RUN·DONE만 표시 중 · 누르면 전체 보기' :
+        ready ? '전체 표시 중 · 누르면 RUN·DONE만 보기' : '기본 목록 구조가 확인되지 않아 필터 사용 불가';
+      modeButton.setAttribute('aria-label',label);modeButton.title=label;
+    }
+    if (!ready || !focusWanted) {
+      focusList && (focusList.hidden=true);
+      releaseFocusBranch();
+      return;
+    }
+    // Native navigation stays connected and discoverable; it is only clipped.
+    if (focusBranch!==branch) releaseFocusBranch();
+    focusBranch=branch;
+    renderFocusEntries(records);
+    focusList.hidden=false;
+    setAttr(focusBranch,FOCUS_MENU_ATTR,'clipped');
   }
   function renderDock(records) {
     if (!setupDock()) return;
@@ -1485,6 +1785,7 @@
       if (signature !== lastSignature || route !== lastRoute || document.title !== lastAppliedTitle) renderTab(list);
       if (signature !== lastSignature || !dock?.isConnected || !dockStyle?.isConnected) renderDock(list);
       else alignDockToClock();
+      syncFocusView(list);
       syncMotionVisibility();
       if (panelOpen) openPanel(panel.dataset.filter || 'working');
       observeClock();
@@ -1619,6 +1920,7 @@
     document.removeEventListener('mouseover', hoverIn, true); document.removeEventListener('mouseout', hoverOut, true);
     document.removeEventListener('focusin', hoverIn, true); document.removeEventListener('focusout', hoverOut, true);
     if (lastAppliedTitle && document.title === lastAppliedTitle) document.title = nativeTitle;
+    releaseFocusBranch();focusList?.remove();focusStyle.remove();
     generatedFavicon?.remove(); dock?.remove(); dockStyle?.remove(); panel?.remove(); tooltip?.remove(); tooltipStyle?.remove(); fitFrameStyle.remove();
     document.documentElement.removeAttribute('data-jaroo-status-hidden');
     for (const row of new Set([...rowNodes, ...document.querySelectorAll(OWN_ROW)])) cleanRow(row);
@@ -1645,6 +1947,8 @@
     cssVersion: getComputedStyle(document.documentElement).getPropertyValue('--jaroo-status-css-version').trim().replace(/["']/g, ''),
     rows: rows().length, working: validRecords().filter(item => item.status === 'working').length,
     done: validRecords().filter(item => item.status === 'done').length,
+    focusWanted, focusActive: Boolean(focusBranch?.isConnected && focusList && !focusList.hidden),
+    focusMenuFound: Boolean(findNativeMenuBranch()),
     sourceValues: [...new Set(rows().map(row => row.getAttribute('data-sidebar-indicator')))],
     sidebarRoots: watchedSidebars.length, probe: composerProbe.diagnostics(), read: readAcknowledgement.diagnostics(), sync: statusBus.diagnostics(),
     recentSignals: trace.slice(-12), lastError
