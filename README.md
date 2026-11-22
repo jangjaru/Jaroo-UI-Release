@@ -8,7 +8,7 @@
 |---|---|---|
 | ChatGPT | Clock userscript | 3.7.0 |
 | ChatGPT | Status userscript | 6.3.17 |
-| ChatGPT | Organization Mapper userscript | 1.3.1 |
+| ChatGPT | Organization Mapper userscript | 1.3.2 |
 | ChatGPT | Stylus UserCSS | 6.8.6 |
 | Google Calendar | Companion userscript | 1.3.7 |
 | Google Calendar | Stylus UserCSS | 1.2.2 |
