@@ -6,10 +6,10 @@
 
 | Site | Component | Version |
 |---|---|---|
-| ChatGPT | Clock userscript | 3.7.0 |
-| ChatGPT | Status userscript | 6.3.17 |
+| ChatGPT | Clock userscript | 3.7.2 |
+| ChatGPT | Status userscript | 6.5.2 |
 | ChatGPT | Organization Mapper userscript | 1.3.2 |
-| ChatGPT | Stylus UserCSS | 6.8.6 |
+| ChatGPT | Stylus UserCSS | 7.2.0 |
 | Google Calendar | Companion userscript | 1.3.7 |
 | Google Calendar | Stylus UserCSS | 1.2.2 |
 
@@ -19,4 +19,4 @@ Security rules: keep personal dates/location/credentials in a **separate, local-
 
 SHA256 hashes of published files: [SHA256.json](SHA256.json).
 
-**Important:** Source uploaded + repository readback verified (2026-11-22). Anonymous HTTP fetch and real Chrome extension install/update tests are still pending. The older installed scripts are not automatically migrated to this distribution.
+**Current release (2026-11-22):** ChatGPT Simple Flat Vivid v7.2.0. See [release notes](docs/RELEASE_v7.2.0_KO.md). GitHub readback, JS syntax, CSS syntax and local profile tests passed; live Chrome v7.2 rendering and update installation still require confirmation. Previous Calendar Stylus manual update test was successful; previous Tampermonkey Mapper version 1.3.2 was verified installed.
