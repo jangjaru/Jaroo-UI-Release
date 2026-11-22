@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo · Organization Mapper
 // @namespace    https://chatgpt.com/
-// @version      1.3.1
+// @version      1.3.2
 // @description  Jaroo organization color mappings; updates via pinned release URLs.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
