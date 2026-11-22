@@ -29,7 +29,7 @@
 | Mapper (Tampermonkey) | [mapper.user.js](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/chatgpt/mapper.user.js) | 1.3.1 |
 | ChatGPT CSS (Stylus) | [theme.user.css](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/chatgpt/theme.user.css) | 6.8.6 |
 | Calendar Companion (Tampermonkey) | [companion.user.js](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/calendar/companion.user.js) | 1.3.7 |
-| Calendar CSS (Stylus) | [theme.user.css](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/calendar/theme.user.css) | 1.2.1 |
+| Calendar CSS (Stylus) | [theme.user.css](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/calendar/theme.user.css) | 1.2.2 |
 
 ## 주의 사항
 - 로컬 파일(`file://`)에서 UserCSS를 설치하면, Stylus는 로컬 파일 업데이트 경로를 우선할 수 있음. 따라서 CSS는 **반드시 웹 URL로 설치**.
