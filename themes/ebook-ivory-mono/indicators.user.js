@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.2.4
+// @version      0.2.5
 // @description  E-book visual dot indicators for role prefixes plus a light Clock skin; keeps original chat titles, React data and RUN/DONE logic intact.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -417,39 +417,42 @@
      without altering any title content, href, click handler or app data. */
   const opticalFontOriginal=new Map();
   function enforceOpticalSidebarText() {
-    const s=getComputedStyle(document.documentElement)
-      .getPropertyValue('--eb-nav-optical-size').trim() || '16px';
-    const targets=new Set();
+    // The old visual script could hold 16px as an inline !important rule.
+    // Set ONLY chat title text to the user's requested 16px - 1pt.
+    const projectSize=getComputedStyle(document.documentElement)
+      .getPropertyValue('--eb-nav-optical-size').trim() || '14.667px';
+    const chatSize='14.667px';
+    const targets=new Map();
     // The user-provided Chrome Elements tree confirms [data-thread-title]
     // with several nested spans, often under .content-marquee.
     for(const title of document.querySelectorAll('[data-thread-title="true"]')) {
       if(!title.closest('[data-sidebar-cycle-item],#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]'))
         continue;
-      targets.add(title);
+      targets.set(title,chatSize);
       for(const el of title.querySelectorAll('span,div,[data-d-component="text"]')) {
         if(el.closest('[data-ebook-glyph="true"],[aria-hidden="true"],.sr-only'))continue;
-        targets.add(el);
+        targets.set(el,chatSize);
       }
     }
     // Apply the same optical size to the displayed project name, not the
     // folder glyph or other unrelated sidebar controls.
     for(const title of document.querySelectorAll(
         '[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] [data-marquee-content="true"]')) {
-      targets.add(title);
+      targets.set(title,projectSize);
       for(const el of title.querySelectorAll('span,div,[data-d-component="text"]')) {
         if(el.closest('[aria-hidden="true"],.sr-only'))continue;
-        targets.add(el);
+        targets.set(el,projectSize);
       }
     }
-    for(const el of targets) {
+    for(const [el,targetSize] of targets) {
       if(!opticalFontOriginal.has(el))
         opticalFontOriginal.set(el,{
           value:el.style.getPropertyValue('font-size'),
           priority:el.style.getPropertyPriority('font-size')
         });
-      if(el.style.getPropertyValue('font-size')!==s ||
+      if(el.style.getPropertyValue('font-size')!==targetSize ||
          el.style.getPropertyPriority('font-size')!=='important')
-        el.style.setProperty('font-size',s,'important');
+        el.style.setProperty('font-size',targetSize,'important');
     }
     for(const el of opticalFontOriginal.keys())if(!el.isConnected)
       opticalFontOriginal.delete(el);
@@ -560,7 +563,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.2.4',dispose,refresh:schedule,
-    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),fontAudit:fontAudit()})
+    version:'0.2.5',dispose,refresh:schedule,
+    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),opticalChatTarget:'14.667px',fontAudit:fontAudit()})
   };
 })();
