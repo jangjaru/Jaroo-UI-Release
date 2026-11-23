@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.2.20
+// @version      0.2.21
 // @description  E-book visual dot indicators for role prefixes plus a light Clock skin; keeps original chat titles, React data and RUN/DONE logic intact.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -213,72 +213,37 @@
   }
 
 
-  /* Identify native quick actions by exact visible label and left-rail position.
-     Unlike the previous version, discovery does NOT rely on observedRoots:
-     ChatGPT now puts '새 채팅' in a button > div > span.text-fade-truncate,
-     and the outer shell may not have any of the legacy sidebar IDs.
-     Only marker attributes on text leaves; no button/React behavior changes. */
-  const quickMarkWidthOriginal=new Map();
-  function restoreQuickMarkWidth(el) {
-    const previous=quickMarkWidthOriginal.get(el);
-    if(!previous)return;
-    if(el.isConnected) {
-      if(previous.value)el.style.setProperty('--eb-quick-mark-width',previous.value,previous.priority);
-      else el.style.removeProperty('--eb-quick-mark-width');
-    }
-    quickMarkWidthOriginal.delete(el);
-  }
+  /* Only mark the true visible text span. CSS v0.2.27 constrains the
+     marker by its intrinsic text width; no Range measurement or inline
+     width mutation is needed. Native buttons and click handlers are untouched. */
   function markQuickActionLabels() {
     const found=new Map();
-    const navLeaves=document.querySelectorAll(
+    const leaves=document.querySelectorAll(
       'button span,a span,[role="button"] span,[role="link"] span,'+
       'button [data-d-component="text"],a [data-d-component="text"]'
     );
-    for(const el of navLeaves) {
+    for(const el of leaves) {
       if(el.closest('main,[role="main"],[role="dialog"],[role="menu"],'+
                     '[data-sidebar-cycle-item],[data-sidebar-project-kind="local"],'+
                     '[data-thread-title="true"],[aria-hidden="true"],.sr-only'))continue;
+      if(el.children.length>0)continue;
       const raw=(el.textContent||'').replace(/\s+/gu,' ').trim();
-      if(el.children.length>0 || raw.length>16)continue;
+      if(raw.length>16)continue;
       const kind=(raw==='새 채팅'||raw==='New chat')?'new-chat':
                  raw==='Dot'?'dot':null;
       if(!kind)continue;
       const nav=el.closest('button,a,[role="button"],[role="link"]');
       if(!nav)continue;
-      const rect=el.getBoundingClientRect();
-      const nrect=nav.getBoundingClientRect();
-      // Native quick actions live near the top of the expanded sidebar.
+      const rect=el.getBoundingClientRect(),nrect=nav.getBoundingClientRect();
       if(rect.width<=0||rect.height<=0||rect.left<0||rect.left>410||
          rect.top<32||rect.top>360||nrect.left>400)continue;
       found.set(el,kind);
     }
-    for(const el of document.querySelectorAll('[data-ebook-quick-label]')) {
-      if(!found.has(el)) {
-        el.removeAttribute('data-ebook-quick-label');
-        restoreQuickMarkWidth(el);
-      }
-    }
-    for(const [el,kind] of found) {
+    for(const el of document.querySelectorAll('[data-ebook-quick-label]'))
+      if(!found.has(el))el.removeAttribute('data-ebook-quick-label');
+    for(const [el,kind] of found)
       if(el.getAttribute('data-ebook-quick-label')!==kind)
         el.setAttribute('data-ebook-quick-label',kind);
-      if(kind!=='new-chat'){restoreQuickMarkWidth(el);continue;}
-      // Range measures only rendered glyphs, not the stretched native text span.
-      const range=document.createRange();
-      range.selectNodeContents(el);
-      const measured=Math.ceil(range.getBoundingClientRect().width);
-      if(measured>0) {
-        const width=Math.min(180,measured+2)+'px';
-        if(!quickMarkWidthOriginal.has(el))quickMarkWidthOriginal.set(el,{
-          value:el.style.getPropertyValue('--eb-quick-mark-width'),
-          priority:el.style.getPropertyPriority('--eb-quick-mark-width')
-        });
-        if(el.style.getPropertyValue('--eb-quick-mark-width')!==width ||
-           el.style.getPropertyPriority('--eb-quick-mark-width')!=='important')
-          el.style.setProperty('--eb-quick-mark-width',width,'important');
-      }
-    }
-    for(const el of quickMarkWidthOriginal.keys())
-      if(!el.isConnected)quickMarkWidthOriginal.delete(el);
   }
 
   function synchronizeSidebar() {
@@ -853,7 +818,7 @@
     restoreOpticalSidebarText();
     restoreComposerFrames();
     restorePromptTypography();
-    document.querySelectorAll('[data-ebook-quick-label]').forEach(n=>{n.removeAttribute('data-ebook-quick-label');restoreQuickMarkWidth(n);});
+    document.querySelectorAll('[data-ebook-quick-label]').forEach(n=>n.removeAttribute('data-ebook-quick-label'));
     document.querySelectorAll('[data-ebook-effort-picker="true"]').forEach(n=>n.removeAttribute('data-ebook-effort-picker'));
     document.querySelectorAll('[data-ebook-active-title="true"]').forEach(n=>n.removeAttribute('data-ebook-active-title'));
     document.querySelectorAll('[data-ebook-upload-divider="true"]').forEach(n=>n.remove());
@@ -910,7 +875,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.2.20',dispose,refresh:schedule,
+    version:'0.2.21',dispose,refresh:schedule,
     diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),fontAudit:fontAudit()})
   };
 })();
