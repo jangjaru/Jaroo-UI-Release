@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo ChatGPT Dracula Neon
 @namespace    jaroo.chatgpt.dracula
-@version      8.3.1
+@version      8.3.2
 @description  Jaroo v7.3 vivid-neon restoration with stable project typography, responsive Clock and working ALL filter.
 @author       Jaroo
 @license      UNLICENSED
@@ -93,9 +93,9 @@
 /* 04. TYPOGRAPHIC FOUNDATION — avoid duplicate body overrides. */
 :root {
   --jaroo-prose-color: #D5D9E2;
-  --jaroo-prose-weight: 350; 
+  --jaroo-prose-weight: 320; 
   --jaroo-emphasis-color: #FFFFFF;
-  --jaroo-emphasis-weight: 100; 
+  --jaroo-emphasis-weight: 320; 
 }
 
 [data-message-author-role="assistant"] {
@@ -345,8 +345,8 @@
 :is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
   a[href*="/c/"] {
   --jaroo-title-color: var(--jaroo-role-neutral);
-  --jaroo-title-weight: 410;
-  --jaroo-title-selected-weight: 600;
+  --jaroo-title-weight: 320;
+  --jaroo-title-selected-weight: 420;
   --jaroo-title-glow: none;
   --jaroo-title-decoration: none;
   color: var(--jaroo-title-color) !important;
@@ -357,8 +357,8 @@
 :is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
   a[href*="/c/"]:is([aria-label^="☆"],[aria-label^="★"]) {
   --jaroo-title-color: var(--jaroo-role-lead);
-  --jaroo-title-weight: 420;
-  --jaroo-title-selected-weight: 600;
+  --jaroo-title-weight: 320;
+  --jaroo-title-selected-weight: 420;
 }
 :is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
   a[href*="/c/"][aria-label^="○"] {
@@ -367,7 +367,7 @@
 :is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
   a[href*="/c/"][aria-label^="●"] {
   --jaroo-title-color: var(--jaroo-role-produce);
-  --jaroo-title-weight: 410;
+  --jaroo-title-weight: 320;
 }
 :is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
   a[href*="/c/"]:is([aria-label^="▷"],[aria-label^="▶"]) {
@@ -384,15 +384,15 @@
   a[href*="/c/"][aria-label*="[중요]"] {
   --jaroo-priority-mark: "◇";
   --jaroo-priority-color: var(--jaroo-priority-important);
-  --jaroo-title-weight: 410;
-  --jaroo-title-selected-weight: 600;
+  --jaroo-title-weight: 320;
+  --jaroo-title-selected-weight: 420;
 }
 :is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
   a[href*="/c/"][aria-label*="[핵심]"] {
   --jaroo-priority-mark: "◆";
   --jaroo-priority-color: var(--jaroo-priority-core);
-  --jaroo-title-weight: 420;
-  --jaroo-title-selected-weight: 610;
+  --jaroo-title-weight: 320;
+  --jaroo-title-selected-weight: 430;
 }
 :is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
   a[href*="/c/"][aria-label*="[긴급]"] {
@@ -432,7 +432,7 @@
   background: #30313F !important;
   border: 1px solid currentColor !important;
   border-radius: 4px !important;
-  font: 610 11px/1 "Pretendard",sans-serif !important;
+  font: 430 11px/1 "Pretendard",sans-serif !important;
   letter-spacing: .1px !important;
   white-space: nowrap !important;
   box-shadow: none !important;
@@ -446,21 +446,21 @@
 :is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
   a[href*="/c/"][aria-label^="[완료]"] {
   --jaroo-title-color: var(--jaroo-role-archive);
-  --jaroo-title-weight: 410;
-  --jaroo-title-selected-weight: 580;
+  --jaroo-title-weight: 320;
+  --jaroo-title-selected-weight: 410;
   --jaroo-title-decoration: line-through;
 }
 :is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
   a[href*="/c/"][aria-label^="[중단]"] {
   --jaroo-title-color: var(--jaroo-role-stopped);
-  --jaroo-title-weight: 410;
-  --jaroo-title-selected-weight: 580;
+  --jaroo-title-weight: 320;
+  --jaroo-title-selected-weight: 410;
   --jaroo-title-decoration: line-through;
 }
 :is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
   a[href*="/c/"][aria-label^="[보류]"] {
   --jaroo-title-color: var(--jaroo-role-neutral);
-  --jaroo-title-weight: 410;
+  --jaroo-title-weight: 320;
 }
 :is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
   a[href*="/c/"]:is([aria-label^="[완료]"],[aria-label^="[중단]"])::after {
@@ -488,13 +488,13 @@
   :is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"] a[href*="/c/"] {
   --jaroo-title-glow: var(--jaroo-selected-title-glow);
   text-shadow: var(--jaroo-title-glow) !important;
-  font-weight: var(--jaroo-title-selected-weight,510) !important;
+  font-weight: var(--jaroo-title-selected-weight,360) !important;
 }
 :is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
   :is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"] a[href*="/c/"]
   :is([data-thread-title="true"],[data-thread-title="true"] *,span.truncate,div.truncate,span[dir="auto"]):not(.jaroo-recent-status-badge) {
   text-shadow: var(--jaroo-title-glow) !important;
-  font-weight: var(--jaroo-title-selected-weight,510) !important;
+  font-weight: var(--jaroo-title-selected-weight,360) !important;
 }
 
 /* 12. CLASSIC ORANGE PROJECT CAPSULES
@@ -518,7 +518,7 @@
   color: var(--da-project-text) !important;
   -webkit-text-fill-color: var(--da-project-text) !important;
   font-size: var(--jaroo-sidebar-title-font-size,1rem) !important;
-  font-weight: 610 !important;
+  font-weight: 430 !important;
   line-height: 1.2 !important;
   text-shadow: none !important;
   box-shadow: none !important;
@@ -549,13 +549,13 @@ div[data-user-message-bubble="true"].bg-user-message {
   border: 2px solid var(--da-user-border) !important;
   color: var(--da-user-text) !important;
   -webkit-text-fill-color: var(--da-user-text) !important;
-  font-weight: 540 !important;
+  font-weight: 380 !important;
 }
 div[data-user-message-bubble="true"].bg-user-message,
 div[data-user-message-bubble="true"].bg-user-message :is(.text-user-message, p, span, strong, b, em, li, a) {
   color: var(--da-user-text) !important;
   -webkit-text-fill-color: var(--da-user-text) !important;
-  font-weight: 540 !important;
+  font-weight: 380 !important;
   opacity: 1 !important;
   filter: none !important;
 }
@@ -641,7 +641,7 @@ button:is([aria-label*="현재 모드: ChatGPT" i], [aria-label*="현재 모드:
   flex: 0 0 auto !important;
   font-size: 17px !important;
   line-height: 24px !important;
-  font-weight: 610 !important;
+  font-weight: 430 !important;
   letter-spacing: -0.25px !important;
   text-decoration: none !important;
   text-shadow: none !important;
@@ -748,7 +748,7 @@ button:is([aria-label*="현재 모드: ChatGPT" i], [aria-label*="현재 모드:
 
 [data-message-author-role="assistant"] :is(h1, h2, h3, h4, h5, h6)[data-d-component="text"],
 [data-message-author-role="assistant"] :is(h1, h2, h3, h4, h5, h6)[data-d-component="text"] > span {
-  font-weight: 610 !important;
+  font-weight: 430 !important;
 }
 
 
@@ -1071,7 +1071,7 @@ body [data-message-author-role="assistant"]
   line-height: 1.52 !important;
   color: var(--jaroo-table-text) !important;
   -webkit-text-fill-color: var(--jaroo-table-text) !important;
-  font-weight: 400 !important;
+  font-weight: 320 !important;
   padding: 11px 14px !important;
   vertical-align: middle !important;
   border-bottom: 1px solid var(--jaroo-table-grid) !important;
@@ -1105,7 +1105,7 @@ body [data-message-author-role="assistant"]
   :is(table, [role="table"], [data-d-component="table"])
   :is(strong, b, [data-d-weight="bold"], [data-d-weight="semibold"],
       [data-d-text-weight="bold"], [data-d-text-weight="semibold"]) {
-  font-weight: 580 !important;
+  font-weight: 410 !important;
 }
 
 /* Native table headers, accessible headers, and DIL-marked header cells. */
@@ -1119,7 +1119,7 @@ body [data-message-author-role="assistant"]
   color: var(--jaroo-table-heading) !important;
   -webkit-text-fill-color: var(--jaroo-table-heading) !important;
   font-size: var(--jaroo-answer-table-font-size) !important;
-  font-weight: 580 !important;
+  font-weight: 410 !important;
   border-bottom: 1.5px solid rgba(139,233,253,.44) !important;
 }
 
@@ -1133,7 +1133,7 @@ body [data-message-author-role="assistant"]
   :is(p, span, div, strong, b, [data-d-component="text"]) {
   color: var(--jaroo-table-heading) !important;
   -webkit-text-fill-color: var(--jaroo-table-heading) !important;
-  font-weight: 580 !important;
+  font-weight: 410 !important;
 }
 
 /* Alternating rows, subtle enough for long 30+ row proposal tables. */
@@ -1268,7 +1268,7 @@ body [data-message-author-role="assistant"]
   [data-d-component="table"], [data-d-component="data-table"]
 ) :is(th, [role="columnheader"], [role="rowheader"],
       [data-d-component="table-cell"][data-header="true"]) {
-  font-weight: 580 !important;
+  font-weight: 410 !important;
   background-color: var(--jaroo-table-header-bg) !important;
   color: var(--jaroo-table-heading) !important;
   -webkit-text-fill-color: var(--jaroo-table-heading) !important;
@@ -1299,7 +1299,7 @@ body [data-message-author-role="assistant"]
   background: var(--jaroo-ceo-gold-fill) !important;
   color: var(--jaroo-ceo-gold-text) !important;
   -webkit-text-fill-color: var(--jaroo-ceo-gold-text) !important;
-  font-weight: 610 !important;
+  font-weight: 430 !important;
   box-shadow: none !important;
   text-shadow: none !important;
   filter: none !important;
@@ -1312,7 +1312,7 @@ body [data-message-author-role="assistant"]
   background: var(--jaroo-strategy-base) !important;
   color: var(--jaroo-strategy-text) !important;
   -webkit-text-fill-color: var(--jaroo-strategy-text) !important;
-  font-weight: 540 !important;
+  font-weight: 380 !important;
   box-shadow: 0 0 0 1px rgba(192,174,255,.55), 0 0 8px rgba(126,96,248,.28) !important;
 }
 [data-sidebar-project-kind="local"]
@@ -1378,7 +1378,7 @@ body :is(div, span, p, a, button, input, textarea, select, option,
   border-radius: 5px !important;
   background: #242631 !important;
   color: var(--jaroo-run-color) !important;
-  font: 750 11px/1 "Pretendard", sans-serif !important;
+  font: 530 11px/1 "Pretendard", sans-serif !important;
   letter-spacing: .2px !important;
   white-space: nowrap !important;
   -webkit-text-fill-color: currentColor !important;
@@ -1408,7 +1408,7 @@ body :is(div, span, p, a, button, input, textarea, select, option,
   box-sizing: border-box !important;
   text-align: center !important;
   color: inherit !important;
-  font: 750 14px/1 "Pretendard", sans-serif !important;
+  font: 530 14px/1 "Pretendard", sans-serif !important;
   -webkit-text-fill-color: currentColor !important;
   text-shadow: inherit !important;
   opacity: 1 !important;
@@ -1600,22 +1600,53 @@ html[data-jaroo-status-hidden="true"] [data-jaroo-native-row="true"] .jaroo-nati
 /* v7.3: role tags retain v6 high contrast on every sidebar width.
    Original solid pink/purple/orange backgrounds are intentionally kept. */
 
-/* 33. TYPOGRAPHY COMFORT v8.3.1
-   Tone down font weight above normal (400) by ~30% of the bold increment.
-   Only typography changes; colors, placement, animation, font size and
-   the underlying RUN/DONE/Life Clock state remain untouched.
-   Respect stronger semantic selectors from the restored design above. */
-body :is(.font-medium, [data-d-weight="medium"], [data-d-text-weight="medium"]) {
-  font-weight: 470 !important;
+/* 33. DRACULA TYPOGRAPHY LIGHT v8.3.2
+   User-requested target: about 70% of current font-weight values.
+   Lower bound 320 retains readability on small labels and prose.
+   Bold retains a visible distinction; NO colors, sizes, geometry,
+   hover, status behavior, personal data or animation changes.
+   Explicit rules handle ChatGPT native utility classes/React text. */
+:root {
+  --jaroo-prose-weight: 320;
+  --jaroo-emphasis-weight: 430;
 }
-body :is(.font-semibold, [data-d-weight="semibold"], [data-d-text-weight="semibold"]) {
-  font-weight: 540 !important;
+html body { font-weight: 320 !important; }
+body :is(.font-normal,[data-d-weight="normal"],[data-d-text-weight="normal"]) {
+  font-weight: 320 !important;
 }
-body :is(.font-bold, [data-d-weight="bold"], [data-d-text-weight="bold"]) {
-  font-weight: 610 !important;
+body :is(.font-medium,[data-d-weight="medium"],[data-d-text-weight="medium"]) {
+  font-weight: 330 !important;
 }
-body .font-extrabold { font-weight: 680 !important; }
-body .font-black { font-weight: 750 !important; }
-body :is(strong, b):not(pre *, code *) { font-weight: 610 !important; }
+body :is(.font-semibold,[data-d-weight="semibold"],[data-d-text-weight="semibold"]) {
+  font-weight: 380 !important;
+}
+body :is(.font-bold,[data-d-weight="bold"],[data-d-text-weight="bold"]) {
+  font-weight: 430 !important;
+}
+body .font-extrabold { font-weight: 480 !important; }
+body .font-black { font-weight: 530 !important; }
+body :is(strong,b):not(pre *,code *) {
+  font-weight: 430 !important;
+}
+/* Body prose remains lighter than explicitly emphasized text. */
+body [data-message-author-role="assistant"] :is(.markdown,.prose)
+  :is(p,li,dd,dt) {
+  font-weight: 320 !important;
+}
+/* TextBase elements render independently of their HTML container. */
+body [data-message-author-role="assistant"]
+  [data-d-component="text"][data-d-text-flow]:not(
+    [data-d-weight="bold"],[data-d-weight="semibold"],
+    [data-d-text-weight="bold"],[data-d-text-weight="semibold"],
+    h1,h2,h3,h4,h5,h6
+  ) {
+  font-weight: 320 !important;
+}
+/* This scoped heading rule preserves the hierarchy without heavy type. */
+body [data-message-author-role="assistant"]
+  :is(h1,h2,h3,h4,h5,h6) {
+  font-weight: 430 !important;
+}
+
 
 }

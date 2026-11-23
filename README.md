@@ -1,22 +1,22 @@
 # Jaroo's Company · UI Auto-Update Release
 
-**2026-11-23 · Dracula Neon · Typography Comfort 1**
+**2026-11-23 · Dracula Neon Typography Light 2 · v8.3.2**
 
-This release retains the existing Dracula Neon visual system and functionality, while reducing overly heavy bold text across ChatGPT by approximately 30% of the excess font weight above 400. Font sizes, colors, glows, backgrounds, layouts, hover behavior and application state logic are preserved.
+The user found the preceding 8.3.1 typography still too bold. This release lightens current font-weight values to approximately **70% of the current values** across ChatGPT, the project/sidebar chat names, assistant body and text emphasis, Life Clock, RUN/DONE status controls and native font utilities.
 
-| Component | New version | Status |
+| Component | Version | Change |
 |---|---|---|
-| ChatGPT Clock | **3.10.1** | Life Clock labels/headings softened |
-| ChatGPT Status | **6.8.1** | RUN/DONE/filter text softened |
-| ChatGPT Mapper | 1.3.6 | unchanged |
-| ChatGPT Dracula Neon CSS | **8.3.1** | Sidebar, projects, headings, response and native bold controls softened |
+| ChatGPT Dracula CSS | **8.3.2** | native body/heading/strong/project/chat typography lighter |
+| Sidebar Life Clock | **3.10.2** | Shadow DOM text weights lighter |
+| Status & Command Center | **6.8.2** | RUN/DONE/ALL widget text lighter |
+| Organization Mapper | 1.3.6 | unchanged |
 | Calendar Companion | 1.3.7 | unchanged |
 | Calendar CSS | 1.2.2 | unchanged |
 
-Examples of the proportional adjustment: 900 → 750, 850 → 720, 800 → 680, 700 → 610, 600 → 540. Normal body weight 400 and values below 400 remain unchanged. These are CSS font-weight units, not a guaranteed 30% reduction in perceived visual darkness.
+For explicit numeric weights: `new = max(320, round(old * 0.70 / 10) * 10)`. Examples: 750→530, 680→480, 610→430, 600→420, 540→380, 470→330, 410→320. Some natural weight values reach the 320 floor to protect readability. This is a font-weight adjustment, not a guaranteed perceived darkness ratio.
 
-- [한국어 설치 및 업데이트 가이드](docs/INSTALLATION_KO.md)
-- [Typography Comfort release notes](docs/RELEASE_v8.3.1_TYPOGRAPHY_KO.md)
-- [SHA-256 checksums](SHA256.json)
+- [설치 및 업데이트 가이드](docs/INSTALLATION_KO.md)
+- [변경내역](docs/RELEASE_v8.3.2_TYPOGRAPHY_LIGHT_KO.md)
+- [파일 SHA256](SHA256.json)
 
-Private source is maintained at `jangjaru/Jaroo-UI-Updates`; personal Life Clock data remains in the user-specific local profile and is never published. This is a source-level rollout; final signed-in Chrome visual validation remains pending.
+No intentional changes were made to layout, font sizes, palette, borders, glows, animations, status logic or Life Clock calculations. Local profile data is never published. Final signed-in Chrome display and extension update tests remain pending.

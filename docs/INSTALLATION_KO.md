@@ -1,30 +1,22 @@
-# Jaroo's Company UI · Dracula Neon 8.3.1 업데이트
+# Dracula Neon · Typography Light 2 설치 및 업데이트
 
-## 현재 배포 버전
+**2026-11-23 | CSS 8.3.2 · Clock 3.10.2 · Status 6.8.2**
 
-- ChatGPT CSS (Stylus): **8.3.1**
-- Life Clock JS (Tampermonkey): **3.10.1**
-- Status & Command Center JS (Tampermonkey): **6.8.1**
-- Organization Mapper JS: **1.3.6** (변경 없음)
-- Google Calendar Companion 1.3.7 / CSS 1.2.2 (변경 없음)
+전체적인 글자 굵기를 이전 적용 상태의 약 70% 수준으로 낮췄습니다. 프로젝트 캡슐, 채팅 제목, 대화 본문, 제목/강조, 표, Clock 라벨, RUN/DONE/ALL이 대상입니다. 색상·글꼴 크기·기능과 개인 정보는 유지합니다.
 
-## 적용 방법
+## 설치 방법
+1. 현재 Tampermonkey·Stylus 설정을 내보내 백업합니다. Life Clock 개인 프로필은 별도 보존합니다.
+2. Tampermonkey에서 **사용자 스크립트 업데이트 확인**을 실행하여 Clock **3.10.2**, Status **6.8.2** 버전을 확인합니다.
+3. Stylus에서 **모든 스타일 업데이트 확인**을 실행해 `Jaroo ChatGPT Dracula Neon 8.3.2`를 적용합니다.
+4. ChatGPT 새로고침 후 프로젝트명·채팅 제목·대화 본문·사용자 메시지·Life Clock·RUN/DONE 글꼴을 한 화면에서 확인합니다.
 
-1. 현재 Tampermonkey·Stylus 설치 내용을 **내보내기로 백업**합니다. 특히 Life Clock 개인용 프로필은 별도 보존합니다.
-2. 기존 Tampermonkey에서 '사용자 스크립트 업데이트 확인'을 실행합니다. Clock 3.10.1 및 Status 6.8.1을 확인합니다.
-3. Stylus에서 '모든 스타일 업데이트 확인'을 실행해 ChatGPT Dracula Neon **8.3.1**을 확인합니다.
-4. ChatGPT 새로고침 후 본문·사이드바·프로젝트 이름·Life Clock·RUN/DONE 버튼의 글꼴 굵기가 이전보다 부드러워졌는지 확인합니다.
-5. 모든 색상·레이아웃과 기능은 기존과 동일해야 합니다. 본문/시계/버튼 잘림이 있으면 화면 캡처로 확인합니다.
+| 항목 | 자동 업데이트/재설치 주소 |
+|---|---|
+| Life Clock JS 3.10.2 | [clock.user.js](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/chatgpt/clock.user.js) |
+| Status JS 6.8.2 | [status.user.js](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/chatgpt/status.user.js) |
+| Mapper JS 1.3.6 (변경 없음) | [mapper.user.js](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/chatgpt/mapper.user.js) |
+| ChatGPT CSS 8.3.2 | [theme.user.css](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/chatgpt/theme.user.css) |
 
-**업데이트가 감지되지 않으면**, 아래 main 배포 주소를 열어 기존 항목과 중복되지 않도록 업데이트/재설치합니다. 이전의 frozen 버전은 main 업데이트를 자동 추적하지 않습니다.
+**업데이트가 없다고 표시되면:** `frozen` 브랜치 설치 또는 수동 수정한 스타일일 수 있습니다. 백업 후 위 `main` 링크에서 기존 항목을 업데이트하거나 중복 없이 설치하세요.
 
-| 종류 | 링크 | 버전 |
-|---|---|---|
-| Clock | [clock.user.js](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/chatgpt/clock.user.js) | 3.10.1 |
-| Status | [status.user.js](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/chatgpt/status.user.js) | 6.8.1 |
-| Mapper (변경 없음) | [mapper.user.js](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/chatgpt/mapper.user.js) | 1.3.6 |
-| ChatGPT CSS | [theme.user.css](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/chatgpt/theme.user.css) | 8.3.1 |
-
-**유지:** ChatGPT 다크 모드, Dracula 색상, 프로젝트 구분, RUN/DONE/ALL, Life Clock 계산, 로컬 프로필 및 브라우저 데이터.
-
-**검수 상태:** 소스 버전·JS 구문·Github 원본/배포 파일 일치·SHA256 검증과 로그인 Chrome 실제 화면 검수는 별개입니다. 최종 시각 검수는 실제 PC의 스크린샷으로 진행합니다.
+**주의:** 원래 Dracula 다크/네온 색상은 유지됩니다. 실제 글꼴 렌더링은 로컬 Pretendard 파일·Chrome 디스플레이 배율에 따라 다르므로 로그인한 화면에서 시각 검수를 진행합니다. 실제 Chrome 시각 검수는 아직 완료하지 않았습니다.
