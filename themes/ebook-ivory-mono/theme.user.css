@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.10
+@version      0.2.11
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -107,7 +107,7 @@
     --link: var(--eb-ink) !important;
     --link-hover: var(--eb-secondary) !important;
     --jaroo-status-css-version: "6.8.2";
-    --ebook-theme-version: "0.2.10";
+    --ebook-theme-version: "0.2.11";
   }
 
   /* 02. LIGHT-PAPER BASE — do not modify Chrome frame or extension UIs. */
@@ -1147,6 +1147,47 @@
   html body [data-sidebar-cycle-item] span[data-thread-title="true"] span:not(
     [data-ebook-glyph="true"]):not([aria-hidden="true"]) {
     font-size:var(--eb-nav-optical-size)!important;
+  }
+
+
+  /* 20. TABLE TYPOGRAPHY + USER BUBBLE CURVATURE v0.2.11
+     Scoped to rendered assistant tables and the user's sent-message bubble.
+     Sidebar optical text is fixed at its user-approved sizes. */
+  :root {
+    --eb-table-reading-size:calc(var(--eb-ui-size) + 1.5pt);
+    --eb-user-bubble-curve:28px;
+  }
+  /* The actual cells and their nested TextBase elements need the same
+     effective size; setting font-size only on the table container is
+     insufficient with ChatGPT's rich DOM rendering. */
+  html body [data-message-author-role="assistant"]
+    :is(table,[role="table"],[data-d-component="table"])
+    :is(th,td,[role="cell"],[role="columnheader"],[role="rowheader"],
+        [data-d-component="table-cell"]) {
+    font-size:var(--eb-table-reading-size)!important;
+    line-height:1.5!important;
+  }
+  html body [data-message-author-role="assistant"]
+    :is(table,[role="table"],[data-d-component="table"])
+    :is(th,td,[role="cell"],[role="columnheader"],[role="rowheader"],
+        [data-d-component="table-cell"])
+    :is(p,span,div,strong,b,em,i,a,small,
+        [data-d-component="text"],[data-d-text-flow]):not(
+        :is(button *,[role="button"] *,pre *,code *,svg *,[role="img"] *)
+    ) {
+    font-family:var(--eb-font)!important;
+    font-size:var(--eb-table-reading-size)!important;
+    line-height:1.5!important;
+  }
+  /* Black JS update bar has a capsule-like rounded end. On the shorter
+     sent-message bubbles 28px creates the same soft curvature, without
+     turning long multi-line bubbles into awkward giant pills. */
+  html body :is(
+      [data-message-author-role="user"] [data-user-message-bubble="true"],
+      [data-message-author-role="user"] .bg-user-message,
+      [data-user-message-bubble="true"].bg-user-message
+    ) {
+    border-radius:var(--eb-user-bubble-curve)!important;
   }
 
 }
