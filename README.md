@@ -1,24 +1,18 @@
 # Jaroo's Company · UI Auto-Update Release
 
-**Public distribution repository.** Only sanitized scripts and styles are published here. Local personal profile data is NOT included.
+**2026-11-23 · Dracula Neon RESTORED to the latest main branch**
 
-**[한국어 설치 가이드](docs/INSTALLATION_KO.md)**
+The user's requested last pre-Neo Dracula Neon UI is restored from sanitized public commit `af603c9f929d6e51d71a232b57701116674318c6`. Neo code remains recoverable in Git history. The only modifications to the restored ChatGPT source are higher update version labels and corresponding Clock/Status runtime version reports.
 
-| Site | Component | Version |
+| Component | Latest release | Restored visual/functional baseline |
 |---|---|---|
-| ChatGPT | Clock userscript | 3.9.2 |
-| ChatGPT | Status userscript | 6.7.4 |
-| ChatGPT | Organization Mapper userscript | 1.3.5 |
-| ChatGPT | Stylus UserCSS | 8.2.1 |
-| Google Calendar | Companion userscript | 1.3.7 |
-| Google Calendar | Stylus UserCSS | 1.2.2 |
+| ChatGPT Clock | 3.10.0 | Dracula 3.7.3 |
+| ChatGPT Status | 6.8.0 | Dracula 6.5.3 |
+| ChatGPT Mapper | 1.3.6 | Dracula 1.3.2 |
+| ChatGPT UserCSS | 8.3.0 | Dracula 7.3.0 |
+| Google Calendar Companion | 1.3.7 | unchanged |
+| Google Calendar UserCSS | 1.2.2 | unchanged |
 
-Each userscript has Tampermonkey `@updateURL`/`@downloadURL`. Each UserCSS has Stylus `@updateURL`.
+**Install/update:** [한국어 안내](docs/INSTALLATION_KO.md). **Change details:** [Dracula restoration release notes](docs/RELEASE_v8.3.0_DRACULA_RESTORE_KO.md). **Integrity:** [SHA256.json](SHA256.json).
 
-Security rules: keep personal dates/location/credentials in a **separate, local-only profile**. Do not upload this private profile here. Source management is kept in a separate private GitHub repository.
-
-SHA256 hashes of published files: [SHA256.json](SHA256.json).
-
-**Current release (2026-11-23 KST)** restores the ChatGPT theme and userscripts from version 8.1.0. Version 8.2.1 delivers the restored theme through the existing extension update URL. [Chrome update guide](docs/INSTALLATION_KO.md)
-
-Restored release [ChatGPT theme 8.1.0](docs/RELEASE_v8.1.0_KO.md).
+Automatic update URLs remain on `main`. A previously installed `frozen` copy does not automatically follow `main`; replace it using main URLs. Individual Life Clock profile data is never included in these published files. Real logged-in Chrome visual validation and actual extension auto-update tests remain pending.

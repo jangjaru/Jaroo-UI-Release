@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Jaroo · Status & Command Center
 // @namespace    jaroo-company.local
-// @version      6.7.4
-// @description  Neo-Brutalist chat title status, RUN/DONE counters, and ALL/ONLY sidebar view.
+// @version      6.8.0
+// @description  Flat Vivid RUN/DONE and ALL/FOCUS switch for sidebar chat view. Read-only presentation filter; native state logic retained.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
 // @grant        none
@@ -15,22 +15,12 @@
   const RUNTIME = '__jarooCommandCenterRuntimeV4';
   window[RUNTIME]?.dispose?.();
   window.__jarooNativeCapture?.stop?.();
-  const VERSION = '6.7.4';
+  const VERSION = '6.8.0';
   const HOVER_MS = 400;
   const ROOTS = '#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]';
   const ARCHIVE = '[data-sidebar-archive-chatgpt-id]';
   const OWN_ROW = '[data-jaroo-native-row="true"]';
-  const TITLE_STATUS = 'data-jaroo-title-status';
-  const CHAT_ROLE = 'data-jaroo-chat-role';
-  const TITLE_PREFIX = 'data-jaroo-title-prefix';
-  const TITLE_TEXT = 'data-jaroo-title-text';
-  const TITLE_OMIT = 'svg,img,button,script,style,[role="button"],[role="menu"],[role="menuitem"],[popover],[data-native-menu-root],[data-loading-indicator],[hidden],[aria-hidden="true"],.sr-only,.visually-hidden';
-  const NATIVE_TITLE = '[data-thread-title]';
-  const TITLE_SELECTORS = [NATIVE_TITLE, '[data-marquee-content="true"],[data-marquee-text]', '.truncate,[dir="auto"]'];
-  const CHAT_ROLES = new Map([
-    ['☆', 'lead'], ['★', 'lead'], ['▷', 'plan'], ['▶', 'plan'],
-    ['○', 'manage'], ['●', 'produce'], ['>', 'action'], ['›', 'action']
-  ]);
+  const OWN_BADGE = '.jaroo-native-badge';
   const PROTECTED = 'a,button,input,textarea,select,option,summary,label,audio,video,iframe,object,embed,[contenteditable],[role="button"],[role="link"],[tabindex],[data-thread-title],[data-thread-title-trigger],[data-marquee-text],[data-marquee-content],[data-native-menu-root],[popover]';
   const DECORATION = '.jaroo-native-badge,.jaroo-recent-status-badge,[data-jaroo-status-slot]';
   let disposed = false, scheduled = 0, discoveryTimer = 0, rowDirty = true;
@@ -68,31 +58,23 @@
     }
   `;
   (document.head || document.documentElement).append(focusStyle);
-  const iconCache = new Map(), hidePlans = new WeakMap(), titleTargets = new WeakMap();
-  // Keep the selected row visible when the status userscript runs without Stylus.
+  const iconCache = new Map(), hidePlans = new WeakMap();
+  // Selected frame FIT is a paint-only overlay. Native row width, click target,
+  // status badges, menu buttons, and typography remain owned by ChatGPT/Stylus.
+  // One stylesheet here avoids making the user reinstall the approved Stylus theme.
   const FIT_FRAME_STYLE_ID = 'jaroo-selected-frame-fit-v6312';
   document.getElementById(FIT_FRAME_STYLE_ID)?.remove();
   const fitFrameStyle = document.createElement('style');
   fitFrameStyle.id = FIT_FRAME_STYLE_ID;
   fitFrameStyle.textContent = `
-    html body :is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"] {
-      color:var(--jb-ink,#000) !important;
-      border-radius:var(--jb-radius,3px) !important;
-      box-shadow:inset 0 0 0 1px var(--jb-ink,#000) !important;
-      --jaroo-selected-title-glow:none;
-    }
-    html body :is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"]:not(
-      [data-jaroo-title-status],:has([data-jaroo-title-status])) {
-      background:var(--jb-selection,#efe9d6) !important;
-    }
-    html body :is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"]:focus-visible {
-      outline:var(--jb-focus,3px solid #f0f) !important;
-      outline-offset:-3px !important;
-      box-shadow:inset 0 0 0 1px var(--jb-ink,#000) !important;
-    }
-    html body :is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"]:not([data-jaroo-title-prefix])::before,
+    html body :is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"]::before,
     html body :is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"]::after {
-      content:none !important;
+      /* Fixed start point: no text/badge measurements in the border geometry. */
+      left: 8px !important;
+      /* Right side follows the full available selected-row width. */
+      right: 2px !important;
+      top: 0px !important;
+      bottom: 0px !important;
     }
   `;
   (document.head || document.documentElement).appendChild(fitFrameStyle);
@@ -107,56 +89,12 @@
       u.pathname.toLowerCase().includes(`/c/${id}`) ? u.pathname + u.search : ''; }
     catch { return ''; }
   };
+  const labelFor = row => (row?.getAttribute('aria-label') ||
+    row?.querySelector('[data-thread-title="true"]')?.textContent ||
+    row?.querySelector('a[href*="/c/"]')?.getAttribute('aria-label') ||
+    (row?.matches('a[href*="/c/"]') ? row.textContent : '') || '')
+    .replace(/\s+/g, ' ').trim().slice(0, 180);
   const setAttr = (el, name, value) => { if (el.getAttribute(name) !== value) el.setAttribute(name, value); };
-  const chatLink = row => row?.matches('a[href*="/c/"]') ? row : row?.querySelector('a[href*="/c/"]');
-  const chatPrefix = value => {
-    const glyph = (value || '').trimStart()[0];
-    return CHAT_ROLES.has(glyph) ? glyph : '';
-  };
-
-  function readTitleText(container, scope) {
-    const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
-    let first = null, last = null, text = '';
-    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-      const blocked = node.parentElement?.closest(TITLE_OMIT);
-      if (blocked && blocked !== scope && scope.contains(blocked)) continue;
-      text += node.data;
-      if (!node.data.trim()) continue;
-      first ||= node;
-      last = node;
-    }
-    if (!first) return null;
-    let area = first.parentElement;
-    while (!area.contains(last)) area = area.parentElement;
-    return { area, text: text.trim() };
-  }
-
-  function titleDetails(row, link = chatLink(row)) {
-    let label;
-    const scope = link || row;
-    if (scope) {
-      for (const selector of link ? TITLE_SELECTORS : [NATIVE_TITLE]) {
-        for (const candidate of scope.querySelectorAll(selector)) {
-          if (!link && !ownElement(candidate, row)) continue;
-          label = readTitleText(candidate, scope);
-          if (label) break;
-        }
-        if (label) break;
-      }
-      if (!label && link) label = readTitleText(link, scope);
-    }
-    const visible = label?.text || '';
-    const visiblePrefix = chatPrefix(visible);
-    const prefix = visiblePrefix || chatPrefix(link?.getAttribute('aria-label')) ||
-      chatPrefix(row?.getAttribute('aria-label'));
-    return { target: link || label?.area, area: label?.area, visible, visiblePrefix, prefix };
-  }
-
-  function labelFor(row, link = chatLink(row), { visible, prefix } = titleDetails(row, link)) {
-    const label = (visible || link?.getAttribute('aria-label') || row?.getAttribute('aria-label') || '')
-      .replace(/\s+/g, ' ').trim();
-    return (prefix && label && !chatPrefix(label) ? `${prefix} ${label}` : label).slice(0, 180);
-  }
 
   // The platform-owned indicator remains untouched. It is one input to the
   // separately synchronized display state, not a stored completion history.
@@ -205,39 +143,8 @@
       .sort((a, b) => a.status === b.status ? b.run.clock - a.run.clock : a.status === 'working' ? -1 : 1);
   }
 
-  function setTitleTargets(row, target, area) {
-    const previous = titleTargets.get(row);
-    if (previous?.target && previous.target !== target) {
-      const owner = previous.target.closest(OWN_ROW);
-      if (!owner || owner === row) {
-        for (const attr of [TITLE_STATUS, CHAT_ROLE, TITLE_PREFIX]) previous.target.removeAttribute(attr);
-      }
-    }
-    if (previous?.area && previous.area !== area) {
-      const owner = previous.area.closest(OWN_ROW);
-      if (!owner || owner === row) previous.area.removeAttribute(TITLE_TEXT);
-    }
-    if (target) titleTargets.set(row, { target, area });
-    else titleTargets.delete(row);
-  }
-
-  function updateTitle(row, link, status) {
-    const { target, area, visible, visiblePrefix, prefix } = titleDetails(row, link);
-    setTitleTargets(row, target, area);
-    if (!target) return;
-    if (area) setAttr(area, TITLE_TEXT, 'true');
-    const role = CHAT_ROLES.get(prefix);
-    const missingPrefix = prefix && !visiblePrefix && visible.trim();
-    for (const [attr, value] of [[TITLE_STATUS, status], [CHAT_ROLE, role], [TITLE_PREFIX, missingPrefix && prefix]]) {
-      if (value) setAttr(target, attr, value);
-      else target.removeAttribute(attr);
-    }
-  }
-
   function cleanRow(row) {
     if (!row?.querySelectorAll) return;
-    setTitleTargets(row);
-    // Clear decorations left by a previous installed version.
     row.querySelectorAll('.jaroo-native-badge,.jaroo-recent-status-badge').forEach(el => {
       if (el.closest('[data-jaroo-native-row="true"]') === row) el.remove();
     });
@@ -262,10 +169,18 @@
       (!protectedAncestor || protectedAncestor === row) && !el.matches(PROTECTED) && !el.querySelector(PROTECTED) &&
       !(el.textContent || '').trim();
   }
+  function emptyLeadingSlot(row) {
+    const trigger = row.querySelector('[data-thread-title-trigger="true"]');
+    const slot = trigger?.previousElementSibling;
+    // Native width utility classes can change; only a verified empty
+    // div/span directly preceding the title is a removable leading spacer.
+    if (!slot?.matches('div,span') || !safeIcon(slot, row)) return null;
+    const graphic = 'svg,img,canvas,[role="status"],[data-loading-indicator]';
+    if (slot.matches(graphic) || slot.querySelector(graphic)) return null;
+    return slot;
+  }
   function clearMarks(row, name, keep = []) {
-    for (const el of row.querySelectorAll(`[${name}]`)) {
-      if (ownElement(el, row) && !keep.includes(el)) el.removeAttribute(name);
-    }
+    for (const el of row.querySelectorAll(`[${name}]`)) if (!keep.includes(el)) el.removeAttribute(name);
   }
 
   function nativeIconsToHide(row, status) {
@@ -296,21 +211,61 @@
     return dots.filter(el => !dots.some(other => other !== el && other.contains(el)));
   }
 
+  function placeBadge(row, link, badge) {
+    // Share the native title's actual flex host instead of estimating its
+    // horizontal offset from the outer row. Never move a native node.
+    let host = null, before = null;
+    const trigger = link?.parentElement;
+    if (trigger?.matches('[data-thread-title-trigger="true"]') && ownElement(trigger, row)) {
+      host = trigger; before = link;
+    } else if (link && (link === row || ownElement(link, row))) {
+      const title = [...link.children].find(el =>
+        el.matches('[data-thread-title="true"],span.truncate,div.truncate,span[dir="auto"]'));
+      if (title) { host = link; before = title; }
+    }
+    for (const old of row.querySelectorAll('[data-jaroo-badge-host]')) {
+      if (old !== host && old.closest('[data-jaroo-native-row="true"]') === row) old.removeAttribute('data-jaroo-badge-host');
+    }
+    if (host !== row) row.removeAttribute('data-jaroo-badge-host');
+    if (host) {
+      setAttr(host, 'data-jaroo-badge-host', 'true');
+      setAttr(row, 'data-jaroo-badge-layout', 'inline');
+      if (badge.parentElement !== host || badge.nextSibling !== before) host.insertBefore(badge, before);
+    } else {
+      row.removeAttribute('data-jaroo-badge-layout');
+      if (badge.parentElement !== row) row.append(badge);
+    }
+  }
+
+  // v6.3.12: The neon frame is sized by CSS, not text or status badges.
+  // Its left edge stays at 8px, while the right edge follows the selected
+  // row's responsive width with a 2px inner gutter. This eliminates jitter
+  // when the title or RUN/DONE label changes. No native row is resized here.
+
   function renderRows() {
     const current = idFromPath();
     for (const row of rows()) {
       const id = getRowId(row);
       if (!row.hasAttribute('data-sidebar-archive-chatgpt-id')) setAttr(row, 'data-jaroo-chat-row', 'true');
       setAttr(row, 'data-jaroo-native-row', 'true');
-      const link = chatLink(row);
+      const link = row.matches('a[href*="/c/"]') ? row : row.querySelector('a[href*="/c/"]');
       if (id === current || row.getAttribute('aria-current') === 'page' || link?.getAttribute('aria-current') === 'page') setAttr(row, 'data-jaroo-selected', 'true');
       else row.removeAttribute('data-jaroo-selected');
-      // A passive tab can have shared status without a native indicator.
+      let badge = [...row.querySelectorAll('.jaroo-native-badge')].find(el =>
+        el.closest('[data-jaroo-native-row="true"]') === row);
+      if (!badge) {
+        badge = document.createElement('span'); badge.className = 'jaroo-native-badge';
+        badge.setAttribute('aria-hidden', 'true');
+      }
+      placeBadge(row, link, badge);
+      // CSS reads only our effective display attribute. Native attributes are
+      // never overwritten: a passive tab may have no current native marker.
       const effective = statusBus.get(id)?.status;
-      const titleStatus = effective === 'working' || effective === 'done' ? effective : '';
-      if (titleStatus) setAttr(row, 'data-jaroo-effective-status', titleStatus);
+      if (effective === 'working' || effective === 'done') setAttr(row, 'data-jaroo-effective-status', effective);
       else row.removeAttribute('data-jaroo-effective-status');
-      updateTitle(row, link, titleStatus);
+      const slot = emptyLeadingSlot(row);
+      clearMarks(row, 'data-jaroo-native-leading', slot ? [slot] : []);
+      if (slot) setAttr(slot, 'data-jaroo-native-leading', 'true');
       const status = nativeStatus(row), old = hidePlans.get(row);
       if (!hideLayoutDirty && old?.status === status && old.icons.every(el => el.isConnected && safeIcon(el, row))) continue;
       const icons = nativeIconsToHide(row, status);
@@ -332,16 +287,8 @@
   function showTip(anchor) {
     if (!anchor?.isConnected || hoveredAnchor !== anchor) return;
     const row = anchor.closest(OWN_ROW) || anchor;
-    const details = titleDetails(row, anchor);
-    const title = labelFor(row, anchor, details);
-    let truncated = false;
-    for (let area = details.area || anchor; area && anchor.contains(area); area = area.parentElement) {
-      if (area.getAttribute('data-marquee-overflowing') === 'true' ||
-          area.scrollWidth > area.clientWidth + 5 || area.scrollHeight > area.clientHeight + 2) {
-        truncated = true;
-        break;
-      }
-    }
+    const title = labelFor(row), area = anchor.querySelector('[data-thread-title="true"]');
+    const truncated = area?.getAttribute('data-marquee-overflowing') === 'true' || (area && area.scrollWidth > area.clientWidth + 5);
     if (!title || !truncated) return;
     setupPanel(); tooltip.textContent = title; tooltip.style.display = 'block';
     const r = anchor.getBoundingClientRect(), w = tooltip.getBoundingClientRect().width, h = tooltip.getBoundingClientRect().height;
@@ -1078,10 +1025,10 @@
 
   const svgData = (color, state) => {
     const glyph = state === 'working'
-      ? '<path d="M16 5A11 11 0 1 0 27 16" stroke="#000" stroke-width="3" stroke-linecap="round" fill="none"/><path d="m23 5 5 1-1 5" stroke="#000" stroke-width="3" stroke-linecap="round" fill="none"/>'
-      : state === 'done' ? '<path d="m8 17 6 6 11-13" fill="none" stroke="#000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>'
-      : '<path d="M8 16h16" stroke="#000" stroke-width="3" stroke-linecap="round"/>';
-    return 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect x="2" y="2" width="28" height="28" rx="3" fill="${color}" stroke="#000" stroke-width="3"/>${glyph}</svg>`);
+      ? '<path d="M16 5A11 11 0 1 0 27 16" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none"/><path d="m23 5 5 1-1 5" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none"/>'
+      : state === 'done' ? '<path d="m8 17 6 6 11-13" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>'
+      : '<path d="M8 16h16" stroke="#fff" stroke-width="3" stroke-linecap="round"/>';
+    return 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect x="0" y="0" width="32" height="32" rx="9" fill="#282a36"/><circle cx="16" cy="16" r="13.5" fill="${color}"/>${glyph}</svg>`);
   };
   function renderTab(records) {
     const id = idFromPath(), cur = records.find(record => record.id === id);
@@ -1105,133 +1052,357 @@
       generatedFavicon.rel='icon';
       document.head.append(generatedFavicon);
     }
-    if (!iconCache.has(type)) iconCache.set(type, svgData(type==='working'?'#00c2c8':'#ffdd00',type));
+    if (!iconCache.has(type)) iconCache.set(type, svgData(type==='working'?'#FFAB32':'#47EC84',type));
     const href=iconCache.get(type);
     if (generatedFavicon.getAttribute('href') !== href) generatedFavicon.setAttribute('href',href);
   }
-  const titlePulseCSS = `
-    @keyframes jaroo-list-title-pulse {
-      50%{background-color:color-mix(in srgb,var(--jb-status-fill) 65%,var(--jb-white,#fff))}
-    }
-  `;
-  const statusTitleCSS = `
-    .jaroo-status-link[data-jaroo-chat-role="lead"]{--jb-role-color:var(--jb-role-lead,#215323)}
-    .jaroo-status-link[data-jaroo-chat-role="plan"]{--jb-role-color:var(--jb-role-plan,#563888)}
-    .jaroo-status-link[data-jaroo-chat-role="manage"]{--jb-role-color:var(--jb-role-manage,#075463)}
-    .jaroo-status-link[data-jaroo-chat-role="produce"]{--jb-role-color:var(--jb-role-produce,#17468a)}
-    .jaroo-status-link[data-jaroo-chat-role="action"]{--jb-role-color:var(--jb-role-action,#8a2958)}
-    .jaroo-status-link[data-jstatus="working"]{
-      --jb-status-fill:var(--jb-title-run-bg,#e9f8f7);
-      --jb-status-line:var(--jb-title-run-line,#168a88);
-      --jb-status-cycles:infinite;
-    }
-    .jaroo-status-link[data-jstatus="done"]{
-      --jb-status-fill:var(--jb-title-done-bg,#fff5ce);
-      --jb-status-line:var(--jb-title-done-line,#967200);
-      --jb-status-cycles:3;
-    }
-    .jaroo-status-link .jaroo-list-title{
-      display:block;min-width:0;flex:1;white-space:normal;overflow-wrap:anywhere;
-      color:var(--jb-role-color,var(--jb-ink,#000));
-      font:var(--jb-weight-regular,400) var(--jb-reading-size,.9375rem)/1.42 var(--jb-font,"Pretendard Variable","Pretendard",system-ui,sans-serif);
-    }
-  `;
-  // The dock and filtered list live inside Clock's shadow tree.
+  // v6.3.9: Preserve the approved alignment and neon behavior; only increase count legibility and spacing between label and number.
+  // State discovery, DONE acknowledgements, and cross-tab synchronization are unchanged.
+  // The counters remain in Clock's shadow tree; displayed numbers NEVER animate.
   const dockCSS = `
-  ${titlePulseCSS}
-  ${statusTitleCSS}
   .jaroo-center{
-    display:grid;grid-template-columns:repeat(2,minmax(0,1fr)) 52px;gap:6px;
-    box-sizing:border-box;min-width:0;max-width:100%;margin:8px 0 10px;
-    color:var(--jb-ink,#000);font-family:var(--jb-font,"Pretendard Variable","Pretendard",system-ui,sans-serif);
-    pointer-events:auto;
+    box-sizing:border-box;isolation:isolate;position:relative;
+    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+    align-items:center;justify-content:stretch;
+    gap:calc(8px * var(--jaroo-ui-scale,1));min-width:0;max-width:100%;
+    margin:calc(10px * var(--jaroo-ui-scale,1)) 0 calc(6px * var(--jaroo-ui-scale,1));padding:0;pointer-events:auto;
+    font:750 11px/1 "Pretendard",sans-serif;
+    --jaroo-run-color:#FFB86C;--jaroo-done-color:#50FA7B;
+    --jaroo-run-period:.28s;--jaroo-done-period:1.8s;
   }
   .jaroo-center button{
-    appearance:none;display:flex;align-items:center;justify-content:center;
-    box-sizing:border-box;width:100%;min-width:0;min-height:44px;margin:0;padding:4px;
-    border:1px solid var(--jb-rule,#d8d2be);border-radius:var(--jb-radius,5px);
-    background:var(--jb-white,#fff);color:inherit;
-    font:var(--jb-weight-regular,400) 12px/1.1 var(--jb-font,"Pretendard Variable","Pretendard",system-ui,sans-serif);
-    cursor:pointer;
+    display:inline-flex;align-items:center;justify-content:center;
+    flex:1 1 auto;width:100%;min-width:0;max-width:none;box-sizing:border-box;
+    height:calc(49px * var(--jaroo-ui-scale,1));padding:1px 0;margin:0;
+    border:0;border-radius:7px;background:transparent;
+    font:750 11px/1 "Pretendard",sans-serif;
+    cursor:pointer;white-space:nowrap;appearance:none;
   }
-  .jaroo-center .run[data-active="true"]{
-    background:var(--jb-title-run-bg,#e9f8f7);border-color:var(--jb-title-run-line,#168a88)
+  .jaroo-center .run{--jaroo-neon-color:#FFB86C;--jaroo-neon-rgb:255,184,108}
+  .jaroo-center .done{--jaroo-neon-color:#50FA7B;--jaroo-neon-rgb:80,250,123}
+  /* Zero-count status must be visually quiet across border, glyph, text and number. */
+  .jaroo-center button[data-active="false"]{
+    --jaroo-neon-color:#9299A9;--jaroo-neon-rgb:146,153,169;
   }
-  .jaroo-center .done[data-active="true"]{
-    background:var(--jb-title-done-bg,#fff5ce);border-color:var(--jb-title-done-line,#967200)
-  }
-  .jaroo-center button[data-active="false"]{background:var(--jb-canvas,#fffdf7)}
-  .jaroo-center button:hover:not(:disabled){border-color:var(--jb-ink,#000)}
-  .jaroo-center button:active:not(:disabled){background:var(--jb-selection,#efe9d6)}
-  .jaroo-center button:focus-visible,
-  .jaroo-focus-row:focus-visible{outline:var(--jb-focus,3px solid #f0f);outline-offset:-5px}
-  .jaroo-center button:disabled{background:var(--jb-muted,#eae5d5);box-shadow:none;cursor:not-allowed}
-  .jaroo-top-badge,
-  .jaroo-mode-frame{
+  .jaroo-center .jaroo-top-badge{
     display:flex;flex-direction:column;align-items:center;justify-content:center;
-    gap:4px;min-width:0;white-space:nowrap;
+    box-sizing:border-box;flex:1 1 auto;min-width:0;width:100%;height:calc(46px * var(--jaroo-ui-scale,1));
+    padding:calc(4px * var(--jaroo-ui-scale,1)) calc(6px * var(--jaroo-ui-scale,1));margin:0;gap:calc(3px * var(--jaroo-ui-scale,1));
+    border:1px solid var(--jaroo-neon-color);border-radius:6px;
+    color:var(--jaroo-neon-color);
+    background:rgba(28,31,42,.90);
+    font:750 calc(11.4px * var(--jaroo-ui-scale,1))/1 "Pretendard",sans-serif;
+    letter-spacing:0;text-shadow:none;
+    user-select:none;white-space:nowrap;
   }
-  .jaroo-top-line{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:center;max-width:100%;gap:2px 4px}
-  .jaroo-mini-label{font-size:11px}
-  .jaroo-top-mark,.jaroo-center .count{font-size:13px}
-  .jaroo-center .count{font-variant-numeric:tabular-nums;font-weight:var(--jb-weight-emphasis,600)}
-  .jaroo-center button:not([data-digits="1"]):not([data-digits="2"]) .jaroo-top-mark{display:none}
-  .jaroo-center .jaroo-mode-switch{padding-inline:2px}
-  .jaroo-center .jaroo-mode-switch[aria-pressed="true"]{
-    background:var(--jb-title-run-bg,#e9f8f7);border-color:var(--jb-title-run-line,#168a88)
+  .jaroo-center .jaroo-top-line{display:inline-flex;align-items:center;justify-content:center;gap:calc(5px * var(--jaroo-ui-scale,1));min-width:0;line-height:1}
+  .jaroo-center .jaroo-mini-label{font:550 max(8px,calc(9px * var(--jaroo-ui-scale,1)))/1 "Pretendard",sans-serif;color:#AAB3C7;letter-spacing:0;white-space:nowrap;opacity:.92}
+  .jaroo-center button[data-active="true"] .jaroo-mini-label{color:var(--jaroo-neon-color);opacity:.78}
+  .jaroo-center .jaroo-top-mark{
+    display:inline-flex;align-items:center;justify-content:center;
+    box-sizing:border-box;flex:0 0 10px;width:10px;
+    height:16px;line-height:16px;
+    text-align:center;font:800 calc(12px * var(--jaroo-ui-scale,1))/16px "Pretendard",sans-serif;
+    color:inherit;text-shadow:none;
   }
-  .jaroo-mode-track{
-    display:flex;align-items:center;box-sizing:border-box;width:26px;height:13px;padding:1px;
-    border:var(--jb-border-light,2px solid #000);border-radius:var(--jb-radius,3px);
-    background:var(--jb-white,#fff);
+  .jaroo-center .done .jaroo-top-mark{font-size:12px}
+  .jaroo-center .jaroo-top-word{
+    display:inline-flex;align-items:center;justify-content:center;
+    box-sizing:border-box;height:16px;flex:0 0 auto;
+    font:750 calc(11.4px * var(--jaroo-ui-scale,1))/16px "Pretendard",sans-serif;
+    color:inherit;text-shadow:none;
   }
-  .jaroo-mode-thumb{width:8px;height:7px;background:var(--jb-ink,#000)}
-  .jaroo-mode-switch[aria-pressed="true"] .jaroo-mode-track{justify-content:flex-end}
-  .jaroo-mode-caption{font-size:11px}
+  /* Numerals use the same status color but NEVER animate. */
+  .jaroo-center .count{
+    display:inline-flex;align-items:center;justify-content:center;
+    box-sizing:border-box;height:16px;flex:0 0 auto;margin-left:2px;
+    font:800 calc(12px * var(--jaroo-ui-scale,1))/16px "Pretendard",sans-serif;
+    font-variant-numeric:tabular-nums;letter-spacing:0;
+    color:var(--jaroo-neon-color);opacity:1!important;
+    text-shadow:none!important;filter:none!important;
+    animation:none!important;transform:none!important;
+    white-space:nowrap;
+  }
+  /* Match the native sidebar badge's exact RUN/DONE palette, shadows and periods.
+     The border halo is independently animated so COUNT DIGITS NEVER BLINK. */
+  .jaroo-center .jaroo-top-badge{position:relative;isolation:isolate}
+  .jaroo-center button[data-active="true"] .jaroo-top-badge{
+    border-color:var(--jaroo-neon-color);
+  }
+  .jaroo-center button[data-active="true"] .jaroo-top-badge::before{
+    content:"";position:absolute;inset:-1px;z-index:-1;pointer-events:none;
+    border-radius:inherit;border:1px solid currentColor;
+    opacity:1;
+  }
+  .jaroo-center .run[data-active="true"] .jaroo-top-badge{
+    text-shadow:0 0 3px rgba(255,184,108,.95),0 0 8px rgba(255,184,108,.72);
+  }
+  .jaroo-center .run[data-active="true"] .jaroo-top-badge::before{
+    box-shadow:inset 0 0 6px rgba(255,184,108,.18),0 0 5px rgba(255,184,108,.95),0 0 12px rgba(255,184,108,.55),0 0 18px rgba(255,184,108,.22);
+    animation:jaroo-head-run-neon-692 var(--jaroo-run-period) steps(1,end) infinite;
+  }
+  .jaroo-center .run[data-active="true"] :is(.jaroo-top-mark,.jaroo-top-word){
+    text-shadow:0 0 3px rgba(255,184,108,.95),0 0 8px rgba(255,184,108,.72);
+    animation:jaroo-head-run-neon-692 var(--jaroo-run-period) steps(1,end) infinite;
+  }
+  /* @property exists in the unchanged Stylus CSS and is mirrored here for
+     isolated Shadow DOM testing. Chrome interpolates the numeric glow alpha. */
+  @property --jaroo-done-wave{
+    syntax:"<number>";inherits:false;initial-value:1;
+  }
+  .jaroo-center .done[data-active="true"] .jaroo-top-badge{
+    --jaroo-done-wave:1;
+    --jaroo-text-glow:0 0 2px rgba(80,250,123,var(--jaroo-done-wave)),0 0 6px rgba(80,250,123,var(--jaroo-done-wave)),0 0 12px rgba(80,250,123,calc(var(--jaroo-done-wave)*.95));
+    --jaroo-box-glow:inset 0 0 6px rgba(80,250,123,calc(var(--jaroo-done-wave)*.35)),0 0 4px rgba(80,250,123,var(--jaroo-done-wave)),0 0 12px rgba(80,250,123,calc(var(--jaroo-done-wave)*.95)),0 0 22px rgba(80,250,123,calc(var(--jaroo-done-wave)*.65));
+    text-shadow:var(--jaroo-text-glow);
+    box-shadow:var(--jaroo-box-glow);
+    animation:jaroo-head-done-neon-692 var(--jaroo-done-period) ease-in-out infinite;
+  }
+  .jaroo-center .done[data-active="true"] :is(.jaroo-top-mark,.jaroo-top-word){
+    text-shadow:inherit;
+  }
+  .jaroo-center button[data-active="false"] .jaroo-top-badge,
+  .jaroo-center button[data-active="false"] .jaroo-top-badge::before{
+    box-shadow:none!important;animation:none!important;
+    background:rgba(30,33,44,.72);
+  }
+  .jaroo-center button[data-active="false"] :is(.jaroo-top-mark,.jaroo-top-word){
+    color:var(--jaroo-neon-color);opacity:1;animation:none!important;
+  }
+  .jaroo-center button:hover .jaroo-top-badge{background:rgba(44,48,61,.93)}
+  .jaroo-center button:focus-visible{outline:2px solid #8BE9FD;outline-offset:2px}
+  .jaroo-center button[data-digits="2"] .count{font-size:12px}
+  .jaroo-center button:is([data-digits="3"],[data-digits="4"],[data-digits="5"]) .count{
+    font-size:11px;letter-spacing:-.25px;
+  }
+  .jaroo-center button:is([data-digits="3"],[data-digits="4"],[data-digits="5"]) .jaroo-top-badge{
+    padding-inline:6px;gap:3px;
+  }
+  .jaroo-center button[data-digits="3"] .jaroo-top-word{font-size:10.5px}
+  .jaroo-center button:is([data-digits="4"],[data-digits="5"]) .jaroo-top-word{font-size:9.5px}
+  .jaroo-center button:is([data-digits="4"],[data-digits="5"]) .jaroo-top-mark{font-size:11px}
+  .jaroo-center button:is([data-digits="4"],[data-digits="5"]) .count{font-size:9.5px}
+  /* Compact behavior is DOWNWARD only; never enlarge smaller Satin labels. */
+  .jaroo-center[data-compact="true"] .jaroo-top-badge{padding-inline:6px;gap:3px}
+  .jaroo-center[data-compact="true"] .jaroo-top-word{font-size:max(8px,calc(10px * var(--jaroo-ui-scale,1)))}
+  .jaroo-center[data-compact="true"] .jaroo-top-mark{font-size:max(8px,calc(11px * var(--jaroo-ui-scale,1)))}
+  .jaroo-center[data-compact="true"] .count{font-size:max(8px,calc(11px * var(--jaroo-ui-scale,1)))}
+  /* Reduced-width mode: keep RUN/DONE numbers readable, omit only the
+     optional explanatory line. Status counts, animations and click targets
+     are identical to the full mode. */
+  :host([data-jaroo-width="compact"]) .jaroo-center,
+  :host([data-jaroo-width="narrow"]) .jaroo-center{gap:7px;margin:9px 0 5px}
+  :host([data-jaroo-width="compact"]) .jaroo-center button,
+  :host([data-jaroo-width="narrow"]) .jaroo-center button{height:36px;min-height:36px}
+  :host([data-jaroo-width="compact"]) .jaroo-center .jaroo-top-badge,
+  :host([data-jaroo-width="narrow"]) .jaroo-center .jaroo-top-badge{
+    height:33px;min-height:33px;gap:0;padding:4px 3px;
+  }
+  :host([data-jaroo-width="compact"]) .jaroo-center .jaroo-mini-label,
+  :host([data-jaroo-width="narrow"]) .jaroo-center .jaroo-mini-label{display:none}
+  :host([data-jaroo-width="compact"]) .jaroo-center :is(.jaroo-top-word,.count),
+  :host([data-jaroo-width="narrow"]) .jaroo-center :is(.jaroo-top-word,.count){font-size:11.6px}
+  :host([data-jaroo-width="compact"]) .jaroo-center .jaroo-top-mark,
+  :host([data-jaroo-width="narrow"]) .jaroo-center .jaroo-top-mark{font-size:12px}
+  /* v6.3.16: minimum-width density uses existing 36px button geometry,
+     but increases the icon/label/number and gives each group breathing room. */
+  :host([data-jaroo-width="narrow"]) .jaroo-center .jaroo-top-badge{
+    padding:5px 5px;gap:0;justify-content:center;
+  }
+  :host([data-jaroo-width="narrow"]) .jaroo-center .jaroo-top-line{gap:3px}
+  :host([data-jaroo-width="narrow"]) .jaroo-center .jaroo-top-mark{
+    font-size:13px;flex:0 0 10px;width:10px;line-height:16px;
+  }
+  :host([data-jaroo-width="narrow"]) .jaroo-center .done .jaroo-top-mark{font-size:13px}
+  :host([data-jaroo-width="narrow"]) .jaroo-center .jaroo-top-word{font-size:12.3px}
+  :host([data-jaroo-width="narrow"]) .jaroo-center .count{
+    font-size:12.8px;margin-left:3px;
+  }
+  /* Higher multi-digit counts need their own existing compaction rule. */
+  :host([data-jaroo-width="narrow"]) .jaroo-center button:is([data-digits="3"],[data-digits="4"],[data-digits="5"]) .jaroo-top-word{font-size:10px}
+  :host([data-jaroo-width="narrow"]) .jaroo-center button:is([data-digits="3"],[data-digits="4"],[data-digits="5"]) .count{font-size:10px}
+  :host([data-jaroo-width="narrow"]) .jaroo-center button:is([data-digits="3"],[data-digits="4"],[data-digits="5"]) .jaroo-top-mark{font-size:11px}
+  .jaroo-center[data-paused="true"] .jaroo-top-badge::before,
+  .jaroo-center[data-paused="true"] .jaroo-top-badge,
+  .jaroo-center[data-paused="true"] .jaroo-top-mark,
+  .jaroo-center[data-paused="true"] .jaroo-top-word{animation-play-state:paused!important}
+  /* Identical temporal envelopes to the native sidebar's v6.8.2 badge. */
+  @keyframes jaroo-head-run-neon-692{
+    0%,49.999%{opacity:1}
+    50%,100%{opacity:.25}
+  }
+  @keyframes jaroo-head-done-neon-692{
+    0%,100%{--jaroo-done-wave:.18}
+    50%{--jaroo-done-wave:1}
+  }
+  @media(prefers-reduced-motion:reduce){
+    .jaroo-center .jaroo-top-badge::before,
+    .jaroo-center .jaroo-top-badge,
+    .jaroo-center .jaroo-top-mark,
+    .jaroo-center .jaroo-top-word{animation:none!important}
+  }
+
+  /* v7.2: The v7.0 static overrides were removed. Keep the original
+     v6.3.16 neon pulse, timeline, glow, and RUN/DONE word treatment. */
+
+  /* ===============================================================
+     v6.5.0 · ALL / RUN+DONE sidebar list toggle, flat vivid
+     =============================================================== */
+  .jaroo-center{
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr) 42px;
+    gap:6px;
+  }
+  .jaroo-center .jaroo-mode-switch{
+    padding:0;min-width:0;width:100%;height:49px;
+    font:700 9px/1 "Pretendard",sans-serif;
+  }
+  .jaroo-center .jaroo-mode-frame{
+    display:flex;align-items:center;justify-content:center;
+    flex-direction:column;gap:4px;width:100%;height:46px;
+    border:0!important;border-radius:0!important;
+    background:transparent!important;color:#A7B2C6;
+    box-sizing:border-box;transition:color .12s ease;
+  }
+  .jaroo-center .jaroo-mode-switch[aria-pressed="true"] .jaroo-mode-frame{
+    color:#24C2E8;
+  }
+  .jaroo-center .jaroo-mode-track{
+    width:28px;height:14px;border:1px solid currentColor;
+    border-radius:100px;position:relative;box-sizing:border-box;
+  }
+  .jaroo-center .jaroo-mode-thumb{
+    position:absolute;left:2px;top:2px;width:8px;height:8px;
+    border-radius:50%;background:currentColor;transition:left .12s ease;
+  }
+  .jaroo-center .jaroo-mode-switch[aria-pressed="true"] .jaroo-mode-thumb{left:16px}
+  .jaroo-center .jaroo-mode-caption{
+    font:800 9px/1 "Pretendard",sans-serif;letter-spacing:.04em;
+  }
+  .jaroo-center .jaroo-mode-switch:hover .jaroo-mode-frame{
+    background:transparent!important;color:#24C2E8;
+  }
+  .jaroo-center .jaroo-mode-switch:disabled{cursor:not-allowed;opacity:.45}
+  .jaroo-center .jaroo-mode-switch:focus-visible{outline:2px solid #24C2E8;outline-offset:2px}
   .jaroo-focus-list{
-    display:flex;flex-direction:column;gap:8px;box-sizing:border-box;min-width:0;
-    margin:8px 0;padding:8px;border:var(--jb-border,3px solid #000);
-    border-radius:var(--jb-radius,3px);box-shadow:var(--jb-shadow-small,2px 2px 0 #000);
-    background:var(--jb-paper,#f5f0dc);color:var(--jb-ink,#000);
-    font:var(--jb-weight-regular,400) 13px/1.4 var(--jb-font,"Pretendard Variable","Pretendard",system-ui,sans-serif);
+    display:flex;flex-direction:column;gap:8px;
+    min-width:0;padding:10px 8px 9px;margin:8px 0 4px;
+    border:1.5px solid #9B70FF;border-radius:9px;
+    background:#151925;color:#F4F7FC;
+    box-sizing:border-box;font:500 11px/1.35 "Pretendard",sans-serif;
   }
-  .jaroo-focus-list[hidden]{display:none}
-  .jaroo-focus-header{
-    display:flex;align-items:center;justify-content:space-between;gap:6px;
-    min-width:0;padding-bottom:6px;border-bottom:var(--jb-border-light,2px solid #000);
-  }
-  .jaroo-focus-header strong{font-weight:var(--jb-weight-emphasis,600)}
-  .jaroo-focus-header em{font-style:normal;white-space:nowrap}
-  .jaroo-focus-entries{
-    display:flex;flex-direction:column;gap:4px;min-height:0;
-    max-height:min(340px,42vh);overflow:auto;scrollbar-width:thin;
-    scrollbar-color:var(--jb-ink,#000) var(--jb-muted,#eae5d5);
-  }
+  .jaroo-focus-list[hidden]{display:none!important}
+  .jaroo-focus-header{display:flex;align-items:center;justify-content:space-between;gap:5px;min-width:0}
+  .jaroo-focus-header strong{color:#BCA5FF;font:800 11px/1 "Pretendard",sans-serif;white-space:nowrap}
+  .jaroo-focus-header em{font:650 10px/1 "Pretendard",sans-serif;font-style:normal;color:#A7B2C6;white-space:nowrap}
+  .jaroo-focus-entries{display:flex;flex-direction:column;gap:4px;min-height:0;max-height:min(340px,42vh);overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:#526078 transparent}
   .jaroo-focus-row{
-    display:flex;align-items:center;gap:6px;box-sizing:border-box;
-    min-width:0;min-height:44px;padding:6px 8px;
-    border:var(--jb-border-light,2px solid #000);border-radius:var(--jb-radius,3px);
-    border-color:var(--jb-status-line,var(--jb-ink,#000));
-    background:var(--jb-status-fill,var(--jb-white,#fff));color:inherit;text-decoration:none;cursor:pointer;
+    display:flex;gap:5px;align-items:center;padding:7px 5px;
+    border:1px solid #333E51;border-radius:6px;background:#1A2030;
+    min-width:0;min-height:32px;box-sizing:border-box;
+    color:#F4F7FC;text-decoration:none;cursor:pointer;
   }
-  .jaroo-focus-row:hover{text-decoration:underline}
-  @media(prefers-reduced-motion:no-preference){
-    .jaroo-focus-row[data-jstatus]:not([aria-disabled="true"]){animation:jaroo-list-title-pulse 1.8s ease-in-out var(--jb-status-cycles)}
-    .jaroo-center[data-paused="true"] + .jaroo-focus-list .jaroo-focus-row{animation-play-state:paused}
+  .jaroo-focus-row:hover{background:#212A3B;border-color:#9B70FF}
+  .jaroo-focus-row:focus-visible{outline:2px solid #24C2E8;outline-offset:1px}
+  .jaroo-focus-row[aria-disabled="true"]{opacity:.55;cursor:default}
+  .jaroo-focus-tag{
+    display:inline-flex;align-items:center;justify-content:center;
+    flex:0 0 36px;min-width:0;height:21px;padding:1px;
+    border:1px solid currentColor;border-radius:4px;
+    font:800 9px/1 "Pretendard",sans-serif;box-sizing:border-box;
+    background:transparent;white-space:nowrap;
   }
-  .jaroo-focus-row[aria-disabled="true"]{background:var(--jb-muted,#eae5d5);cursor:default;text-decoration:none}
-  .jaroo-focus-empty{padding:8px 0;text-align:center}
-  .jaroo-focus-help{font-size:12px}
-  :host(:is([data-jaroo-width="compact"],[data-jaroo-width="narrow"])) .jaroo-mini-label,
-  .jaroo-center[data-compact="true"] .jaroo-mini-label{display:none}
-  :host([data-jaroo-width="narrow"]) .jaroo-top-line{gap:3px}
-  :host([data-jaroo-width="narrow"]) .jaroo-focus-list{padding:6px}
-  :host([data-jaroo-micro="true"]) .jaroo-center,
-  .jaroo-center[data-compact="true"]{grid-template-columns:repeat(2,minmax(0,1fr))}
-  :host([data-jaroo-micro="true"]) .jaroo-mode-switch,
-  .jaroo-center[data-compact="true"] .jaroo-mode-switch{grid-column:1 / -1;min-height:44px}
-  :host([data-jaroo-micro="true"]) .jaroo-mode-frame,
-  .jaroo-center[data-compact="true"] .jaroo-mode-frame{flex-direction:row}
+  .jaroo-focus-tag[data-jstatus="working"]{color:#FFAB32}
+  .jaroo-focus-tag[data-jstatus="done"]{color:#47EC84}
+  /* RUN/DONE filtered-chat tags look and pulse like original native badges. */
+  .jaroo-focus-tag[data-jstatus="working"]{
+    color:#FFB86C;
+    background:#242631;
+    text-shadow:0 0 3px rgba(255,184,108,.95),0 0 8px rgba(255,184,108,.72);
+    box-shadow:inset 0 0 6px rgba(255,184,108,.18),0 0 5px rgba(255,184,108,.95),0 0 12px rgba(255,184,108,.55);
+    animation:jaroo-focus-run-breathe .28s steps(1,end) infinite;
+  }
+  .jaroo-focus-tag[data-jstatus="done"]{
+    color:#50FA7B;background:#242631;
+    --jaroo-done-wave:1;
+    text-shadow:0 0 3px rgba(80,250,123,var(--jaroo-done-wave)),0 0 7px rgba(80,250,123,var(--jaroo-done-wave));
+    box-shadow:0 0 4px rgba(80,250,123,var(--jaroo-done-wave)),0 0 12px rgba(80,250,123,var(--jaroo-done-wave));
+    animation:jaroo-focus-done-breathe 1.8s ease-in-out infinite;
+  }
+  @keyframes jaroo-focus-run-breathe{0%,49.999%{opacity:1}50%,100%{opacity:.25}}
+  @keyframes jaroo-focus-done-breathe{0%,100%{--jaroo-done-wave:.18}50%{--jaroo-done-wave:1}}
+  @media(prefers-reduced-motion:reduce){.jaroo-focus-tag{animation:none!important}}
+  /* Only at extreme width: keep 2 readable status buttons on the first
+     row, put borderless filter underneath on the right. No overlapping text. */
+  :host([data-jaroo-micro="true"]) .jaroo-center{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    grid-template-rows:36px 20px;
+    gap:4px;
+  }
+  :host([data-jaroo-micro="true"]) .jaroo-center .jaroo-top-badge{padding-inline:2px}
+  :host([data-jaroo-micro="true"]) .jaroo-center .jaroo-top-mark{display:none}
+  :host([data-jaroo-micro="true"]) .jaroo-center .jaroo-top-word{font-size:10px}
+  :host([data-jaroo-micro="true"]) .jaroo-center .count{font-size:10.5px}
+  :host([data-jaroo-micro="true"]) .jaroo-center .jaroo-mode-switch{
+    grid-column:1 / -1;justify-self:end;width:65px;height:20px;min-height:20px;
+  }
+  :host([data-jaroo-micro="true"]) .jaroo-center .jaroo-mode-frame{
+    height:20px;min-height:20px;flex-direction:row;gap:5px;
+  }
+  :host([data-jaroo-micro="true"]) .jaroo-center .jaroo-mode-track{width:26px}
+  :host([data-jaroo-micro="true"]) .jaroo-center .jaroo-mode-caption{font-size:8px}
+  :host([data-jaroo-micro="true"]) .jaroo-center .jaroo-mode-switch[aria-pressed="true"] .jaroo-mode-thumb{left:14px}
+  .jaroo-focus-name{
+    min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    font:650 11px/1.35 "Pretendard",sans-serif;
+  }
+  .jaroo-focus-empty{
+    padding:15px 4px;color:#A7B2C6;font:550 11px/1.5 "Pretendard",sans-serif;text-align:center;
+  }
+  .jaroo-focus-help{color:#8793A8;font:500 9px/1.4 "Pretendard",sans-serif}
+  /* v6.5.3: unmistakable active toggle with a usable 38px hit target. */
+  .jaroo-center{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 50px!important;gap:5px!important}
+  .jaroo-center .jaroo-mode-switch{
+    min-height:38px!important;height:46px!important;width:100%!important;
+    cursor:pointer!important;opacity:1!important;
+  }
+  .jaroo-center .jaroo-mode-frame{
+    min-height:38px!important;gap:6px!important;color:#E4D4F7!important;
+  }
+  .jaroo-center .jaroo-mode-caption{font-size:10px!important;color:#F3E5FF!important}
+  .jaroo-center .jaroo-mode-track{width:32px!important;height:16px!important;border:1.4px solid #BD93F9!important}
+  .jaroo-center .jaroo-mode-thumb{width:10px!important;height:10px!important;background:#BD93F9!important}
+  .jaroo-center .jaroo-mode-switch[aria-pressed="true"] .jaroo-mode-thumb{left:18px!important;background:#50FA7B!important}
+  .jaroo-center .jaroo-mode-switch[aria-pressed="true"] .jaroo-mode-caption{color:#50FA7B!important}
+  :host([data-jaroo-micro="true"]) .jaroo-center{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    grid-template-rows:minmax(38px,auto) 32px!important;
+  }
+  :host([data-jaroo-micro="true"]) .jaroo-center .jaroo-mode-switch{
+    grid-column:1 / -1!important;justify-self:end!important;
+    width:84px!important;height:30px!important;min-height:30px!important;
+  }
+  :host([data-jaroo-micro="true"]) .jaroo-center .jaroo-mode-frame{
+    flex-direction:row!important;height:30px!important;min-height:30px!important;
+  }
+  :host([data-jaroo-width="compact"]) .jaroo-center,
+  :host([data-jaroo-width="narrow"]) .jaroo-center{
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr) 42px;gap:5px;
+  }
+  :host([data-jaroo-width="compact"]) .jaroo-center .jaroo-mode-switch,
+  :host([data-jaroo-width="narrow"]) .jaroo-center .jaroo-mode-switch{height:36px;min-height:36px}
+  :host([data-jaroo-width="compact"]) .jaroo-center .jaroo-mode-frame,
+  :host([data-jaroo-width="narrow"]) .jaroo-center .jaroo-mode-frame{height:36px;min-height:36px;gap:2px}
+  :host([data-jaroo-width="narrow"]) .jaroo-center .jaroo-top-mark{display:inline-flex;flex-basis:7px;width:7px;font-size:10px}
+  :host([data-jaroo-width="narrow"]) .jaroo-center .jaroo-top-word{font-size:10px}
+  :host([data-jaroo-width="narrow"]) .jaroo-center .count{font-size:11px;margin-left:0}
+  :host([data-jaroo-width="narrow"]) .jaroo-center .jaroo-top-line{gap:2px}
+  :host([data-jaroo-width="narrow"]) .jaroo-focus-list{padding:8px 5px;gap:5px}
+  :host([data-jaroo-width="narrow"]) .jaroo-focus-tag{flex-basis:29px;font-size:8px}
+  :host([data-jaroo-width="narrow"]) .jaroo-focus-name{font-size:10px}
+  :host([data-jaroo-width="narrow"]) .jaroo-focus-help{display:none}
+  @media(prefers-reduced-motion:reduce){
+    .jaroo-center .jaroo-mode-thumb,.jaroo-center .jaroo-mode-frame{transition:none!important}
+  }
   `;
   function alignDockToClock() {
     if(!dock?.isConnected || !lastDockHost?.isConnected) return;
@@ -1298,51 +1469,52 @@
     panel.setAttribute('aria-label','작업 상태 바로가기');panel.tabIndex=-1;
     const css=document.createElement('style');css.id='jaroo-v4-panel-style';
     css.textContent=`
-      ${titlePulseCSS}
-      ${statusTitleCSS}
-      #jaroo-v4-quick-panel,#jaroo-v4-title-tip{
-        position:fixed;box-sizing:border-box;display:none;overflow-wrap:anywhere;
-        border:var(--jb-border,3px solid #000);border-radius:var(--jb-radius,3px);
-        box-shadow:var(--jb-shadow,4px 4px 0 #000);
-        color:var(--jb-ink,#000);
-        font:var(--jb-weight-regular,400) 14px/1.45 var(--jb-font,"Pretendard Variable","Pretendard",system-ui,sans-serif);
-      }
+      #jaroo-v4-quick-panel{position:fixed;z-index:2147483400;min-width:240px;max-width:min(350px,calc(100vw - 20px));max-height:min(360px,65vh);overflow:auto;padding:10px;border:1px solid #5b6279;border-radius:11px;box-shadow:0 12px 32px #0009,0 0 15px #8be9fd20;background:#282a36;color:#f8f8f2;font:12px/1.4 "Pretendard",sans-serif;display:none;box-sizing:border-box}
+      #jaroo-v4-quick-panel .head{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:7px;font-weight:750}
+      #jaroo-v4-quick-panel .dismiss{border:0;background:#414458;color:#fff;border-radius:5px;cursor:pointer;padding:3px 7px}
+      #jaroo-v4-quick-panel a{display:flex;align-items:center;gap:4px;padding:8px 5px;color:#d6ecfc;text-decoration:none;border-radius:6px;cursor:pointer}
+      #jaroo-v4-quick-panel a:hover,#jaroo-v4-quick-panel a:focus-visible{background:#44475a;outline:1px solid #8be9fd}
+      #jaroo-v4-quick-panel .tag{display:inline-flex;align-items:center;justify-content:center;gap:3px;flex:0 0 56px;box-sizing:border-box;min-height:23px;font:900 11px/1 "Pretendard",sans-serif;border:1.5px solid currentColor;border-radius:4px;padding:0 4px;background:#20222D;white-space:nowrap}
+      #jaroo-v4-quick-panel .tag::before{width:9px;flex:0 0 9px;text-align:center;font:900 14px/1 "Pretendard",sans-serif;color:inherit;text-shadow:inherit}
+      #jaroo-v4-quick-panel .tag[data-jstatus="working"]{text-shadow:0 0 3px rgba(255,184,108,.95),0 0 8px rgba(255,184,108,.72);box-shadow:inset 0 0 6px rgba(255,184,108,.18),0 0 5px rgba(255,184,108,.95),0 0 12px rgba(255,184,108,.55),0 0 18px rgba(255,184,108,.22);animation:jaroo-run-neon-v67 var(--jaroo-run-period,.28s) steps(1,end) infinite}
+      #jaroo-v4-quick-panel .tag[data-jstatus="working"]::before{content:"»";animation:jaroo-run-sprint-v67 var(--jaroo-run-period,.28s) linear infinite}
+      #jaroo-v4-quick-panel .tag[data-jstatus="done"]{--jaroo-text-glow: 0 0 2px rgba(80,250,123,var(--jaroo-done-wave,1)), 0 0 6px rgba(80,250,123,var(--jaroo-done-wave,1)), 0 0 12px rgba(80,250,123,calc(var(--jaroo-done-wave,1)*.95));--jaroo-box-glow: inset 0 0 6px rgba(80,250,123,calc(var(--jaroo-done-wave,1)*.35)), 0 0 4px rgba(80,250,123,var(--jaroo-done-wave,1)), 0 0 12px rgba(80,250,123,calc(var(--jaroo-done-wave,1)*.95)), 0 0 22px rgba(80,250,123,calc(var(--jaroo-done-wave,1)*.65));text-shadow: var(--jaroo-text-glow);box-shadow: var(--jaroo-box-glow);opacity:1;animation:jaroo-done-neon-v67 var(--jaroo-done-period,1.8s) ease-in-out infinite}
+      #jaroo-v4-quick-panel .tag[data-jstatus="done"]::before{content:"✓";font-size:12px}
+      html[data-jaroo-status-hidden="true"] #jaroo-v4-quick-panel .tag,html[data-jaroo-status-hidden="true"] #jaroo-v4-quick-panel .tag::before{animation-play-state:paused!important}
+      @media(prefers-reduced-motion:reduce){#jaroo-v4-quick-panel .tag,#jaroo-v4-quick-panel .tag::before{animation:none!important}}
+      #jaroo-v4-quick-panel .name{min-width:0;overflow-wrap:anywhere}
+      #jaroo-v4-quick-panel .empty{padding:8px;color:#b9b8c9}
+      #jaroo-v4-title-tip{position:fixed;z-index:2147483401;max-width:min(380px,calc(100vw - 22px));padding:9px 12px;border:1px solid #677089;border-radius:8px;box-shadow:0 8px 25px #0009;background:#303241;color:#f5f5fa;font:12px/1.5 "Pretendard",sans-serif;pointer-events:none;display:none;overflow-wrap:anywhere;box-sizing:border-box}
+      /* v7.0: flat status popover + matching readable color tokens. */
       #jaroo-v4-quick-panel{
-        z-index:2147483400;width:min(350px,calc(100vw - 20px));max-height:min(360px,65vh);
-        padding:8px;overflow:auto;background:var(--jb-paper,#f5f0dc);
-      }
-      #jaroo-v4-quick-panel .head{
-        display:flex;align-items:center;justify-content:space-between;gap:8px;
-        padding-bottom:8px;margin-bottom:8px;border-bottom:var(--jb-border-light,2px solid #000);
-      }
-      #jaroo-v4-quick-panel .head > [role="heading"]{font-weight:var(--jb-weight-emphasis,600)}
-      #jaroo-v4-quick-panel .dismiss,#jaroo-v4-quick-panel a{
-        min-height:44px;box-sizing:border-box;color:inherit;background:var(--jb-white,#fff);
-        border:var(--jb-border-light,2px solid #000);border-radius:var(--jb-radius,3px);
-        cursor:pointer;
+        border:1.5px solid #9B70FF;border-radius:11px;
+        background:#151925;box-shadow:none;color:#F4F7FC;
       }
       #jaroo-v4-quick-panel .dismiss{
-        padding:4px 8px;font:inherit;box-shadow:var(--jb-shadow-small,2px 2px 0 #000);
+        border:1px solid #394152;border-radius:6px;background:#1D2230;
+        color:#F4F7FC;
       }
-      #jaroo-v4-quick-panel a{
-        display:flex;align-items:center;gap:8px;padding:6px 8px;margin-block:4px;text-decoration:none;
-        border-color:var(--jb-status-line,var(--jb-ink,#000));
-        background:var(--jb-status-fill,var(--jb-white,#fff));
+      #jaroo-v4-quick-panel .dismiss:hover{border-color:#24C2E8}
+      #jaroo-v4-quick-panel a{color:#F4F7FC;border-radius:6px}
+      #jaroo-v4-quick-panel a:hover,
+      #jaroo-v4-quick-panel a:focus-visible{
+        background:#1D2230;outline:1px solid #24C2E8;
       }
-      #jaroo-v4-quick-panel .dismiss:hover{background:var(--jb-muted,#eae5d5)}
-      #jaroo-v4-quick-panel a:hover .name{text-decoration:underline}
-      #jaroo-v4-quick-panel a[aria-disabled="true"]{background:var(--jb-muted,#eae5d5);cursor:default}
-      #jaroo-v4-quick-panel a[aria-disabled="true"] .name{text-decoration:none}
-      #jaroo-v4-quick-panel :is(a,.dismiss):focus-visible,
-      #jaroo-v4-quick-panel:focus-visible{outline:var(--jb-focus,3px solid #f0f);outline-offset:-5px}
-      @media(prefers-reduced-motion:no-preference){
-        #jaroo-v4-quick-panel a[data-jstatus]:not([aria-disabled="true"]){animation:jaroo-list-title-pulse 1.8s ease-in-out var(--jb-status-cycles)}
-        html[data-jaroo-status-hidden="true"] #jaroo-v4-quick-panel a[data-jstatus]{animation-play-state:paused}
+      #jaroo-v4-quick-panel .tag{
+        background:#151925;border-radius:5px;
+        text-shadow:none!important;box-shadow:none!important;
+        animation:none!important;
       }
-      #jaroo-v4-quick-panel .empty{padding:8px 4px;font-size:13px}
+      #jaroo-v4-quick-panel .tag[data-jstatus="working"],
+      #jaroo-v4-quick-panel .tag[data-jstatus="done"]{
+        background:#151925;text-shadow:none!important;
+        box-shadow:none!important;animation:none!important;
+      }
+      #jaroo-v4-quick-panel .tag::before{animation:none!important;text-shadow:none!important}
+      #jaroo-v4-quick-panel .empty{color:#A7B2C6}
       #jaroo-v4-title-tip{
-        z-index:2147483401;max-width:min(380px,calc(100vw - 22px));padding:8px;
-        pointer-events:none;background:var(--jb-white,#fff);
+        border:1px solid #9B70FF;border-radius:8px;
+        box-shadow:none;background:#1D2230;color:#F4F7FC;
       }
     `;
     document.head.append(css);
@@ -1352,21 +1524,6 @@
     document.body.append(tooltip);
   }
   function closePanel() {panelOpen=false;panelSignature='';if(panel)panel.style.display='none';}
-  function createStatusLink(record, href, titleClass) {
-    const link = document.createElement('a');
-    link.className = 'jaroo-status-link';
-    link.href = href || '#';
-    link.dataset.jstatus = record.status;
-    link.setAttribute('aria-description', record.status === 'working' ? '진행 중' : '미확인 완료');
-    const title = document.createElement('span');
-    title.className = `jaroo-list-title ${titleClass}`;
-    title.textContent = record.title || `채팅 ${record.id.slice(0,8)}`;
-    const role = CHAT_ROLES.get(chatPrefix(title.textContent));
-    if (role) setAttr(link, CHAT_ROLE, role);
-    link.append(title);
-    return link;
-  }
-
   function openPanel(filter) {
     setupPanel();
     if (!dock?.isConnected) return;
@@ -1378,13 +1535,15 @@
     panel.replaceChildren();
     const head=document.createElement('div');head.className='head';
     const title=document.createElement('span');title.textContent=(filter==='working'?'진행 중':'미확인 완료')+` · ${records.length}건`;
-    title.setAttribute('role','heading');title.setAttribute('aria-level','2');
     const close=document.createElement('button');close.className='dismiss';close.type='button';close.textContent='닫기';close.onclick=closePanel;
     head.append(title,close);panel.append(head);
     if (!records.length) {const empty=document.createElement('div');empty.className='empty';empty.textContent='표시할 상태가 없어.';panel.append(empty);}
     else records.forEach(r => {
-      const link = createStatusLink(r, r.href, 'name');
-      if (!r.href) {link.title='현재 사이드바에서 위치를 찾을 수 없음';link.setAttribute('aria-disabled','true');}
+      const link=document.createElement('a');link.href=r.href || '#';
+      const token=document.createElement('span');token.className='tag';token.dataset.jstatus=filter;token.style.color=filter==='working'?'#FFAB32':'#47EC84';token.textContent=filter==='working'?'RUN':'DONE';
+      const name=document.createElement('span');name.className='name';name.textContent=r.title || `채팅 ${r.id.slice(0,8)}`;
+      link.append(token,name);
+      if (!r.href) {link.style.opacity='.55';link.title='현재 사이드바에서 위치를 찾을 수 없음';link.setAttribute('aria-disabled','true');}
       link.onclick=e => {if (!r.href) {e.preventDefault();return;}closePanel();};
       panel.append(link);
     });
@@ -1448,10 +1607,15 @@
     }
     for (const record of records) {
       const href=safePath(record.href || `/c/${record.id}`,record.id);
-      const row=createStatusLink(record, href, 'jaroo-focus-name');
-      row.classList.add('jaroo-focus-row');
-      row.setAttribute('role','listitem');
-      row.title=row.textContent;
+      const row=document.createElement('a');row.className='jaroo-focus-row';
+      row.setAttribute('role','listitem');row.href=href || '#';
+      const tag=document.createElement('span');tag.className='jaroo-focus-tag';
+      tag.dataset.jstatus=record.status;
+      tag.textContent=record.status==='working'?'RUN':'DONE';
+      const title=document.createElement('span');title.className='jaroo-focus-name';
+      title.textContent=record.title || `채팅 ${record.id.slice(0,8)}`;
+      row.title=title.textContent;
+      row.append(tag,title);
       if (!href) {
         row.setAttribute('aria-disabled','true');
         row.title='이 채팅의 유효한 주소를 확인하지 못했어.';
@@ -1693,9 +1857,10 @@
     let changed = pendingNative.length > 0;
     for (const event of events) {
       if (event.type === 'characterData') {
-        if (event.target.parentElement?.closest('[data-jaroo-native-hidden]')) {
+        if (event.target.parentElement?.closest('[data-jaroo-native-hidden],[data-jaroo-native-leading]')) {
           changed = true; hideLayoutDirty = true;
-        } else if (event.target.parentElement?.closest('a[href*="/c/"],' + NATIVE_TITLE)) {
+        } else if (event.target.parentElement?.closest('[data-jaroo-selected="true"] a[href*="/c/"]')) {
+          // The selected title was renamed; refresh only its visual fit.
           changed = true;
         }
         continue;
@@ -1708,6 +1873,8 @@
       }
       const target = event.target instanceof Element ? event.target : event.target.parentElement;
       if (target?.closest('[data-native-menu-root],[popover],#jaroo-v4-quick-panel,#jaroo-v4-title-tip')) continue;
+      if (!event.removedNodes.length && event.addedNodes.length &&
+          [...event.addedNodes].every(node => node.nodeType === 1 && node.matches(OWN_BADGE))) continue;
       changed = true; rowDirty = true; hideLayoutDirty = true;
     }
     if (changed) scheduleRefresh('native-mutation');
