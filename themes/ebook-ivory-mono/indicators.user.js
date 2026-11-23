@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.2.5
+// @version      0.2.6
 // @description  E-book visual dot indicators for role prefixes plus a light Clock skin; keeps original chat titles, React data and RUN/DONE logic intact.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -416,13 +416,15 @@
      requested 19.33px. This presentation-only fallback survives React redraws
      without altering any title content, href, click handler or app data. */
   const opticalFontOriginal=new Map();
+  const projectWeightOriginal=new Map();
   function enforceOpticalSidebarText() {
     // The old visual script could hold 16px as an inline !important rule.
     // Set ONLY chat title text to the user's requested 16px - 1pt.
     const projectSize=getComputedStyle(document.documentElement)
       .getPropertyValue('--eb-nav-optical-size').trim() || '14.667px';
-    const chatSize='14.667px';
+    const chatSize='15.333px';
     const targets=new Map();
+    const projectLeaves=new Set();
     // The user-provided Chrome Elements tree confirms [data-thread-title]
     // with several nested spans, often under .content-marquee.
     for(const title of document.querySelectorAll('[data-thread-title="true"]')) {
@@ -439,9 +441,11 @@
     for(const title of document.querySelectorAll(
         '[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] [data-marquee-content="true"]')) {
       targets.set(title,projectSize);
+      projectLeaves.add(title);
       for(const el of title.querySelectorAll('span,div,[data-d-component="text"]')) {
         if(el.closest('[aria-hidden="true"],.sr-only'))continue;
         targets.set(el,projectSize);
+        projectLeaves.add(el);
       }
     }
     for(const [el,targetSize] of targets) {
@@ -454,6 +458,20 @@
          el.style.getPropertyPriority('font-size')!=='important')
         el.style.setProperty('font-size',targetSize,'important');
     }
+    // On real project text leaves, old child styles may win over parent CSS.
+    // Apply a moderately strong 650 weight without changing any chat row.
+    for(const el of projectLeaves) {
+      if(!projectWeightOriginal.has(el))
+        projectWeightOriginal.set(el,{
+          value:el.style.getPropertyValue('font-weight'),
+          priority:el.style.getPropertyPriority('font-weight')
+        });
+      if(el.style.getPropertyValue('font-weight')!=='650' ||
+         el.style.getPropertyPriority('font-weight')!=='important')
+        el.style.setProperty('font-weight','650','important');
+    }
+    for(const el of projectWeightOriginal.keys())if(!el.isConnected)
+      projectWeightOriginal.delete(el);
     for(const el of opticalFontOriginal.keys())if(!el.isConnected)
       opticalFontOriginal.delete(el);
   }
@@ -465,6 +483,87 @@
       else el.style.removeProperty('font-size');
     }
     opticalFontOriginal.clear();
+    for(const [el,original] of projectWeightOriginal){
+      if(!el.isConnected)continue;
+      if(original.value)
+        el.style.setProperty('font-weight',original.value,original.priority);
+      else el.style.removeProperty('font-weight');
+    }
+    projectWeightOriginal.clear();
+  }
+
+
+  /* Decorate the actual outer input-card surface, never the text editor.
+     The form can wrap a distinct #composer-background node. Measure the
+     candidate geometry and only decorate an element enclosing the editor. */
+  const composerFrameOriginal=new Map();
+  function syncComposerFrame() {
+    const context=activeComposer();
+    const editor=context?.editor;
+    const editorBox=editor?.getBoundingClientRect();
+    const candidates=editor?[
+      editor.closest('#composer-background'),
+      editor.closest('[data-testid="composer"]'),
+      document.querySelector('#composer-background'),
+      editor.closest('form')
+    ].filter(Boolean):[];
+    const unique=[...new Set(candidates)];
+    const chosen=unique.find(el=>{
+      if(!editorBox||editorBox.width<=0)return false;
+      const box=el.getBoundingClientRect();
+      return box.width>=Math.max(180,editorBox.width*.93) &&
+        box.height>=editorBox.height+10 &&
+        box.height<650 &&
+        box.top<=editorBox.top+4 && box.bottom>=editorBox.bottom-4 &&
+        (el.contains(editor) || (box.left<=editorBox.left+6 &&
+          box.right>=editorBox.right-6));
+    });
+    for(const el of composerFrameOriginal.keys()){
+      if(el===chosen)continue;
+      const previous=composerFrameOriginal.get(el);
+      if(el.isConnected){
+        for(const [property,saved] of Object.entries(previous)){
+          if(saved.value)el.style.setProperty(property,saved.value,saved.priority);
+          else el.style.removeProperty(property);
+        }
+        el.removeAttribute('data-ebook-composer-frame');
+      }
+      composerFrameOriginal.delete(el);
+    }
+    if(!chosen)return;
+    const settings={
+      border:'2.5px solid #1F1E1A',
+      'border-radius':'18px',
+      'box-shadow':'none',
+      '-webkit-box-shadow':'none',
+      outline:'none'
+    };
+    if(!composerFrameOriginal.has(chosen)){
+      const previous={};
+      for(const property of Object.keys(settings))previous[property]={
+        value:chosen.style.getPropertyValue(property),
+        priority:chosen.style.getPropertyPriority(property)
+      };
+      composerFrameOriginal.set(chosen,previous);
+    }
+    if(!chosen.hasAttribute('data-ebook-composer-frame'))
+      chosen.setAttribute('data-ebook-composer-frame','true');
+    for(const [property,value] of Object.entries(settings)){
+      if(chosen.style.getPropertyValue(property)!==value ||
+         chosen.style.getPropertyPriority(property)!=='important')
+        chosen.style.setProperty(property,value,'important');
+    }
+  }
+  function restoreComposerFrames(){
+    for(const [el,previous] of composerFrameOriginal){
+      if(!el.isConnected)continue;
+      for(const [property,saved] of Object.entries(previous)){
+        if(saved.value)el.style.setProperty(property,saved.value,saved.priority);
+        else el.style.removeProperty(property);
+      }
+      el.removeAttribute('data-ebook-composer-frame');
+    }
+    composerFrameOriginal.clear();
   }
 
   function update() {
@@ -474,6 +573,7 @@
     enforceOpticalSidebarText();
     markDotCounter();
     watchComposer();
+    syncComposerFrame();
     markEffortPicker();
     markCurrentChatTitle();
     markUploadDivider();
@@ -507,6 +607,7 @@
     if (frame) cancelAnimationFrame(frame);
     restore();
     restoreOpticalSidebarText();
+    restoreComposerFrames();
     document.querySelectorAll('[data-ebook-effort-picker="true"]').forEach(n=>n.removeAttribute('data-ebook-effort-picker'));
     document.querySelectorAll('[data-ebook-active-title="true"]').forEach(n=>n.removeAttribute('data-ebook-active-title'));
     document.querySelectorAll('[data-ebook-upload-divider="true"]').forEach(n=>n.remove());
@@ -563,7 +664,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.2.5',dispose,refresh:schedule,
-    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),opticalChatTarget:'14.667px',fontAudit:fontAudit()})
+    version:'0.2.6',dispose,refresh:schedule,
+    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,fontAudit:fontAudit()})
   };
 })();

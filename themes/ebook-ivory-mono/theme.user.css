@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.11
+@version      0.2.12
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -107,7 +107,7 @@
     --link: var(--eb-ink) !important;
     --link-hover: var(--eb-secondary) !important;
     --jaroo-status-css-version: "6.8.2";
-    --ebook-theme-version: "0.2.11";
+    --ebook-theme-version: "0.2.12";
   }
 
   /* 02. LIGHT-PAPER BASE — do not modify Chrome frame or extension UIs. */
@@ -1188,6 +1188,41 @@
       [data-user-message-bubble="true"].bg-user-message
     ) {
     border-radius:var(--eb-user-bubble-curve)!important;
+  }
+
+
+  /* 21. CHAT +0.5PT, PROJECT EMPHASIS, COMPOSER KEYLINE v0.2.12
+     User-approved text density is preserved except CHAT title +0.5pt.
+     Project names get a restrained 650 weight; the composer shell receives
+     a charcoal accent border with a crisp flat surface. No other changes. */
+  :root {
+    --eb-chat-corrected-size:15.333px;
+    --eb-project-emphasis-weight:650;
+    --eb-composer-keyline:2.5px solid #1F1E1A;
+  }
+  html body [data-thread-title="true"],
+  html body [data-thread-title="true"] :is(span,div):not(
+    :is([data-ebook-glyph="true"],[aria-hidden="true"],.sr-only)
+  ) {
+    font-size:var(--eb-chat-corrected-size)!important;
+  }
+  html body [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row]
+    [data-marquee-content="true"],
+  html body [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row]
+    [data-marquee-content="true"] :is(span,div):not(
+      :is([aria-hidden="true"],.sr-only)
+    ) {
+    font-weight:var(--eb-project-emphasis-weight)!important;
+  }
+  /* Visual JS marks the actual outer composer frame, not the editor itself.
+     This prevents an apparently missing border when native markup varies. */
+  html body [data-ebook-composer-frame="true"] {
+    border:var(--eb-composer-keyline)!important;
+    border-radius:18px!important;
+    box-shadow:none!important;
+    -webkit-box-shadow:none!important;
+    filter:none!important;
+    outline:none!important;
   }
 
 }
