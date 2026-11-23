@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.2.8
+// @version      0.2.9
 // @description  E-book visual dot indicators for role prefixes plus a light Clock skin; keeps original chat titles, React data and RUN/DONE logic intact.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -641,7 +641,7 @@
   }
 
 
-  /* v0.2.8 — user prompt typography on the exact text-bearing elements.
+  /* v0.2.9 — user prompt typography on the exact text-bearing elements.
      Earlier CSS reached the user bubble/editor shell but not its nested DIL
      leaves; this is why font-size looked unchanged. Original inline values
      are restored on disable or script update. */
@@ -651,6 +651,8 @@
     const chosen=new Map();
     const reading=getComputedStyle(document.documentElement)
       .getPropertyValue('--eb-prompt-optical-size').trim() || '16px';
+    const sentReading=getComputedStyle(document.documentElement)
+      .getPropertyValue('--eb-user-sent-optical-size').trim() || '20px';
     const ink=getComputedStyle(document.documentElement)
       .getPropertyValue('--eb-prompt-accent').trim() || '#1F1E1A';
     const hasDirectText=el=>[...el.childNodes].some(node=>
@@ -699,11 +701,11 @@
       if(el.getAttribute('data-ebook-prompt-text')!==kind)
         el.setAttribute('data-ebook-prompt-text',kind);
       const required={
-        'font-size':reading,
-        'line-height':'1.56'
+        'font-size':kind==='sent'?sentReading:reading,
+        'line-height':kind==='sent'?'1.55':'1.56'
       };
       if(kind==='sent'){
-        required['font-weight']='600';
+        required['font-weight']='700';
         required.color=ink;
         required['-webkit-text-fill-color']=ink;
       }
@@ -828,7 +830,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.2.8',dispose,refresh:schedule,
-    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),fontAudit:fontAudit()})
+    version:'0.2.9',dispose,refresh:schedule,
+    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),fontAudit:fontAudit()})
   };
 })();
