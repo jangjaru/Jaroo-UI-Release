@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.2.0
+// @version      0.2.1
 // @description  E-book visual dot indicators for role prefixes plus a light Clock skin; keeps original chat titles, React data and RUN/DONE logic intact.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -229,11 +229,30 @@
     for (const root of roots) observer.observe(root,{subtree:true,childList:true,characterData:true});
   }
 
+
+  /* Find effort/model display inside the composer without modifying its state. */
+  function markEffortPicker() {
+    const composer=document.querySelector('[data-testid="composer"]') ||
+      document.querySelector('form:has(#prompt-textarea)') ||
+      document.querySelector('form:has([data-testid="prompt-textarea"])');
+    if (!composer) return;
+    const pattern=/^(?:(?:GPT[\w.\- ]+|Model|모델)\s+)?(?:Extra High|High|Medium|Low|Instant|Auto)$/iu;
+    for(const node of composer.querySelectorAll('button,[role="button"],[aria-haspopup]')) {
+      const label=(node.textContent||'').replace(/\s+/g,' ').trim();
+      const match=label.length>0 && label.length<=48 && pattern.test(label);
+      if (match && !node.hasAttribute('data-ebook-effort-picker'))
+        node.setAttribute('data-ebook-effort-picker','true');
+      if (!match && node.hasAttribute('data-ebook-effort-picker'))
+        node.removeAttribute('data-ebook-effort-picker');
+    }
+  }
+
   function update() {
     if (disposed) return;
     attachObservers();
     synchronizeSidebar();
     markDotCounter();
+    markEffortPicker();
     syncClock();
   }
 
@@ -262,6 +281,7 @@
     clearInterval(recoverTimer);
     if (frame) cancelAnimationFrame(frame);
     restore();
+    document.querySelectorAll('[data-ebook-effort-picker="true"]').forEach(n=>n.removeAttribute('data-ebook-effort-picker'));
     shadowStyle?.remove();
     document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`)?.remove();
     document.removeEventListener('visibilitychange', onVisibility);
@@ -280,7 +300,7 @@
   recoverTimer = setInterval(() => { if (!document.hidden) schedule(); }, 4000);
   schedule();
   window[RUNTIME] = {
-    version:'0.2.0',dispose,refresh:schedule,
+    version:'0.2.1',dispose,refresh:schedule,
     diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`)})
   };
 })();

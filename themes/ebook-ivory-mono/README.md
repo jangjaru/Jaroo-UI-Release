@@ -1,41 +1,30 @@
-# Jaroo's Company · E-book Editorial Notebook v0.2.0
+# Jaroo's Company · E-book Editorial Notebook v0.2.1
 
-**2026-11-23 · 독립 E-book 테마 / Chrome 실제 화면 검수 대기**
+**2026-11-24 · 독립 E-book CSS/JS 배포 / 로그인 Chrome 시각 검수 대기**
 
-이번 버전은 이전 E-book Ivory Mono 0.1.1을 업데이트하며, Dracula Neon / Flat Neon Pixel 및 핵심 Life Clock/Status/Mapper 코드와 별도로 관리해.
+현재 Dracula Neon, Flat Neon Pixel 및 핵심 Life Clock·Status·Mapper 스크립트와 별도 경로에서만 업데이트되는 E-book 디자인 테마야.
 
-## 설치 및 업데이트
-
-| 항목 | 설치 URL | 버전 |
+| 앱 | 설치/업데이트 파일 | 버전 |
 |---|---|---|
-| Stylus E-book CSS | [theme.user.css](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/theme.user.css) | **0.2.0** |
-| Tampermonkey E-book JS | [indicators.user.js](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/indicators.user.js) | **0.2.0** |
+| Stylus | [E-book CSS](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/theme.user.css) | **0.2.1** |
+| Tampermonkey | [E-book Indicators & Clock Skin JS](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/indicators.user.js) | **0.2.1** |
 
-이미 E-book v0.1.1이 설치됐다면 Stylus·Tampermonkey에서 **업데이트 확인**한 후 ChatGPT를 새로고침해. 자동 업데이트가 안 되면 위 링크에서 기존 항목을 덮어쓰되 중복 설치하지 않도록 해.
+### 변경 사항
 
-최초 설치라면 E-book CSS/JS 두 개를 설치해. Stylus에서는 **Dracula Neon**과 **Flat Neon Pixel PREVIEW CSS**를 비활성화하고 E-book CSS만 켜. Tampermonkey에서는 Flat Neon Pixel 시각 보조 JS만 끄고 E-book 보조 JS를 켜. **Clock 3.10.2, Status 6.8.2, Mapper 1.3.6 및 개인 로컬 프로필은 반드시 유지**해.
+1. 대화 일반 본문은 14px 기준에서 약 2pt 낮추되, 가독성을 위해 **최소 12px**을 유지. 좌측 프로젝트·채팅명과 입력 중인 프롬프트는 14px 그대로.
+2. 실제 이미지/첨부파일 미리보기가 있는 작성창에만 텍스트 입력 영역 위 **연회색 가로선** 추가.
+3. 프롬프트 작성창 외곽은 **1px 차콜(`#1F1E1A`) 테두리**와 18px 라운드, 그림자와 글로우 제거.
+4. 사용자 메시지 버블은 **투명 배경 + 2px 차콜 테두리**로, 뒤의 노트 격자가 보이도록 변경.
+5. 모델/추론 강도 표시는 E-book 보조 JS가 해당 버튼을 인식한 경우 **차콜색 굵은 글자와 화살표**로 표시. 모델 선택 동작은 변경하지 않음.
 
-## ChatGPT 모양 추천값
+### 업데이트 순서
+1. Stylus·Tampermonkey의 설치 설정을 백업하고 **E-book CSS·JS만** 위 링크에서 업데이트.
+2. **Dracula CSS / Flat Neon CSS는 OFF**, E-book CSS는 ON. Flat Neon 시각 JS는 OFF.
+3. **Life Clock·Status·Mapper JS 및 개인 로컬 프로필은 계속 ON**.
+4. ChatGPT 모양은 라이트 / 배경 `#F6F2E8` / 전경 `#1F1E1A` / 액센트 `#1F1E1A`.
+5. `Ctrl+Shift+R` 새로고침 후 사용자 메시지, 첨부파일 있는 프롬프트, 모델·추론 강도 드롭다운을 비교.
 
-- 모드: 라이트
-- 배경색: **`#F6F2E8`**
-- 전경색: **`#1F1E1A`**
-- 액센트: **`#9B8F7A`**
+### 원상 복구
+E-book CSS·JS만 비활성화하고 이전에 사용하던 Dracula / Flat Neon 테마를 다시 켠 뒤 앱 모양을 원래 값으로 돌려. 기존 Clock/Status/Mapper 및 개인 프로필은 제거하지 않아.
 
-## 이번 수정
-
-- 본문·채팅명·프로젝트명 14px 공통 크기
-- 가변폭 **Pretendard Variable** 기본 사용, 숫자·메타·코드는 IBM Plex Mono
-- 프로젝트명 600 굵기, 자간 -0.03em / 기존 프로젝트 앞 회색 원 제거
-- 채팅명 450 굵기, 자간 -0.035em / 역할별 컬러 원 인디케이터 보존
-- 메인 배경에 28px 크기의 극도로 옅은 노트 격자
-- 입력창 베이지 메모 카드, 18px 라운드, 회색 포커스 테두리
-- 번호·글머리표 입력 시 들여쓰기와 말줄임 개선
-- Dot 알림 숫자는 JS가 식별한 경우에만 투명 배경·차콜 테두리의 검정 원형 배지 적용
-- Life Clock과 RUN/DONE의 원래 계산·데이터·상태 전환은 변경하지 않음
-
-## 검수와 되돌리기
-
-소스 JS 문법과 CSS 괄호 및 구조를 확인했고, 공개 저장소 파일 일치 여부를 별도 검증한다. 실제 사용자 Chrome 화면에서의 Dot 배지 대상 식별, Life Clock/Status 표시, 입력창 및 텍스트 렌더링 확인은 아직 완료되지 않았어.
-
-원상 복구 시 E-book CSS와 보조 JS만 끄고 기존 Dracula/Flat Neon을 켠 뒤 ChatGPT 모양을 다크/기존 색으로 돌려. **핵심 JS 및 Life Clock 개인 프로필은 절대 지우지 마.**
+**검증 범위:** CSS 구조와 JS 구문, 비공개·공개 GitHub 파일 일치 확인. 실제 로그인 Chrome DOM 구조, 첨부 구분선 선택자, 모델 선택 버튼 마커의 렌더링 효과는 사용자 PC에서 최종 확인 필요.
