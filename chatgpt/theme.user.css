@@ -1,8 +1,8 @@
 /* ==UserStyle==
 @name         Jaroo ChatGPT Dracula Neon
 @namespace    jaroo.chatgpt.dracula
-@version      8.1.0
-@description  Jaroo Neo-Brutalist for ChatGPT, with shared reading typography and a compact sidebar.
+@version      8.2.0
+@description  Jaroo Calendar-inspired category colors and compact conversation rows for ChatGPT.
 @author       Jaroo
 @license      UNLICENSED
 @updateURL    https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/chatgpt/theme.user.css
@@ -21,40 +21,54 @@
 
 /* The UserCSS name and namespace are the installed style's update identity. */
 :root {
-  --jb-ink: #000000;
+  --jb-ink: #343840;
   --jb-paper: #F5F0DC;
   --jb-canvas: #FFFDF7;
   --jb-white: #FFFFFF;
   --jb-rule: #D8D2BE;
-  --jb-teal: #00C2C8;
-  --jb-teal-dark: #065B5D;
-  --jb-teal-soft: #EDF8F4;
-  --jb-selection: #EFE9D6;
-  --jb-magenta: #FF00FF;
-  --jb-yellow: #FFDD00;
+  --jb-pink: #FF79C6;
+  --jb-lavender: #D2A6FF;
+  --jb-leaf: #A4FF66;
+  --jb-amber: #FF9F1C;
+  --jb-purple: #784BA0;
+  --jb-blue: #63E6FF;
+  --jb-mint: #50FA7B;
+  --jb-gold: #F9C74F;
+  --jb-mint-dark: #075F4C;
+  --jb-selection: var(--jb-canvas);
   --jb-muted: #EAE5D5;
-  --jb-border: 2px solid var(--jb-ink);
-  --jb-border-light: 1px solid var(--jb-ink);
-  --jb-shadow: 3px 3px 0 var(--jb-ink);
-  --jb-shadow-small: 2px 2px 0 var(--jb-ink);
-  --jb-radius: 5px;
-  --jb-focus: 2px solid var(--jb-teal-dark);
+  --jb-panel-line: #AB9D7C;
+  --jb-border: 2px solid var(--jb-panel-line);
+  --jb-border-light: 1px solid var(--jb-rule);
+  /* Earlier Clock and Status versions also consume these tokens. */
+  --jb-shadow: none;
+  --jb-shadow-small: none;
+  --jb-radius: 10px;
+  --jb-radius-panel: 15px;
+  --jb-focus: 2px solid var(--jb-mint-dark);
   --jb-font: "Pretendard Variable", "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
   --jb-weight-regular: 400;
   --jb-weight-emphasis: 600;
-  --jaroo-status-css-version: "8.1.0";
+  --jb-weight-chat: 450;
+  --jb-weight-project: 650;
+  --jaroo-status-css-version: "8.2.0";
   --jb-reading-size: 0.9375rem;
   --jb-sidebar-title-size: var(--jb-reading-size);
-  --jb-sidebar-title-line: 1.42;
-  --jb-role-lead: #215323;
-  --jb-role-plan: #563888;
-  --jb-role-manage: #075463;
-  --jb-role-produce: #17468a;
-  --jb-role-action: #8a2958;
-  --jb-title-run-bg: #e9f8f7;
-  --jb-title-done-bg: #fff5ce;
-  --jb-title-run-line: #168a88;
-  --jb-title-done-line: #967200;
+  --jb-sidebar-title-line: 1.30;
+  /* Calendar accents stay bright. Text uses darker tones on the light surface. */
+  --jb-role-lead: #3C681F;
+  --jb-role-plan: #704C99;
+  --jb-role-manage: #08724E;
+  --jb-role-produce: #086980;
+  --jb-role-action: #A02167;
+  --jb-role-lead-accent: var(--jb-leaf);
+  --jb-role-plan-accent: var(--jb-lavender);
+  --jb-role-manage-accent: var(--jb-mint);
+  --jb-role-produce-accent: var(--jb-blue);
+  --jb-role-action-accent: var(--jb-pink);
+  --jb-title-run-line: var(--jb-amber);
+  --jb-title-done-line: var(--jb-mint);
+  --jb-role-tint-strength: 18%;
 }
 
 /* Map native theme tokens in both appearance modes, including portalled UI. */
@@ -75,7 +89,7 @@ html, html body, html :is(.light, .dark, [data-theme="light"], [data-theme="dark
   --bg-elevated-primary: var(--jb-white) !important;
   --bg-elevated-secondary: var(--jb-paper) !important;
   --bg-scrim: rgb(0 0 0 / .55) !important;
-  --bg-accent: var(--jb-teal) !important;
+  --bg-accent: var(--jb-canvas) !important;
   --text-primary: var(--jb-ink) !important;
   --text-secondary: #302e27 !important;
   --text-tertiary: #49453a !important;
@@ -83,17 +97,17 @@ html, html body, html :is(.light, .dark, [data-theme="light"], [data-theme="dark
   --text-primary-inverse: var(--jb-white) !important;
   --text-accent: var(--jb-ink) !important;
   --border-light: var(--jb-rule) !important;
-  --border-medium: var(--jb-ink) !important;
-  --border-heavy: var(--jb-ink) !important;
+  --border-medium: var(--jb-panel-line) !important;
+  --border-heavy: var(--jb-panel-line) !important;
   --border-default: var(--jb-rule) !important;
-  --interactive-bg-primary-default: var(--jb-teal) !important;
-  --interactive-bg-primary-hover: var(--jb-yellow) !important;
+  --interactive-bg-primary-default: var(--jb-canvas) !important;
+  --interactive-bg-primary-hover: var(--jb-white) !important;
   --interactive-bg-secondary-default: var(--jb-white) !important;
   --interactive-bg-secondary-hover: var(--jb-paper) !important;
   --interactive-label-primary-default: var(--jb-ink) !important;
   --interactive-label-secondary-default: var(--jb-ink) !important;
-  --message-surface: var(--jb-teal-soft) !important;
-  --color-background-user-message: var(--jb-teal-soft) !important;
+  --message-surface: var(--jb-canvas) !important;
+  --color-background-user-message: var(--jb-canvas) !important;
   --color-text-user-message: var(--jb-ink) !important;
   --link: var(--jb-ink) !important;
   --link-hover: var(--jb-ink) !important;
@@ -154,11 +168,11 @@ body :where(a[href], button, [role="button"], [role="tab"], [role="menuitem"],
 }
 
 body :is(input[type="checkbox"], input[type="radio"], input[type="range"], progress) {
-  accent-color: var(--jb-teal);
+  accent-color: var(--jb-mint);
 }
 
 ::selection {
-  background: var(--jb-yellow);
+  background: color-mix(in srgb, var(--jb-gold) 40%, var(--jb-white));
   color: var(--jb-ink);
 }
 
@@ -176,7 +190,7 @@ body :is(input[type="checkbox"], input[type="radio"], input[type="range"], progr
 :is(#stage-sidebar, #stage-slideover-sidebar, #slate-sidebar, [data-testid="sidebar"])
   :is(a[href="/"], a[href="/new"], [data-testid="create-new-chat-button"], [data-testid="sidebar-search-button"],
     button[aria-label="Search chats" i], button[aria-label="채팅 검색"]):hover {
-  background: var(--jb-teal) !important;
+  border-color: var(--jb-blue) !important;
 }
 
 :is(#stage-sidebar, #stage-slideover-sidebar, #slate-sidebar, [data-testid="sidebar"])
@@ -189,11 +203,26 @@ body :is(input[type="checkbox"], input[type="radio"], input[type="range"], progr
 }
 
 /* Chat titles share one rhythm in project, pinned, and recent lists. */
-[data-jaroo-chat-role="lead"] { --jb-role-color: var(--jb-role-lead); }
-[data-jaroo-chat-role="plan"] { --jb-role-color: var(--jb-role-plan); }
-[data-jaroo-chat-role="manage"] { --jb-role-color: var(--jb-role-manage); }
-[data-jaroo-chat-role="produce"] { --jb-role-color: var(--jb-role-produce); }
-[data-jaroo-chat-role="action"] { --jb-role-color: var(--jb-role-action); }
+:is([data-jaroo-chat-role="lead"], [data-jaroo-local-role="lead"]) {
+  --jb-role-color: var(--jb-role-lead);
+  --jb-role-accent: var(--jb-role-lead-accent);
+}
+:is([data-jaroo-chat-role="plan"], [data-jaroo-local-role="plan"]) {
+  --jb-role-color: var(--jb-role-plan);
+  --jb-role-accent: var(--jb-role-plan-accent);
+}
+:is([data-jaroo-chat-role="manage"], [data-jaroo-local-role="manage"]) {
+  --jb-role-color: var(--jb-role-manage);
+  --jb-role-accent: var(--jb-role-manage-accent);
+}
+:is([data-jaroo-chat-role="produce"], [data-jaroo-local-role="produce"]) {
+  --jb-role-color: var(--jb-role-produce);
+  --jb-role-accent: var(--jb-role-produce-accent);
+}
+:is([data-jaroo-chat-role="action"], [data-jaroo-local-role="action"]) {
+  --jb-role-color: var(--jb-role-action);
+  --jb-role-accent: var(--jb-role-action-accent);
+}
 
 @layer jaroo-sidebar-layout {
   :where([data-jaroo-native-row], [data-sidebar-archive-chatgpt-id])
@@ -203,13 +232,32 @@ body :is(input[type="checkbox"], input[type="radio"], input[type="range"], progr
   :is(#stage-sidebar, #stage-slideover-sidebar, #slate-sidebar, [data-testid="sidebar"], nav, aside)
     a:is([href*="/c/"], [href^="/local/"], [href^="https://chatgpt.com/local/"]) :is([data-thread-title="true"], [data-thread-title="true"] *,
       [data-jaroo-title-text], [data-jaroo-title-text] *, [data-marquee-content="true"], [data-marquee-text], .truncate) {
-    --jb-text-weight: var(--jb-weight-regular);
+    --jb-weight-regular: var(--jb-weight-chat);
+    --jb-text-weight: var(--jb-weight-chat);
     color: var(--jb-role-color, var(--jb-ink)) !important;
     -webkit-text-fill-color: currentColor !important;
     font-size: var(--jb-sidebar-title-size) !important;
     line-height: var(--jb-sidebar-title-line) !important;
     text-shadow: none !important;
     text-decoration: none !important;
+  }
+
+  :is(a, [data-thread-title], [data-jaroo-title-text]):is([data-jaroo-chat-role], [data-jaroo-local-role]) {
+    min-block-size: 23px;
+    align-content: center;
+    padding-inline-start: 5px !important;
+    background: color-mix(in srgb,
+      var(--jb-role-accent) var(--jb-role-tint-strength), var(--jb-canvas)) !important;
+    border-inline-start: 2px solid var(--jb-role-accent) !important;
+    border-radius: 5px !important;
+  }
+
+  :is(a, [data-thread-title], [data-jaroo-title-text]):is([data-jaroo-chat-role], [data-jaroo-local-role]):hover {
+    background: color-mix(in srgb, var(--jb-role-accent) 28%, var(--jb-canvas)) !important;
+  }
+
+  :is([data-thread-title], [data-jaroo-title-text]):not(a)[data-jaroo-chat-role] {
+    display: block;
   }
 }
 
@@ -252,9 +300,10 @@ body :is(input[type="checkbox"], input[type="radio"], input[type="range"], progr
   a:is([href*="/c/"], [href^="/local/"], [href^="https://chatgpt.com/local/"]) {
   box-sizing: border-box !important;
   flex: 1 1 auto;
-  min-block-size: 30px;
+  min-block-size: 23px;
+  margin-block: 1px;
   align-content: center;
-  padding-block: 4px !important;
+  padding-block: 1px !important;
   padding-inline-start: 6px !important;
   border-radius: var(--jb-radius) !important;
 }
@@ -280,8 +329,8 @@ a[data-jaroo-title-prefix] {
 :is(#stage-sidebar, #stage-slideover-sidebar, #slate-sidebar, [data-testid="sidebar"], aside)
   a:is([href*="/c/"], [href^="/local/"], [href^="https://chatgpt.com/local/"])[aria-current="page"]:not([data-jaroo-selected="true"] *, :has([data-jaroo-selected="true"])) {
   border-radius: var(--jb-radius) !important;
-  outline: 1px solid var(--jb-ink) !important;
-  outline-offset: -1px !important;
+  outline: 2px solid var(--jb-purple) !important;
+  outline-offset: -2px !important;
 }
 
 :is([data-sidebar-archive-chatgpt-id], [data-jaroo-chat-row="true"])[data-jaroo-selected="true"]:not(
@@ -324,17 +373,24 @@ a[data-jaroo-title-prefix] {
   }
 
   [data-app-action-sidebar-project-row] {
-    --jb-project-fill: #F8EDD1 !important;
+    --jb-project-color: var(--jb-role-produce);
   }
 
   [data-app-action-sidebar-project-row][data-jaroo-org="ceo"] {
-    --jb-project-fill: #F5E9ED !important;
+    --jb-project-color: var(--jb-role-lead);
   }
 
   [data-app-action-sidebar-project-row]:is(
-    [data-jaroo-org="strategy"], [data-jaroo-org="assistant"], [data-jaroo-org="technical"],
-    [data-jaroo-org="management"], [data-jaroo-org="philosophy"]) {
-    --jb-project-fill: var(--jb-title-run-bg) !important;
+    [data-jaroo-org="strategy"], [data-jaroo-org="design"], [data-jaroo-org="philosophy"]) {
+    --jb-project-color: var(--jb-role-plan);
+  }
+
+  [data-app-action-sidebar-project-row]:is([data-jaroo-org="assistant"], [data-jaroo-org="sales"]) {
+    --jb-project-color: var(--jb-role-manage);
+  }
+
+  [data-app-action-sidebar-project-row]:is([data-jaroo-org="bd"], [data-jaroo-org="proposal"]) {
+    --jb-project-color: var(--jb-role-action);
   }
 
   [data-app-action-sidebar-project-row]
@@ -372,23 +428,28 @@ a[data-jaroo-title-prefix] {
 
   [data-app-action-sidebar-project-row] :is([data-marquee-content], [data-jaroo-project-title]) {
     /* Mapper resolves its inline weight from the inherited regular token. */
-    --jb-weight-regular: var(--jb-weight-emphasis);
-    --jb-text-weight: var(--jb-weight-emphasis);
+    --jb-weight-regular: var(--jb-weight-project);
+    --jb-text-weight: var(--jb-weight-project);
     display: block !important;
     box-sizing: border-box !important;
-    padding: 3px 7px !important;
-    background: var(--jb-project-fill) !important;
-    color: var(--jb-ink) !important;
+    flex: 0 1 auto !important;
+    inline-size: fit-content !important;
+    padding: 2px 8px !important;
+    background: var(--jb-project-color) !important;
+    color: var(--jb-white) !important;
     -webkit-text-fill-color: currentColor !important;
     text-align: start !important;
-    border: 1px solid var(--jb-ink) !important;
-    border-radius: var(--jb-radius) !important;
+    border: 0 !important;
+    border-radius: 14px !important;
+    box-shadow: none !important;
     font-size: var(--jb-sidebar-title-size) !important;
     line-height: var(--jb-sidebar-title-line) !important;
   }
 
   [data-app-action-sidebar-project-row] :is([data-marquee-content], [data-jaroo-project-title])
     :not(:where(svg, svg *, button, [role="button"], [aria-haspopup])) {
+    color: inherit !important;
+    -webkit-text-fill-color: currentColor !important;
     font-size: var(--jb-sidebar-title-size) !important;
     line-height: inherit !important;
   }
@@ -413,18 +474,18 @@ a[data-jaroo-title-prefix] {
   :is(button, [role="button"]):is([aria-label*="사용량"], [aria-label*="usage" i],
     [aria-label*="weekly limit" i], [title*="사용량"], [title*="usage" i], [data-testid*="usage" i])
   svg :is(circle, path):is([stroke-dasharray], [data-progress], [style*="stroke-dasharray"]) {
-  stroke: var(--jb-teal) !important;
+  stroke: var(--jb-mint) !important;
 }
 
 /* Retain the native mode control and its accessible name. */
 button:is([aria-label*="현재 모드: ChatGPT" i], [aria-label*="현재 모드: Codex" i],
   [aria-label*="current mode: ChatGPT" i], [aria-label*="current mode: Codex" i]) {
   min-block-size: 44px !important;
-  background: var(--jb-teal) !important;
+  background: var(--jb-canvas) !important;
   color: var(--jb-ink) !important;
-  border: var(--jb-border) !important;
+  border: 2px solid var(--jb-mint) !important;
   border-radius: var(--jb-radius) !important;
-  box-shadow: var(--jb-shadow-small);
+  box-shadow: none !important;
 }
 
 button:is([aria-label*="현재 모드:" i], [aria-label*="current mode:" i])
@@ -439,6 +500,24 @@ button:is([aria-label*="현재 모드:" i], [aria-label*="current mode:" i])
   content: "JAROO'S COMPANY" / "";
   color: var(--jb-ink) !important;
   font: var(--jb-weight-emphasis) clamp(0.75rem, 2vw, 1rem)/1.1 var(--jb-font);
+}
+
+/* Tighten conversation rhythm in the native message flow. */
+:where(#thread, [data-testid="conversation-panel"], [data-testid="conversation-thread"])
+  :is([data-testid="conversation-turns"], .group\/turn-messages) {
+  row-gap: 0.625rem !important;
+}
+
+:where(#thread, [data-testid="conversation-panel"], [data-testid="conversation-thread"])
+  [data-testid^="conversation-turn-"]:has([data-message-author-role]) {
+  margin-block: 0 !important;
+  padding-block: 0.25rem !important;
+}
+
+:where(#thread, [data-testid="conversation-panel"], [data-testid="conversation-thread"])
+  [data-testid^="conversation-turn-"]:has([data-message-author-role]):not(:last-of-type)
+    > div:has([data-message-author-role]) {
+  padding-block-end: 0.375rem !important;
 }
 
 /* One reading size across message text and sidebar titles. */
@@ -495,29 +574,38 @@ button:is([aria-label*="현재 모드:" i], [aria-label*="current mode:" i])
 
 [data-message-author-role="assistant"] :is(p, li, blockquote) {
   overflow-wrap: break-word;
-  line-height: 1.72;
+  line-height: 1.56;
+}
+
+[data-message-author-role="assistant"] :is(.markdown, .prose) > :is(p, ul, ol, blockquote) {
+  margin-block: 0.55em;
+}
+
+[data-message-author-role="assistant"] :is(.markdown, .prose) > :is(h1, h2, h3) {
+  margin-block: 0.8em 0.35em;
 }
 
 [data-message-author-role="assistant"] :is(.markdown, .prose, [data-d-component="text"])
-  :is(p, li, dd, dt):not([style*="color:"], [data-d-weight], pre *, code *) {
+  :is(p, li, dd, dt):not([style*="color:"], [data-d-weight], pre *, code *, blockquote *) {
   color: var(--jb-ink) !important;
 }
 
 [data-message-author-role="assistant"] :is(.markdown, .prose, [data-d-component="text"]) a[href] {
-  color: var(--jb-teal-dark) !important;
+  color: var(--jb-mint-dark) !important;
   text-decoration: 1px underline currentColor !important;
   text-underline-offset: .18em;
 }
 
 [data-message-author-role="assistant"] :is(.markdown, .prose, [data-d-component="text"]) a[href]:hover {
-  background: var(--jb-teal-soft) !important;
+  background: var(--jb-canvas) !important;
 }
 
 [data-message-author-role="assistant"] blockquote {
-  color: var(--jb-ink) !important;
-  background: var(--jb-paper) !important;
-  border-inline-start: 3px solid var(--jb-teal-dark) !important;
-  padding: 9px 14px;
+  color: var(--jb-role-plan) !important;
+  background: color-mix(in srgb, var(--jb-lavender) 18%, var(--jb-canvas)) !important;
+  border-inline-start: 2px solid var(--jb-lavender) !important;
+  border-radius: 5px;
+  padding: 7px 12px;
 }
 
 [data-message-author-role="assistant"] :is(mark, :not(pre) > code:not(pre *)) {
@@ -564,12 +652,13 @@ button:is([aria-label*="현재 모드:" i], [aria-label*="current mode:" i])
 [data-message-author-role="user"] [data-user-message-bubble="true"],
 [data-user-message-bubble="true"].bg-user-message {
   max-inline-size: min(100%, 44rem);
-  line-height: 1.62;
-  background: var(--jb-teal-soft) !important;
+  line-height: 1.54;
+  background: color-mix(in srgb, var(--jb-blue) 13%, var(--jb-canvas)) !important;
   color: var(--jb-ink) !important;
-  border: var(--jb-border-light) !important;
-  border-radius: var(--jb-radius) !important;
-  box-shadow: var(--jb-shadow-small);
+  border: 0 !important;
+  border-inline-start: 2px solid var(--jb-blue) !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
 }
 
 [data-message-author-role="assistant"] :is(div, figure, section):has(> table),
@@ -609,12 +698,13 @@ button:is([aria-label*="현재 모드:" i], [aria-label*="current mode:" i])
 }
 
 [data-message-author-role="assistant"] :is(th, [role="columnheader"], [role="rowheader"]) {
-  background: var(--jb-ink) !important;
-  color: var(--jb-white) !important;
+  --jb-text-weight: var(--jb-weight-emphasis);
+  background: var(--jb-canvas) !important;
+  color: var(--jb-ink) !important;
 }
 
 [data-message-author-role="assistant"] :is(th, [role="columnheader"], [role="rowheader"]) :is(p, a, strong, span, code) {
-  color: var(--jb-white) !important;
+  color: var(--jb-ink) !important;
   background: transparent !important;
   text-decoration-color: currentColor !important;
 }
@@ -628,9 +718,9 @@ button:is([aria-label*="현재 모드:" i], [aria-label*="current mode:" i])
     :is([data-testid="composer-container"], [data-testid="composer-surface"], [data-testid="composer"]) :is(#prompt-textarea, [data-testid="composer-input"]))) {
   background: var(--jb-white) !important;
   color: var(--jb-ink) !important;
-  border: var(--jb-border-light) !important;
-  border-radius: var(--jb-radius) !important;
-  box-shadow: var(--jb-shadow-small) !important;
+  border: var(--jb-border) !important;
+  border-radius: var(--jb-radius-panel) !important;
+  box-shadow: none !important;
 }
 
 :is(#prompt-textarea, [data-testid="composer-input"]) {
@@ -639,29 +729,14 @@ button:is([aria-label*="현재 모드:" i], [aria-label*="current mode:" i])
   font-size: var(--jb-reading-size) !important;
 }
 
-/* The text editor can match focus-visible even after a mouse click. When a
-   composer surrounds it, show the focus ring on that surface instead. */
+/* Keep the caret as the prompt's focus indicator. */
 :is(#prompt-textarea, [data-testid="composer-input"],
-    [data-testid="composer-input"] :is(textarea, [contenteditable="true"])):focus-visible {
-  outline: 1px solid #67635a !important;
-  outline-offset: 1px !important;
-  box-shadow: none !important;
-}
-
-:where(form, [data-testid="composer"], [data-testid="composer-container"], [data-testid="composer-surface"])
-  :is(#prompt-textarea, [data-testid="composer-input"],
-    [data-testid="composer-input"] :is(textarea, [contenteditable="true"])):focus-visible {
-  outline: none !important;
-}
-
+    [data-testid="composer-input"] :is(input, textarea, [contenteditable="true"])),
 :is(form, [data-testid="composer"], [data-testid="composer-container"], [data-testid="composer-surface"]):has(
   :is(#prompt-textarea, [data-testid="composer-input"]):focus-within
-):not(:has(
-  :is(form, [data-testid="composer"], [data-testid="composer-container"], [data-testid="composer-surface"])
-    :is(#prompt-textarea, [data-testid="composer-input"]):focus-within
-)) {
-  outline: 1px solid #67635a !important;
-  outline-offset: 1px !important;
+) {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 :where(main, #thread, #page-header, [data-testid="conversation-header"], [role="dialog"], [role="alertdialog"],
@@ -673,31 +748,32 @@ button:is([aria-label*="현재 모드:" i], [aria-label*="current mode:" i])
   color: var(--jb-ink) !important;
   border: var(--jb-border-light) !important;
   border-radius: var(--jb-radius) !important;
-  box-shadow: var(--jb-shadow-small);
+  box-shadow: none !important;
 }
 
 :where(main, #thread, #page-header, [data-testid="conversation-header"], [role="dialog"], [role="alertdialog"],
   [data-testid*="settings" i], [data-testid*="search" i], [data-testid*="work-panel" i])
   :is(button.btn-primary, [role="button"].btn-primary, [data-testid="send-button"], [data-testid="composer-submit-button"]) {
-  background: var(--jb-teal) !important;
+  background: var(--jb-canvas) !important;
+  border: 2px solid var(--jb-mint) !important;
 }
 
 :where(main, #thread, [role="dialog"], [role="alertdialog"])
   :is([data-testid="stop-button"], .btn-danger, button[data-variant="destructive"]) {
-  background: var(--jb-magenta) !important;
+  background: var(--jb-canvas) !important;
   color: var(--jb-ink) !important;
-  border: var(--jb-border-light) !important;
+  border: 2px solid var(--jb-pink) !important;
   border-radius: var(--jb-radius) !important;
 }
 
 :where(main, #thread, #page-header, [role="dialog"], [role="alertdialog"])
   :is(.btn-primary, .btn-secondary, [data-testid="send-button"], [data-testid="composer-submit-button"]):not(:disabled, [aria-disabled="true"]):hover {
-  background: var(--jb-yellow) !important;
+  border-color: var(--jb-blue) !important;
 }
 
 :where(main, #thread, #page-header, [role="dialog"], [role="alertdialog"])
   :is(.btn-primary, .btn-secondary, [data-testid="send-button"], [data-testid="composer-submit-button"]):not(:disabled, [aria-disabled="true"]):active {
-  box-shadow: inset var(--jb-shadow-small) !important;
+  background: var(--jb-canvas) !important;
 }
 
 :where(main, #thread, #page-header, [role="dialog"], [role="alertdialog"])
@@ -717,7 +793,7 @@ button:is([aria-label*="현재 모드:" i], [aria-label*="current mode:" i])
 }
 
 :is(input, textarea, [role="textbox"], [role="combobox"])[aria-invalid="true"] {
-  border-inline-start: 6px solid var(--jb-magenta) !important;
+  border-inline-start: 6px solid var(--jb-pink) !important;
 }
 
 /* Menus, Work, search, settings, and feedback surfaces */
@@ -729,7 +805,7 @@ button:is([aria-label*="현재 모드:" i], [aria-label*="current mode:" i])
   color: var(--jb-ink) !important;
   border: var(--jb-border) !important;
   border-radius: var(--jb-radius) !important;
-  box-shadow: var(--jb-shadow) !important;
+  box-shadow: none !important;
 }
 
 dialog[open]::backdrop,
@@ -749,12 +825,13 @@ dialog[open]::backdrop,
 
 :is([role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"], [role="tab"]):not(
   :disabled, [aria-disabled="true"]):is(:hover, [data-highlighted], [aria-checked="true"], [aria-selected="true"], [data-state="active"]) {
-  background: var(--jb-teal) !important;
-  box-shadow: inset 0 0 0 2px var(--jb-ink);
+  background: var(--jb-canvas) !important;
+  outline: 2px solid var(--jb-purple);
+  outline-offset: -2px;
 }
 
 :is([role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"])[data-variant="destructive"]:hover {
-  background: var(--jb-magenta) !important;
+  background: var(--jb-canvas) !important;
 }
 
 [role="tablist"] {
@@ -766,7 +843,7 @@ dialog[open]::backdrop,
   color: var(--jb-ink) !important;
   border: var(--jb-border-light) !important;
   border-radius: var(--jb-radius) !important;
-  box-shadow: var(--jb-shadow-small);
+  box-shadow: none !important;
 }
 
 [role="tooltip"], [data-radix-tooltip-content] {
@@ -779,23 +856,23 @@ dialog[open]::backdrop,
 }
 
 :is([data-sonner-toast], [data-testid="toast"], [role="alert"]:not(.sr-only, .visually-hidden)):not(:empty) {
-  background: var(--jb-feedback-fill, var(--jb-paper)) !important;
+  background: var(--jb-canvas) !important;
   color: var(--jb-ink) !important;
-  border: var(--jb-border-light) !important;
+  border: 2px solid var(--jb-feedback-line, var(--jb-rule)) !important;
   border-radius: var(--jb-radius) !important;
-  box-shadow: var(--jb-shadow-small) !important;
+  box-shadow: none !important;
 }
 
 :is([data-sonner-toast], [data-testid*="toast" i], [role="alert"]):is([data-type="success"], [data-variant="success"]) {
-  --jb-feedback-fill: var(--jb-teal);
+  --jb-feedback-line: var(--jb-mint);
 }
 
 :is([data-sonner-toast], [data-testid*="toast" i], [role="alert"]):is([data-type="warning"], [data-variant="warning"]) {
-  --jb-feedback-fill: var(--jb-yellow);
+  --jb-feedback-line: var(--jb-gold);
 }
 
 :is([data-sonner-toast], [data-testid*="toast" i], [role="alert"]):is([data-type="error"], [data-variant="destructive"]) {
-  --jb-feedback-fill: var(--jb-magenta);
+  --jb-feedback-line: var(--jb-pink);
 }
 
 progress, [role="progressbar"][aria-valuemax]:not(svg, [aria-valuetext]) {
@@ -806,42 +883,43 @@ progress, [role="progressbar"][aria-valuemax]:not(svg, [aria-valuetext]) {
 }
 
 progress::-webkit-progress-bar { background: var(--jb-white); }
-progress::-webkit-progress-value { background: var(--jb-teal); }
-progress::-moz-progress-bar { background: var(--jb-teal); }
+progress::-webkit-progress-value { background: var(--jb-mint); }
+progress::-moz-progress-bar { background: var(--jb-mint); }
 
 [role="progressbar"]:not(svg) > [data-progress-indicator] {
-  background: var(--jb-teal) !important;
+  background: var(--jb-mint) !important;
   border-radius: 0 !important;
 }
 
-/* Pulse only the colored title box. Text and links stay fully visible. */
-@property --jb-title-color-amount {
+/* Keep the category tint while marking status with a colored lower edge. */
+@property --jb-title-line-amount {
   syntax: "<percentage>";
   inherits: false;
   initial-value: 100%;
 }
 
 @keyframes jaroo-title-pulse {
-  50% { --jb-title-color-amount: 75%; }
+  50% { --jb-title-line-amount: 75%; }
 }
 
 [data-jaroo-title-status="working"] {
-  --jb-title-status-fill: var(--jb-title-run-bg);
   --jb-title-status-line: var(--jb-title-run-line);
   animation-iteration-count: infinite;
 }
 
 [data-jaroo-title-status="done"] {
-  --jb-title-status-fill: var(--jb-title-done-bg);
   --jb-title-status-line: var(--jb-title-done-line);
   animation-iteration-count: 3;
 }
 
 :is([data-jaroo-title-status="working"], [data-jaroo-title-status="done"]) {
-  background: color-mix(in srgb, var(--jb-title-status-fill) var(--jb-title-color-amount), var(--jb-white)) !important;
+  --jb-title-status-stroke: color-mix(in srgb,
+    var(--jb-title-status-line) var(--jb-title-line-amount), var(--jb-panel-line));
+  background: color-mix(in srgb,
+    var(--jb-title-status-line) var(--jb-role-tint-strength), var(--jb-canvas)) !important;
   color: var(--jb-role-color, var(--jb-ink)) !important;
-  border-radius: var(--jb-radius) !important;
-  border-inline-start: 2px solid var(--jb-title-status-line) !important;
+  border-radius: 5px !important;
+  border-block-end: 2px solid var(--jb-title-status-stroke) !important;
   animation-name: jaroo-title-pulse;
   animation-duration: 1.8s;
   animation-timing-function: ease-in-out;

@@ -1,19 +1,19 @@
 # Chrome 업데이트 및 설치 · Jaroo's Company UI
 
-**2026-11-23 KST · ChatGPT Neo-Brutalist v1.0**
+**2026-11-23 KST · ChatGPT 테마 8.2.0**
 
 ## 기존 설치에서 업데이트
 
 1. Chrome 테스트 프로필이나 PC 한 대에서 먼저 진행합니다. 이전 정상본이 있다면 ZIP을 로컬에 보관합니다.
-2. Tampermonkey 메뉴에서 **Check for userscript updates**를 실행합니다. 대시보드의 설치 항목에서 **Sidebar Live Clock 3.9.0**, **Organization Mapper 1.3.3**, **Status & Command Center 6.7.2**을 확인합니다.
-3. Stylus 관리 화면에서 **Jaroo ChatGPT Dracula Neon** 항목의 업데이트를 확인하고 **8.1.0**을 적용합니다. 기존 설치에 연결되도록 이 항목 이름을 계속 사용합니다.
-4. ChatGPT를 새로고침합니다. 설치 항목별로 활성 버전이 하나인지, 별도 로컬 프로필이 활성 상태인지 확인합니다. ChatGPT 테마의 이전 복사본이 있으면 비활성화합니다. Mapper와 Calendar는 기존 배포 버전을 사용합니다.
+2. Tampermonkey 메뉴에서 **Check for userscript updates**를 실행합니다. 대시보드의 설치 항목에서 **Sidebar Live Clock 3.9.1**, **Organization Mapper 1.3.4**, **Status & Command Center 6.7.3**을 설치 버전에서 확인합니다.
+3. Stylus 관리 화면에서 **Jaroo ChatGPT Dracula Neon** 항목의 업데이트를 확인하고 **8.2.0**을 적용합니다. 기존 설치에 연결되도록 이 항목 이름을 계속 사용합니다.
+4. ChatGPT를 새로고침합니다. 설치 항목별로 활성 버전이 하나인지, 별도 로컬 프로필이 활성 상태인지 확인합니다. ChatGPT 테마의 이전 복사본이 있으면 비활성화합니다. Google Calendar의 버전은 1.3.7과 1.2.2입니다.
 
 ## 업데이트 후 확인
 
 - Chrome에 로그인한 상태에서 사이드바를 180~220px, 260~290px, 395~420px로 바꿔 긴 프로젝트·대화 제목의 줄바꿈과 더보기 버튼을 확인합니다. 시각은 이전의 세그먼트 숫자로 표시되며 넓은 사이드바에서는 초까지 보입니다.
-- 새 응답을 실행해 채팅 제목의 본래 역할 색이 유지되고, RUN에서는 옅은 청록색, 미확인 완료에서는 옅은 노란색 배경이 나타나는지 확인합니다. 제목의 역할 기호, 선택 테두리, 제목 링크, RUN/DONE 목록과 ALL/ONLY 전환도 확인합니다.
-- 본문·사이드바·입력창의 기본 글자와 제목·강조의 굵기 차이를 확인합니다. 본문·채팅명·프로젝트명은 같은 Pretendard 크기입니다. 프로젝트명은 600이고 본문과 채팅명은 400입니다. 표·코드 가로 스크롤, 메뉴, Work 패널과 키보드 포커스도 확인합니다. 로컬 프로필이 없는 테스트 프로필에서는 Life Clock 지표가 숨겨지는지 확인합니다.
+- 새 응답을 실행해 채팅 제목의 본래 역할 색이 유지되고, 진행 중에는 주황색, 미확인 완료에는 초록색 하단 선이 나타나는지 확인합니다. 제목의 역할 기호, 선택 테두리, 제목 링크, RUN/DONE 목록과 ALL/ONLY 전환도 확인합니다.
+- 본문·사이드바·입력창의 기본 글자와 제목·강조의 굵기 차이를 확인합니다. 본문·채팅명·프로젝트명은 같은 Pretendard 크기입니다. 본문은 400, 채팅명은 450, 프로젝트명은 650입니다. 입력창 포커스는 커서로 표시합니다. 표·코드 가로 스크롤, 메뉴, Work 패널과 키보드 포커스도 확인합니다. 로컬 프로필이 없는 테스트 프로필에서는 Life Clock 지표가 숨겨지는지 확인합니다.
 
 오프라인 Chromium에서 화면과 기능을 검증했습니다. 실제 로그인 화면, 확장 프로그램 업데이트, 개인 프로필 출력은 Chrome에서 최종 확인해야 합니다.
 
@@ -26,13 +26,13 @@
 
 | 항목 | 설치 URL | 버전 |
 |---|---|---|
-| Clock (Tampermonkey) | [clock.user.js](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/chatgpt/clock.user.js) | 3.9.0 |
-| Status (Tampermonkey) | [status.user.js](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/chatgpt/status.user.js) | 6.7.2 |
-| Mapper (Tampermonkey) | [mapper.user.js](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/chatgpt/mapper.user.js) | 1.3.3 |
-| ChatGPT CSS (Stylus) | [theme.user.css](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/chatgpt/theme.user.css) | 8.1.0 |
+| Clock (Tampermonkey) | [clock.user.js](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/chatgpt/clock.user.js) | 3.9.1 |
+| Status (Tampermonkey) | [status.user.js](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/chatgpt/status.user.js) | 6.7.3 |
+| Mapper (Tampermonkey) | [mapper.user.js](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/chatgpt/mapper.user.js) | 1.3.4 |
+| ChatGPT CSS (Stylus) | [theme.user.css](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/chatgpt/theme.user.css) | 8.2.0 |
 | Calendar Companion (Tampermonkey) | [companion.user.js](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/calendar/companion.user.js) | 1.3.7 |
 | Calendar CSS (Stylus) | [theme.user.css](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/calendar/theme.user.css) | 1.2.2 |
 
 ## 되돌리기
 
-테스트 프로필에서 새 버전을 비활성화하고 저장해 둔 이전 정상본을 복구할 수 있습니다. 공개 이전 버전은 [8.0.3 시점의 커밋](https://github.com/jangjaru/Jaroo-UI-Release/tree/126ab4119342fa4f183e2fe7edb18046ce2ce165)에 보관되어 있습니다. 이전 코드로 공개 업데이트를 제공하려면 설치 버전보다 높은 번호로 다시 배포해야 합니다.
+테스트 프로필에서 새 버전을 비활성화하고 저장해 둔 이전 정상본을 복구할 수 있습니다. 공개 이전 버전은 [8.1.0 시점의 커밋](https://github.com/jangjaru/Jaroo-UI-Release/tree/11ac4c8bae66a5db2dab06c4853663c47488fd61)에 보관되어 있습니다. 이전 코드로 공개 업데이트를 제공하려면 설치 버전보다 높은 번호로 다시 배포해야 합니다.
