@@ -25,12 +25,12 @@ Colors, font sizes, layout, icons, animations, message body (including variable 
 
 The reversible flat saturated Monokai/pixel-edge layer is available as [CSS](chatgpt/flat-neon-pixel.user.css) and [JS](chatgpt/flat-neon-pixel.user.js). Install each once, leaving Dracula 8.3.4 and Clock/Status/Mapper enabled; these existing files are unchanged. See [Korean installation and rollback instructions](docs/INSTALL_FLAT_NEON_PIXEL_v0.1.0_KO.md). Signed-in Chrome visual acceptance remains pending.
 
-## E-book Ivory Mono v0.1.0 (independent theme)
+## E-book Ivory Mono v0.1.1 (independent theme)
 
-A separate, opt-in light **E-book × Minimal Tech** theme has been published in [`themes/ebook-ivory-mono/`](themes/ebook-ivory-mono/README.md). It does not replace Dracula/Flat Neon; disable the old visual styles when using E-book. Keep Clock, Status and Mapper active.
+A separate, opt-in light **E-book × Minimal Tech** theme with IBM Plex Mono + Monoplex KR and matched sidebar chat/body reading size has been published in [`themes/ebook-ivory-mono/`](themes/ebook-ivory-mono/README.md). It does not replace Dracula/Flat Neon; disable the old visual styles when using E-book. Keep Clock, Status and Mapper active.
 
 - [Stylus CSS installer](themes/ebook-ivory-mono/theme.user.css)
 - [Tampermonkey JS installer](themes/ebook-ivory-mono/indicators.user.js)
 - [Korean setup, font and rollback guidance](themes/ebook-ivory-mono/README.md)
 
-Version 0.1.0 is source-validated; signed-in Chrome appearance/interaction acceptance remains pending.
+Version 0.1.1 is source-validated; signed-in Chrome appearance/interaction acceptance remains pending.

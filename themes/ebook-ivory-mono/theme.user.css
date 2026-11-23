@@ -1,8 +1,8 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.1.0
-@description  Independent ivory-paper / IBM Plex Mono / Pretendard ChatGPT theme, with fine dividers and role-color dots.
+@version      0.1.1
+@description  E-book ivory UI with installed IBM Plex Mono and Monoplex KR, equal sidebar-chat and body text sizes.
 @author       Jaroo Design Team
 @license      UNLICENSED
 @updateURL    https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/theme.user.css
@@ -28,10 +28,10 @@
     --eb-teal: #59B8BC;
     --eb-green: #A5D685;
     --eb-orange: #E3AA62;
-    --eb-font: "IBM Plex Mono", "Pretendard Variable", "Pretendard", "Noto Sans KR", "Noto Sans CJK KR", monospace;
-    --eb-font-korean: "Pretendard Variable", "Pretendard", "Noto Sans KR", "Noto Sans CJK KR", sans-serif;
+    --eb-font: "IBM Plex Mono", "Monoplex KR", "Pretendard Variable", "Pretendard", monospace;
+    --eb-font-korean: "Monoplex KR", "Pretendard Variable", "Pretendard", monospace;
     --eb-ui-size: 13.5px;
-    --eb-prose-size: 14px;
+    --eb-prose-size: var(--eb-ui-size);
     --eb-code-size: 12.5px;
     --eb-weight-normal: 400;
     --eb-weight-strong: 600;
@@ -73,7 +73,7 @@
     --link: var(--eb-ink) !important;
     --link-hover: var(--eb-secondary) !important;
     --jaroo-status-css-version: "6.8.2";
-    --ebook-theme-version: "0.1.0";
+    --ebook-theme-version: "0.1.1";
   }
 
   /* 02. LIGHT-PAPER BASE — do not modify Chrome frame or extension UIs. */
@@ -81,10 +81,12 @@
   html :is([data-theme="light"],[data-theme="dark"]) {
     color-scheme: light !important;
   }
-  html, body { background: var(--eb-paper) !important; color: var(--eb-ink) !important; }
+  html, body { background: var(--eb-paper) !important; color: var(--eb-ink) !important; font-family:var(--eb-font)!important; }
   body :is(p, a, span, div, label, li, ul, ol, button, input, textarea,
        select, option, h1, h2, h3, h4, h5, h6, th, td, blockquote,
-       small, strong, b, em, i, summary, [contenteditable="true"]) {
+       small, strong, b, em, i, summary, section, article, main, aside, nav, header, footer,
+       pre, code, kbd, samp, [role="textbox"], [data-d-component="text"], [data-d-text-flow],
+       [contenteditable="true"]) {
     font-family: var(--eb-font) !important;
     font-style: normal !important;
     text-shadow: none !important;
@@ -351,7 +353,7 @@
     padding: 8px 13px !important;
   }
   body [data-message-author-role="assistant"] :not(pre) > code {
-    font-family: "IBM Plex Mono", ui-monospace, monospace !important;
+    font-family: var(--eb-font) !important;
     font-size: var(--eb-code-size) !important;
     background: var(--eb-soft) !important;
     border: 1px solid var(--eb-line) !important;
@@ -361,7 +363,7 @@
     padding: 1px 4px;
   }
   body :is(pre, pre code, code, kbd, samp) {
-    font-family: "IBM Plex Mono", "Cascadia Mono", "Consolas", monospace !important;
+    font-family: var(--eb-font) !important;
     font-style: normal !important;
   }
   body [data-message-author-role="user"] :is(
@@ -380,6 +382,30 @@
     -webkit-text-fill-color: var(--eb-ink) !important;
     font-weight: 450 !important;
     font-size: var(--eb-prose-size) !important;
+  }
+
+
+  /* 12. E-BOOK v0.1.1: identical regular reading size for chat titles
+     and messages, including nested rich-text nodes. Headings remain hierarchical. */
+  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)
+    a[href*="/c/"] :is([data-thread-title="true"],[data-marquee-text],span.truncate,div.truncate,span[dir="auto"],[data-ebook-role]) {
+      font-family:var(--eb-font)!important;
+      font-size:var(--eb-ui-size)!important;
+  }
+  body :is([data-message-author-role="assistant"],[data-message-author-role="user"])
+    :is(p,li,dd,dt,blockquote,[data-d-text-flow],[data-d-component="text"]):not(
+      :is(h1 *,h2 *,h3 *,h4 *,h5 *,h6 *,pre *,code *,table *,[role="table"] *,[data-d-component="table"] *,button *,[role="button"] *)
+    ) {
+      font-family:var(--eb-font)!important;
+      font-size:var(--eb-prose-size)!important;
+  }
+  body :is([data-message-author-role="assistant"],[data-message-author-role="user"])
+    :is(p,li,[data-d-text-flow],[data-d-component="text"])
+    :is(span,strong,b,em,i,a,[data-d-component="text"]):not(
+      :is(h1 *,h2 *,h3 *,h4 *,h5 *,h6 *,pre *,code *,table *,[role="table"] *,[data-d-component="table"] *,button *,[role="button"] *)
+    ) {
+      font-family:var(--eb-font)!important;
+      font-size:var(--eb-prose-size)!important;
   }
 
   /* 08. EDITABLE TABLES — 1px horizontal structure and no fake metrics. */
@@ -422,7 +448,7 @@
     box-shadow: none !important;
   }
   body [data-message-author-role="assistant"] :is(pre,[data-d-component="code"]) :is(code,span) {
-    font-family: "IBM Plex Mono", "Cascadia Mono", monospace !important;
+    font-family: var(--eb-font) !important;
   }
 
   /* 09. COMPOSER + PANEL CONTROLS — retain click, focus, and sizing logic. */
@@ -482,11 +508,11 @@
 
   /* 11. RESPONSIVE — no invented second conversation panel. */
   @media (max-width: 1050px) {
-    :root { --eb-ui-size: 13px; --eb-prose-size: 13.8px; }
+    :root { --eb-ui-size: 13px; --eb-prose-size: var(--eb-ui-size); }
     body [data-message-author-role="assistant"] :is(table,[role="table"],[data-d-component="table"]) { overflow-x: auto !important; }
   }
   @media (max-width: 650px) {
-    :root { --eb-ui-size: 12.8px; --eb-prose-size: 13.6px; }
+    :root { --eb-ui-size: 12.8px; --eb-prose-size: var(--eb-ui-size); }
     body [data-message-author-role="assistant"] :is(h1,h2,h3,h4,h5,h6) { margin-top: .8em; }
   }
   @media (prefers-reduced-motion: reduce) {

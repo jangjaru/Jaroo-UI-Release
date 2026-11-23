@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.1.0
+// @version      0.1.1
 // @description  E-book visual dot indicators for role prefixes plus a light Clock skin; keeps original chat titles, React data and RUN/DONE logic intact.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -39,9 +39,20 @@
       --ebook-ink:#1D1D1B;
       --ebook-muted:#575751;
       --ebook-line:#AAA9A0;
-      --ebook-font:"IBM Plex Mono","Pretendard Variable","Pretendard",sans-serif;
+      --ebook-font:"IBM Plex Mono","Monoplex KR","Pretendard Variable","Pretendard",monospace;
     }
-    /* Do not touch status dock and its top controls (Status visual pulse). */
+    /* v0.1.1: locally installed Latin and Korean mono font, including status dock.
+       Segmented digital digits and all calculations remain unmodified. */
+    :host .fallback-brand,
+    :host .fallback-brand :is(.brand-word,.brand-title,.brand-jaroo,.brand-company,.brand-subtitle),
+    :host .life-clock, :host .life-clock :is(div,span,strong),
+    :host .clock :is(.date-main,.weather-label),
+    :host .jaroo-center, :host .jaroo-center :is(div,span,button,strong,em),
+    :host .jaroo-focus-list, :host .jaroo-focus-list :is(a,button,div,span,strong,em) {
+      font-family:var(--ebook-font)!important;
+      font-style:normal!important;
+    }
+    /* Preserve all existing RUN/DONE visual pulses and click behavior. */
     .life-clock {
       background:var(--ebook-panel)!important;
       border:1px solid var(--ebook-line)!important;
@@ -244,7 +255,7 @@
   recoverTimer = setInterval(() => { if (!document.hidden) schedule(); }, 4000);
   schedule();
   window[RUNTIME] = {
-    version:'0.1.0',dispose,refresh:schedule,
+    version:'0.1.1',dispose,refresh:schedule,
     diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`)})
   };
 })();
