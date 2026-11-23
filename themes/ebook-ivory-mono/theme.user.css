@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.29
+@version      0.2.30
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -42,17 +42,19 @@
     unicode-range:U+0021-007E,U+00A1-024F,U+1E00-1EFF,U+20AC;
   }
 
-  /* 01. DESIGN TOKENS — adapt colors here; no other theme is required. */
+  /* 01. DESIGN TOKENS — Cool Paper A palette, 2026-11-24 (v0.2.30).
+     Reduce cream/yellow cast while retaining the original paper grain, grid,
+     New Chat ink highlight and all typography/interactive behavior. */
   :root {
-    --eb-paper: #F6F2E8;
-    --eb-panel: #FBF8F1;
-    --eb-rail: #F1ECE2;
-    --eb-soft: #ECE6DB;
+    --eb-paper: #F2F3F0;
+    --eb-panel: #F8F9F7;
+    --eb-rail: #ECEFEE;
+    --eb-soft: #E7EBEA;
     --eb-ink: #1F1E1A;
     --eb-secondary: #4C4942;
     --eb-muted: #787267;
-    --eb-line: #CBC3B5;
-    --eb-line-strong: #8E8679;
+    --eb-line: #C9D0D1;
+    --eb-line-strong: #8C999C;
     --eb-amber: #E3AA2A;
     --eb-blue: #65A4E3;
     --eb-coral: #F1AD79;
@@ -475,7 +477,7 @@
     border-bottom: 0 !important;
   }
   body [data-message-author-role="assistant"] :is(pre,[data-d-component="code"]) {
-    background: #F3F2EA !important;
+    background: #EFF2F0 !important;
     color: var(--eb-ink) !important;
     border: 1px solid var(--eb-line) !important;
     border-radius: 10px !important;
@@ -558,10 +560,10 @@
      No DOM reconstruction. Native sidebar and prompt controls retain their
      click/keyboard behavior. Color roles are informational, not decorations. */
   :root {
-    --eb-notebook-grid: rgba(120,114,103,.022);
-    --eb-composer-paper: #F4F0E6;
-    --eb-composer-line: #D4CDC0;
-    --eb-quiet-focus: #9B8F7A;
+    --eb-notebook-grid: rgba(101,116,121,.022);
+    --eb-composer-paper: #F3F5F3;
+    --eb-composer-line: #CED6D6;
+    --eb-quiet-focus: #8B989A;
     --eb-dot-size: 8px;
     --eb-sidebar-chat-size: var(--eb-ui-size);
   }
@@ -1007,7 +1009,7 @@
   /* 16. CLASSIC PAPER · 2026-11-24, no external assets.
      Fine fibrous grain + barely visible notebook grid. Keep cards and text
      crisp; the texture belongs to the paper surface only. */
-  :root { --eb-classic-paper-grain: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22240%22%20height%3D%22240%22%20viewBox%3D%220%200%20240%20240%22%3E%3Cfilter%20id%3D%22paper%22%20x%3D%220%22%20y%3D%220%22%20width%3D%22100%25%22%20height%3D%22100%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%22.83%22%20numOctaves%3D%223%22%20seed%3D%2217%22%20stitchTiles%3D%22stitch%22%2F%3E%3CfeColorMatrix%20type%3D%22saturate%22%20values%3D%220%22%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%22240%22%20height%3D%22240%22%20opacity%3D%22.12%22%20filter%3D%22url(%23paper)%22%2F%3E%3Cg%20stroke%3D%22%23957F5F%22%20stroke-opacity%3D%22.045%22%20stroke-width%3D%22.55%22%20fill%3D%22none%22%3E%3Cpath%20d%3D%22M14%2025l23%202m80%2036l17%201m67%2038l11%202M35%20183l20-1m99%2037l14%201M187%2013l26%201%22%2F%3E%3Cpath%20d%3D%22M56%2041l2%2015m103%2078l1%2019M89%20208l2%2017M226%20146l1%2013%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
+  :root { --eb-classic-paper-grain: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22240%22%20height%3D%22240%22%20viewBox%3D%220%200%20240%20240%22%3E%3Cfilter%20id%3D%22paper%22%20x%3D%220%22%20y%3D%220%22%20width%3D%22100%25%22%20height%3D%22100%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%22.83%22%20numOctaves%3D%223%22%20seed%3D%2217%22%20stitchTiles%3D%22stitch%22%2F%3E%3CfeColorMatrix%20type%3D%22saturate%22%20values%3D%220%22%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%22240%22%20height%3D%22240%22%20opacity%3D%22.12%22%20filter%3D%22url(%23paper)%22%2F%3E%3Cg%20stroke%3D%22%23848F95%22%20stroke-opacity%3D%22.045%22%20stroke-width%3D%22.55%22%20fill%3D%22none%22%3E%3Cpath%20d%3D%22M14%2025l23%202m80%2036l17%201m67%2038l11%202M35%20183l20-1m99%2037l14%201M187%2013l26%201%22%2F%3E%3Cpath%20d%3D%22M56%2041l2%2015m103%2078l1%2019M89%20208l2%2017M226%20146l1%2013%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
   html body :is(#thread,[data-testid="conversation-panel"],
     [data-testid="conversation-thread"],main,[role="main"]) {
     background-color:var(--eb-paper)!important;
