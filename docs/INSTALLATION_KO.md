@@ -1,21 +1,15 @@
-# Jaroo's Company · Dracula Neon CSS v8.3.3
+# Jaroo's Company · Dracula Neon CSS v8.3.4 적용 안내
 
-## 이번 변경
-현재 ChatGPT 스크린샷에서 사이드바는 가벼워졌지만 대화 본문은 여전히 두껍게 보이는 현상을 확인했습니다. 이번에는 **CSS만** 업데이트했고, 본문 내부의 텍스트 노드와 가변 Pretendard를 대상으로 굵기 규칙을 추가했습니다.
+**변경 범위:** 좌측 프로젝트 이름과 채팅 제목만 글꼴 굵기 약 30% 증가. 우측 본문·Life Clock·RUN/DONE·색상·레이아웃은 변경하지 않았습니다.
 
-- 일반 본문: `font-weight: 320`
-- 제목·강조 글씨: `font-weight: 430`
-- Life Clock/Status JS, Mapper, Google Calendar는 변경하지 않았습니다.
-
-## 설치
+## 업데이트
 1. Stylus 설정을 내보내기로 백업합니다.
-2. Stylus의 `Jaroo ChatGPT Dracula Neon` 스타일 업데이트 확인을 실행하여 **8.3.3** 적용.
-3. 감지되지 않으면 [GitHub 최신 CSS](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/chatgpt/theme.user.css) 주소로 기존 스타일을 중복되지 않게 업데이트합니다.
-4. ChatGPT에서 `Ctrl+R` 새로고침.
-5. **본문 일반 문장과 강조 문장**이 실제로 달라졌는지 확인한 뒤 전체 화면을 공유합니다.
+2. Stylus 관리 화면에서 `Jaroo ChatGPT Dracula Neon` → 업데이트 확인.
+3. **CSS v8.3.4**가 설치되었는지 확인하고 ChatGPT에서 `Ctrl+R`.
+4. 프로젝트명(대표실·전략기획본부·일반 부서)과 채팅명(일반/선택/완료)을 이전 화면과 비교합니다.
 
-## 검증 및 제한
-- 최종 설치/렌더 검수는 아직 완료하지 않았습니다.
-- `font-weight` 숫자만으로 체감상 30% 얇아지는 효과를 보장하지는 않습니다.
-- Pretendard Variable 로컬 설치나 CDN 폰트 파일 접근에 실패하면 환경에 따라 다르게 보일 수 있습니다.
-- 기존 개인 프로필/시계/상태관리는 수정하지 않았습니다.
+자동 업데이트가 감지되지 않으면 [최신 CSS 직접 설치](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/chatgpt/theme.user.css)를 사용합니다. 단, 기존 스타일을 삭제하거나 중복 설치하지 말고 먼저 백업한 후 기존 항목을 업데이트합니다. frozen 브랜치로 설치한 경우 main을 자동 추적하지 않습니다.
+
+**변경 없음:** Clock 3.10.2 / Status 6.8.2 / Mapper 1.3.6 / Google Calendar 1.3.7·1.2.2. Tampermonkey 업데이트 불필요.
+
+**검수 상태:** GitHub 소스 반영과 실제 로그인 Chrome 렌더링은 별개이며, 사용자 화면을 보고 최종 승인합니다.

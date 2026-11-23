@@ -1,24 +1,22 @@
 # Jaroo's Company · UI Auto-Update Release
 
-**2026-11-23 · Dracula Neon · Conversation Typography Fix v8.3.3**
+**2026-11-23 · Dracula Neon Sidebar Text Weight v8.3.4**
 
-Previous 8.3.2 settings reduced CSS numeric font weight throughout the system, but the user reported that actual ChatGPT conversation text still looked heavy while sidebar text did change. This release addresses the conversation itself without further reducing the sidebar.
+The user wants **only the left sidebar project names and chat-list names** about 30% heavier than v8.3.3. This version adjusts the existing color-coded chat title and project capsule `font-weight` declarations without touching conversation messages or JS.
 
 | Component | Version | Change |
 |---|---|---|
-| ChatGPT Dracula Neon CSS | **8.3.3** | message text style and Pretendard Variable font-face targeting |
-| Sidebar Life Clock JS | 3.10.2 | unchanged |
-| Status & Command Center JS | 6.8.2 | unchanged |
-| Organization Mapper JS | 1.3.6 | unchanged |
-| Google Calendar Companion | 1.3.7 | unchanged |
-| Google Calendar CSS | 1.2.2 | unchanged |
+| ChatGPT CSS | **8.3.4** | sidebar project/chat titles +30% weight |
+| Clock JS | 3.10.2 | unchanged |
+| Status JS | 6.8.2 | unchanged |
+| Mapper JS | 1.3.6 | unchanged |
+| Calendar Companion | 1.3.7 | unchanged |
+| Calendar CSS | 1.2.2 | unchanged |
 
-The CSS adds scoped targeting for nested ChatGPT message text, including HTML p/li/strong, DIL TextBase spans, conversation table cells and headings. The intended font weights are regular 320, emphasized 430. The styles load Pretendard Variable from a locally installed copy when available, with a webfont fallback, instead of relying on a possibly static Pretendard face.
+Typical numeric changes: chat normal 320→420, selected 420→550, standard/CEO projects 430→560, strategy projects 380→490. Other role-specific and archived names keep their relative treatment with a similar 1.3 multiplier.
 
-**No intended change:** sidebar/project names, Life Clock visuals, RUN/DONE logic, colors, font sizes, spacing or layout.
+- [Korean update guide](docs/INSTALLATION_KO.md)
+- [Release notes](docs/RELEASE_v8.3.4_SIDEBAR_WEIGHT_KO.md)
+- [SHA256 manifest](SHA256.json)
 
-- [설치 안내](docs/INSTALLATION_KO.md)
-- [v8.3.3 변경 내역](docs/RELEASE_v8.3.3_CONVERSATION_FONT_KO.md)
-- [SHA256.json](SHA256.json)
-
-This is a testable source release, not a completed visual acceptance. Actual signed-in Chrome computed font and rendered screen must be inspected to establish whether the issue is resolved. Any remaining discrepancy may be caused by native DOM selector changes or blocked/absent variable font files.
+Colors, font sizes, layout, icons, animations, message body (including variable Pretendard v8.3.3), Life Clock, RUN/DONE behavior and private local profile are not modified. Final signed-in Chrome visual verification is pending.

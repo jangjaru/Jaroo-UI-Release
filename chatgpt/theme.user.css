@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo ChatGPT Dracula Neon
 @namespace    jaroo.chatgpt.dracula
-@version      8.3.3
+@version      8.3.4
 @description  Jaroo v7.3 vivid-neon restoration with stable project typography, responsive Clock and working ALL filter.
 @author       Jaroo
 @license      UNLICENSED
@@ -345,8 +345,8 @@
 :is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
   a[href*="/c/"] {
   --jaroo-title-color: var(--jaroo-role-neutral);
-  --jaroo-title-weight: 320;
-  --jaroo-title-selected-weight: 420;
+  --jaroo-title-weight: 420;
+  --jaroo-title-selected-weight: 550;
   --jaroo-title-glow: none;
   --jaroo-title-decoration: none;
   color: var(--jaroo-title-color) !important;
@@ -357,8 +357,8 @@
 :is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
   a[href*="/c/"]:is([aria-label^="☆"],[aria-label^="★"]) {
   --jaroo-title-color: var(--jaroo-role-lead);
-  --jaroo-title-weight: 320;
-  --jaroo-title-selected-weight: 420;
+  --jaroo-title-weight: 420;
+  --jaroo-title-selected-weight: 550;
 }
 :is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
   a[href*="/c/"][aria-label^="○"] {
@@ -367,7 +367,7 @@
 :is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
   a[href*="/c/"][aria-label^="●"] {
   --jaroo-title-color: var(--jaroo-role-produce);
-  --jaroo-title-weight: 320;
+  --jaroo-title-weight: 420;
 }
 :is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
   a[href*="/c/"]:is([aria-label^="▷"],[aria-label^="▶"]) {
@@ -384,15 +384,15 @@
   a[href*="/c/"][aria-label*="[중요]"] {
   --jaroo-priority-mark: "◇";
   --jaroo-priority-color: var(--jaroo-priority-important);
-  --jaroo-title-weight: 320;
-  --jaroo-title-selected-weight: 420;
+  --jaroo-title-weight: 420;
+  --jaroo-title-selected-weight: 550;
 }
 :is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
   a[href*="/c/"][aria-label*="[핵심]"] {
   --jaroo-priority-mark: "◆";
   --jaroo-priority-color: var(--jaroo-priority-core);
-  --jaroo-title-weight: 320;
-  --jaroo-title-selected-weight: 430;
+  --jaroo-title-weight: 420;
+  --jaroo-title-selected-weight: 560;
 }
 :is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
   a[href*="/c/"][aria-label*="[긴급]"] {
@@ -446,21 +446,21 @@
 :is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
   a[href*="/c/"][aria-label^="[완료]"] {
   --jaroo-title-color: var(--jaroo-role-archive);
-  --jaroo-title-weight: 320;
-  --jaroo-title-selected-weight: 410;
+  --jaroo-title-weight: 420;
+  --jaroo-title-selected-weight: 530;
   --jaroo-title-decoration: line-through;
 }
 :is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
   a[href*="/c/"][aria-label^="[중단]"] {
   --jaroo-title-color: var(--jaroo-role-stopped);
-  --jaroo-title-weight: 320;
-  --jaroo-title-selected-weight: 410;
+  --jaroo-title-weight: 420;
+  --jaroo-title-selected-weight: 530;
   --jaroo-title-decoration: line-through;
 }
 :is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
   a[href*="/c/"][aria-label^="[보류]"] {
   --jaroo-title-color: var(--jaroo-role-neutral);
-  --jaroo-title-weight: 320;
+  --jaroo-title-weight: 420;
 }
 :is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
   a[href*="/c/"]:is([aria-label^="[완료]"],[aria-label^="[중단]"])::after {
@@ -488,13 +488,13 @@
   :is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"] a[href*="/c/"] {
   --jaroo-title-glow: var(--jaroo-selected-title-glow);
   text-shadow: var(--jaroo-title-glow) !important;
-  font-weight: var(--jaroo-title-selected-weight,360) !important;
+  font-weight: var(--jaroo-title-selected-weight,470) !important;
 }
 :is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
   :is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"] a[href*="/c/"]
   :is([data-thread-title="true"],[data-thread-title="true"] *,span.truncate,div.truncate,span[dir="auto"]):not(.jaroo-recent-status-badge) {
   text-shadow: var(--jaroo-title-glow) !important;
-  font-weight: var(--jaroo-title-selected-weight,360) !important;
+  font-weight: var(--jaroo-title-selected-weight,470) !important;
 }
 
 /* 12. CLASSIC ORANGE PROJECT CAPSULES
@@ -518,7 +518,7 @@
   color: var(--da-project-text) !important;
   -webkit-text-fill-color: var(--da-project-text) !important;
   font-size: var(--jaroo-sidebar-title-font-size,1rem) !important;
-  font-weight: 430 !important;
+  font-weight: 560 !important;
   line-height: 1.2 !important;
   text-shadow: none !important;
   box-shadow: none !important;
@@ -1299,7 +1299,7 @@ body [data-message-author-role="assistant"]
   background: var(--jaroo-ceo-gold-fill) !important;
   color: var(--jaroo-ceo-gold-text) !important;
   -webkit-text-fill-color: var(--jaroo-ceo-gold-text) !important;
-  font-weight: 430 !important;
+  font-weight: 560 !important;
   box-shadow: none !important;
   text-shadow: none !important;
   filter: none !important;
@@ -1312,7 +1312,7 @@ body [data-message-author-role="assistant"]
   background: var(--jaroo-strategy-base) !important;
   color: var(--jaroo-strategy-text) !important;
   -webkit-text-fill-color: var(--jaroo-strategy-text) !important;
-  font-weight: 380 !important;
+  font-weight: 490 !important;
   box-shadow: 0 0 0 1px rgba(192,174,255,.55), 0 0 8px rgba(126,96,248,.28) !important;
 }
 [data-sidebar-project-kind="local"]
