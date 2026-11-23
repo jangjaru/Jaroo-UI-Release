@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.2.2
+// @version      0.2.3
 // @description  E-book visual dot indicators for role prefixes plus a light Clock skin; keeps original chat titles, React data and RUN/DONE logic intact.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -39,8 +39,8 @@
       --ebook-ink:#1D1D1B;
       --ebook-muted:#575751;
       --ebook-line:#AAA9A0;
-      --ebook-font:"Pretendard Variable","Pretendard",sans-serif;
-       --ebook-mono:"IBM Plex Mono","Monoplex KR",monospace;
+      --ebook-font:"IBM Plex Mono","Pretendard Variable","Pretendard",sans-serif;
+       --ebook-mono:"IBM Plex Mono","Pretendard Variable","Pretendard",monospace;
     }
     /* v0.1.1: locally installed Latin and Korean mono font, including status dock.
        Segmented digital digits and all calculations remain unmodified. */
@@ -469,8 +469,42 @@
   window.addEventListener('focus', schedule);
   recoverTimer = setInterval(() => { if (!document.hidden) schedule(); }, 4000);
   schedule();
+
+  /* On-demand read-only font audit. Gives the actual computed CSS pixel size
+     and family without collecting or returning private chat text. */
+  function fontAudit() {
+    const sidebar=document.querySelector(
+      '#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]'
+    )||document.querySelector('aside');
+    const sample=selector=>document.querySelector(selector);
+    const pick=(el)=>{
+      if(!el)return {found:false};
+      const s=getComputedStyle(el);
+      return {found:true,fontFamily:s.fontFamily,fontSize:s.fontSize,
+        fontWeight:s.fontWeight,letterSpacing:s.letterSpacing};
+    };
+    const reply=sample('[data-message-author-role="assistant"] p[data-d-text-flow]')||
+      sample('[data-message-author-role="assistant"] .markdown p')||
+      sample('[data-message-author-role="assistant"] p');
+    const user=sample('[data-message-author-role="user"] [data-user-message-bubble="true"] p')||
+      sample('[data-message-author-role="user"] [data-d-text-flow]');
+    const project=sidebar?.querySelector(
+      '[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] [data-marquee-content="true"]'
+    );
+    const chat=sidebar?.querySelector(
+      'a[href*="/c/"] [data-ebook-role], a[href*="/c/"] [data-thread-title="true"], a[href*="/c/"]'
+    );
+    const prompt=sample('#prompt-textarea,[data-testid="prompt-textarea"],[contenteditable="true"][role="textbox"]');
+    const composer=sample('#composer-background,[data-testid="composer"]');
+    const composerStyle=composer?getComputedStyle(composer):null;
+    return {project:pick(project),chat:pick(chat),reply:pick(reply),user:pick(user),
+      prompt:pick(prompt),composer:composerStyle?
+      {border:composerStyle.borderTopWidth+' '+composerStyle.borderTopStyle+' '+composerStyle.borderTopColor,
+       boxShadow:composerStyle.boxShadow}: {found:false}};
+  }
+
   window[RUNTIME] = {
-    version:'0.2.2',dispose,refresh:schedule,
-    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]')})
+    version:'0.2.3',dispose,refresh:schedule,
+    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),fontAudit:fontAudit()})
   };
 })();

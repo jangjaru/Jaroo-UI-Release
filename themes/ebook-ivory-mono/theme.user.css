@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.2
+@version      0.2.3
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -28,11 +28,11 @@
     --eb-teal: #59B8BC;
     --eb-green: #A5D685;
     --eb-orange: #E3AA62;
-    --eb-font: "Pretendard Variable", "Pretendard", sans-serif;
-    --eb-mono: "IBM Plex Mono", "Monoplex KR", monospace;
+    --eb-font: "IBM Plex Mono", "Pretendard Variable", "Pretendard", sans-serif;
+    --eb-mono: "IBM Plex Mono", "Pretendard Variable", "Pretendard", monospace;
     --eb-font-korean: "Pretendard Variable", "Pretendard", sans-serif;
     --eb-ui-size: 14px;
-    --eb-prose-size: 11.2px;
+    --eb-prose-size: var(--eb-ui-size);
     --eb-code-size: 12.5px;
     --eb-weight-normal: 400;
     --eb-weight-strong: 600;
@@ -74,7 +74,7 @@
     --link: var(--eb-ink) !important;
     --link-hover: var(--eb-secondary) !important;
     --jaroo-status-css-version: "6.8.2";
-    --ebook-theme-version: "0.2.2";
+    --ebook-theme-version: "0.2.3";
   }
 
   /* 02. LIGHT-PAPER BASE — do not modify Chrome frame or extension UIs. */
@@ -509,11 +509,11 @@
 
   /* 11. RESPONSIVE — no invented second conversation panel. */
   @media (max-width: 1050px) {
-    :root { --eb-ui-size: 13px; --eb-prose-size: 11.2px; }
+    :root { --eb-ui-size: 13px; --eb-prose-size: var(--eb-ui-size); }
     body [data-message-author-role="assistant"] :is(table,[role="table"],[data-d-component="table"]) { overflow-x: auto !important; }
   }
   @media (max-width: 650px) {
-    :root { --eb-ui-size: 12.8px; --eb-prose-size: 11.2px; }
+    :root { --eb-ui-size: 12.8px; --eb-prose-size: var(--eb-ui-size); }
     body [data-message-author-role="assistant"] :is(h1,h2,h3,h4,h5,h6) { margin-top: .8em; }
   }
   @media (prefers-reduced-motion: reduce) {
@@ -693,10 +693,10 @@
      CSS maps explicit real-text carriers, avoiding the previous rule's
      dependence on nested TextBase markup. No native app state is changed. */
   :root {
-    --eb-prose-size:11.2px;
-    --eb-user-prose-size:10.8px;
+    --eb-prose-size:var(--eb-ui-size);
+    --eb-user-prose-size:var(--eb-ui-size);
     --eb-accent-ink:#1F1E1A;
-    --eb-upload-divider-color:#CFC7B8;
+    --eb-upload-divider-color:var(--eb-ink);
   }
   /* Regular conversation text: fixed density regardless of nested DIL spans.
      Preserve intentionally larger headings, code, table layouts and controls. */
@@ -759,7 +759,7 @@
   html body #composer-background,
   html body [data-testid="composer"]:not(:has(#composer-background)) {
     background:var(--eb-composer-paper)!important;
-    border:1px solid var(--eb-accent-ink)!important;
+    border:2.5px solid var(--eb-accent-ink)!important;
     border-radius:18px!important;
     outline:none!important;
   }
@@ -770,7 +770,7 @@
   }
   html body form:has(#prompt-textarea):not(:has(#composer-background)),
   html body form:has([data-testid="prompt-textarea"]):not(:has(#composer-background)) {
-    border:1px solid var(--eb-accent-ink)!important;
+    border:2.5px solid var(--eb-accent-ink)!important;
     background:var(--eb-composer-paper)!important;
     border-radius:18px!important;
   }
@@ -850,7 +850,124 @@
   }
   /* Narrow screens keep readable body, separate from the sidebar title size. */
   @media(max-width:650px) {
-    :root {--eb-prose-size:11px;--eb-user-prose-size:10.6px;}
+    :root {--eb-prose-size:11px;--eb-user-prose-size:var(--eb-ui-size);}
+  }
+
+
+  /* 15. UNIFIED TYPOGRAPHY + INK OUTLINES v0.2.3
+     Strictly one size token for sidebar project/chat, standard messages and
+     typed prompt. Heading hierarchies and UI tooltips retain semantic sizing.
+     Fonts: IBM Plex Mono for Latin; Pretendard Variable for Hangul fallback.
+     The user's native chat data and React state remain unchanged. */
+  :root {
+    --eb-standard-type-size:var(--eb-ui-size);
+    --eb-prose-size:var(--eb-ui-size);
+    --eb-user-prose-size:var(--eb-ui-size);
+    --eb-font:"IBM Plex Mono","Pretendard Variable","Pretendard",sans-serif;
+    --eb-mono:"IBM Plex Mono","Pretendard Variable","Pretendard",monospace;
+    --eb-outline-thickness:2.5px;
+    --eb-upload-divider-color:var(--eb-ink);
+  }
+  /* Target the actual text leaves: the earlier v0.2.2 reduction applied an
+     independent font-size to message spans, making messages visually tiny. */
+  html body [data-message-author-role="assistant"] :is(
+      p[data-d-text-flow],p[data-d-component="text"],
+      .markdown p,.markdown li,.prose p,.prose li,
+      p,li,dd,dt,blockquote,[data-d-text-flow],[data-d-component="text"]
+    ):not(:is(
+      h1,h2,h3,h4,h5,h6,pre,code,table,button,[role="button"],
+      [contenteditable="true"],[role="textbox"],
+      pre *,code *,table *,[role="table"] *,[data-d-component="table"] *
+    )),
+  html body [data-message-author-role="user"] :is(
+      p,li,[data-d-text-flow],[data-d-component="text"]
+    ):not(:is(button,pre,code,table,[contenteditable="true"],button *,pre *,code *,table *)) {
+    font-family:var(--eb-font)!important;
+    font-size:var(--eb-standard-type-size)!important;
+    line-height:1.57!important;
+  }
+  html body :is([data-message-author-role="assistant"],[data-message-author-role="user"])
+    :is(p,li,dd,dt,blockquote,[data-d-text-flow],[data-d-component="text"])
+    :is(span,div,a,strong,b,em,i,small,[data-d-component="text"]):not(
+      :is(h1 *,h2 *,h3 *,h4 *,h5 *,h6 *,pre *,code *,table *,
+        [role="table"] *,[data-d-component="table"] *,button *,
+        [role="button"] *,[contenteditable="true"] *,
+        [data-d-component="math"] *)
+    ) {
+    font-family:var(--eb-font)!important;
+    font-size:var(--eb-standard-type-size)!important;
+  }
+  /* User bubble inner text is independently sized by ChatGPT. */
+  html body :is([data-message-author-role="user"] [data-user-message-bubble="true"],
+                [data-message-author-role="user"] .bg-user-message,
+                [data-user-message-bubble="true"].bg-user-message)
+    :is(p,span,div,strong,b,em,i,a,[data-d-component="text"]):not(
+      :is(button *,[role="button"] *,pre *,code *,table *,svg *)
+    ) {
+    font-family:var(--eb-font)!important;
+    font-size:var(--eb-standard-type-size)!important;
+  }
+  /* Equal measured CSS pixel size, not merely an inherited parent font. */
+  html body [data-sidebar-project-kind="local"]
+    [data-app-action-sidebar-project-row] [data-marquee-content="true"],
+  html body [data-sidebar-project-kind="local"]
+    [data-app-action-sidebar-project-row] [data-marquee-content="true"]
+    :is(span,div,[data-d-component="text"]) {
+    font-family:var(--eb-font)!important;
+    font-size:var(--eb-standard-type-size)!important;
+    font-weight:600!important;
+  }
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)
+    a[href*="/c/"],
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)
+    a[href*="/c/"] :is(
+      [data-thread-title="true"],[data-marquee-text],
+      [data-ebook-role],span.truncate,div.truncate,
+      span[dir="auto"],[data-d-component="text"]
+    ) {
+    font-family:var(--eb-font)!important;
+    font-size:var(--eb-standard-type-size)!important;
+  }
+  /* The editable field must match the same size as the SENT user message. */
+  html body :is(#prompt-textarea,[data-testid="prompt-textarea"],
+                [contenteditable="true"][role="textbox"]),
+  html body :is(#prompt-textarea,[data-testid="prompt-textarea"],
+                [contenteditable="true"][role="textbox"])
+    :is(p,li,span,div,[data-d-component="text"]) {
+    font-family:var(--eb-font)!important;
+    font-size:var(--eb-standard-type-size)!important;
+    line-height:1.55!important;
+  }
+  /* All Latin font runs use IBM Plex Mono and Korean runs fall back to
+     locally installed Pretendard Variable even inside portal/panel content. */
+  html body :is(svg text) {font-family:var(--eb-font)!important;}
+  /* Attachment divider and composer outline share the same charcoal accent. */
+  html body [data-ebook-upload-divider="true"] {
+    border-top-color:var(--eb-ink)!important;
+  }
+  html body #composer-background,
+  html body [data-testid="composer"]:not(:has(#composer-background)),
+  html body form:has(#prompt-textarea):not(:has(#composer-background)),
+  html body form:has([data-testid="prompt-textarea"]):not(:has(#composer-background)) {
+    border-color:var(--eb-ink)!important;
+    border-style:solid!important;
+    border-width:var(--eb-outline-thickness)!important;
+    box-shadow:none!important;
+    -webkit-box-shadow:none!important;
+    filter:none!important;
+    outline:none!important;
+  }
+  html body :is(#composer-background,[data-testid="composer"],
+                 form:has(#prompt-textarea),form:has([data-testid="prompt-textarea"])):focus-within {
+    border-color:var(--eb-ink)!important;
+    box-shadow:none!important;
+    -webkit-box-shadow:none!important;
+    outline:none!important;
+  }
+  /* Keep a single outer border if #composer-background exists. */
+  html body form:has(#composer-background) {
+    border-color:transparent!important;
+    box-shadow:none!important;
   }
 
 }
