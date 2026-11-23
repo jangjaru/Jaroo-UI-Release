@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.8.2
+// @version      3.8.3
 // @description  Neo-Brutalist v1.0 sidebar clock, private Life Clock and native menu bridge
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -119,6 +119,7 @@
         --clock-teal: var(--jb-teal, #00C2C8);
         --clock-yellow: var(--jb-yellow, #FFDD00);
         --clock-magenta: var(--jb-magenta, #FF00FF);
+        --clock-muted: var(--jb-muted, #EAE5D5);
         --clock-border: var(--jb-border, 3px solid #000000);
         --clock-border-light: var(--jb-border-light, 2px solid #000000);
         --clock-shadow: var(--jb-shadow, 4px 4px 0 #000000);
@@ -334,18 +335,34 @@
         font-size: 11px;
       }
 
-      .digital-time {
-        display: flex;
-        flex: 0 0 auto;
+      /* Seven-segment face with fixed digit and separator widths. */
+      .digital-time { display: flex; flex: 0 0 auto; align-items: center; height: 40px; }
+      .pair { display: inline-flex; flex: 0 0 auto; align-items: center; }
+      .digit { display: inline-block; position: relative; flex: 0 0 21px; width: 21px; height: 38px; }
+      .digit .seg { position: absolute; display: block; pointer-events: none; background: var(--clock-muted); }
+      .digit .seg.on { background: var(--clock-ink); }
+      .seg-a, .seg-g, .seg-d { left: 4px; width: 13.6px; height: 3.7px; }
+      .seg-a { top: 1px; }
+      .seg-g { top: 18px; }
+      .seg-d { top: 35px; }
+      .seg-f, .seg-e, .seg-b, .seg-c { width: 3.7px; height: 15px; }
+      .seg-f { left: 1px; top: 3px; }
+      .seg-e { left: 1px; top: 20px; }
+      .seg-b { right: 1px; top: 3px; }
+      .seg-c { right: 1px; top: 20px; }
+      .separator {
+        display: inline-flex;
+        flex: 0 0 8px;
         align-items: center;
-        min-height: 40px;
-        font-size: 28px;
-        line-height: 1.15;
-        font-variant-numeric: tabular-nums;
-        white-space: nowrap;
+        justify-content: center;
+        width: 8px;
+        height: 38px;
+        margin-inline: 4px;
+        font: 800 28px/1 var(--clock-font);
       }
 
-      :host(:is([data-jaroo-width="compact"], [data-jaroo-width="narrow"])) .clock-seconds,
+      :host(:is([data-jaroo-width="compact"], [data-jaroo-width="narrow"])) .digital-time > .pair:last-child,
+      :host(:is([data-jaroo-width="compact"], [data-jaroo-width="narrow"])) .digital-time > .separator:nth-last-child(2),
       :host(:is([data-jaroo-width="compact"], [data-jaroo-width="narrow"])) .life-sub,
       :host(:is([data-jaroo-width="compact"], [data-jaroo-width="narrow"])) .life-meta,
       :host(:is([data-jaroo-width="compact"], [data-jaroo-width="narrow"])) .life-progress-meta,
@@ -425,7 +442,7 @@
             <span class="date-main"></span>
             <span class="weather-line" data-weather="loading"><span class="weather-symbol" aria-hidden="true">◌</span><span class="weather-label">날씨 조회</span></span>
           </div>
-          <div class="digital-time" aria-hidden="true"><span class="clock-hours-minutes"></span><span class="clock-seconds"></span></div>
+          <div class="digital-time" aria-hidden="true"></div>
         </div>
       </div>
     </div>
@@ -437,8 +454,7 @@
   const weatherSymbol = shadow.querySelector('.weather-symbol');
   const weatherLabel = shadow.querySelector('.weather-label');
   const clockEl = shadow.querySelector('.clock');
-  const hoursMinutesEl = shadow.querySelector('.clock-hours-minutes');
-  const secondsEl = shadow.querySelector('.clock-seconds');
+  const timeEl = shadow.querySelector('.digital-time');
 
   const lifeEls = {
     retireValue: shadow.querySelector('[data-life="retireValue"]'),
@@ -461,6 +477,45 @@
     console.warn('[Jaroo Life Clock] Local profile missing or invalid; life times hidden.');
   }
   let lifeMountState = 'overlay-reserved-space';
+
+  // Build the three time pairs once; compact layouts hide the seconds pair.
+  const digits = [];
+  for (let groupIndex = 0; groupIndex < 3; groupIndex++) {
+    const pair = document.createElement('span');
+    pair.className = 'pair';
+    for (let index = 0; index < 2; index++) {
+      const cell = document.createElement('span');
+      cell.className = 'digit';
+      cell.dataset.value = '0';
+      for (const id of 'abcdefg') {
+        const seg = document.createElement('i');
+        seg.className = 'seg seg-' + id;
+        seg.setAttribute('aria-hidden','true');
+        cell.appendChild(seg);
+      }
+      pair.appendChild(cell);
+      digits.push(cell);
+    }
+    timeEl.appendChild(pair);
+    if (groupIndex < 2) {
+      const colon = document.createElement('span');
+      colon.className = 'separator';
+      colon.textContent = ':';
+      timeEl.appendChild(colon);
+    }
+  }
+
+  // Seven-segment on/off maps; only update the six cells when values change.
+  const SEGMENTS = ['abcdef', 'bc', 'abdeg', 'abcdg', 'bcfg',
+                    'acdfg', 'acdefg', 'abc', 'abcdefg', 'abcdfg'];
+  function setDigit(cell, value) {
+    if (cell.dataset.value === value && cell.dataset.drawn === '1') return;
+    const active = SEGMENTS[Number(value)] || '';
+    for (const seg of cell.children) seg.classList.toggle('on', active.includes(seg.classList[1].slice(-1)));
+    cell.dataset.value = value;
+    cell.dataset.drawn = '1';
+  }
+
 
   function clamp(value, min, max) {
     return Math.min(max, Math.max(min, value));
@@ -1157,10 +1212,8 @@
     updateWeather();
     clockEl.setAttribute('aria-label',
       `한국 표준시 ${parts.hour}시 ${parts.minute}분 ${parts.second}초`);
-    const hoursMinutes = `${parts.hour}:${parts.minute}`;
-    const seconds = `:${parts.second}`;
-    if (hoursMinutesEl.textContent !== hoursMinutes) hoursMinutesEl.textContent = hoursMinutes;
-    if (secondsEl.textContent !== seconds) secondsEl.textContent = seconds;
+    const numbers = parts.hour + parts.minute + parts.second;
+    for (let i = 0; i < digits.length; i++) setDigit(digits[i], numbers[i]);
     const hour = Number(parts.hour);
     updateLifeClock(new Date());
     // Simple fixed day/night rule in Korea, not astronomical sunrise/sunset.
@@ -1258,14 +1311,14 @@
     if (window[RUNTIME_KEY]?.dispose === dispose) delete window[RUNTIME_KEY];
   }
   window[RUNTIME_KEY] = {
-    version: '3.8.2', dispose,
+    version: '3.8.3', dispose,
     diagnostics: () => ({
-      version: '3.8.2', ...placementReport,
+      version: '3.8.3', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
       legacyHexJPresent: Boolean(shadow.querySelector('.brand-mark')),
-      textClock: Boolean(hoursMinutesEl.textContent),
+      segmentClock: shadow.querySelectorAll('.digital-time .digit').length === 6,
       fontLoaded: Boolean(document.fonts?.check?.('12px Pretendard')),
       counterPresent: Boolean(shadow.querySelector('.jaroo-center')),
       weatherStatus: weatherStatus,

@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo ChatGPT Dracula Neon
 @namespace    jaroo.chatgpt.dracula
-@version      8.0.2
+@version      8.0.3
 @description  Jaroo Neo-Brutalist v1.0 for ChatGPT, with Pretendard typography and solid status accents.
 @author       Jaroo
 @license      UNLICENSED
@@ -37,7 +37,7 @@
   --jb-font: "Pretendard Variable", "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
   --jb-weight-regular: 400;
   --jb-weight-emphasis: 600;
-  --jaroo-status-css-version: "8.0.2";
+  --jaroo-status-css-version: "8.0.3";
   --jb-sidebar-title-size: 0.875rem;
   --jb-sidebar-title-line: 1.4;
   --jb-role-lead: #215323;
@@ -190,19 +190,22 @@ body :is(input[type="checkbox"], input[type="radio"], input[type="range"], progr
 [data-jaroo-chat-role="produce"] { --jb-role-color: var(--jb-role-produce); }
 [data-jaroo-chat-role="action"] { --jb-role-color: var(--jb-role-action); }
 
-:where([data-jaroo-native-row], [data-sidebar-archive-chatgpt-id])
-  :is([data-thread-title="true"], [data-jaroo-title-text]),
-:is(#stage-sidebar, #stage-slideover-sidebar, #slate-sidebar, [data-testid="sidebar"], nav, aside)
-  a[href*="/c/"],
-:is(#stage-sidebar, #stage-slideover-sidebar, #slate-sidebar, [data-testid="sidebar"], nav, aside)
-  a[href*="/c/"] :is([data-thread-title="true"], [data-thread-title="true"] *,
-    [data-jaroo-title-text], [data-jaroo-title-text] *, [data-marquee-content="true"], [data-marquee-text], .truncate) {
-  color: var(--jb-role-color, var(--jb-ink)) !important;
-  -webkit-text-fill-color: currentColor !important;
-  font-size: var(--jb-sidebar-title-size) !important;
-  line-height: var(--jb-sidebar-title-line) !important;
-  text-shadow: none !important;
-  text-decoration: none !important;
+@layer jaroo-sidebar-layout {
+  :where([data-jaroo-native-row], [data-sidebar-archive-chatgpt-id])
+    :is([data-thread-title="true"], [data-jaroo-title-text], [data-thread-title="true"] *, [data-jaroo-title-text] *),
+  :is(#stage-sidebar, #stage-slideover-sidebar, #slate-sidebar, [data-testid="sidebar"], nav, aside)
+    a:is([href*="/c/"], [href^="/local/"], [href^="https://chatgpt.com/local/"]),
+  :is(#stage-sidebar, #stage-slideover-sidebar, #slate-sidebar, [data-testid="sidebar"], nav, aside)
+    a:is([href*="/c/"], [href^="/local/"], [href^="https://chatgpt.com/local/"]) :is([data-thread-title="true"], [data-thread-title="true"] *,
+      [data-jaroo-title-text], [data-jaroo-title-text] *, [data-marquee-content="true"], [data-marquee-text], .truncate) {
+    --jb-text-weight: var(--jb-weight-regular);
+    color: var(--jb-role-color, var(--jb-ink)) !important;
+    -webkit-text-fill-color: currentColor !important;
+    font-size: var(--jb-sidebar-title-size) !important;
+    line-height: var(--jb-sidebar-title-line) !important;
+    text-shadow: none !important;
+    text-decoration: none !important;
+  }
 }
 
 :where([data-sidebar-archive-chatgpt-id], [data-jaroo-chat-row="true"]) {
@@ -216,9 +219,9 @@ body :is(input[type="checkbox"], input[type="radio"], input[type="range"], progr
   :is([data-thread-title-trigger], [data-thread-title="true"], [data-jaroo-title-text],
     :has([data-thread-title="true"], [data-jaroo-title-text])):not(button, [aria-haspopup]),
 :is(#stage-sidebar, #stage-slideover-sidebar, #slate-sidebar, [data-testid="sidebar"], nav, aside)
-  a[href*="/c/"],
+  a:is([href*="/c/"], [href^="/local/"], [href^="https://chatgpt.com/local/"]),
 :is(#stage-sidebar, #stage-slideover-sidebar, #slate-sidebar, [data-testid="sidebar"], nav, aside)
-  a[href*="/c/"] :is([data-thread-title="true"], [data-jaroo-title-text], [data-marquee-content="true"],
+  a:is([href*="/c/"], [href^="/local/"], [href^="https://chatgpt.com/local/"]) :is([data-thread-title="true"], [data-jaroo-title-text], [data-marquee-content="true"],
     [data-marquee-text], .truncate, .line-clamp-1, .whitespace-nowrap, [class*="line-clamp-"],
     :has([data-thread-title="true"], [data-jaroo-title-text], [data-marquee-content="true"])) {
   min-inline-size: 0 !important;
@@ -241,7 +244,7 @@ body :is(input[type="checkbox"], input[type="radio"], input[type="range"], progr
 
 /* Keep the title slot flexible and the adjacent native action slot usable. */
 :is(#stage-sidebar, #stage-slideover-sidebar, #slate-sidebar, [data-testid="sidebar"], nav, aside)
-  a[href*="/c/"] {
+  a:is([href*="/c/"], [href^="/local/"], [href^="https://chatgpt.com/local/"]) {
   box-sizing: border-box !important;
   flex: 1 1 auto;
   min-block-size: 30px;
@@ -252,7 +255,7 @@ body :is(input[type="checkbox"], input[type="radio"], input[type="range"], progr
 }
 
 :is(#stage-sidebar, #stage-slideover-sidebar, #slate-sidebar, [data-testid="sidebar"], nav, aside)
-  a[href*="/c/"]:not([data-jaroo-title-status], [data-jaroo-selected="true"],
+  a:is([href*="/c/"], [href^="/local/"], [href^="https://chatgpt.com/local/"]):not([data-jaroo-title-status], [data-jaroo-selected="true"],
     [aria-current="page"]:not([data-jaroo-selected="true"] *)) {
   background: transparent !important;
 }
@@ -270,7 +273,7 @@ a[data-jaroo-title-prefix] {
 
 :is([data-sidebar-archive-chatgpt-id], [data-jaroo-chat-row="true"])[data-jaroo-selected="true"],
 :is(#stage-sidebar, #stage-slideover-sidebar, #slate-sidebar, [data-testid="sidebar"], aside)
-  a[href*="/c/"][aria-current="page"]:not([data-jaroo-selected="true"] *, :has([data-jaroo-selected="true"])) {
+  a:is([href*="/c/"], [href^="/local/"], [href^="https://chatgpt.com/local/"])[aria-current="page"]:not([data-jaroo-selected="true"] *, :has([data-jaroo-selected="true"])) {
   border-radius: var(--jb-radius) !important;
   outline: var(--jb-border-light) !important;
   outline-offset: -2px !important;
@@ -279,79 +282,118 @@ a[data-jaroo-title-prefix] {
 :is([data-sidebar-archive-chatgpt-id], [data-jaroo-chat-row="true"])[data-jaroo-selected="true"]:not(
   [data-jaroo-title-status], :has([data-jaroo-title-status])),
 :is(#stage-sidebar, #stage-slideover-sidebar, #slate-sidebar, [data-testid="sidebar"], aside)
-  a[href*="/c/"][aria-current="page"]:not([data-jaroo-title-status], [data-jaroo-selected="true"] *,
+  a:is([href*="/c/"], [href^="/local/"], [href^="https://chatgpt.com/local/"])[aria-current="page"]:not([data-jaroo-title-status], [data-jaroo-selected="true"] *,
     :has([data-jaroo-selected="true"])) {
   background: var(--jb-white) !important;
 }
 
 :is(#stage-sidebar, #stage-slideover-sidebar, #slate-sidebar, [data-testid="sidebar"], aside)
-  a[href*="/c/"]:not([aria-current="page"], [data-jaroo-title-status], [data-jaroo-selected="true"], [data-jaroo-selected="true"] *):hover {
+  a:is([href*="/c/"], [href^="/local/"], [href^="https://chatgpt.com/local/"]):not([aria-current="page"], [data-jaroo-title-status], [data-jaroo-selected="true"], [data-jaroo-selected="true"] *):hover {
   background: var(--jb-muted) !important;
 }
 
 :is([data-sidebar-archive-chatgpt-id], [data-jaroo-chat-row="true"])[data-jaroo-selected="true"]:focus-visible,
 :is(#stage-sidebar, #stage-slideover-sidebar, #slate-sidebar, [data-testid="sidebar"], aside)
-  a[href*="/c/"][aria-current="page"]:focus-visible {
+  a:is([href*="/c/"], [href^="/local/"], [href^="https://chatgpt.com/local/"])[aria-current="page"]:focus-visible {
   outline: var(--jb-focus) !important;
   box-shadow: inset 0 0 0 4px var(--jb-ink) !important;
 }
 
-/* Let the native marquee's label slot occupy the space beside the folder
-   icon and actions. The project name can wrap as the sidebar gets narrower. */
-[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] {
-  --jb-project-fill: #fff5ce;
-  min-inline-size: 0 !important;
-  block-size: auto !important;
-}
-
-[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row][data-jaroo-org="ceo"] {
-  --jb-project-fill: #f8e9f3;
-}
-
-[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row]:is(
-  [data-jaroo-org="strategy"], [data-jaroo-org="assistant"], [data-jaroo-org="technical"],
-  [data-jaroo-org="management"], [data-jaroo-org="philosophy"]) {
-  --jb-project-fill: var(--jb-title-run-bg);
-}
-
-[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row]
-  :is([data-marquee-content="true"], [data-marquee-text], :has([data-marquee-content="true"])) {
-  min-inline-size: 0 !important;
-  max-inline-size: 100% !important;
-  flex: 1 1 auto !important;
-  inline-size: auto !important;
-  block-size: auto !important;
-  max-block-size: none !important;
-  white-space: normal !important;
-  word-break: keep-all !important;
-  overflow-wrap: anywhere !important;
-  text-overflow: clip !important;
-  overflow: visible !important;
-  -webkit-line-clamp: unset !important;
-  line-clamp: none !important;
-  mask-image: none !important;
-}
-
-:where([data-jaroo-native-row], [data-sidebar-archive-chatgpt-id]) [data-marquee-text],
-[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] [data-marquee-text],
-[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] [data-marquee-content="true"] {
+:where([data-jaroo-native-row], [data-sidebar-archive-chatgpt-id]) [data-marquee-text] {
   position: static !important;
   transform: none !important;
   animation: none !important;
 }
 
-[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] [data-marquee-content="true"] {
-  display: block !important;
-  box-sizing: border-box !important;
-  padding: 2px 5px !important;
-  background: var(--jb-project-fill) !important;
-  color: var(--jb-ink) !important;
-  -webkit-text-fill-color: currentColor !important;
-  text-align: start !important;
-  border: 1px solid var(--jb-ink) !important;
-  border-radius: var(--jb-radius) !important;
-  font-size: var(--jb-sidebar-title-size) !important;
-  line-height: var(--jb-sidebar-title-line) !important;
+/* Allocate project label space before wrapping text. The platform can set
+   widths on the marquee slot and apply a separate clamp to its inner span.
+   Layer these overrides above earlier, unlayered project chip styles. */
+@layer jaroo-sidebar-layout {
+  [data-app-action-sidebar-project-row]:has(:is([data-marquee-content], [data-jaroo-project-title])),
+  [data-sidebar-project-kind]:has(> [data-app-action-sidebar-project-row]),
+  [data-sidebar-project-kind] :has(> [data-app-action-sidebar-project-row]) {
+    box-sizing: border-box;
+    inline-size: 100% !important;
+    min-inline-size: 0 !important;
+    max-inline-size: 100% !important;
+    block-size: auto !important;
+  }
+
+  [data-app-action-sidebar-project-row] {
+    --jb-project-fill: #fff5ce !important;
+  }
+
+  [data-app-action-sidebar-project-row][data-jaroo-org="ceo"] {
+    --jb-project-fill: #f8e9f3 !important;
+  }
+
+  [data-app-action-sidebar-project-row]:is(
+    [data-jaroo-org="strategy"], [data-jaroo-org="assistant"], [data-jaroo-org="technical"],
+    [data-jaroo-org="management"], [data-jaroo-org="philosophy"]) {
+    --jb-project-fill: var(--jb-title-run-bg) !important;
+  }
+
+  [data-app-action-sidebar-project-row]
+    :is([data-marquee-content], [data-jaroo-project-title], :has([data-marquee-content], [data-jaroo-project-title])),
+  [data-app-action-sidebar-project-row] :is([data-marquee-content], [data-jaroo-project-title])
+    :not(:where(svg, svg *, button, [role="button"], [aria-haspopup])) {
+    min-inline-size: 0 !important;
+    max-inline-size: 100% !important;
+    flex: 1 1 auto !important;
+    inline-size: auto !important;
+    block-size: auto !important;
+    max-block-size: none !important;
+    white-space: normal !important;
+    word-break: keep-all !important;
+    overflow-wrap: anywhere !important;
+    text-overflow: clip !important;
+    overflow: visible !important;
+    -webkit-line-clamp: unset !important;
+    line-clamp: none !important;
+    mask-image: none !important;
+  }
+
+  [data-app-action-sidebar-project-row] :is([data-marquee-content], [data-jaroo-project-title]),
+  [data-app-action-sidebar-project-row] :is([data-marquee-content], [data-jaroo-project-title])
+    :is([data-marquee-text], [data-marquee-overflowing], .truncate, [class*="line-clamp-"]) {
+    position: static !important;
+    transform: none !important;
+    animation: none !important;
+  }
+
+  [data-app-action-sidebar-project-row] :is([data-marquee-content], [data-jaroo-project-title])
+    :is([data-marquee-text], .truncate, [class*="line-clamp-"]) {
+    display: inline !important;
+  }
+
+  [data-app-action-sidebar-project-row] :is([data-marquee-content], [data-jaroo-project-title]) {
+    display: block !important;
+    box-sizing: border-box !important;
+    padding: 2px 5px !important;
+    background: var(--jb-project-fill) !important;
+    color: var(--jb-ink) !important;
+    -webkit-text-fill-color: currentColor !important;
+    text-align: start !important;
+    border: 1px solid var(--jb-ink) !important;
+    border-radius: var(--jb-radius) !important;
+    font-size: var(--jb-sidebar-title-size) !important;
+    line-height: var(--jb-sidebar-title-line) !important;
+  }
+
+  /* The mapper supplies this only when the platform exposes a matching
+     unabridged label and has already shortened its visible text. */
+  [data-app-action-sidebar-project-row] [data-jaroo-project-full-name],
+  [data-app-action-sidebar-project-row] [data-jaroo-project-full-name] :not(:where(svg, svg *)) {
+    font-size: 0 !important;
+    line-height: 0 !important;
+  }
+
+  [data-app-action-sidebar-project-row] [data-jaroo-project-full-name]::before {
+    content: attr(data-jaroo-project-full-name) / "";
+    display: block;
+    font-size: var(--jb-sidebar-title-size);
+    line-height: var(--jb-sidebar-title-line);
+  }
 }
 
 :is(#stage-sidebar, #stage-slideover-sidebar, #slate-sidebar, [data-testid="sidebar"])
