@@ -1,8 +1,8 @@
 /* ==UserStyle==
 @name         Jaroo ChatGPT Dracula Neon
 @namespace    jaroo.chatgpt.dracula
-@version      8.0.3
-@description  Jaroo Neo-Brutalist v1.0 for ChatGPT, with Pretendard typography and solid status accents.
+@version      8.1.0
+@description  Jaroo Neo-Brutalist for ChatGPT, with shared reading typography and a compact sidebar.
 @author       Jaroo
 @license      UNLICENSED
 @updateURL    https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/chatgpt/theme.user.css
@@ -23,23 +23,29 @@
 :root {
   --jb-ink: #000000;
   --jb-paper: #F5F0DC;
+  --jb-canvas: #FFFDF7;
   --jb-white: #FFFFFF;
+  --jb-rule: #D8D2BE;
   --jb-teal: #00C2C8;
+  --jb-teal-dark: #065B5D;
+  --jb-teal-soft: #EDF8F4;
+  --jb-selection: #EFE9D6;
   --jb-magenta: #FF00FF;
   --jb-yellow: #FFDD00;
   --jb-muted: #EAE5D5;
-  --jb-border: 3px solid var(--jb-ink);
-  --jb-border-light: 2px solid var(--jb-ink);
-  --jb-shadow: 4px 4px 0 var(--jb-ink);
+  --jb-border: 2px solid var(--jb-ink);
+  --jb-border-light: 1px solid var(--jb-ink);
+  --jb-shadow: 3px 3px 0 var(--jb-ink);
   --jb-shadow-small: 2px 2px 0 var(--jb-ink);
-  --jb-radius: 3px;
-  --jb-focus: 3px solid var(--jb-magenta);
+  --jb-radius: 5px;
+  --jb-focus: 2px solid var(--jb-teal-dark);
   --jb-font: "Pretendard Variable", "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
   --jb-weight-regular: 400;
   --jb-weight-emphasis: 600;
-  --jaroo-status-css-version: "8.0.3";
-  --jb-sidebar-title-size: 0.875rem;
-  --jb-sidebar-title-line: 1.4;
+  --jaroo-status-css-version: "8.1.0";
+  --jb-reading-size: 0.9375rem;
+  --jb-sidebar-title-size: var(--jb-reading-size);
+  --jb-sidebar-title-line: 1.42;
   --jb-role-lead: #215323;
   --jb-role-plan: #563888;
   --jb-role-manage: #075463;
@@ -56,14 +62,14 @@ html, html body, html :is(.light, .dark, [data-theme="light"], [data-theme="dark
   color-scheme: light !important;
   --font-sans: var(--jb-font) !important;
   --font-mono: var(--jb-font) !important;
-  --main-surface-primary: var(--jb-white) !important;
+  --main-surface-primary: var(--jb-canvas) !important;
   --main-surface-primary-inverse: var(--jb-ink) !important;
   --main-surface-secondary: var(--jb-paper) !important;
   --main-surface-tertiary: var(--jb-muted) !important;
   --sidebar-surface-primary: var(--jb-paper) !important;
   --sidebar-surface-secondary: var(--jb-muted) !important;
   --sidebar-surface-tertiary: var(--jb-white) !important;
-  --bg-primary: var(--jb-white) !important;
+  --bg-primary: var(--jb-canvas) !important;
   --bg-secondary: var(--jb-paper) !important;
   --bg-tertiary: var(--jb-muted) !important;
   --bg-elevated-primary: var(--jb-white) !important;
@@ -76,25 +82,25 @@ html, html body, html :is(.light, .dark, [data-theme="light"], [data-theme="dark
   --text-quaternary: #555044 !important;
   --text-primary-inverse: var(--jb-white) !important;
   --text-accent: var(--jb-ink) !important;
-  --border-light: var(--jb-ink) !important;
+  --border-light: var(--jb-rule) !important;
   --border-medium: var(--jb-ink) !important;
   --border-heavy: var(--jb-ink) !important;
-  --border-default: var(--jb-ink) !important;
+  --border-default: var(--jb-rule) !important;
   --interactive-bg-primary-default: var(--jb-teal) !important;
   --interactive-bg-primary-hover: var(--jb-yellow) !important;
   --interactive-bg-secondary-default: var(--jb-white) !important;
   --interactive-bg-secondary-hover: var(--jb-paper) !important;
   --interactive-label-primary-default: var(--jb-ink) !important;
   --interactive-label-secondary-default: var(--jb-ink) !important;
-  --message-surface: var(--jb-paper) !important;
-  --color-background-user-message: var(--jb-paper) !important;
+  --message-surface: var(--jb-teal-soft) !important;
+  --color-background-user-message: var(--jb-teal-soft) !important;
   --color-text-user-message: var(--jb-ink) !important;
   --link: var(--jb-ink) !important;
   --link-hover: var(--jb-ink) !important;
 }
 
 html, body {
-  background: var(--jb-paper) !important;
+  background: var(--jb-canvas) !important;
   color: var(--jb-ink) !important;
 }
 
@@ -122,7 +128,7 @@ body :where([data-message-author-role], [data-user-message-bubble="true"]) :wher
 
 :is(#stage-sidebar, #stage-slideover-sidebar, #slate-sidebar, [data-testid="sidebar"]) {
   background-color: var(--jb-paper) !important;
-  border-inline-end: var(--jb-border) !important;
+  border-inline-end: 1px solid var(--jb-rule) !important;
 }
 
 /* Nested sidebar containers are part of the same panel. */
@@ -132,20 +138,19 @@ body :where([data-message-author-role], [data-user-message-bubble="true"]) :wher
 }
 
 :is(#thread, [data-testid="conversation-panel"], [data-testid="conversation-thread"]) {
-  background-color: var(--jb-white) !important;
+  background-color: var(--jb-canvas) !important;
 }
 
 :is(#page-header, [data-testid="conversation-header"]) {
-  background: var(--jb-paper) !important;
-  border-block-end: var(--jb-border-light) !important;
+  background: var(--jb-canvas) !important;
+  border-block-end: 1px solid var(--jb-rule) !important;
 }
 
 body :where(a[href], button, [role="button"], [role="tab"], [role="menuitem"],
     [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"], input,
     textarea, select, summary, [contenteditable="true"], [tabindex]):focus-visible {
   outline: var(--jb-focus) !important;
-  outline-offset: -3px !important;
-  box-shadow: inset 0 0 0 4px var(--jb-ink) !important;
+  outline-offset: 2px !important;
 }
 
 body :is(input[type="checkbox"], input[type="radio"], input[type="range"], progress) {
@@ -161,12 +166,11 @@ body :is(input[type="checkbox"], input[type="radio"], input[type="range"], progr
 :is(#stage-sidebar, #stage-slideover-sidebar, #slate-sidebar, [data-testid="sidebar"])
   :is(a[href="/"], a[href="/new"], [data-testid="create-new-chat-button"], [data-testid="sidebar-search-button"],
     button[aria-label="Search chats" i], button[aria-label="채팅 검색"]) {
-  min-block-size: 44px;
-  border: var(--jb-border-light) !important;
+  min-block-size: 42px;
+  border: 1px solid var(--jb-rule) !important;
   border-radius: var(--jb-radius) !important;
-  background: var(--jb-white) !important;
+  background: var(--jb-canvas) !important;
   color: var(--jb-ink) !important;
-  box-shadow: var(--jb-shadow-small);
 }
 
 :is(#stage-sidebar, #stage-slideover-sidebar, #slate-sidebar, [data-testid="sidebar"])
@@ -177,9 +181,10 @@ body :is(input[type="checkbox"], input[type="radio"], input[type="range"], progr
 
 :is(#stage-sidebar, #stage-slideover-sidebar, #slate-sidebar, [data-testid="sidebar"])
   a:is([href="/"], [href="/new"]) {
+  --jb-text-weight: var(--jb-weight-emphasis);
   display: flex;
   align-items: center;
-  padding-inline: 8px;
+  padding-inline: 10px;
   text-decoration: none;
 }
 
@@ -275,8 +280,8 @@ a[data-jaroo-title-prefix] {
 :is(#stage-sidebar, #stage-slideover-sidebar, #slate-sidebar, [data-testid="sidebar"], aside)
   a:is([href*="/c/"], [href^="/local/"], [href^="https://chatgpt.com/local/"])[aria-current="page"]:not([data-jaroo-selected="true"] *, :has([data-jaroo-selected="true"])) {
   border-radius: var(--jb-radius) !important;
-  outline: var(--jb-border-light) !important;
-  outline-offset: -2px !important;
+  outline: 1px solid var(--jb-ink) !important;
+  outline-offset: -1px !important;
 }
 
 :is([data-sidebar-archive-chatgpt-id], [data-jaroo-chat-row="true"])[data-jaroo-selected="true"]:not(
@@ -284,7 +289,7 @@ a[data-jaroo-title-prefix] {
 :is(#stage-sidebar, #stage-slideover-sidebar, #slate-sidebar, [data-testid="sidebar"], aside)
   a:is([href*="/c/"], [href^="/local/"], [href^="https://chatgpt.com/local/"])[aria-current="page"]:not([data-jaroo-title-status], [data-jaroo-selected="true"] *,
     :has([data-jaroo-selected="true"])) {
-  background: var(--jb-white) !important;
+  background: var(--jb-selection) !important;
 }
 
 :is(#stage-sidebar, #stage-slideover-sidebar, #slate-sidebar, [data-testid="sidebar"], aside)
@@ -296,7 +301,6 @@ a[data-jaroo-title-prefix] {
 :is(#stage-sidebar, #stage-slideover-sidebar, #slate-sidebar, [data-testid="sidebar"], aside)
   a:is([href*="/c/"], [href^="/local/"], [href^="https://chatgpt.com/local/"])[aria-current="page"]:focus-visible {
   outline: var(--jb-focus) !important;
-  box-shadow: inset 0 0 0 4px var(--jb-ink) !important;
 }
 
 :where([data-jaroo-native-row], [data-sidebar-archive-chatgpt-id]) [data-marquee-text] {
@@ -320,11 +324,11 @@ a[data-jaroo-title-prefix] {
   }
 
   [data-app-action-sidebar-project-row] {
-    --jb-project-fill: #fff5ce !important;
+    --jb-project-fill: #F8EDD1 !important;
   }
 
   [data-app-action-sidebar-project-row][data-jaroo-org="ceo"] {
-    --jb-project-fill: #f8e9f3 !important;
+    --jb-project-fill: #F5E9ED !important;
   }
 
   [data-app-action-sidebar-project-row]:is(
@@ -367,9 +371,12 @@ a[data-jaroo-title-prefix] {
   }
 
   [data-app-action-sidebar-project-row] :is([data-marquee-content], [data-jaroo-project-title]) {
+    /* Mapper resolves its inline weight from the inherited regular token. */
+    --jb-weight-regular: var(--jb-weight-emphasis);
+    --jb-text-weight: var(--jb-weight-emphasis);
     display: block !important;
     box-sizing: border-box !important;
-    padding: 2px 5px !important;
+    padding: 3px 7px !important;
     background: var(--jb-project-fill) !important;
     color: var(--jb-ink) !important;
     -webkit-text-fill-color: currentColor !important;
@@ -378,6 +385,12 @@ a[data-jaroo-title-prefix] {
     border-radius: var(--jb-radius) !important;
     font-size: var(--jb-sidebar-title-size) !important;
     line-height: var(--jb-sidebar-title-line) !important;
+  }
+
+  [data-app-action-sidebar-project-row] :is([data-marquee-content], [data-jaroo-project-title])
+    :not(:where(svg, svg *, button, [role="button"], [aria-haspopup])) {
+    font-size: var(--jb-sidebar-title-size) !important;
+    line-height: inherit !important;
   }
 
   /* The mapper supplies this only when the platform exposes a matching
@@ -428,14 +441,44 @@ button:is([aria-label*="현재 모드:" i], [aria-label*="current mode:" i])
   font: var(--jb-weight-emphasis) clamp(0.75rem, 2vw, 1rem)/1.1 var(--jb-font);
 }
 
-/* Conversation content. Native text sizes and response structure still apply. */
+/* One reading size across message text and sidebar titles. */
+@layer jaroo-typography {
+  :is([data-message-author-role], [data-user-message-bubble="true"]),
+  :is([data-message-author-role], [data-user-message-bubble="true"])
+    :is(.markdown, .prose, [data-d-component="text"], [data-d-text-flow], p, li, dd, dt, blockquote, pre, code, th, td, [role="cell"], [role="columnheader"], [role="rowheader"]),
+  :is([data-message-author-role], [data-user-message-bubble="true"])
+    :is(p, li, dd, dt, blockquote, pre, code, th, td, [data-d-text-flow])
+      :is(a, b, strong, em, span):not(:where(svg *, math *, .katex *, [role="heading"] *)),
+  [data-user-message-bubble="true"]
+    :is(div, span):not(:where(button *, [role="button"] *, svg *, math *, .katex *)) {
+    font-size: var(--jb-reading-size) !important;
+  }
+
+  [data-message-author-role] :is(h1, h2, h3, h4, h5, h6) {
+    font-size: var(--jb-heading-size) !important;
+  }
+
+  [data-message-author-role] :is(h1, h2, h3, h4, h5, h6)
+    :not(:where(svg, svg *, math, math *, .katex, .katex *)) {
+    font-size: inherit !important;
+  }
+}
+
+[data-message-author-role] h1 { --jb-heading-size: 1.75rem; }
+[data-message-author-role] h2 { --jb-heading-size: 1.375rem; }
+[data-message-author-role] h3 { --jb-heading-size: 1.175rem; }
+[data-message-author-role] :is(h4, h5, h6) { --jb-heading-size: 1rem; }
+
+[data-message-author-role] :is(h1, h2, h3, h4, h5, h6) {
+  --jb-text-weight: 700;
+}
 [data-message-author-role="assistant"] {
   color: var(--jb-ink) !important;
 }
 
 [data-message-author-role="assistant"] :is(.markdown, .prose, [data-d-component="text"]) {
   min-inline-size: 0;
-  max-inline-size: 100%;
+  max-inline-size: min(100%, 49rem);
   color: var(--jb-ink) !important;
 }
 
@@ -446,13 +489,13 @@ button:is([aria-label*="현재 모드:" i], [aria-label*="current mode:" i])
 }
 
 [data-message-author-role="assistant"] :is(h1, h2) {
-  border-block-end: var(--jb-border-light);
-  padding-block-end: .3em;
+  border-block-end: 1px solid var(--jb-rule);
+  padding-block-end: .45em;
 }
 
 [data-message-author-role="assistant"] :is(p, li, blockquote) {
   overflow-wrap: break-word;
-  line-height: 1.65;
+  line-height: 1.72;
 }
 
 [data-message-author-role="assistant"] :is(.markdown, .prose, [data-d-component="text"])
@@ -461,25 +504,25 @@ button:is([aria-label*="현재 모드:" i], [aria-label*="current mode:" i])
 }
 
 [data-message-author-role="assistant"] :is(.markdown, .prose, [data-d-component="text"]) a[href] {
-  color: var(--jb-ink) !important;
-  text-decoration: 2px underline var(--jb-ink) !important;
+  color: var(--jb-teal-dark) !important;
+  text-decoration: 1px underline currentColor !important;
   text-underline-offset: .18em;
 }
 
 [data-message-author-role="assistant"] :is(.markdown, .prose, [data-d-component="text"]) a[href]:hover {
-  background: var(--jb-teal) !important;
+  background: var(--jb-teal-soft) !important;
 }
 
 [data-message-author-role="assistant"] blockquote {
   color: var(--jb-ink) !important;
   background: var(--jb-paper) !important;
-  border-inline-start: 5px solid var(--jb-ink) !important;
-  padding: 8px 12px;
+  border-inline-start: 3px solid var(--jb-teal-dark) !important;
+  padding: 9px 14px;
 }
 
 [data-message-author-role="assistant"] :is(mark, :not(pre) > code:not(pre *)) {
   padding: .1em .3em;
-  background: var(--jb-yellow) !important;
+  background: var(--jb-paper) !important;
   color: var(--jb-ink) !important;
   border-radius: var(--jb-radius);
 }
@@ -520,7 +563,9 @@ button:is([aria-label*="현재 모드:" i], [aria-label*="current mode:" i])
 
 [data-message-author-role="user"] [data-user-message-bubble="true"],
 [data-user-message-bubble="true"].bg-user-message {
-  background: var(--jb-paper) !important;
+  max-inline-size: min(100%, 44rem);
+  line-height: 1.62;
+  background: var(--jb-teal-soft) !important;
   color: var(--jb-ink) !important;
   border: var(--jb-border-light) !important;
   border-radius: var(--jb-radius) !important;
@@ -551,7 +596,7 @@ button:is([aria-label*="현재 모드:" i], [aria-label*="current mode:" i])
 
 [data-message-author-role="assistant"] :is(th, td, [role="cell"], [role="gridcell"], [role="columnheader"], [role="rowheader"]) {
   padding: .55em .7em;
-  border: 1px solid var(--jb-ink) !important;
+  border: 1px solid var(--jb-rule) !important;
   background: var(--jb-white) !important;
   color: var(--jb-ink) !important;
   vertical-align: top;
@@ -583,14 +628,40 @@ button:is([aria-label*="현재 모드:" i], [aria-label*="current mode:" i])
     :is([data-testid="composer-container"], [data-testid="composer-surface"], [data-testid="composer"]) :is(#prompt-textarea, [data-testid="composer-input"]))) {
   background: var(--jb-white) !important;
   color: var(--jb-ink) !important;
-  border: var(--jb-border) !important;
+  border: var(--jb-border-light) !important;
   border-radius: var(--jb-radius) !important;
-  box-shadow: var(--jb-shadow) !important;
+  box-shadow: var(--jb-shadow-small) !important;
 }
 
 :is(#prompt-textarea, [data-testid="composer-input"]) {
   color: var(--jb-ink) !important;
   caret-color: var(--jb-ink);
+  font-size: var(--jb-reading-size) !important;
+}
+
+/* The text editor can match focus-visible even after a mouse click. When a
+   composer surrounds it, show the focus ring on that surface instead. */
+:is(#prompt-textarea, [data-testid="composer-input"],
+    [data-testid="composer-input"] :is(textarea, [contenteditable="true"])):focus-visible {
+  outline: 1px solid #67635a !important;
+  outline-offset: 1px !important;
+  box-shadow: none !important;
+}
+
+:where(form, [data-testid="composer"], [data-testid="composer-container"], [data-testid="composer-surface"])
+  :is(#prompt-textarea, [data-testid="composer-input"],
+    [data-testid="composer-input"] :is(textarea, [contenteditable="true"])):focus-visible {
+  outline: none !important;
+}
+
+:is(form, [data-testid="composer"], [data-testid="composer-container"], [data-testid="composer-surface"]):has(
+  :is(#prompt-textarea, [data-testid="composer-input"]):focus-within
+):not(:has(
+  :is(form, [data-testid="composer"], [data-testid="composer-container"], [data-testid="composer-surface"])
+    :is(#prompt-textarea, [data-testid="composer-input"]):focus-within
+)) {
+  outline: 1px solid #67635a !important;
+  outline-offset: 1px !important;
 }
 
 :where(main, #thread, #page-header, [data-testid="conversation-header"], [role="dialog"], [role="alertdialog"],

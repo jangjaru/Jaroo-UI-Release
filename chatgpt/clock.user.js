@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.8.3
+// @version      3.9.0
 // @description  Neo-Brutalist v1.0 sidebar clock, private Life Clock and native menu bridge
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -116,10 +116,11 @@
         --clock-ink: var(--jb-ink, #000000);
         --clock-paper: var(--jb-paper, #F5F0DC);
         --clock-white: var(--jb-white, #FFFFFF);
+        --clock-rule: var(--jb-rule, #D8D2BE);
         --clock-teal: var(--jb-teal, #00C2C8);
         --clock-yellow: var(--jb-yellow, #FFDD00);
         --clock-magenta: var(--jb-magenta, #FF00FF);
-        --clock-muted: var(--jb-muted, #EAE5D5);
+        --clock-segment-off: #F3F0E5;
         --clock-border: var(--jb-border, 3px solid #000000);
         --clock-border-light: var(--jb-border-light, 2px solid #000000);
         --clock-shadow: var(--jb-shadow, 4px 4px 0 #000000);
@@ -136,9 +137,9 @@
         gap: 8px;
         width: 100%;
         min-width: 0;
-        min-height: 60px;
+        min-height: 48px;
         margin: 0;
-        padding: 8px 10px;
+        padding: 6px 10px;
         border: var(--clock-border);
         border-radius: var(--clock-radius);
         background: var(--clock-teal);
@@ -201,11 +202,10 @@
         box-sizing: border-box;
         width: 100%;
         margin-top: 8px;
-        padding: 8px;
-        border: var(--clock-border);
+        padding: 9px 10px;
+        border: 1px solid var(--clock-rule);
         border-radius: var(--clock-radius);
-        background: var(--clock-paper);
-        box-shadow: var(--clock-shadow);
+        background: var(--clock-white);
         font-family: var(--clock-font);
         font-weight: var(--jb-weight-regular, 400);
       }
@@ -214,7 +214,7 @@
         align-items: baseline;
         justify-content: space-between;
         gap: 8px;
-        margin-bottom: 8px;
+        margin-bottom: 5px;
       }
       .life-title, .life-progress-title {
         font-size: 13px;
@@ -228,26 +228,33 @@
       }
       .life-title-short, .life-progress-percent { display: none; }
 
-      .life-grid { display: grid; gap: 6px; }
+      .life-grid { display: grid; }
       .life-card {
         display: grid;
-        grid-template-columns: 8px minmax(0, 1fr);
+        grid-template-columns: 3px minmax(0, 1fr);
+        align-items: center;
         min-width: 0;
-        border: var(--clock-border-light);
-        border-radius: var(--clock-radius);
-        background: var(--clock-white);
-        box-shadow: var(--clock-shadow-small);
+        border-top: 1px solid var(--clock-rule);
       }
       .life-card::before {
         content: "";
-        border-inline-end: var(--clock-border-light);
+        width: 3px;
+        height: 14px;
+        border-radius: 1px;
         background: var(--life-card-accent);
       }
       .life-card.retire { --life-card-accent: var(--clock-yellow); }
       .life-card.work { --life-card-accent: var(--clock-teal); }
       .life-card.after { --life-card-accent: var(--clock-magenta); }
-      .life-card-main { display: grid; gap: 4px; min-width: 0; padding: 6px 8px; }
-      .life-caption { display: flex; flex-wrap: wrap; gap: 2px 6px; align-items: baseline; }
+      .life-card-main {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 2px 7px;
+        min-width: 0;
+        padding: 5px 0 5px 7px;
+      }
+      .life-caption { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 5px; min-width: 0; }
       .life-label { font-size: 13px; line-height: 1.2; }
       .life-value {
         min-width: 0;
@@ -259,17 +266,17 @@
         white-space: nowrap;
       }
       .life-progress {
-        margin-top: 10px;
-        padding-top: 8px;
-        border-top: var(--clock-border-light);
+        margin-top: 5px;
+        padding-top: 6px;
+        border-top: 1px solid var(--clock-rule);
       }
       .life-progress-percent { font-size: 12px; }
       .life-bar {
         box-sizing: border-box;
-        height: 12px;
+        height: 7px;
         overflow: hidden;
-        border: var(--clock-border-light);
-        background: var(--clock-white);
+        border: 1px solid var(--clock-rule);
+        background: var(--clock-paper);
       }
       .life-bar-fill {
         width: 0%;
@@ -300,7 +307,8 @@
         align-items: center;
         justify-content: space-between;
         gap: 8px;
-        min-height: 53px;
+        min-height: 49px;
+        padding-block: 4px;
         background: var(--clock-white);
       }
       .date-chip {
@@ -312,7 +320,7 @@
         min-width: 0;
         min-height: 40px;
         padding-inline-end: 6px;
-        border-inline-end: var(--clock-border-light);
+        border-inline-end: 1px solid var(--clock-rule);
       }
       .date-main { font-size: 13px; line-height: 1.2; white-space: nowrap; }
       .weather-line { display: flex; align-items: center; gap: 4px; min-width: 0; }
@@ -326,7 +334,7 @@
         font-size: 12px;
         line-height: 1;
       }
-      .weather-line[data-weather="error"] .weather-symbol { background: var(--clock-magenta); }
+      .weather-line[data-weather="error"] .weather-symbol { background: var(--clock-paper); }
       .weather-label {
         min-width: 0;
         overflow: hidden;
@@ -339,7 +347,7 @@
       .digital-time { display: flex; flex: 0 0 auto; align-items: center; height: 40px; }
       .pair { display: inline-flex; flex: 0 0 auto; align-items: center; }
       .digit { display: inline-block; position: relative; flex: 0 0 21px; width: 21px; height: 38px; }
-      .digit .seg { position: absolute; display: block; pointer-events: none; background: var(--clock-muted); }
+      .digit .seg { position: absolute; display: block; pointer-events: none; background: var(--clock-segment-off); }
       .digit .seg.on { background: var(--clock-ink); }
       .seg-a, .seg-g, .seg-d { left: 4px; width: 13.6px; height: 3.7px; }
       .seg-a { top: 1px; }
@@ -379,7 +387,9 @@
       :host([data-jaroo-micro="true"]) .brand-arrow { display: none; }
       :host([data-jaroo-width="narrow"]) .life-title-short { display: inline; }
       :host([data-jaroo-width="narrow"]) .life-clock { padding: 6px; }
-      :host([data-jaroo-width="narrow"]) .life-card-main { padding-inline: 5px; }
+      :host([data-jaroo-micro="true"]) .life-card-main { grid-template-columns: minmax(0, 1fr); }
+      :host([data-jaroo-micro="true"]) .life-card { align-items: start; }
+      :host([data-jaroo-micro="true"]) .life-card::before { margin-top: 5px; }
       :host([data-jaroo-width="narrow"]) .life-label,
       :host([data-jaroo-width="narrow"]) .life-progress-title { font-size: 12px; }
 
@@ -412,13 +422,13 @@
       </div>
       <div class="life-grid">
         <article class="life-card retire">
-          <div class="life-card-main"><div class="life-caption"><div class="life-label">▣ 은퇴까지</div><div class="life-meta" data-life="retireMeta" title="65세 기준">65세 기준</div></div><div class="life-value" data-life="retireValue">0 시간</div></div>
+          <div class="life-card-main"><div class="life-caption"><div class="life-label">은퇴까지</div><div class="life-meta" data-life="retireMeta" title="65세 기준">65세 기준</div></div><div class="life-value" data-life="retireValue">0 시간</div></div>
         </article>
         <article class="life-card work">
-          <div class="life-card-main"><div class="life-caption"><div class="life-label">⌛ 남은 근무시간</div><div class="life-meta" data-life="workMeta" title="평일 8시간 기준">평일 8시간 기준</div></div><div class="life-value" data-life="workValue">0 시간</div></div>
+          <div class="life-card-main"><div class="life-caption"><div class="life-label">남은 근무시간</div><div class="life-meta" data-life="workMeta" title="평일 8시간 기준">평일 8시간 기준</div></div><div class="life-value" data-life="workValue">0 시간</div></div>
         </article>
         <article class="life-card after">
-          <div class="life-card-main"><div class="life-caption"><div class="life-label">✦ 은퇴 이후</div><div class="life-meta" data-life="afterMeta" title="65~80세 계획기간">65~80세 계획기간</div></div><div class="life-value" data-life="afterValue">0 시간</div></div>
+          <div class="life-card-main"><div class="life-caption"><div class="life-label">은퇴 이후</div><div class="life-meta" data-life="afterMeta" title="65~80세 계획기간">65~80세 계획기간</div></div><div class="life-value" data-life="afterValue">0 시간</div></div>
         </article>
       </div>
       <div class="life-progress">
@@ -1311,9 +1321,9 @@
     if (window[RUNTIME_KEY]?.dispose === dispose) delete window[RUNTIME_KEY];
   }
   window[RUNTIME_KEY] = {
-    version: '3.8.3', dispose,
+    version: '3.9.0', dispose,
     diagnostics: () => ({
-      version: '3.8.3', ...placementReport,
+      version: '3.9.0', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),

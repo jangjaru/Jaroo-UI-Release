@@ -1,8 +1,8 @@
 {
-  "chatgpt/clock.user.js": "e0cb968ee76bd0978d14db23948573a6bd79f97a243ae00bfd6c5537e6d15bd6",
-  "chatgpt/status.user.js": "d02d05e411e3d0027216e1e745f8569ad2fd2c74cce18459ef43c060e30f418f",
+  "chatgpt/clock.user.js": "85f053a2e21e663cecd5caad893de8249068694f5b2298acfebdf1fbd6f3cf9b",
+  "chatgpt/status.user.js": "2facfa3e0a1666676c7a95241ffc9dc728210eec3ae1da5ebe3d2136d617e8af",
   "chatgpt/mapper.user.js": "ca5f75b506c8dd83af5a8c8168111f29e0c846b6e73fb694b5a989fd9fb114b2",
-  "chatgpt/theme.user.css": "74f9c7ce428167aafcc4d737c7fdfe8faf85c84ee4abfff8398d72449df518b8",
+  "chatgpt/theme.user.css": "57f63e5f1569f1680b6158e0972b29c23534ed0668be788316c0167af3460bb4",
   "calendar/companion.user.js": "e7feacb7a3565aaa8bef7aa0ea21a63407c66921ca9ccd675b7f5c8709468aba",
   "calendar/theme.user.css": "c10a60802290db0d891dcfe60251b18c4134759e44c98e38fcc77b69cb64f9cd"
 }
