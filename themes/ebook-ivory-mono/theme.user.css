@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.13
+@version      0.2.14
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -107,7 +107,7 @@
     --link: var(--eb-ink) !important;
     --link-hover: var(--eb-secondary) !important;
     --jaroo-status-css-version: "6.8.2";
-    --ebook-theme-version: "0.2.13";
+    --ebook-theme-version: "0.2.14";
   }
 
   /* 02. LIGHT-PAPER BASE — do not modify Chrome frame or extension UIs. */
@@ -1288,6 +1288,51 @@
     font-weight:var(--eb-user-sent-weight)!important;
     color:var(--eb-ink)!important;
     -webkit-text-fill-color:var(--eb-ink)!important;
+    line-height:1.56!important;
+  }
+
+
+  /* 23. REAL PROMPT TEXT · OPTICAL READING CORRECTION v0.2.14
+     On the user's 90% Chrome screenshot both sent and editable prompts
+     appear visibly smaller than the right-hand article, even though earlier
+     container declarations specify 14px. Apply an initial 16px optical
+     correction directly on the actual rendered text leaves, not buttons or
+     chat toolbars. The E-book JS adds the precise leaf markers and a reversible
+     inline !important fallback to defeat nested TextBase size overrides. */
+  :root {
+    --eb-prompt-optical-size:16px;
+    --eb-prompt-accent:#1F1E1A;
+    --eb-prompt-sent-weight:600;
+  }
+  /* Editable message textbox; native model selector and toolbar excluded. */
+  html body :is(#prompt-textarea,[data-testid="prompt-textarea"],
+        [contenteditable="true"][role="textbox"]),
+  html body :is(#prompt-textarea,[data-testid="prompt-textarea"],
+        [contenteditable="true"][role="textbox"])
+        :is(p,li,span,div,[data-d-component="text"],[data-d-text-flow]) {
+    font-family:var(--eb-font)!important;
+    font-size:var(--eb-prompt-optical-size)!important;
+    line-height:1.56!important;
+  }
+  html body [data-ebook-prompt-text="editor"] {
+    font-family:var(--eb-font)!important;
+    font-size:var(--eb-prompt-optical-size)!important;
+    line-height:1.56!important;
+  }
+  /* Sent user messages: match the body optically, accent ink and a definite
+     medium-bold 600. No accent background, no color changes to controls. */
+  html body [data-message-author-role="user"]
+    :is([data-user-message-bubble="true"],.bg-user-message)
+    :is(p,li,span,div,small,[data-d-component="text"],[data-d-text-flow]):not(
+      :is(button *,[role="button"] *,pre *,code *,svg *,table *,
+         [role="img"] *,[data-d-component="math"] *)
+    ),
+  html body [data-ebook-prompt-text="sent"] {
+    font-family:var(--eb-font)!important;
+    font-size:var(--eb-prompt-optical-size)!important;
+    font-weight:var(--eb-prompt-sent-weight)!important;
+    color:var(--eb-prompt-accent)!important;
+    -webkit-text-fill-color:var(--eb-prompt-accent)!important;
     line-height:1.56!important;
   }
 

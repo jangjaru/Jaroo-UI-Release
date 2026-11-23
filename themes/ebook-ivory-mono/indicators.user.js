@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.2.7
+// @version      0.2.8
 // @description  E-book visual dot indicators for role prefixes plus a light Clock skin; keeps original chat titles, React data and RUN/DONE logic intact.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -640,6 +640,94 @@
     composerMutedOriginal.clear();
   }
 
+
+  /* v0.2.8 — user prompt typography on the exact text-bearing elements.
+     Earlier CSS reached the user bubble/editor shell but not its nested DIL
+     leaves; this is why font-size looked unchanged. Original inline values
+     are restored on disable or script update. */
+  const promptTypeOriginal=new Map();
+  const promptTypeProps=['font-size','font-weight','color','-webkit-text-fill-color','line-height'];
+  function markPromptTypography() {
+    const chosen=new Map();
+    const reading=getComputedStyle(document.documentElement)
+      .getPropertyValue('--eb-prompt-optical-size').trim() || '16px';
+    const ink=getComputedStyle(document.documentElement)
+      .getPropertyValue('--eb-prompt-accent').trim() || '#1F1E1A';
+    const hasDirectText=el=>[...el.childNodes].some(node=>
+      node.nodeType===Node.TEXT_NODE && (node.nodeValue||'').trim().length>0);
+    const add=(el,kind)=>{
+      if(el.closest('button,[role="button"],[role="toolbar"],svg,pre,code,kbd,samp,table,[role="table"],[data-d-component="math"]'))return;
+      if(el.closest('[aria-hidden="true"],.sr-only'))return;
+      chosen.set(el,kind);
+    };
+    const editor=activeComposer()?.editor;
+    if(editor?.isConnected){
+      add(editor,'editor');
+      for(const el of editor.querySelectorAll('p,li,span,div,[data-d-component="text"],[data-d-text-flow]')){
+        if(hasDirectText(el))add(el,'editor');
+      }
+    }
+    for(const message of document.querySelectorAll('[data-message-author-role="user"]')){
+      const bubble=message.querySelector('[data-user-message-bubble="true"],.bg-user-message');
+      const target=bubble||message;
+      if(bubble)add(bubble,'sent');
+      const nodes=target.querySelectorAll('p,li,span,div,[data-d-component="text"],[data-d-text-flow]');
+      for(const el of nodes){
+        if(hasDirectText(el))add(el,'sent');
+      }
+    }
+    for(const [el,record] of promptTypeOriginal){
+      if(chosen.has(el))continue;
+      if(el.isConnected){
+        for(const [property,saved] of Object.entries(record.previous)){
+          if(saved.value)el.style.setProperty(property,saved.value,saved.priority);
+          else el.style.removeProperty(property);
+        }
+        el.removeAttribute('data-ebook-prompt-text');
+      }
+      promptTypeOriginal.delete(el);
+    }
+    for(const [el,kind] of chosen){
+      if(!promptTypeOriginal.has(el)){
+        const previous={};
+        for(const property of promptTypeProps)previous[property]={
+          value:el.style.getPropertyValue(property),
+          priority:el.style.getPropertyPriority(property)
+        };
+        promptTypeOriginal.set(el,{kind,previous});
+      }
+      if(el.getAttribute('data-ebook-prompt-text')!==kind)
+        el.setAttribute('data-ebook-prompt-text',kind);
+      const required={
+        'font-size':reading,
+        'line-height':'1.56'
+      };
+      if(kind==='sent'){
+        required['font-weight']='600';
+        required.color=ink;
+        required['-webkit-text-fill-color']=ink;
+      }
+      for(const [p,v] of Object.entries(required)){
+        if(el.style.getPropertyValue(p)!==v ||
+           el.style.getPropertyPriority(p)!=='important')
+          el.style.setProperty(p,v,'important');
+      }
+    }
+    for(const el of promptTypeOriginal.keys())if(!el.isConnected)
+      promptTypeOriginal.delete(el);
+  }
+  function restorePromptTypography(){
+    for(const [el,record] of promptTypeOriginal){
+      if(!el.isConnected)continue;
+      for(const [p,saved] of Object.entries(record.previous)){
+        if(saved.value)el.style.setProperty(p,saved.value,saved.priority);
+        else el.style.removeProperty(p);
+      }
+      el.removeAttribute('data-ebook-prompt-text');
+    }
+    promptTypeOriginal.clear();
+  }
+
   function update() {
     if (disposed) return;
     attachObservers();
@@ -648,6 +736,7 @@
     markDotCounter();
     watchComposer();
     syncComposerFrame();
+    markPromptTypography();
     markEffortPicker();
     markCurrentChatTitle();
     markUploadDivider();
@@ -682,6 +771,7 @@
     restore();
     restoreOpticalSidebarText();
     restoreComposerFrames();
+    restorePromptTypography();
     document.querySelectorAll('[data-ebook-effort-picker="true"]').forEach(n=>n.removeAttribute('data-ebook-effort-picker'));
     document.querySelectorAll('[data-ebook-active-title="true"]').forEach(n=>n.removeAttribute('data-ebook-active-title'));
     document.querySelectorAll('[data-ebook-upload-divider="true"]').forEach(n=>n.remove());
@@ -738,7 +828,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.2.7',dispose,refresh:schedule,
-    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,fontAudit:fontAudit()})
+    version:'0.2.8',dispose,refresh:schedule,
+    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),fontAudit:fontAudit()})
   };
 })();

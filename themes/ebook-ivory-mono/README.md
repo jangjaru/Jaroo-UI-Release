@@ -1,29 +1,29 @@
-# Jaroo E-book Classic Paper · CSS v0.2.13 / JS v0.2.7
+# Jaroo E-book Classic Paper CSS v0.2.14 / JS v0.2.8
 
-**2026-11-24 · 입력창 겹선 제거 및 작성한 메시지 글꼴 강조**
+**2026-11-24 · 보낸 프롬프트 + 작성 중 프롬프트 글자 확대 / 전송 문구 강조**
 
-## 수정 내용
+사용자가 실사용 화면에서 작성 중인 입력창과 이미 보낸 프롬프트 내부의 글자가 일반 본문보다 눈에 띄게 작아 보인다고 반복 보고함. 이전 버전의 CSS `14px`은 부모 요소에 걸렸지만 내부 ChatGPT 리치 텍스트 span/p/div가 별도 크기를 유지했을 가능성이 있음.
 
-1. **작성창 단일 테두리:** 이전에는 안쪽 연회색 라인과 바깥쪽 차콜 라인이 겹쳐 보였다. 실제 입력 요소부터 부모를 탐색해 **안쪽 둥근 프레임**을 찾고 그 프레임에만 `2.5px solid #1F1E1A` 액센트 라인을 적용한다. 바깥쪽 중복 테두리와 그림자는 없앤다. 안쪽 라운드는 기존 둥근 곡선을 우선 활용하고 22px보다 작지 않도록 한다.
-2. **이미 보낸 내 메시지 글씨:** 우측 일반 본문과 같은 `var(--eb-prose-size)` (**14px 데스크톱 기준**), 굵기 **600**, 전경·액센트 `#1F1E1A`. 투명 배경, 기존 2.5px 라인과 28px 메시지 라운드는 유지한다.
-3. 좌측 프로젝트명·채팅명 확정 크기, 표 글자 +1.5pt, 종이 질감, 기존 기능·스크립트는 그대로 보존.
+## 이번 수정
+- **실제 편집 중인 프롬프트 글자:** E-book CSS 및 JS에서 실제 contenteditable 텍스트와 내부 글자에 **16px** 광학 보정값을 우선 적용.
+- **이미 전송한 프롬프트 글자:** 동일한 **16px**, 색상 액센트 **`#1F1E1A`**, 굵기 **600**으로 시각적 강조.
+- 일반 본문 CSS는 이전 **14px 유지**. 화면상 균형을 맞추는 실험적 광학 보정이므로 같은 Computed font-size라는 뜻은 아님.
+- E-book JS가 실제 텍스트를 가진 span/p/div의 인라인 스타일을 별도로 보정하고 종료 시 원복. 아이콘, 코드, 모델 선택 버튼, 업로드 파일 내용은 조정 대상에서 제외.
+- **유지:** 왼쪽 프로젝트명·채팅명 확정 크기, 표 글자 +1.5pt, 작성창의 단일 검은 테두리, 보낸 메시지의 곡선 라운드, 종이 질감 및 기존 기능.
 
-## 설치/업데이트
+## 설치
+- [Stylus CSS v0.2.14](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/theme.user.css)
+- [Tampermonkey E-book Helper JS v0.2.8](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/indicators.user.js)
 
-- [Stylus CSS 0.2.13](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/theme.user.css)
-- [Tampermonkey E-book JS 0.2.7](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/indicators.user.js)
+**CSS와 JS 둘 다 업데이트**하고 `Ctrl + Shift + R`로 새로고침할 것. 기존 E-book 항목을 덮어쓰며 중복 활성화를 피함. Dracula / Flat Neon 테마 CSS는 OFF, 기존 Clock/Status/Mapper 핵심 JS는 ON 유지.
 
-**이번에는 CSS와 JS 모두 업데이트해야 한다.** 기존 E-book 두 항목을 업데이트한 다음 `Ctrl+Shift+R`로 새로고침한다. 다른 시각 테마(Dracula·Flat Neon)는 OFF, E-book CSS/JS와 Life Clock·Status·Mapper는 ON.
+## 진단
+Chrome 개발자도구 Console에서 아래 명령으로 `promptTextLeaves`와 `promptOpticalTarget`을 확인할 수 있음.
 
-## 확인할 부분
+```javascript
+window.__jarooEbookIvoryMonoV1?.diagnostics?.()
+```
 
-- 프롬프트 작성창 안쪽/바깥쪽에 **두 줄**이 아닌 **차콜 외곽선 한 줄**만 표시되는지
-- 둥근 모서리가 기존 안쪽 연회색 박스처럼 자연스러운지
-- 전송한 메시지의 글씨가 일반 본문 크기와 같고 적절히 진해졌는지
-- 작성, 첨부, 삭제, 모델 선택 버튼 동작이 유지되는지
+`promptTextLeaves`가 0이면 실제 입력·메시지 내부 DOM을 찾지 못한 상태일 수 있음. 정상 코드를 배포하더라도 실제 로그인 Chrome에서의 결과가 확인된 것은 아님.
 
-코드의 JS 문법/CSS 구조와 GitHub 공개·비공개 원본 동일성 검사는 가능하나, **로그인된 Chrome의 실제 DOM과 렌더링은 사용자의 적용 후 확인 필요**하다. 연회색 선이 계속 겹치면 F12로 그 내부 요소를 확인해야 한다.
-
-## 원복
-
-이전 E-book CSS 0.2.12와 JS 0.2.6을 GitHub 커밋 이력에서 다시 적용하거나 신규 두 테마 항목을 비활성화하면 된다. 원본 Clock/Status/Mapper와 개인 프로필은 변경하거나 삭제하지 않는다.
+원복: GitHub 이전 배포본으로 되돌리거나 E-book CSS/Helper JS만 꺼서 이전 모양 복원. Clock/Status/Mapper 및 개인 프로필은 건드리지 않음.
