@@ -6,10 +6,10 @@
 
 | Site | Component | Version |
 |---|---|---|
-| ChatGPT | Clock userscript | 3.9.1 |
-| ChatGPT | Status userscript | 6.7.3 |
-| ChatGPT | Organization Mapper userscript | 1.3.4 |
-| ChatGPT | Stylus UserCSS | 8.2.0 |
+| ChatGPT | Clock userscript | 3.9.2 |
+| ChatGPT | Status userscript | 6.7.4 |
+| ChatGPT | Organization Mapper userscript | 1.3.5 |
+| ChatGPT | Stylus UserCSS | 8.2.1 |
 | Google Calendar | Companion userscript | 1.3.7 |
 | Google Calendar | Stylus UserCSS | 1.2.2 |
 
@@ -19,6 +19,6 @@ Security rules: keep personal dates/location/credentials in a **separate, local-
 
 SHA256 hashes of published files: [SHA256.json](SHA256.json).
 
-**Current release (2026-11-23 KST)** uses Calendar-style category colors on the light ChatGPT theme. Chat rows have colored text, light tints and a leading stripe. The prompt uses a caret to show focus. [Chrome update guide](docs/INSTALLATION_KO.md)
+**Current release (2026-11-23 KST)** restores the ChatGPT theme and userscripts from version 8.1.0. Version 8.2.1 delivers the restored theme through the existing extension update URL. [Chrome update guide](docs/INSTALLATION_KO.md)
 
-Previous release [ChatGPT theme 8.1.0](docs/RELEASE_v8.1.0_KO.md).
+Restored release [ChatGPT theme 8.1.0](docs/RELEASE_v8.1.0_KO.md).

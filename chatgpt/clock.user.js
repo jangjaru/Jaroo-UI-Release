@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.9.1
-// @description  Sidebar clock, private Life Clock and native menu bridge
+// @version      3.9.2
+// @description  Neo-Brutalist v1.0 sidebar clock, private Life Clock and native menu bridge
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
 // @grant        none
@@ -113,18 +113,19 @@
     <style>
       :host {
         --jaroo-ui-scale: 1;
-        --clock-ink: var(--jb-ink, #343840);
+        --clock-ink: var(--jb-ink, #000000);
         --clock-paper: var(--jb-paper, #F5F0DC);
         --clock-white: var(--jb-white, #FFFFFF);
         --clock-rule: var(--jb-rule, #D8D2BE);
-        --clock-mint: var(--jb-mint, #50FA7B);
-        --clock-blue: var(--jb-blue, #63E6FF);
-        --clock-gold: var(--jb-gold, #F9C74F);
-        --clock-purple: var(--jb-lavender, #D2A6FF);
-        --clock-canvas: var(--jb-canvas, #FFFDF7);
+        --clock-teal: var(--jb-teal, #00C2C8);
+        --clock-yellow: var(--jb-yellow, #FFDD00);
+        --clock-magenta: var(--jb-magenta, #FF00FF);
         --clock-segment-off: #F3F0E5;
-        --clock-panel-border: var(--jb-border, 2px solid #AB9D7C);
-        --clock-radius: var(--jb-radius-panel, 15px);
+        --clock-border: var(--jb-border, 3px solid #000000);
+        --clock-border-light: var(--jb-border-light, 2px solid #000000);
+        --clock-shadow: var(--jb-shadow, 4px 4px 0 #000000);
+        --clock-shadow-small: var(--jb-shadow-small, 2px 2px 0 #000000);
+        --clock-radius: var(--jb-radius, 3px);
         --clock-font: var(--jb-font, "Pretendard Variable", "Pretendard", "Malgun Gothic", system-ui, sans-serif);
         color: var(--clock-ink);
       }
@@ -136,14 +137,14 @@
         gap: 8px;
         width: 100%;
         min-width: 0;
-        min-height: 44px;
+        min-height: 48px;
         margin: 0;
-        padding: 5px 10px;
-        border: 0;
-        border-inline-start: 2px solid var(--clock-blue);
-        border-radius: 8px;
-        background: color-mix(in srgb, var(--clock-blue) 18%, var(--clock-canvas));
-        color: var(--jb-role-produce, #086980);
+        padding: 6px 10px;
+        border: var(--clock-border);
+        border-radius: var(--clock-radius);
+        background: var(--clock-teal);
+        box-shadow: var(--clock-shadow);
+        color: var(--clock-ink);
         font-family: var(--clock-font);
         font-weight: var(--jb-weight-regular, 400);
         text-align: left;
@@ -151,10 +152,10 @@
         cursor: pointer;
         user-select: none;
       }
-      .fallback-brand:not([aria-disabled="true"]):hover { border-color: var(--clock-purple); }
-      .fallback-brand:not([aria-disabled="true"]):active { border-color: var(--clock-ink); }
+      .fallback-brand:not([aria-disabled="true"]):hover { background: var(--clock-white); }
+      .fallback-brand:not([aria-disabled="true"]):active { box-shadow: var(--clock-shadow-small); }
       .fallback-brand:focus-visible {
-        outline: var(--jb-focus, 2px solid #075F4C);
+        outline: var(--jb-focus, 3px solid #FF00FF);
         outline-offset: 2px;
       }
       .fallback-brand[aria-disabled="true"] { cursor: default; }
@@ -200,9 +201,9 @@
       .life-clock, .clock-line {
         box-sizing: border-box;
         width: 100%;
-        margin-top: 6px;
-        padding: 7px 9px;
-        border: var(--clock-panel-border);
+        margin-top: 8px;
+        padding: 9px 10px;
+        border: 1px solid var(--clock-rule);
         border-radius: var(--clock-radius);
         background: var(--clock-white);
         font-family: var(--clock-font);
@@ -227,37 +228,34 @@
       }
       .life-title-short, .life-progress-percent { display: none; }
 
-      .life-grid { display: grid; gap: 2px; }
+      .life-grid { display: grid; }
       .life-card {
         display: grid;
+        grid-template-columns: 3px minmax(0, 1fr);
         align-items: center;
         min-width: 0;
-        border-inline-start: 2px solid var(--life-card-accent);
-        border-radius: 5px;
-        background: color-mix(in srgb, var(--life-card-accent) 16%, var(--clock-canvas));
+        border-top: 1px solid var(--clock-rule);
       }
-      .life-card.retire {
-        --life-card-accent: var(--clock-gold);
-        --life-card-ink: #835705;
+      .life-card::before {
+        content: "";
+        width: 3px;
+        height: 14px;
+        border-radius: 1px;
+        background: var(--life-card-accent);
       }
-      .life-card.work {
-        --life-card-accent: var(--clock-mint);
-        --life-card-ink: var(--jb-role-manage, #08724E);
-      }
-      .life-card.after {
-        --life-card-accent: var(--clock-purple);
-        --life-card-ink: var(--jb-role-plan, #704C99);
-      }
+      .life-card.retire { --life-card-accent: var(--clock-yellow); }
+      .life-card.work { --life-card-accent: var(--clock-teal); }
+      .life-card.after { --life-card-accent: var(--clock-magenta); }
       .life-card-main {
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: center;
         gap: 2px 7px;
         min-width: 0;
-        padding: 4px 5px;
+        padding: 5px 0 5px 7px;
       }
       .life-caption { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 5px; min-width: 0; }
-      .life-label { color: var(--life-card-ink); font-size: 13px; line-height: 1.2; }
+      .life-label { font-size: 13px; line-height: 1.2; }
       .life-value {
         min-width: 0;
         text-align: right;
@@ -275,16 +273,15 @@
       .life-progress-percent { font-size: 12px; }
       .life-bar {
         box-sizing: border-box;
-        height: 8px;
+        height: 7px;
         overflow: hidden;
         border: 1px solid var(--clock-rule);
-        border-radius: 99px;
         background: var(--clock-paper);
       }
       .life-bar-fill {
         width: 0%;
         height: 100%;
-        background: var(--clock-blue);
+        background: var(--clock-teal);
         transition: width .2s ease;
       }
       .life-progress-meta {
@@ -333,12 +330,11 @@
         place-items: center;
         width: 14px;
         height: 14px;
-        border: 1px solid var(--clock-gold);
-        border-radius: 50%;
+        background: var(--clock-yellow);
         font-size: 12px;
         line-height: 1;
       }
-      .weather-line[data-weather="error"] .weather-symbol { border-color: var(--clock-rule); }
+      .weather-line[data-weather="error"] .weather-symbol { background: var(--clock-paper); }
       .weather-label {
         min-width: 0;
         overflow: hidden;
@@ -393,6 +389,7 @@
       :host([data-jaroo-width="narrow"]) .life-clock { padding: 6px; }
       :host([data-jaroo-micro="true"]) .life-card-main { grid-template-columns: minmax(0, 1fr); }
       :host([data-jaroo-micro="true"]) .life-card { align-items: start; }
+      :host([data-jaroo-micro="true"]) .life-card::before { margin-top: 5px; }
       :host([data-jaroo-width="narrow"]) .life-label,
       :host([data-jaroo-width="narrow"]) .life-progress-title { font-size: 12px; }
 
@@ -406,7 +403,7 @@
         min-height: 0;
         padding: 0 0 5px;
         border: 0;
-        border-bottom: 1px solid var(--clock-rule);
+        border-bottom: var(--clock-border-light);
       }
       :host([data-jaroo-width="narrow"]) .date-main { font-size: 12px; }
 
@@ -1324,9 +1321,9 @@
     if (window[RUNTIME_KEY]?.dispose === dispose) delete window[RUNTIME_KEY];
   }
   window[RUNTIME_KEY] = {
-    version: '3.9.1', dispose,
+    version: '3.9.2', dispose,
     diagnostics: () => ({
-      version: '3.9.1', ...placementReport,
+      version: '3.9.2', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),

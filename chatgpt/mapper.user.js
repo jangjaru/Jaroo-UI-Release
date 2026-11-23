@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo · Organization Mapper
 // @namespace    https://chatgpt.com/
-// @version      1.3.4
+// @version      1.3.5
 // @description  Jaroo organization colors and sidebar title typography.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -29,11 +29,6 @@
   const SIDEBAR = '#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]';
   const PROJECT = '[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row]';
   const CHAT_LINK = 'a[href*="/c/"],a[href*="/local/"]';
-  const ROLE = new Map([
-    ['☆', 'lead'], ['★', 'lead'], ['▷', 'plan'], ['▶', 'plan'],
-    ['○', 'manage'], ['●', 'produce'], ['>', 'action'], ['›', 'action']
-  ]);
-  const LOCAL_ROLE = 'data-jaroo-local-role';
   const TITLE = '[data-thread-title],[data-jaroo-title-text]';
   const EXCLUDED_TEXT = 'svg,img,canvas,math,mjx-container,script,style,.katex,[role="menu"],[role="menuitem"],[popover],[data-native-menu-root],[data-icon-font],.iconfont,[class^="material-symbols-"],.material-icons,[hidden],[aria-hidden="true"],.sr-only,.visually-hidden';
   const OMIT = EXCLUDED_TEXT + ',button:not([data-thread-title-trigger]),[role="button"]:not([data-thread-title-trigger],[data-sidebar-archive-chatgpt-id]),[aria-haspopup]';
@@ -42,7 +37,7 @@
     ['font-weight', 'var(--jb-weight-regular, 400)']
   ];
   const styled = new Map(), markedProjects = new Set(), mappedRows = new Map();
-  let disposed = false, frame = 0, sidebars = [], localRoles = new Set();
+  let disposed = false, frame = 0, sidebars = [];
 
   const normalize = text => (text || '').replace(/\s+/g, ' ').trim();
   const permitted = (element, scope, omit = OMIT) => {
@@ -166,22 +161,14 @@
   function sync() {
     frame = 0;
     if (disposed) return;
-    const wanted = new Set(), seenProjects = new Set(), seenRows = new Set(), seenLocalRoles = new Set();
+    const wanted = new Set(), seenProjects = new Set(), seenRows = new Set();
     for (const row of document.querySelectorAll(PROJECT)) showProject(row, wanted, seenProjects, seenRows);
     sidebars = [...document.querySelectorAll(SIDEBAR)];
     for (const root of sidebars) {
       for (const link of root.querySelectorAll(CHAT_LINK)) {
-        const local = link.pathname.startsWith('/local/');
-        if (link.origin !== location.origin || (!local && !link.pathname.includes('/c/')) || !permitted(link, root)) continue;
-        const { text, parents } = titleText(link);
-        collectFonts(parents, link, wanted);
-        if (local) {
-          const role = ROLE.get(text[0]) || ROLE.get(normalize(link.getAttribute('aria-label'))[0]);
-          if (role) {
-            setAttr(link, LOCAL_ROLE, role);
-            seenLocalRoles.add(link);
-          }
-        }
+        if (link.origin === location.origin &&
+            (link.pathname.includes('/c/') || link.pathname.startsWith('/local/')) &&
+            permitted(link, root)) collectFonts(titleText(link).parents, link, wanted);
       }
       for (const label of root.querySelectorAll(TITLE)) {
         if (!label.closest('a') && permitted(label, root)) collectFonts(titleText(label).parents, label, wanted);
@@ -190,8 +177,6 @@
     for (const [element, saved] of styled) if (!wanted.has(element)) restoreFonts(element, saved);
     for (const label of markedProjects) if (!seenProjects.has(label)) clearProjectMarker(label);
     for (const [row, org] of mappedRows) if (!seenRows.has(row)) clearMappedRow(row, org);
-    for (const link of localRoles) if (!seenLocalRoles.has(link)) link.removeAttribute(LOCAL_ROLE);
-    localRoles = seenLocalRoles;
     for (const element of wanted) setFonts(element);
   }
 
@@ -228,9 +213,8 @@
     for (const [element, saved] of styled) restoreFonts(element, saved);
     for (const label of markedProjects) clearProjectMarker(label);
     for (const [row, org] of mappedRows) clearMappedRow(row, org);
-    for (const link of localRoles) link.removeAttribute(LOCAL_ROLE);
     if (window[RUNTIME]?.dispose === dispose) delete window[RUNTIME];
   };
-  window[RUNTIME] = {version: '1.3.4', dispose};
+  window[RUNTIME] = {version: '1.3.5', dispose};
   sync();
 })();
