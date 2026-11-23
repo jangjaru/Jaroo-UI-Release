@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.27
+@version      0.2.28
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -1405,7 +1405,7 @@
   }
 
 
-  /* 26. QUICK ACTION NAV LABELS — v0.2.27
+  /* 26. QUICK ACTION NAV LABELS — v0.2.28
      Render a compact, even highlighter directly behind the visible New Chat
      text leaf, not across its full-width native row. Preserve icons and links.
      Dot uses the same optical size without highlighting. */
@@ -1436,14 +1436,25 @@
     align-self:flex-start!important;
     white-space:nowrap!important;
     overflow:visible!important;
-    padding-inline:3px!important;
+    /* Small ink breathing room, with the marker confined to these glyphs. */
+    padding:2px 5px!important;
     margin-inline:0!important;
-    border-radius:2px!important;
-    background-image:linear-gradient(180deg,
-      transparent 0%,transparent 13%,
-      rgba(242,209,111,.78) 13%,
-      rgba(242,209,111,.78) 87%,
-      transparent 87%,transparent 100%)!important;
+    border-radius:3px 2px 4px 2px!important;
+    /* Two gently slanted, translucent passes approximate a felt-tip swipe:
+       irregular top/bottom edges, no rectangular full-row stripe. */
+    background-image:
+      linear-gradient(177deg,
+        transparent 0%,transparent 5%,
+        rgba(242,209,111,.16) 10%,
+        rgba(242,209,111,.73) 19%,
+        rgba(242,209,111,.77) 76%,
+        rgba(242,209,111,.38) 88%,
+        transparent 96%),
+      linear-gradient(183deg,
+        transparent 0%,transparent 16%,
+        rgba(244,206,100,.16) 25%,
+        rgba(244,206,100,.23) 72%,
+        transparent 93%)!important;
     background-color:transparent!important;
     background-repeat:no-repeat!important;
     background-size:100% 100%!important;
