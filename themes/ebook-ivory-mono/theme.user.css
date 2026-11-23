@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.9
+@version      0.2.10
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -107,7 +107,7 @@
     --link: var(--eb-ink) !important;
     --link-hover: var(--eb-secondary) !important;
     --jaroo-status-css-version: "6.8.2";
-    --ebook-theme-version: "0.2.9";
+    --ebook-theme-version: "0.2.10";
   }
 
   /* 02. LIGHT-PAPER BASE — do not modify Chrome frame or extension UIs. */
@@ -1117,14 +1117,14 @@
   }
 
 
-  /* 19. REAL SIDEBAR GLYPHS · OPTICAL MATCH v0.2.9
+  /* 19. REAL SIDEBAR GLYPHS · OPTICAL MATCH v0.2.10
      F12 screenshot: both the exact sidebar leaf and body p compute to 14px,
-     but the narrow sidebar looks smaller. Use a conservative 16px optical
+     but the narrow sidebar looks smaller. Use a 14.667px optical
      correction for BOTH project and chat titles. Not a 19.33px text overgrowth.
      No right-pane selectors. The E-book JS applies the same number to actual
      nested text leaves if ChatGPT's injected styles override this rule. */
   :root {
-    --eb-nav-optical-size:16px;
+    --eb-nav-optical-size:14.667px;
     --eb-project-title-size:var(--eb-nav-optical-size);
     --eb-chat-title-size:var(--eb-nav-optical-size);
   }
