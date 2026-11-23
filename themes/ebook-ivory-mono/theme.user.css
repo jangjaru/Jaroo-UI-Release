@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.5
+@version      0.2.6
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -107,7 +107,7 @@
     --link: var(--eb-ink) !important;
     --link-hover: var(--eb-secondary) !important;
     --jaroo-status-css-version: "6.8.2";
-    --ebook-theme-version: "0.2.5";
+    --ebook-theme-version: "0.2.6";
   }
 
   /* 02. LIGHT-PAPER BASE — do not modify Chrome frame or extension UIs. */
@@ -1029,8 +1029,9 @@
      visual experiment. Only the glyph source for ordinary spaces changes. */
 
 
-  /* 17. LEFT SIDEBAR TYPOGRAPHY TRIAL v0.2.5
-     User explicitly asked for the LEFT navigation only to be +2pt (~2.67px).
+  /* 17. LEFT SIDEBAR TYPOGRAPHY TUNING v0.2.6
+     Left nav remains +2pt; project title is now +1pt and chat title +3pt
+     relative to the 14px baseline (change of -1pt/+1pt from v0.2.5).
      Right conversation, sent bubbles, prompt editor, current-chat header,
      texture and colors are not modified. One additional final layer
      overrides the older shared 14px rule only under the sidebar roots.
@@ -1038,6 +1039,8 @@
   :root {
     --eb-sidebar-font-bump: 2pt;
     --eb-sidebar-raised-size: calc(var(--eb-ui-size) + var(--eb-sidebar-font-bump));
+    --eb-project-title-size: calc(var(--eb-ui-size) + 1pt);
+    --eb-chat-title-size: calc(var(--eb-ui-size) + 3pt);
     --eb-sidebar-meta-raised-size: calc(11px + var(--eb-sidebar-font-bump));
   }
   /* Apply the bump to actual text-bearing descendants even when ChatGPT uses
@@ -1063,7 +1066,7 @@
   html body [data-sidebar-project-kind="local"]
     [data-app-action-sidebar-project-row] [data-marquee-content="true"]
     :is(span,div,[data-d-component="text"]) {
-    font-size:var(--eb-sidebar-raised-size)!important;
+    font-size:var(--eb-project-title-size)!important;
     line-height:1.42!important;
   }
   html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"])
@@ -1072,7 +1075,7 @@
     a[href*="/c/"] :is([data-ebook-role],[data-thread-title="true"],
        [data-marquee-text],span.truncate,div.truncate,
        span[dir="auto"],[data-d-component="text"]) {
-    font-size:var(--eb-sidebar-raised-size)!important;
+    font-size:var(--eb-chat-title-size)!important;
     line-height:1.42!important;
   }
   /* Small utility subtitles and status counts increase from their own
