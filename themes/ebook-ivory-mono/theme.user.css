@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.28
+@version      0.2.29
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -1405,7 +1405,7 @@
   }
 
 
-  /* 26. QUICK ACTION NAV LABELS — v0.2.28
+  /* 26. QUICK ACTION NAV LABELS — v0.2.29
      Render a compact, even highlighter directly behind the visible New Chat
      text leaf, not across its full-width native row. Preserve icons and links.
      Dot uses the same optical size without highlighting. */
@@ -1427,8 +1427,13 @@
     -webkit-mask-image:none!important;
     mask-image:none!important;
   }
+  /* A distinctly hand-drawn marker, verified in a local Chromium visual test.
+     Two slightly offset rough-edged swipes sit BEHIND the glyphs only.
+     Pseudo-elements prevent full-row bleeding without touching JS or buttons. */
   html body [data-ebook-quick-label="new-chat"] {
     display:inline-block!important;
+    position:relative!important;
+    isolation:isolate!important;
     width:max-content!important;
     max-width:max-content!important;
     min-width:0!important;
@@ -1436,32 +1441,38 @@
     align-self:flex-start!important;
     white-space:nowrap!important;
     overflow:visible!important;
-    /* Small ink breathing room, with the marker confined to these glyphs. */
     padding:2px 5px!important;
     margin-inline:0!important;
-    border-radius:3px 2px 4px 2px!important;
-    /* Two gently slanted, translucent passes approximate a felt-tip swipe:
-       irregular top/bottom edges, no rectangular full-row stripe. */
-    background-image:
-      linear-gradient(177deg,
-        transparent 0%,transparent 5%,
-        rgba(242,209,111,.16) 10%,
-        rgba(242,209,111,.73) 19%,
-        rgba(242,209,111,.77) 76%,
-        rgba(242,209,111,.38) 88%,
-        transparent 96%),
-      linear-gradient(183deg,
-        transparent 0%,transparent 16%,
-        rgba(244,206,100,.16) 25%,
-        rgba(244,206,100,.23) 72%,
-        transparent 93%)!important;
-    background-color:transparent!important;
-    background-repeat:no-repeat!important;
-    background-size:100% 100%!important;
-    background-position:center center!important;
-    box-decoration-break:clone!important;
-    -webkit-box-decoration-break:clone!important;
+    border:0!important;
+    border-radius:0!important;
+    background:none!important;
   }
+  html body [data-ebook-quick-label="new-chat"]::before,
+  html body [data-ebook-quick-label="new-chat"]::after {
+    content:""!important;
+    position:absolute!important;
+    pointer-events:none!important;
+    z-index:-1!important;
+  }
+  html body [data-ebook-quick-label="new-chat"]::before {
+    left:1px!important;
+    right:1px!important;
+    top:1px!important;
+    bottom:1px!important;
+    background:rgba(242,205,94,.88)!important;
+    clip-path:polygon(0% 17%,18% 11%,42% 9%,73% 14%,98% 7%,100% 84%,84% 91%,61% 96%,28% 92%,0% 100%)!important;
+    transform:rotate(-1deg)!important;
+  }
+  html body [data-ebook-quick-label="new-chat"]::after {
+    left:2px!important;
+    right:0!important;
+    top:4px!important;
+    bottom:0!important;
+    background:rgba(230,187,70,.18)!important;
+    clip-path:polygon(1% 28%,41% 18%,79% 22%,100% 4%,99% 95%,64% 87%,29% 100%,0 86%)!important;
+    transform:rotate(.7deg)!important;
+  }
+
 
   /* 27. PROJECT FOLDER TITLES +1pt ONLY — v0.2.26
      Base project title is 14.667px; increase to 16px (12pt).
