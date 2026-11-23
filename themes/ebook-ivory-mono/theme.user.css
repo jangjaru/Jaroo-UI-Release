@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.23
+@version      0.2.24
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -1405,16 +1405,16 @@
   }
 
 
-  /* 26. QUICK ACTION INK + HAND-DRAWN HIGHLIGHT — v0.2.23
-     Match the existing sidebar chat title, not the enlarged generic sidebar
-     controls. E-book JS marks only the real text leaf for '새 채팅' and 'Dot'.
-     The yellow swipe belongs only to the New Chat label, never its icon/row. */
+  /* 26. QUICK ACTION NAV LABELS — v0.2.24
+     The observed ChatGPT DOM uses button > div > span.text-fade-truncate
+     for New Chat, not a title below an old sidebar root ID.
+     JS labels only the visible native text leaf. No navigation handlers change. */
   :root {
     --eb-quick-nav-size:var(--eb-chat-corrected-size,15.333px);
     --eb-marker-yellow:#F2D16F;
   }
-  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,
-       [data-testid="sidebar"]) [data-ebook-quick-label] {
+  html body [data-ebook-quick-label="new-chat"],
+  html body [data-ebook-quick-label="dot"] {
     font-family:var(--eb-font)!important;
     font-size:var(--eb-quick-nav-size)!important;
     font-weight:400!important;
@@ -1424,22 +1424,19 @@
     -webkit-text-fill-color:var(--eb-ink)!important;
     text-shadow:none!important;
     text-decoration:none!important;
+    -webkit-mask-image:none!important;
+    mask-image:none!important;
   }
-  /* Two softly irregular strokes evoke a physical yellow highlighter,
-     covering the lettering rather than painting a rectangular navigation row. */
-  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,
-       [data-testid="sidebar"]) [data-ebook-quick-label="new-chat"] {
-    background-image:
-      linear-gradient(177deg,
-        transparent 0%, transparent 35%,
-        rgba(242,209,111,.18) 36%,
-        rgba(242,209,111,.68) 46%,
-        rgba(242,209,111,.75) 75%,
-        rgba(242,209,111,.49) 86%,
-        transparent 91%, transparent 100%)!important;
-    background-color:transparent!important;
-    background-size:100% 100%!important;
+  html body [data-ebook-quick-label="new-chat"] {
+    background:linear-gradient(176deg,
+      transparent 0%,transparent 23%,
+      rgba(242,209,111,.35) 26%,
+      rgba(242,209,111,.78) 36%,
+      rgba(242,209,111,.82) 76%,
+      rgba(242,209,111,.55) 84%,
+      transparent 90%)!important;
     background-repeat:no-repeat!important;
+    background-size:100% 100%!important;
     border-radius:2px 7px 3px 5px!important;
     box-decoration-break:clone;
     -webkit-box-decoration-break:clone;
