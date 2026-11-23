@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.26
+@version      0.2.27
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -1405,10 +1405,10 @@
   }
 
 
-  /* 26. QUICK ACTION NAV LABELS — v0.2.25
-     The observed ChatGPT DOM uses button > div > span.text-fade-truncate
-     for New Chat, not a title below an old sidebar root ID.
-     JS labels only the visible native text leaf. No navigation handlers change. */
+  /* 26. QUICK ACTION NAV LABELS — v0.2.27
+     Render a compact, even highlighter directly behind the visible New Chat
+     text leaf, not across its full-width native row. Preserve icons and links.
+     Dot uses the same optical size without highlighting. */
   :root {
     --eb-quick-nav-size:var(--eb-chat-corrected-size,15.333px);
     --eb-marker-yellow:#F2D16F;
@@ -1427,24 +1427,30 @@
     -webkit-mask-image:none!important;
     mask-image:none!important;
   }
-  /* The native text span stretches across the whole nav row. The companion
-     script measures the actual text ink run with Range, then supplies only
-     that width to the highlighter. Keep the native span/row layout intact. */
   html body [data-ebook-quick-label="new-chat"] {
+    display:inline-block!important;
+    width:max-content!important;
+    max-width:max-content!important;
+    min-width:0!important;
+    flex:0 0 auto!important;
+    align-self:flex-start!important;
+    white-space:nowrap!important;
+    overflow:visible!important;
+    padding-inline:3px!important;
+    margin-inline:0!important;
+    border-radius:2px!important;
     background-image:linear-gradient(180deg,
-      transparent 0%,transparent 12%,
-      rgba(242,209,111,.76) 12%,
-      rgba(242,209,111,.76) 88%,
-      transparent 88%,transparent 100%)!important;
+      transparent 0%,transparent 13%,
+      rgba(242,209,111,.78) 13%,
+      rgba(242,209,111,.78) 87%,
+      transparent 87%,transparent 100%)!important;
     background-color:transparent!important;
     background-repeat:no-repeat!important;
-    background-position:left center!important;
-    background-size:var(--eb-quick-mark-width,3.5em) 1.10em!important;
-    border-radius:0!important;
-    padding-inline:0!important;
-    margin-inline:0!important;
+    background-size:100% 100%!important;
+    background-position:center center!important;
+    box-decoration-break:clone!important;
+    -webkit-box-decoration-break:clone!important;
   }
-
 
   /* 27. PROJECT FOLDER TITLES +1pt ONLY — v0.2.26
      Base project title is 14.667px; increase to 16px (12pt).
