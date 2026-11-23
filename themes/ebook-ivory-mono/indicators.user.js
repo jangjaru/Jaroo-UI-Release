@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.2.18
+// @version      0.2.19
 // @description  E-book visual dot indicators for role prefixes plus a light Clock skin; keeps original chat titles, React data and RUN/DONE logic intact.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -218,6 +218,16 @@
      ChatGPT now puts '새 채팅' in a button > div > span.text-fade-truncate,
      and the outer shell may not have any of the legacy sidebar IDs.
      Only marker attributes on text leaves; no button/React behavior changes. */
+  const quickMarkWidthOriginal=new Map();
+  function restoreQuickMarkWidth(el) {
+    const previous=quickMarkWidthOriginal.get(el);
+    if(!previous)return;
+    if(el.isConnected) {
+      if(previous.value)el.style.setProperty('--eb-quick-mark-width',previous.value,previous.priority);
+      else el.style.removeProperty('--eb-quick-mark-width');
+    }
+    quickMarkWidthOriginal.delete(el);
+  }
   function markQuickActionLabels() {
     const found=new Map();
     const navLeaves=document.querySelectorAll(
@@ -243,12 +253,32 @@
       found.set(el,kind);
     }
     for(const el of document.querySelectorAll('[data-ebook-quick-label]')) {
-      if(!found.has(el))el.removeAttribute('data-ebook-quick-label');
+      if(!found.has(el)) {
+        el.removeAttribute('data-ebook-quick-label');
+        restoreQuickMarkWidth(el);
+      }
     }
     for(const [el,kind] of found) {
       if(el.getAttribute('data-ebook-quick-label')!==kind)
         el.setAttribute('data-ebook-quick-label',kind);
+      if(kind!=='new-chat'){restoreQuickMarkWidth(el);continue;}
+      // Range measures only rendered glyphs, not the stretched native text span.
+      const range=document.createRange();
+      range.selectNodeContents(el);
+      const measured=Math.ceil(range.getBoundingClientRect().width);
+      if(measured>0) {
+        const width=Math.min(180,measured+2)+'px';
+        if(!quickMarkWidthOriginal.has(el))quickMarkWidthOriginal.set(el,{
+          value:el.style.getPropertyValue('--eb-quick-mark-width'),
+          priority:el.style.getPropertyPriority('--eb-quick-mark-width')
+        });
+        if(el.style.getPropertyValue('--eb-quick-mark-width')!==width ||
+           el.style.getPropertyPriority('--eb-quick-mark-width')!=='important')
+          el.style.setProperty('--eb-quick-mark-width',width,'important');
+      }
     }
+    for(const el of quickMarkWidthOriginal.keys())
+      if(!el.isConnected)quickMarkWidthOriginal.delete(el);
   }
 
   function synchronizeSidebar() {
@@ -823,7 +853,7 @@
     restoreOpticalSidebarText();
     restoreComposerFrames();
     restorePromptTypography();
-    document.querySelectorAll('[data-ebook-quick-label]').forEach(n=>n.removeAttribute('data-ebook-quick-label'));
+    document.querySelectorAll('[data-ebook-quick-label]').forEach(n=>{n.removeAttribute('data-ebook-quick-label');restoreQuickMarkWidth(n);});
     document.querySelectorAll('[data-ebook-effort-picker="true"]').forEach(n=>n.removeAttribute('data-ebook-effort-picker'));
     document.querySelectorAll('[data-ebook-active-title="true"]').forEach(n=>n.removeAttribute('data-ebook-active-title'));
     document.querySelectorAll('[data-ebook-upload-divider="true"]').forEach(n=>n.remove());
@@ -880,7 +910,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.2.18',dispose,refresh:schedule,
+    version:'0.2.19',dispose,refresh:schedule,
     diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),fontAudit:fontAudit()})
   };
 })();
