@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.25
+@version      0.2.26
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -1443,6 +1443,25 @@
     border-radius:0!important;
     padding-inline:0!important;
     margin-inline:0!important;
+  }
+
+
+  /* 27. PROJECT FOLDER TITLES +1pt ONLY — v0.2.26
+     Base project title is 14.667px; increase to 16px (12pt).
+     Actual nested title leaves are matched; chat titles, quick actions,
+     folder glyphs, unread badges and other text remain unchanged.
+     Companion JS uses the same token when native inline styles win. */
+  :root {
+    --eb-project-optical-size:16px;
+  }
+  html body [data-sidebar-project-kind="local"]
+    [data-app-action-sidebar-project-row] [data-marquee-content="true"],
+  html body [data-sidebar-project-kind="local"]
+    [data-app-action-sidebar-project-row] [data-marquee-content="true"]
+    :is(span,div,[data-d-component="text"]):not(
+      :is([aria-hidden="true"],[data-ebook-glyph="true"],.sr-only)
+    ) {
+    font-size:var(--eb-project-optical-size)!important;
   }
 
 }
