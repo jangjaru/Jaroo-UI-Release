@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.2.3
+// @version      0.2.4
 // @description  E-book visual dot indicators for role prefixes plus a light Clock skin; keeps original chat titles, React data and RUN/DONE logic intact.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -410,10 +410,65 @@
     if(line.style.top!==top)line.style.top=top;
   }
 
+
+  /* Applies a reversible inline size only to genuine title text. A user's
+     DevTools screenshots showed 14px at the leaf while outer selectors had
+     requested 19.33px. This presentation-only fallback survives React redraws
+     without altering any title content, href, click handler or app data. */
+  const opticalFontOriginal=new Map();
+  function enforceOpticalSidebarText() {
+    const s=getComputedStyle(document.documentElement)
+      .getPropertyValue('--eb-nav-optical-size').trim() || '16px';
+    const targets=new Set();
+    // The user-provided Chrome Elements tree confirms [data-thread-title]
+    // with several nested spans, often under .content-marquee.
+    for(const title of document.querySelectorAll('[data-thread-title="true"]')) {
+      if(!title.closest('[data-sidebar-cycle-item],#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]'))
+        continue;
+      targets.add(title);
+      for(const el of title.querySelectorAll('span,div,[data-d-component="text"]')) {
+        if(el.closest('[data-ebook-glyph="true"],[aria-hidden="true"],.sr-only'))continue;
+        targets.add(el);
+      }
+    }
+    // Apply the same optical size to the displayed project name, not the
+    // folder glyph or other unrelated sidebar controls.
+    for(const title of document.querySelectorAll(
+        '[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] [data-marquee-content="true"]')) {
+      targets.add(title);
+      for(const el of title.querySelectorAll('span,div,[data-d-component="text"]')) {
+        if(el.closest('[aria-hidden="true"],.sr-only'))continue;
+        targets.add(el);
+      }
+    }
+    for(const el of targets) {
+      if(!opticalFontOriginal.has(el))
+        opticalFontOriginal.set(el,{
+          value:el.style.getPropertyValue('font-size'),
+          priority:el.style.getPropertyPriority('font-size')
+        });
+      if(el.style.getPropertyValue('font-size')!==s ||
+         el.style.getPropertyPriority('font-size')!=='important')
+        el.style.setProperty('font-size',s,'important');
+    }
+    for(const el of opticalFontOriginal.keys())if(!el.isConnected)
+      opticalFontOriginal.delete(el);
+  }
+  function restoreOpticalSidebarText() {
+    for(const [el,original] of opticalFontOriginal) {
+      if(!el.isConnected)continue;
+      if(original.value)
+        el.style.setProperty('font-size',original.value,original.priority);
+      else el.style.removeProperty('font-size');
+    }
+    opticalFontOriginal.clear();
+  }
+
   function update() {
     if (disposed) return;
     attachObservers();
     synchronizeSidebar();
+    enforceOpticalSidebarText();
     markDotCounter();
     watchComposer();
     markEffortPicker();
@@ -448,6 +503,7 @@
     clearInterval(recoverTimer);
     if (frame) cancelAnimationFrame(frame);
     restore();
+    restoreOpticalSidebarText();
     document.querySelectorAll('[data-ebook-effort-picker="true"]').forEach(n=>n.removeAttribute('data-ebook-effort-picker'));
     document.querySelectorAll('[data-ebook-active-title="true"]').forEach(n=>n.removeAttribute('data-ebook-active-title'));
     document.querySelectorAll('[data-ebook-upload-divider="true"]').forEach(n=>n.remove());
@@ -504,7 +560,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.2.3',dispose,refresh:schedule,
-    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),fontAudit:fontAudit()})
+    version:'0.2.4',dispose,refresh:schedule,
+    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),fontAudit:fontAudit()})
   };
 })();

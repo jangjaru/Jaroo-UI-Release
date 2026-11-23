@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.8
+@version      0.2.9
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -107,7 +107,7 @@
     --link: var(--eb-ink) !important;
     --link-hover: var(--eb-secondary) !important;
     --jaroo-status-css-version: "6.8.2";
-    --ebook-theme-version: "0.2.8";
+    --ebook-theme-version: "0.2.9";
   }
 
   /* 02. LIGHT-PAPER BASE — do not modify Chrome frame or extension UIs. */
@@ -1114,6 +1114,39 @@
   html body [data-sidebar-cycle-item] a[href*="/c/"]
     [data-thread-title] span[dir="auto"] > span:not([data-ebook-glyph="true"]) {
     font-size:var(--eb-chat-title-size)!important;
+  }
+
+
+  /* 19. REAL SIDEBAR GLYPHS · OPTICAL MATCH v0.2.9
+     F12 screenshot: both the exact sidebar leaf and body p compute to 14px,
+     but the narrow sidebar looks smaller. Use a conservative 16px optical
+     correction for BOTH project and chat titles. Not a 19.33px text overgrowth.
+     No right-pane selectors. The E-book JS applies the same number to actual
+     nested text leaves if ChatGPT's injected styles override this rule. */
+  :root {
+    --eb-nav-optical-size:16px;
+    --eb-project-title-size:var(--eb-nav-optical-size);
+    --eb-chat-title-size:var(--eb-nav-optical-size);
+  }
+  /* No dependence on outer anchor href or sidebar root IDs. */
+  html body [data-thread-title="true"],
+  html body [data-thread-title="true"] :is(span,div):not(
+      [data-ebook-glyph="true"]):not([aria-hidden="true"]):not(.sr-only),
+  html body [data-sidebar-project-kind="local"]
+      [data-app-action-sidebar-project-row] [data-marquee-content="true"],
+  html body [data-sidebar-project-kind="local"]
+      [data-app-action-sidebar-project-row] [data-marquee-content="true"]
+      :is(span,div):not([aria-hidden="true"]):not(.sr-only) {
+    font-family:var(--eb-font)!important;
+    font-size:var(--eb-nav-optical-size)!important;
+    line-height:1.42!important;
+  }
+  /* Exact last text span confirmed in the Chrome Elements screenshot. */
+  html body span[data-thread-title="true"] [data-marquee-content="true"] span[dir="auto"] > span,
+  html body span[data-thread-title="true"] span[dir="auto"] > span,
+  html body [data-sidebar-cycle-item] span[data-thread-title="true"] span:not(
+    [data-ebook-glyph="true"]):not([aria-hidden="true"]) {
+    font-size:var(--eb-nav-optical-size)!important;
   }
 
 }
