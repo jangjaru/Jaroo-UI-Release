@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.2.16
+// @version      0.2.17
 // @description  E-book visual dot indicators for role prefixes plus a light Clock skin; keeps original chat titles, React data and RUN/DONE logic intact.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -209,6 +209,39 @@
     for(const el of marked) {
       if(!el.hasAttribute('data-ebook-dot-counter'))
         el.setAttribute('data-ebook-dot-counter','true');
+    }
+  }
+
+
+  /* Quick-action navigation labels are text only. Do not mutate native links,
+     icons, unread Dot counters, project rows, or React-managed handlers. */
+  function markQuickActionLabels() {
+    const marked=new Map();
+    for(const root of observedRoots) {
+      if(!root.isConnected)continue;
+      const top=root.getBoundingClientRect().top;
+      for(const el of root.querySelectorAll('span,div,label,a,button,[data-d-component="text"]')) {
+        if(el.closest('a[href*="/c/"],[data-sidebar-cycle-item],[data-sidebar-project-kind="local"],[role="toolbar"],[aria-hidden="true"],.sr-only'))
+          continue;
+        // Exact leaf text avoids styling the entire sidebar or the Dot count.
+        const raw=[...el.childNodes]
+          .filter(node=>node.nodeType===Node.TEXT_NODE)
+          .map(node=>node.nodeValue||'').join('')
+          .replace(/\s+/gu,' ').trim();
+        const kind=/^(?:새 채팅|New chat)$/iu.test(raw)?'new-chat':
+                   raw==='Dot'?'dot':null;
+        if(!kind)continue;
+        const rect=el.getBoundingClientRect();
+        if(!rect.width||!rect.height||rect.top<top-8||rect.top>top+320)continue;
+        marked.set(el,kind);
+      }
+    }
+    for(const el of document.querySelectorAll('[data-ebook-quick-label]')) {
+      if(!marked.has(el))el.removeAttribute('data-ebook-quick-label');
+    }
+    for(const [el,kind] of marked) {
+      if(el.getAttribute('data-ebook-quick-label')!==kind)
+        el.setAttribute('data-ebook-quick-label',kind);
     }
   }
 
@@ -745,6 +778,7 @@
     synchronizeSidebar();
     enforceOpticalSidebarText();
     markDotCounter();
+    markQuickActionLabels();
     watchComposer();
     syncComposerFrame();
     markPromptTypography();
@@ -783,6 +817,7 @@
     restoreOpticalSidebarText();
     restoreComposerFrames();
     restorePromptTypography();
+    document.querySelectorAll('[data-ebook-quick-label]').forEach(n=>n.removeAttribute('data-ebook-quick-label'));
     document.querySelectorAll('[data-ebook-effort-picker="true"]').forEach(n=>n.removeAttribute('data-ebook-effort-picker'));
     document.querySelectorAll('[data-ebook-active-title="true"]').forEach(n=>n.removeAttribute('data-ebook-active-title'));
     document.querySelectorAll('[data-ebook-upload-divider="true"]').forEach(n=>n.remove());
@@ -839,7 +874,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.2.16',dispose,refresh:schedule,
+    version:'0.2.17',dispose,refresh:schedule,
     diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),fontAudit:fontAudit()})
   };
 })();
