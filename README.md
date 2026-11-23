@@ -1,18 +1,22 @@
 # Jaroo's Company · UI Auto-Update Release
 
-**2026-11-23 · Dracula Neon RESTORED to the latest main branch**
+**2026-11-23 · Dracula Neon · Typography Comfort 1**
 
-The user's requested last pre-Neo Dracula Neon UI is restored from sanitized public commit `af603c9f929d6e51d71a232b57701116674318c6`. Neo code remains recoverable in Git history. The only modifications to the restored ChatGPT source are higher update version labels and corresponding Clock/Status runtime version reports.
+This release retains the existing Dracula Neon visual system and functionality, while reducing overly heavy bold text across ChatGPT by approximately 30% of the excess font weight above 400. Font sizes, colors, glows, backgrounds, layouts, hover behavior and application state logic are preserved.
 
-| Component | Latest release | Restored visual/functional baseline |
+| Component | New version | Status |
 |---|---|---|
-| ChatGPT Clock | 3.10.0 | Dracula 3.7.3 |
-| ChatGPT Status | 6.8.0 | Dracula 6.5.3 |
-| ChatGPT Mapper | 1.3.6 | Dracula 1.3.2 |
-| ChatGPT UserCSS | 8.3.0 | Dracula 7.3.0 |
-| Google Calendar Companion | 1.3.7 | unchanged |
-| Google Calendar UserCSS | 1.2.2 | unchanged |
+| ChatGPT Clock | **3.10.1** | Life Clock labels/headings softened |
+| ChatGPT Status | **6.8.1** | RUN/DONE/filter text softened |
+| ChatGPT Mapper | 1.3.6 | unchanged |
+| ChatGPT Dracula Neon CSS | **8.3.1** | Sidebar, projects, headings, response and native bold controls softened |
+| Calendar Companion | 1.3.7 | unchanged |
+| Calendar CSS | 1.2.2 | unchanged |
 
-**Install/update:** [한국어 안내](docs/INSTALLATION_KO.md). **Change details:** [Dracula restoration release notes](docs/RELEASE_v8.3.0_DRACULA_RESTORE_KO.md). **Integrity:** [SHA256.json](SHA256.json).
+Examples of the proportional adjustment: 900 → 750, 850 → 720, 800 → 680, 700 → 610, 600 → 540. Normal body weight 400 and values below 400 remain unchanged. These are CSS font-weight units, not a guaranteed 30% reduction in perceived visual darkness.
 
-Automatic update URLs remain on `main`. A previously installed `frozen` copy does not automatically follow `main`; replace it using main URLs. Individual Life Clock profile data is never included in these published files. Real logged-in Chrome visual validation and actual extension auto-update tests remain pending.
+- [한국어 설치 및 업데이트 가이드](docs/INSTALLATION_KO.md)
+- [Typography Comfort release notes](docs/RELEASE_v8.3.1_TYPOGRAPHY_KO.md)
+- [SHA-256 checksums](SHA256.json)
+
+Private source is maintained at `jangjaru/Jaroo-UI-Updates`; personal Life Clock data remains in the user-specific local profile and is never published. This is a source-level rollout; final signed-in Chrome visual validation remains pending.

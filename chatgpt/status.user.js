@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo · Status & Command Center
 // @namespace    jaroo-company.local
-// @version      6.8.0
+// @version      6.8.1
 // @description  Flat Vivid RUN/DONE and ALL/FOCUS switch for sidebar chat view. Read-only presentation filter; native state logic retained.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -15,7 +15,7 @@
   const RUNTIME = '__jarooCommandCenterRuntimeV4';
   window[RUNTIME]?.dispose?.();
   window.__jarooNativeCapture?.stop?.();
-  const VERSION = '6.8.0';
+  const VERSION = '6.8.1';
   const HOVER_MS = 400;
   const ROOTS = '#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]';
   const ARCHIVE = '[data-sidebar-archive-chatgpt-id]';
@@ -1066,7 +1066,7 @@
     align-items:center;justify-content:stretch;
     gap:calc(8px * var(--jaroo-ui-scale,1));min-width:0;max-width:100%;
     margin:calc(10px * var(--jaroo-ui-scale,1)) 0 calc(6px * var(--jaroo-ui-scale,1));padding:0;pointer-events:auto;
-    font:750 11px/1 "Pretendard",sans-serif;
+    font:650 11px/1 "Pretendard",sans-serif;
     --jaroo-run-color:#FFB86C;--jaroo-done-color:#50FA7B;
     --jaroo-run-period:.28s;--jaroo-done-period:1.8s;
   }
@@ -1075,7 +1075,7 @@
     flex:1 1 auto;width:100%;min-width:0;max-width:none;box-sizing:border-box;
     height:calc(49px * var(--jaroo-ui-scale,1));padding:1px 0;margin:0;
     border:0;border-radius:7px;background:transparent;
-    font:750 11px/1 "Pretendard",sans-serif;
+    font:650 11px/1 "Pretendard",sans-serif;
     cursor:pointer;white-space:nowrap;appearance:none;
   }
   .jaroo-center .run{--jaroo-neon-color:#FFB86C;--jaroo-neon-rgb:255,184,108}
@@ -1091,32 +1091,32 @@
     border:1px solid var(--jaroo-neon-color);border-radius:6px;
     color:var(--jaroo-neon-color);
     background:rgba(28,31,42,.90);
-    font:750 calc(11.4px * var(--jaroo-ui-scale,1))/1 "Pretendard",sans-serif;
+    font:650 calc(11.4px * var(--jaroo-ui-scale,1))/1 "Pretendard",sans-serif;
     letter-spacing:0;text-shadow:none;
     user-select:none;white-space:nowrap;
   }
   .jaroo-center .jaroo-top-line{display:inline-flex;align-items:center;justify-content:center;gap:calc(5px * var(--jaroo-ui-scale,1));min-width:0;line-height:1}
-  .jaroo-center .jaroo-mini-label{font:550 max(8px,calc(9px * var(--jaroo-ui-scale,1)))/1 "Pretendard",sans-serif;color:#AAB3C7;letter-spacing:0;white-space:nowrap;opacity:.92}
+  .jaroo-center .jaroo-mini-label{font:510 max(8px,calc(9px * var(--jaroo-ui-scale,1)))/1 "Pretendard",sans-serif;color:#AAB3C7;letter-spacing:0;white-space:nowrap;opacity:.92}
   .jaroo-center button[data-active="true"] .jaroo-mini-label{color:var(--jaroo-neon-color);opacity:.78}
   .jaroo-center .jaroo-top-mark{
     display:inline-flex;align-items:center;justify-content:center;
     box-sizing:border-box;flex:0 0 10px;width:10px;
     height:16px;line-height:16px;
-    text-align:center;font:800 calc(12px * var(--jaroo-ui-scale,1))/16px "Pretendard",sans-serif;
+    text-align:center;font:680 calc(12px * var(--jaroo-ui-scale,1))/16px "Pretendard",sans-serif;
     color:inherit;text-shadow:none;
   }
   .jaroo-center .done .jaroo-top-mark{font-size:12px}
   .jaroo-center .jaroo-top-word{
     display:inline-flex;align-items:center;justify-content:center;
     box-sizing:border-box;height:16px;flex:0 0 auto;
-    font:750 calc(11.4px * var(--jaroo-ui-scale,1))/16px "Pretendard",sans-serif;
+    font:650 calc(11.4px * var(--jaroo-ui-scale,1))/16px "Pretendard",sans-serif;
     color:inherit;text-shadow:none;
   }
   /* Numerals use the same status color but NEVER animate. */
   .jaroo-center .count{
     display:inline-flex;align-items:center;justify-content:center;
     box-sizing:border-box;height:16px;flex:0 0 auto;margin-left:2px;
-    font:800 calc(12px * var(--jaroo-ui-scale,1))/16px "Pretendard",sans-serif;
+    font:680 calc(12px * var(--jaroo-ui-scale,1))/16px "Pretendard",sans-serif;
     font-variant-numeric:tabular-nums;letter-spacing:0;
     color:var(--jaroo-neon-color);opacity:1!important;
     text-shadow:none!important;filter:none!important;
@@ -1254,7 +1254,7 @@
   }
   .jaroo-center .jaroo-mode-switch{
     padding:0;min-width:0;width:100%;height:49px;
-    font:700 9px/1 "Pretendard",sans-serif;
+    font:610 9px/1 "Pretendard",sans-serif;
   }
   .jaroo-center .jaroo-mode-frame{
     display:flex;align-items:center;justify-content:center;
@@ -1276,7 +1276,7 @@
   }
   .jaroo-center .jaroo-mode-switch[aria-pressed="true"] .jaroo-mode-thumb{left:16px}
   .jaroo-center .jaroo-mode-caption{
-    font:800 9px/1 "Pretendard",sans-serif;letter-spacing:.04em;
+    font:680 9px/1 "Pretendard",sans-serif;letter-spacing:.04em;
   }
   .jaroo-center .jaroo-mode-switch:hover .jaroo-mode-frame{
     background:transparent!important;color:#24C2E8;
@@ -1288,12 +1288,12 @@
     min-width:0;padding:10px 8px 9px;margin:8px 0 4px;
     border:1.5px solid #9B70FF;border-radius:9px;
     background:#151925;color:#F4F7FC;
-    box-sizing:border-box;font:500 11px/1.35 "Pretendard",sans-serif;
+    box-sizing:border-box;font:470 11px/1.35 "Pretendard",sans-serif;
   }
   .jaroo-focus-list[hidden]{display:none!important}
   .jaroo-focus-header{display:flex;align-items:center;justify-content:space-between;gap:5px;min-width:0}
-  .jaroo-focus-header strong{color:#BCA5FF;font:800 11px/1 "Pretendard",sans-serif;white-space:nowrap}
-  .jaroo-focus-header em{font:650 10px/1 "Pretendard",sans-serif;font-style:normal;color:#A7B2C6;white-space:nowrap}
+  .jaroo-focus-header strong{color:#BCA5FF;font:680 11px/1 "Pretendard",sans-serif;white-space:nowrap}
+  .jaroo-focus-header em{font:580 10px/1 "Pretendard",sans-serif;font-style:normal;color:#A7B2C6;white-space:nowrap}
   .jaroo-focus-entries{display:flex;flex-direction:column;gap:4px;min-height:0;max-height:min(340px,42vh);overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:#526078 transparent}
   .jaroo-focus-row{
     display:flex;gap:5px;align-items:center;padding:7px 5px;
@@ -1308,7 +1308,7 @@
     display:inline-flex;align-items:center;justify-content:center;
     flex:0 0 36px;min-width:0;height:21px;padding:1px;
     border:1px solid currentColor;border-radius:4px;
-    font:800 9px/1 "Pretendard",sans-serif;box-sizing:border-box;
+    font:680 9px/1 "Pretendard",sans-serif;box-sizing:border-box;
     background:transparent;white-space:nowrap;
   }
   .jaroo-focus-tag[data-jstatus="working"]{color:#FFAB32}
@@ -1353,12 +1353,12 @@
   :host([data-jaroo-micro="true"]) .jaroo-center .jaroo-mode-switch[aria-pressed="true"] .jaroo-mode-thumb{left:14px}
   .jaroo-focus-name{
     min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-    font:650 11px/1.35 "Pretendard",sans-serif;
+    font:580 11px/1.35 "Pretendard",sans-serif;
   }
   .jaroo-focus-empty{
-    padding:15px 4px;color:#A7B2C6;font:550 11px/1.5 "Pretendard",sans-serif;text-align:center;
+    padding:15px 4px;color:#A7B2C6;font:510 11px/1.5 "Pretendard",sans-serif;text-align:center;
   }
-  .jaroo-focus-help{color:#8793A8;font:500 9px/1.4 "Pretendard",sans-serif}
+  .jaroo-focus-help{color:#8793A8;font:470 9px/1.4 "Pretendard",sans-serif}
   /* v6.5.3: unmistakable active toggle with a usable 38px hit target. */
   .jaroo-center{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 50px!important;gap:5px!important}
   .jaroo-center .jaroo-mode-switch{
@@ -1470,12 +1470,12 @@
     const css=document.createElement('style');css.id='jaroo-v4-panel-style';
     css.textContent=`
       #jaroo-v4-quick-panel{position:fixed;z-index:2147483400;min-width:240px;max-width:min(350px,calc(100vw - 20px));max-height:min(360px,65vh);overflow:auto;padding:10px;border:1px solid #5b6279;border-radius:11px;box-shadow:0 12px 32px #0009,0 0 15px #8be9fd20;background:#282a36;color:#f8f8f2;font:12px/1.4 "Pretendard",sans-serif;display:none;box-sizing:border-box}
-      #jaroo-v4-quick-panel .head{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:7px;font-weight:750}
+      #jaroo-v4-quick-panel .head{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:7px;font-weight:650}
       #jaroo-v4-quick-panel .dismiss{border:0;background:#414458;color:#fff;border-radius:5px;cursor:pointer;padding:3px 7px}
       #jaroo-v4-quick-panel a{display:flex;align-items:center;gap:4px;padding:8px 5px;color:#d6ecfc;text-decoration:none;border-radius:6px;cursor:pointer}
       #jaroo-v4-quick-panel a:hover,#jaroo-v4-quick-panel a:focus-visible{background:#44475a;outline:1px solid #8be9fd}
-      #jaroo-v4-quick-panel .tag{display:inline-flex;align-items:center;justify-content:center;gap:3px;flex:0 0 56px;box-sizing:border-box;min-height:23px;font:900 11px/1 "Pretendard",sans-serif;border:1.5px solid currentColor;border-radius:4px;padding:0 4px;background:#20222D;white-space:nowrap}
-      #jaroo-v4-quick-panel .tag::before{width:9px;flex:0 0 9px;text-align:center;font:900 14px/1 "Pretendard",sans-serif;color:inherit;text-shadow:inherit}
+      #jaroo-v4-quick-panel .tag{display:inline-flex;align-items:center;justify-content:center;gap:3px;flex:0 0 56px;box-sizing:border-box;min-height:23px;font:750 11px/1 "Pretendard",sans-serif;border:1.5px solid currentColor;border-radius:4px;padding:0 4px;background:#20222D;white-space:nowrap}
+      #jaroo-v4-quick-panel .tag::before{width:9px;flex:0 0 9px;text-align:center;font:750 14px/1 "Pretendard",sans-serif;color:inherit;text-shadow:inherit}
       #jaroo-v4-quick-panel .tag[data-jstatus="working"]{text-shadow:0 0 3px rgba(255,184,108,.95),0 0 8px rgba(255,184,108,.72);box-shadow:inset 0 0 6px rgba(255,184,108,.18),0 0 5px rgba(255,184,108,.95),0 0 12px rgba(255,184,108,.55),0 0 18px rgba(255,184,108,.22);animation:jaroo-run-neon-v67 var(--jaroo-run-period,.28s) steps(1,end) infinite}
       #jaroo-v4-quick-panel .tag[data-jstatus="working"]::before{content:"»";animation:jaroo-run-sprint-v67 var(--jaroo-run-period,.28s) linear infinite}
       #jaroo-v4-quick-panel .tag[data-jstatus="done"]{--jaroo-text-glow: 0 0 2px rgba(80,250,123,var(--jaroo-done-wave,1)), 0 0 6px rgba(80,250,123,var(--jaroo-done-wave,1)), 0 0 12px rgba(80,250,123,calc(var(--jaroo-done-wave,1)*.95));--jaroo-box-glow: inset 0 0 6px rgba(80,250,123,calc(var(--jaroo-done-wave,1)*.35)), 0 0 4px rgba(80,250,123,var(--jaroo-done-wave,1)), 0 0 12px rgba(80,250,123,calc(var(--jaroo-done-wave,1)*.95)), 0 0 22px rgba(80,250,123,calc(var(--jaroo-done-wave,1)*.65));text-shadow: var(--jaroo-text-glow);box-shadow: var(--jaroo-box-glow);opacity:1;animation:jaroo-done-neon-v67 var(--jaroo-done-period,1.8s) ease-in-out infinite}

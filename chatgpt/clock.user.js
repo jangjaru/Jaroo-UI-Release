@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.10.0
+// @version      3.10.1
 // @description  Restores handwritten logo, single-line metric headings and right aligned Korean hour units; preserves 7-segment clock and native sidebar mounting
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -220,7 +220,7 @@
         background:linear-gradient(97deg,#57E9FF 0%,#8BE9FD 31%,#BD93F9 64%,#FFB86C 100%);
         -webkit-background-clip:text;background-clip:text;
         -webkit-text-fill-color:transparent;
-        font:580 var(--jaroo-brand-font,28px)/1.08 "Kaushan Script","Segoe Script",cursive;
+        font:530 var(--jaroo-brand-font,28px)/1.08 "Kaushan Script","Segoe Script",cursive;
         font-synthesis:weight;
         -webkit-text-stroke:.18px rgba(245,210,255,.34);
         paint-order:stroke fill;
@@ -234,7 +234,7 @@
         background:linear-gradient(90deg,#8BE9FD 0%,#BD93F9 55%,#FFB86C 100%);
         -webkit-background-clip:text;background-clip:text;
         -webkit-text-fill-color:transparent;
-        font:850 var(--jaroo-brand-subtitle-font,11.2px)/1.12 "Pretendard","Inter",sans-serif;
+        font:720 var(--jaroo-brand-subtitle-font,11.2px)/1.12 "Pretendard","Inter",sans-serif;
         letter-spacing:.07em;text-transform:uppercase;
         filter:drop-shadow(0 0 2px rgba(109,235,255,.52));
         opacity:1;
@@ -297,10 +297,10 @@
         background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.03));
         box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 0 0 1px rgba(255,255,255,.03);
       }
-      .date-main{color:#EAF1FF;font-size:12px;font-weight:680;line-height:1;white-space:nowrap;letter-spacing:-.02em}
+      .date-main{color:#EAF1FF;font-size:12px;font-weight:600;line-height:1;white-space:nowrap;letter-spacing:-.02em}
       .weather-line{display:flex;align-items:center;justify-content:center;gap:2px;max-width:100%;white-space:nowrap;color:#BACBE3}
       .weather-symbol{font-size:12px;line-height:1;flex:0 0 auto}
-      .weather-label{font:600 9px/1.1 "Pretendard",sans-serif;letter-spacing:-.03em}
+      .weather-label{font:540 9px/1.1 "Pretendard",sans-serif;letter-spacing:-.03em}
       .weather-line[data-weather="error"] .weather-symbol{color:#9FA8BF}
       /* CSS seven-segment display: real lit segments, not a text-font approximation.
          Keep exactly six .digit cells and their 21×38 geometry for Status dock anchoring. */
@@ -335,7 +335,7 @@
       .separator{
         display:inline-flex;align-items:center;justify-content:center;
         flex:0 0 8px;width:8px;height:38px;margin-inline:4px;
-        color:#B3FAFF;font:600 30px/1 "Consolas",monospace;
+        color:#B3FAFF;font:540 30px/1 "Consolas",monospace;
         text-shadow:0 0 6px rgba(115,245,255,.84),0 0 13px rgba(87,223,255,.40);
       }
       @keyframes jaroo-clock-soft-bloom{
@@ -355,9 +355,9 @@
         color:#ECF3FF;pointer-events:auto;
       }
       .life-head{display:flex;align-items:center;justify-content:space-between;gap:calc(8px * var(--jaroo-ui-scale));margin-bottom:calc(9px * var(--jaroo-ui-scale))}
-      .life-title{display:inline-flex;align-items:center;gap:7px;font:800 max(10px,calc(11.5px * var(--jaroo-ui-scale)))/1 "Pretendard","Inter",sans-serif;letter-spacing:.04em;color:#F3D4FF;text-transform:uppercase}
+      .life-title{display:inline-flex;align-items:center;gap:7px;font:680 max(10px,calc(11.5px * var(--jaroo-ui-scale)))/1 "Pretendard","Inter",sans-serif;letter-spacing:.04em;color:#F3D4FF;text-transform:uppercase}
       .life-title .ico{font-size:calc(13px * var(--jaroo-ui-scale));filter:drop-shadow(0 0 4px rgba(214,132,255,.55))}
-      .life-sub{font:650 max(9px,calc(10px * var(--jaroo-ui-scale)))/1 "Pretendard","Inter",sans-serif;color:#D9B7FF;opacity:.88}
+      .life-sub{font:580 max(9px,calc(10px * var(--jaroo-ui-scale)))/1 "Pretendard","Inter",sans-serif;color:#D9B7FF;opacity:.88}
       /* Three full-width, compact metrics. The 80-year total moves to LIFE PROGRESS. */
       .life-grid{display:flex;flex-direction:column;gap:calc(6px * var(--jaroo-ui-scale))}
       .life-card{
@@ -372,7 +372,7 @@
       .life-card-main{display:flex;align-items:center;gap:calc(8px * var(--jaroo-ui-scale));justify-content:space-between;min-width:0}
       .life-label{
         display:flex;align-items:center;flex:1 1 auto;min-width:0;
-        font:660 max(9px,calc(10px * var(--jaroo-ui-scale)))/1.2 "Pretendard","Inter",sans-serif;
+        font:580 max(9px,calc(10px * var(--jaroo-ui-scale)))/1.2 "Pretendard","Inter",sans-serif;
         white-space:nowrap;text-align:left;color:#E8EAFF;opacity:.96;
       }
       .life-card.retire .life-label{color:#FFC36B}
@@ -380,26 +380,26 @@
       .life-card.after .life-label{color:#96FFB1}
       .life-value{
         display:block;flex:0 1 auto;max-width:65%;min-width:0;
-        font:500 calc(13.8px * var(--jaroo-ui-scale))/1.2 "Pretendard","Inter",sans-serif;
+        font:470 calc(13.8px * var(--jaroo-ui-scale))/1.2 "Pretendard","Inter",sans-serif;
         font-variant-numeric:tabular-nums;letter-spacing:-.02em;
         color:#FBFCFF;white-space:nowrap;text-align:right;overflow:visible;
       }
       .life-meta{margin-top:calc(3px * var(--jaroo-ui-scale));
-        font:480 max(8.5px,calc(9px * var(--jaroo-ui-scale)))/1.25 "Pretendard","Inter",sans-serif;
+        font:460 max(8.5px,calc(9px * var(--jaroo-ui-scale)))/1.25 "Pretendard","Inter",sans-serif;
         color:#AEB9D1;opacity:.91;text-align:left;white-space:nowrap;
       }
       .life-progress{margin-top:calc(9px * var(--jaroo-ui-scale));padding-top:calc(8px * var(--jaroo-ui-scale));border-top:1px solid rgba(255,255,255,.07)}
       .life-progress-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:calc(6px * var(--jaroo-ui-scale))}
-      .life-progress-title{font:800 max(9px,calc(11.2px * var(--jaroo-ui-scale)))/1 "Pretendard","Inter",sans-serif;letter-spacing:.03em;color:#F1D1FF;text-transform:uppercase}
-      .life-progress-scale{font:650 max(8.5px,calc(10px * var(--jaroo-ui-scale)))/1 "Pretendard","Inter",sans-serif;color:#D1C7F9}
+      .life-progress-title{font:680 max(9px,calc(11.2px * var(--jaroo-ui-scale)))/1 "Pretendard","Inter",sans-serif;letter-spacing:.03em;color:#F1D1FF;text-transform:uppercase}
+      .life-progress-scale{font:580 max(8.5px,calc(10px * var(--jaroo-ui-scale)))/1 "Pretendard","Inter",sans-serif;color:#D1C7F9}
       .life-bar{position:relative;height:calc(9px * var(--jaroo-ui-scale));border-radius:999px;overflow:hidden;background:rgba(255,255,255,.09);box-shadow:inset 0 1px 2px rgba(0,0,0,.35),0 0 0 1px rgba(255,255,255,.04)}
       .life-bar-fill{height:100%;width:0%;border-radius:inherit;background:linear-gradient(90deg,#B478FF 0%,#FF62C1 54%,#FFC56B 100%);box-shadow:0 0 10px rgba(255,121,198,.35),0 0 18px rgba(180,120,255,.24);transition:width .6s ease}
       .life-bar-glow{position:absolute;inset:0;border-radius:inherit;pointer-events:none;box-shadow:inset 0 0 8px rgba(255,255,255,.08),0 0 10px rgba(255,121,198,.08);animation:jaroo-life-bar-breathe 1.8s ease-in-out infinite}
       .life-progress-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:calc(6px * var(--jaroo-ui-scale));margin-top:calc(7px * var(--jaroo-ui-scale));color:#DCE2F2}
       .life-progress-stat{display:flex;flex-direction:column;align-items:flex-start;min-width:0;gap:calc(3px * var(--jaroo-ui-scale))}
       .life-progress-stat.remaining{align-items:flex-end}
-      .life-progress-stat span{font:580 max(8.8px,calc(9.6px * var(--jaroo-ui-scale)))/1.1 "Pretendard","Inter",sans-serif;white-space:nowrap}
-      .life-progress-stat strong{font:590 max(10px,calc(12px * var(--jaroo-ui-scale)))/1.1 "Pretendard","Inter",sans-serif;color:#FFF0FE;letter-spacing:-.015em;white-space:nowrap;font-variant-numeric:tabular-nums}
+      .life-progress-stat span{font:530 max(8.8px,calc(9.6px * var(--jaroo-ui-scale)))/1.1 "Pretendard","Inter",sans-serif;white-space:nowrap}
+      .life-progress-stat strong{font:530 max(10px,calc(12px * var(--jaroo-ui-scale)))/1.1 "Pretendard","Inter",sans-serif;color:#FFF0FE;letter-spacing:-.015em;white-space:nowrap;font-variant-numeric:tabular-nums}
       :host([data-jaroo-width="narrow"]) .life-head .life-sub{display:none}
       :host([data-jaroo-width="narrow"]) .life-card-main{display:grid;grid-template-columns:minmax(0,1fr);row-gap:3px}
       :host([data-jaroo-width="narrow"]) .life-value{max-width:100%;text-align:right}
@@ -417,7 +417,7 @@
       :host([data-jaroo-width="narrow"]) .life-title{white-space:nowrap;letter-spacing:0}
       :host([data-jaroo-width="narrow"]) .life-progress-title{white-space:nowrap;font-size:10px;letter-spacing:-.015em}
       :host([data-jaroo-width="narrow"]) .life-progress-scale{display:none}
-      :host([data-jaroo-width="narrow"]) .life-progress-percent{display:block;white-space:nowrap;font:650 10px/1 "Pretendard",sans-serif;color:#E8C8FF}
+      :host([data-jaroo-width="narrow"]) .life-progress-percent{display:block;white-space:nowrap;font:580 10px/1 "Pretendard",sans-serif;color:#E8C8FF}
       /* At genuinely minimum width, drop the secondary date/weather tile.
          Center the legible HH:MM clock; never let glyphs cross the sidebar. */
       :host([data-jaroo-width="narrow"]) .date-chip{display:none}
@@ -438,7 +438,7 @@
       :host([data-jaroo-width="compact"]) .life-label,
       :host([data-jaroo-width="narrow"]) .life-label{font-size:10.5px}
       :host([data-jaroo-width="compact"]) .life-value,
-      :host([data-jaroo-width="narrow"]) .life-value{font-weight:560;white-space:nowrap;overflow:visible}
+      :host([data-jaroo-width="narrow"]) .life-value{font-weight:510;white-space:nowrap;overflow:visible}
       :host([data-jaroo-width="compact"]) .life-meta,
       :host([data-jaroo-width="narrow"]) .life-meta{display:none}
       :host([data-jaroo-width="compact"]) .life-progress,
@@ -491,7 +491,7 @@
       :host([data-jaroo-width="narrow"]) .brand-jaroo{font-size:.93em;line-height:1.12}
       :host([data-jaroo-width="narrow"]) .brand-company{font-size:1.22em;line-height:1.07}
       :host([data-jaroo-width="narrow"]) .life-label{
-        font-size:12.1px;font-weight:700;line-height:1.23;letter-spacing:-.015em;
+        font-size:12.1px;font-weight:610;line-height:1.23;letter-spacing:-.015em;
       }
       /* Retain HH:MM size and add just one weather symbol at minimum width. */
       :host([data-jaroo-width="narrow"]) .date-chip{
@@ -529,7 +529,7 @@
       :host([data-jaroo-width="narrow"]) .brand-title{
         display:flex;align-items:baseline;justify-content:center;flex-direction:row;
         gap:.19em;max-width:100%;white-space:nowrap;
-        font:750 var(--jaroo-brand-font,25px)/1.1 "Kaushan Script","Segoe Script",cursive!important;
+        font:650 var(--jaroo-brand-font,25px)/1.1 "Kaushan Script","Segoe Script",cursive!important;
         font-synthesis:weight;letter-spacing:-.035em;
         background:none!important;-webkit-text-fill-color:initial!important;
         -webkit-text-stroke:.23px rgba(255,255,255,.23);
@@ -575,7 +575,7 @@
         box-shadow:0 0 7px rgba(189,147,249,.22),inset 0 0 10px rgba(189,147,249,.08);
       }
       .life-head{display:flex!important;margin-bottom:8px!important}
-      .life-title{color:#F2D6FF;font-weight:850;font-size:12px!important;letter-spacing:.02em}
+      .life-title{color:#F2D6FF;font-weight:720;font-size:12px!important;letter-spacing:.02em}
       .life-title .ico{color:#D6A8FF;filter:drop-shadow(0 0 4px rgba(189,147,249,.72))}
       .life-sub{color:#D8C9F3}
       .life-grid,
@@ -608,7 +608,7 @@
       :host([data-jaroo-width="narrow"]) .life-label,
       :host([data-jaroo-width="compact"]) .life-label{
         display:inline-block;flex:0 0 auto;white-space:nowrap;
-        font:820 12.5px/1.24 "Pretendard","Inter",sans-serif!important;
+        font:690 12.5px/1.24 "Pretendard","Inter",sans-serif!important;
         opacity:1;letter-spacing:-.026em;
       }
       .life-meta,
@@ -617,7 +617,7 @@
       :host([data-jaroo-width="wide"]) .life-meta{
         display:inline-block;flex:0 1 auto;min-width:0;margin:0!important;
         white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-        font:550 10px/1.2 "Pretendard","Inter",sans-serif!important;
+        font:510 10px/1.2 "Pretendard","Inter",sans-serif!important;
         color:#ABB8D7;opacity:.95;
       }
       .life-value,
@@ -626,7 +626,7 @@
       :host([data-jaroo-width="narrow"]) .life-value{
         display:block!important;width:100%!important;max-width:100%!important;
         justify-self:end!important;text-align:right!important;
-        color:#FFFFFF!important;white-space:nowrap;font-weight:850!important;
+        color:#FFFFFF!important;white-space:nowrap;font-weight:720!important;
         letter-spacing:-.018em;font-variant-numeric:tabular-nums;
         text-shadow:0 0 4px rgba(255,255,255,.15);
       }
@@ -638,13 +638,13 @@
       }
       .life-progress-title{font-size:11px!important;color:#F0C6FF}
       .life-progress-scale{color:#D2BEF1}
-      .life-progress-percent{color:#FFB6E7;font-size:11.5px!important;font-weight:800}
+      .life-progress-percent{color:#FFB6E7;font-size:11.5px!important;font-weight:680}
       .life-bar{height:9px;border:0;background:#2E3245;box-shadow:inset 0 1px 2px #0005}
       .life-bar-fill{border:0;background:linear-gradient(90deg,#BD93F9,#FF79C6)!important;
         box-shadow:0 0 8px rgba(255,121,198,.7);transition:width .4s ease}
       .life-progress-meta{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px}
       .life-progress-stat span{font-size:9.7px;color:#C2C6E3}
-      .life-progress-stat strong{font-size:11px;color:#FFE8F8;font-weight:780}
+      .life-progress-stat strong{font-size:11px;color:#FFE8F8;font-weight:670}
 
       /* Date and weather remain visible when the sidebar becomes tiny:
          move the information ABOVE HH:MM instead of deleting it. */
@@ -663,7 +663,7 @@
         border:0;border-right:1px solid rgba(139,233,253,.25);
         border-radius:0;background:none;box-shadow:none;
       }
-      .date-main{font-size:12px;color:#ECF5FF;font-weight:750}
+      .date-main{font-size:12px;color:#ECF5FF;font-weight:650}
       .weather-line{color:#C0E9FF}
       .weather-symbol{color:#FFB86C;font-size:13px}
       .weather-label{font-size:10px;color:#C6E5FC}
@@ -1650,9 +1650,9 @@
     if (window[RUNTIME_KEY]?.dispose === dispose) delete window[RUNTIME_KEY];
   }
   window[RUNTIME_KEY] = {
-    version: '3.10.0', dispose,
+    version: '3.10.1', dispose,
     diagnostics: () => ({
-      version: '3.10.0', ...placementReport,
+      version: '3.10.1', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
