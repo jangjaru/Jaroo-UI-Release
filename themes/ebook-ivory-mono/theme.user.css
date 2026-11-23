@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.21
+@version      0.2.22
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -1337,7 +1337,7 @@
   }
 
 
-  /* 24. SENT USER PROMPT ONLY — 2026-11-24, v0.2.21.
+  /* 24. SENT USER PROMPT ONLY — 2026-11-24, v0.2.22.
      Make messages already sent noticeably larger and bold while keeping
      the live composer (16px), assistant text, sidebar, icons and status intact.
      JS v0.2.11 also applies this to actual text-bearing leaves. */
@@ -1361,7 +1361,7 @@
   }
 
 
-  /* 25. SENT MESSAGE REAL TEXT FIX — v0.2.21
+  /* 25. SENT MESSAGE REAL TEXT FIX — v0.2.22
      DevTools screenshot showed 14px/400 on the user's rendered message:
      older rules reached only the legacy bubble class and missed nested text.
      Match both ChatGPT's author-role and data-user-message structures.
