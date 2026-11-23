@@ -4,5 +4,7 @@
   "chatgpt/mapper.user.js": "cd61c0a18cad92d0f80608b4d0459f0a2875f39ebb4dadd65fc713666ef600d6",
   "chatgpt/theme.user.css": "881caab35a0b9a753e83e565b2836beaf8c9f4350f598439b1d83c96f3941fe3",
   "calendar/companion.user.js": "e7feacb7a3565aaa8bef7aa0ea21a63407c66921ca9ccd675b7f5c8709468aba",
-  "calendar/theme.user.css": "c10a60802290db0d891dcfe60251b18c4134759e44c98e38fcc77b69cb64f9cd"
+  "calendar/theme.user.css": "c10a60802290db0d891dcfe60251b18c4134759e44c98e38fcc77b69cb64f9cd",
+  "chatgpt/flat-neon-pixel.user.css": "4a1621b45ea57ee17da962da3e0e328d0da87d4728d82c135f13b656233e8dee",
+  "chatgpt/flat-neon-pixel.user.js": "9cbed00d9df9528e3a0ec8be53a30cdc742dcb4980a8270003fa9230d976d1e6"
 }

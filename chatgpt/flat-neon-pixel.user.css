@@ -1,0 +1,265 @@
+/* ==UserStyle==
+@name         Jaroo Flat Neon Pixel · PREVIEW Skin
+@namespace    jaroo.preview.flat-neon-pixel
+@version      0.1.0
+@description  Reversible flat Monokai × saturated neon × subtle pixel edge overlay; requires Dracula baseline and existing Jaroo userscripts.
+@author       Jaroo Design Team
+@license      UNLICENSED
+@updateURL    https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/chatgpt/flat-neon-pixel.user.css
+==/UserStyle== */
+
+@-moz-document domain("chatgpt.com") {
+  /* Visual layer only: no JS functionality, sizing, data, position or click interception. */
+  :root {
+    --fn-bg: #272822;
+    --fn-rail: #1B1D19;
+    --fn-sidebar: #22231F;
+    --fn-surface: #30312B;
+    --fn-raised: #37392F;
+    --fn-border: #55584D;
+    --fn-ink: #F8F8F2;
+    --fn-muted: #B2B4A6;
+    --fn-quiet: #8A8F80;
+    --fn-pink: #FF2D87;
+    --fn-green: #B9FF00;
+    --fn-purple: #C879FF;
+    --fn-cyan: #00E5FF;
+    --fn-blue: #458AFF;
+    --fn-yellow: #FFE500;
+    --fn-orange: #FF9900;
+    --fn-edge: 2px;
+    --font-sans: "Pretendard Variable", "Pretendard", system-ui, sans-serif;
+    --main-surface-primary: var(--fn-bg) !important;
+    --main-surface-secondary: var(--fn-surface) !important;
+    --main-surface-tertiary: var(--fn-raised) !important;
+    --sidebar-surface-primary: var(--fn-sidebar) !important;
+    --sidebar-surface-secondary: var(--fn-surface) !important;
+    --bg-primary: var(--fn-bg) !important;
+    --bg-secondary: var(--fn-surface) !important;
+    --bg-tertiary: var(--fn-raised) !important;
+    --text-primary: var(--fn-ink) !important;
+    --text-secondary: var(--fn-muted) !important;
+    --text-tertiary: var(--fn-quiet) !important;
+    --border-light: var(--fn-border) !important;
+    --border-medium: var(--fn-border) !important;
+    --border-heavy: var(--fn-border) !important;
+    --color-text-primary: var(--fn-ink) !important;
+    --color-text-secondary: var(--fn-muted) !important;
+    --color-background-user-message: transparent !important;
+  }
+  html, html body {
+    color-scheme: dark !important;
+    background-color: var(--fn-bg) !important;
+    color: var(--fn-ink) !important;
+  }
+  /* Borders and intense pure color replace glow, blur, glass and gradients. */
+  html body :is(
+    #stage-sidebar, #stage-slideover-sidebar, #slate-sidebar,
+    [data-testid="sidebar"], #thread, [data-testid="conversation-panel"],
+    [data-testid="conversation-thread"], [data-testid^="conversation-turn"],
+    #page-header, [data-testid="conversation-header"],
+    [data-user-message-bubble="true"], [data-testid="composer"],
+    [data-testid="composer-input"], [role="dialog"], [role="menu"],
+    [role="listbox"], #jaroo-v4-quick-panel,
+    .jaroo-native-badge, .jaroo-recent-status-badge
+  ) {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background-image: none !important;
+  }
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]) {
+    background: var(--fn-sidebar) !important;
+    border-inline-end: var(--fn-edge) solid var(--fn-border) !important;
+  }
+  html body :is(#thread,[data-testid="conversation-panel"],[data-testid="conversation-thread"]) {
+    background: var(--fn-bg) !important;
+    color: var(--fn-ink) !important;
+  }
+  html body :is(#page-header,[data-testid="conversation-header"]) {
+    background: var(--fn-bg) !important;
+    border-bottom: 2px solid var(--fn-border) !important;
+    box-shadow: none !important;
+  }
+  /* Native sidebar names: 100% readable; existing role glyphs and click targets remain. */
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside) a[href*="/c/"] {
+    --jaroo-role-neutral: var(--fn-ink);
+    --jaroo-role-lead: var(--fn-green);
+    --jaroo-role-manage: var(--fn-cyan);
+    --jaroo-role-produce: var(--fn-cyan);
+    --jaroo-role-plan: var(--fn-purple);
+    --jaroo-role-action: var(--fn-pink);
+    --jaroo-role-archive: var(--fn-quiet);
+    --jaroo-role-stopped: var(--fn-orange);
+    font-weight: 490 !important;
+    text-shadow: none !important;
+  }
+  :root {
+    --jaroo-role-neutral: var(--fn-ink) !important;
+    --jaroo-role-lead: var(--fn-green) !important;
+    --jaroo-role-manage: var(--fn-cyan) !important;
+    --jaroo-role-produce: var(--fn-cyan) !important;
+    --jaroo-role-plan: var(--fn-purple) !important;
+    --jaroo-role-action: var(--fn-pink) !important;
+    --jaroo-role-archive: var(--fn-quiet) !important;
+    --jaroo-role-stopped: var(--fn-orange) !important;
+    --jaroo-selected-title-glow: none !important;
+    --da-heading-1: var(--fn-cyan) !important;
+    --da-heading-2: var(--fn-purple) !important;
+    --da-heading-3: var(--fn-yellow) !important;
+    --da-body: var(--fn-ink) !important;
+    --da-bold: var(--fn-ink) !important;
+    --da-italic: var(--fn-pink) !important;
+    --da-link: var(--fn-cyan) !important;
+    --da-inline-code: var(--fn-green) !important;
+    --da-marker: var(--fn-orange) !important;
+    --da-user-border: var(--fn-pink) !important;
+    --da-user-text: var(--fn-ink) !important;
+  }
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
+    :is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"] {
+    border: 2px solid var(--fn-green) !important;
+    border-radius: 2px !important;
+    background: var(--fn-surface) !important;
+    box-shadow: none !important;
+  }
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
+    :is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"]::before,
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside)
+    :is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"]::after {
+    content: none !important;
+    display: none !important;
+    animation: none !important;
+  }
+  /* Project pills: flat color-blocks, 2px pixel-like corners, no lighting. */
+  html body [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] {
+    --fn-project-color: var(--fn-orange);
+  }
+  html body [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row][data-jaroo-org="ceo"] { --fn-project-color:var(--fn-pink); }
+  html body [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row][data-jaroo-org="strategy"] { --fn-project-color:var(--fn-purple); }
+  html body [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row][data-jaroo-org="design"] { --fn-project-color:var(--fn-yellow); }
+  html body [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row][data-jaroo-org="technical"] { --fn-project-color:var(--fn-cyan); }
+  html body [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row][data-jaroo-org="people"] { --fn-project-color:var(--fn-green); }
+  html body [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row][data-jaroo-org="management"] { --fn-project-color:var(--fn-blue); }
+  html body [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] [data-marquee-content="true"] {
+    background: var(--fn-project-color) !important;
+    border: 2px solid var(--fn-project-color) !important;
+    border-radius: 2px !important;
+    box-shadow: none !important;
+    filter: none !important;
+    text-shadow: none !important;
+    color: var(--fn-rail) !important;
+    -webkit-text-fill-color: var(--fn-rail) !important;
+    font-weight: 650 !important;
+    animation: none !important;
+    padding-block: 3px !important;
+  }
+  /* Priority/status tags use border-and-ink, never phosphor glow. */
+  html body .jaroo-native-badge,
+  html body .jaroo-recent-status-badge,
+  html body #jaroo-v4-quick-panel .tag {
+    background: var(--fn-rail) !important;
+    border: 2px solid currentColor !important;
+    border-radius: 2px !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+    animation: none !important;
+    font-weight: 650 !important;
+  }
+  html body [data-jaroo-effective-status="working"] .jaroo-native-badge { color: var(--fn-orange) !important; }
+  html body [data-jaroo-effective-status="done"] .jaroo-native-badge { color: var(--fn-green) !important; }
+  html body .jaroo-native-badge::before,
+  html body .jaroo-native-badge::after,
+  html body #jaroo-v4-quick-panel .tag::before {
+    text-shadow: none !important; filter: none !important; animation: none !important;
+  }
+  /* Conversation body remains comfortable; hot colors are semantic accents. */
+  html body [data-message-author-role="assistant"] {
+    --jaroo-prose-color: var(--fn-ink);
+    --jaroo-emphasis-color: var(--fn-ink);
+    --jaroo-conversation-normal-weight: 420;
+    --jaroo-conversation-emphasis-weight: 590;
+    color: var(--fn-ink) !important;
+  }
+  html body [data-message-author-role="assistant"] :is(h1,h2,h3,h4,h5,h6) {
+    border: 0 !important;
+    padding-left: 0 !important;
+    font-weight: 640 !important;
+    text-shadow: none !important;
+  }
+  html body [data-message-author-role="assistant"] :is(h1,h2) {color:var(--fn-cyan)!important;-webkit-text-fill-color:var(--fn-cyan)!important}
+  html body [data-message-author-role="assistant"] :is(h3,h4) {color:var(--fn-purple)!important;-webkit-text-fill-color:var(--fn-purple)!important}
+  html body [data-message-author-role="assistant"] :is(h5,h6) {color:var(--fn-yellow)!important;-webkit-text-fill-color:var(--fn-yellow)!important}
+  html body [data-message-author-role="assistant"] :is(a,[data-d-component="link"]) {color:var(--fn-cyan)!important}
+  html body [data-message-author-role="assistant"] :is(em,i) {color:var(--fn-pink)!important}
+  html body [data-message-author-role="assistant"] :is(strong,b) {font-weight:590!important}
+  html body [data-message-author-role="assistant"] :not(pre) > code {
+    background:var(--fn-raised)!important;
+    color:var(--fn-green)!important;
+    border:1px solid var(--fn-border)!important;
+    border-radius:2px!important;
+  }
+  html body [data-message-author-role="assistant"] blockquote {
+    border-left: 3px solid var(--fn-purple) !important;
+    border-radius: 0 !important;
+    background: var(--fn-surface) !important;
+    box-shadow: none !important;
+  }
+  html body [data-message-author-role="user"] [data-user-message-bubble="true"],
+  html body div[data-user-message-bubble="true"].bg-user-message {
+    background: var(--fn-surface) !important;
+    border: 2px solid var(--fn-pink) !important;
+    border-radius: 2px !important;
+    box-shadow: none !important;
+    color: var(--fn-ink) !important;
+    -webkit-text-fill-color: var(--fn-ink) !important;
+  }
+  /* Tables, code and menus: static rectangular surface, no light effects. */
+  html body [data-message-author-role="assistant"] :is(table,[role="table"],[data-d-component="table"]) {
+    border: 2px solid var(--fn-border) !important;
+    border-radius: 2px !important;
+    background: var(--fn-sidebar) !important;
+    box-shadow: none !important;
+  }
+  html body [data-message-author-role="assistant"] :is(th,[role="columnheader"],[role="rowheader"]) {
+    background: var(--fn-surface) !important;
+    color: var(--fn-yellow) !important;
+    -webkit-text-fill-color: var(--fn-yellow) !important;
+    border-bottom: 2px solid var(--fn-cyan) !important;
+  }
+  html body :is(pre, [data-d-component="code-block"], [data-testid="code-block"]) {
+    background: var(--fn-rail) !important;
+    border: 2px solid var(--fn-border) !important;
+    border-radius: 2px !important;
+    box-shadow: none !important;
+  }
+  html body :is([data-testid="composer"],form:has(#prompt-textarea),form:has([data-testid="composer-input"])) {
+    background: var(--fn-surface) !important;
+    border: 2px solid var(--fn-green) !important;
+    border-radius: 3px !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+  }
+  html body :is([role="dialog"],[role="menu"],[role="listbox"],#jaroo-v4-quick-panel) {
+    background: var(--fn-sidebar) !important;
+    border: 2px solid var(--fn-purple) !important;
+    border-radius: 2px !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    filter: none !important;
+  }
+  html body :is(button,[role="button"],a,[tabindex]):focus-visible {
+    outline: 2px solid var(--fn-yellow) !important;
+    outline-offset: 2px !important;
+    box-shadow: none !important;
+  }
+  html body ::selection { background:var(--fn-yellow)!important;color:var(--fn-bg)!important; }
+  html body ::-webkit-scrollbar-thumb {background:#6A6F5C!important;border:1px solid var(--fn-sidebar)!important;border-radius:0!important}
+  /* Only visual animation is removed; clicks, timers and status updates remain live. */
+  html body .jaroo-native-badge,
+  html body .jaroo-native-badge::before,
+  html body .jaroo-native-badge::after {animation:none!important;transition:none!important}
+}
