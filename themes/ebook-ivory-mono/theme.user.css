@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.24
+@version      0.2.25
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -1405,7 +1405,7 @@
   }
 
 
-  /* 26. QUICK ACTION NAV LABELS — v0.2.24
+  /* 26. QUICK ACTION NAV LABELS — v0.2.25
      The observed ChatGPT DOM uses button > div > span.text-fade-truncate
      for New Chat, not a title below an old sidebar root ID.
      JS labels only the visible native text leaf. No navigation handlers change. */
@@ -1427,21 +1427,22 @@
     -webkit-mask-image:none!important;
     mask-image:none!important;
   }
+  /* The native text span stretches across the whole nav row. The companion
+     script measures the actual text ink run with Range, then supplies only
+     that width to the highlighter. Keep the native span/row layout intact. */
   html body [data-ebook-quick-label="new-chat"] {
-    background:linear-gradient(176deg,
-      transparent 0%,transparent 23%,
-      rgba(242,209,111,.35) 26%,
-      rgba(242,209,111,.78) 36%,
-      rgba(242,209,111,.82) 76%,
-      rgba(242,209,111,.55) 84%,
-      transparent 90%)!important;
+    background-image:linear-gradient(180deg,
+      transparent 0%,transparent 12%,
+      rgba(242,209,111,.76) 12%,
+      rgba(242,209,111,.76) 88%,
+      transparent 88%,transparent 100%)!important;
+    background-color:transparent!important;
     background-repeat:no-repeat!important;
-    background-size:100% 100%!important;
-    border-radius:2px 7px 3px 5px!important;
-    box-decoration-break:clone;
-    -webkit-box-decoration-break:clone;
-    padding-inline:3px!important;
-    margin-inline:-3px!important;
+    background-position:left center!important;
+    background-size:var(--eb-quick-mark-width,3.5em) 1.10em!important;
+    border-radius:0!important;
+    padding-inline:0!important;
+    margin-inline:0!important;
   }
 
 }
