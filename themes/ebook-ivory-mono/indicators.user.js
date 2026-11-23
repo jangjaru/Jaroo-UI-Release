@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.2.1
+// @version      0.2.2
 // @description  E-book visual dot indicators for role prefixes plus a light Clock skin; keeps original chat titles, React data and RUN/DONE logic intact.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -177,20 +177,38 @@
 
   /* Dot unread counter: visual marker only, leaves native content intact.
      Mark the numeric leaf under the exact sidebar 'Dot' link/button. */
+
   function markDotCounter() {
+    // Search the Dot navigation row only. The number can be a sibling of its
+    // anchor; previous versions incorrectly searched the anchor alone.
+    const marked=new Set();
     for (const root of observedRoots) {
       if (!root.isConnected) continue;
-      for (const item of root.querySelectorAll('a,button,[role="button"]')) {
-        const label=(item.textContent||'').replace(/\s+/g,' ').trim();
-        if (!/^Dot(?:\s*\d{1,3})?$/iu.test(label)) continue;
-        const nearby=item.parentElement?.textContent?.replace(/\s+/g,' ').trim()||'';
-        const scope=/^Dot\s*\d{1,3}$/iu.test(nearby)?item.parentElement:item;
-        const candidates=[...scope.querySelectorAll('span,div')].filter(el =>
-          el.children.length===0 && /^\d{1,3}$/u.test((el.textContent||'').trim()));
-        const badge=candidates.at(-1);
-        if (badge && !badge.hasAttribute('data-ebook-dot-counter'))
-          badge.setAttribute('data-ebook-dot-counter','true');
+      const matches=[...root.querySelectorAll('a,button,[role="button"],span,div')].filter(el=>
+        el.children.length===0 && (el.textContent||'').trim()==='Dot');
+      for (const label of matches) {
+        let parent=label;
+        for(let level=0;level<5 && parent && parent!==root;level++,parent=parent.parentElement) {
+          const aggregate=(parent.textContent||'').replace(/\s+/g,'').trim();
+          if(!/^Dot\d{1,3}$/iu.test(aggregate))continue;
+          const numeric=[...parent.querySelectorAll('span,div,small')].filter(el=>
+            el.children.length===0 && /^\d{1,3}$/u.test((el.textContent||'').trim()));
+          const lr=label.getBoundingClientRect();
+          const badge=numeric.find(el=>{
+            const br=el.getBoundingClientRect();
+            return (br.width===0 || Math.abs(br.top-lr.top)<36) &&
+              (!br.width || br.left>lr.left);
+          })||numeric.at(-1);
+          if(badge){marked.add(badge);break;}
+        }
       }
+    }
+    for(const el of document.querySelectorAll('[data-ebook-dot-counter="true"]')) {
+      if(!marked.has(el))el.removeAttribute('data-ebook-dot-counter');
+    }
+    for(const el of marked) {
+      if(!el.hasAttribute('data-ebook-dot-counter'))
+        el.setAttribute('data-ebook-dot-counter','true');
     }
   }
 
@@ -231,20 +249,165 @@
 
 
   /* Find effort/model display inside the composer without modifying its state. */
+
+  let composerObserved=null;
+  const composerObserver=new MutationObserver(()=>schedule());
+  function activeComposer() {
+    const editor=document.querySelector('#prompt-textarea,[data-testid="prompt-textarea"],[contenteditable="true"][role="textbox"]');
+    if(!editor) return null;
+    const shell=editor.closest('#composer-background')||
+      document.querySelector('#composer-background')||
+      editor.closest('[data-testid="composer"]')||
+      editor.closest('form');
+    const form=editor.closest('form');
+    // A file preview can be outside #composer-background but inside the form.
+    return {editor,shell:shell||form,form};
+  }
+  function watchComposer() {
+    const item=activeComposer();
+    const root=item?.form||item?.shell;
+    if(root===composerObserved && root?.isConnected)return;
+    composerObserver.disconnect();
+    composerObserved=root||null;
+    if(root)composerObserver.observe(root,{subtree:true,childList:true,characterData:true});
+  }
   function markEffortPicker() {
-    const composer=document.querySelector('[data-testid="composer"]') ||
-      document.querySelector('form:has(#prompt-textarea)') ||
-      document.querySelector('form:has([data-testid="prompt-textarea"])');
-    if (!composer) return;
-    const pattern=/^(?:(?:GPT[\w.\- ]+|Model|모델)\s+)?(?:Extra High|High|Medium|Low|Instant|Auto)$/iu;
-    for(const node of composer.querySelectorAll('button,[role="button"],[aria-haspopup]')) {
-      const label=(node.textContent||'').replace(/\s+/g,' ').trim();
-      const match=label.length>0 && label.length<=48 && pattern.test(label);
-      if (match && !node.hasAttribute('data-ebook-effort-picker'))
-        node.setAttribute('data-ebook-effort-picker','true');
-      if (!match && node.hasAttribute('data-ebook-effort-picker'))
-        node.removeAttribute('data-ebook-effort-picker');
+    // The model picker may be outside the form subtree. Search visible button
+    // labels in the lower viewport, then use an exact effort suffix, never
+    // modifying onclick/React model state.
+    const context=activeComposer();
+    const main=context?.form||context?.shell;
+    const containers=[main,context?.shell].filter(Boolean);
+    const suffix=/(?:^|[\s·|])(?:Extra\s+High|High|Medium|Low|Instant|Auto)$/iu;
+    const buttons=[...document.querySelectorAll('button,[role="button"],[aria-haspopup]')];
+    const chosen=new Set();
+    const eligible=(node)=>{
+      const b=node.getBoundingClientRect();
+      if(!(b.width>0&&b.height>0)||node.closest('[role="dialog"],[role="menu"],[role="listbox"]'))return false;
+      if(containers.some(root=>root?.contains(node)))return true;
+      return b.bottom>=window.innerHeight-300 && b.left>=window.innerWidth*.37;
+    };
+    for(const btn of buttons){
+      if(!eligible(btn))continue;
+      const text=[btn.textContent,btn.getAttribute('title'),btn.getAttribute('aria-label')]
+        .map(s=>(s||'').replace(/\s+/g,' ').trim()).find(s=>s&&suffix.test(s));
+      if(!text||text.length>80)continue;
+      chosen.add(btn);
+      for(const node of btn.querySelectorAll('span,small')){
+        if(suffix.test((node.textContent||'').replace(/\s+/g,' ').trim()) && node.childElementCount===0)
+          chosen.add(node);
+      }
     }
+    // The selected effort may be a text span adjacent to a chevron, not a
+    // button. If so, mark a short wrapper that contains both label and icon.
+    if(!chosen.size&&main){
+      for(const span of main.querySelectorAll('span,small,div')){
+        if(span.children.length>1)continue;
+        const label=(span.textContent||'').replace(/\s+/g,' ').trim();
+        if(!suffix.test(label)||label.length>48||!eligible(span))continue;
+        const wrapper=span.parentElement;
+        if(wrapper && (wrapper.textContent||'').trim().length<=80 &&
+           wrapper.querySelector('svg')) chosen.add(wrapper);
+        else chosen.add(span);
+      }
+    }
+    for(const el of document.querySelectorAll('[data-ebook-effort-picker="true"]')){
+      if(!chosen.has(el))el.removeAttribute('data-ebook-effort-picker');
+    }
+    for(const el of chosen)if(!el.hasAttribute('data-ebook-effort-picker'))
+      el.setAttribute('data-ebook-effort-picker','true');
+  }
+  function markCurrentChatTitle() {
+    // Infer the active chat from the selected sidebar link and address.
+    // Only mark one visible text leaf in the top header/breadcrumb.
+    const id=(location.pathname.match(/\/c\/([^/?#]+)/)||[])[1]||'';
+    const selected=[...document.querySelectorAll('a[href*="/c/"]')].find(a=>
+      id && (a.getAttribute('href')||'').includes('/c/'+id))||
+      document.querySelector('[data-jaroo-selected="true"] a[href*="/c/"],a[aria-current="page"][href*="/c/"]');
+    const normalize=s=>(s||'').replace(/^\[(?:RUN|DONE)[^\]]*\]\s*/iu,'')
+      .replace(/^[☆★▷▶○●>›]\s*/u,'').replace(/\s+/g,'').trim();
+    const names=[normalize(selected?.getAttribute('aria-label')),normalize(selected?.textContent),
+      normalize(document.title.replace(/\s*[-|]\s*ChatGPT\s*$/iu,''))]
+      .filter(s=>s.length>=7&&s.length<=80);
+    const headers=[...document.querySelectorAll('#page-header,[data-testid="conversation-header"],header,[role="banner"]')]
+      .filter(h=>!h.closest(SIDE_ROOTS)&&h.getBoundingClientRect().top<180);
+    const candidates=[];
+    for(const header of headers){
+      for(const el of header.querySelectorAll('span,h1,h2,button,[role="button"],div')){
+        if(el.closest(SIDE_ROOTS))continue;
+        const title=normalize(el.textContent);
+        if(title.length<7||title.length>95)continue;
+        if(!names.some(n=>title===n||n.endsWith(title)&&title.length>=10))continue;
+        const rect=el.getBoundingClientRect();
+        if(rect.width<=0||rect.top<0||rect.top>=180)continue;
+        candidates.push({el,length:title.length,depth:el.querySelectorAll('*').length});
+      }
+    }
+    // Newer ChatGPT may render the breadcrumb in a non-header container.
+    // As a fallback, inspect only visible nodes at the very top of main.
+    if(!candidates.length){
+      const main=document.querySelector('main,[role="main"]');
+      if(main)for(const el of main.querySelectorAll('span,h1,h2,button,[role="button"]')){
+        if(el.closest(SIDE_ROOTS))continue;
+        const rect=el.getBoundingClientRect();
+        if(rect.width<=0||rect.top<0||rect.top>=140)continue;
+        const title=normalize(el.textContent);
+        if(title.length<7||title.length>95)continue;
+        if(names.some(n=>title===n||n.endsWith(title)&&title.length>=10))
+          candidates.push({el,length:title.length,depth:el.querySelectorAll('*').length});
+      }
+    }
+    candidates.sort((x,y)=>x.length-y.length||x.depth-y.depth);
+    const winner=candidates[0]?.el;
+    for(const node of document.querySelectorAll('[data-ebook-active-title="true"]')){
+      if(node!==winner)node.removeAttribute('data-ebook-active-title');
+    }
+    if(winner&&!winner.hasAttribute('data-ebook-active-title'))
+      winner.setAttribute('data-ebook-active-title','true');
+  }
+  function markUploadDivider() {
+    // No editor/content insertion. A 1px absolute divider is appended to the
+    // visual composer root, and only for a visible uploaded preview.
+    const c=activeComposer();
+    const prior=document.querySelector('[data-ebook-upload-divider="true"]');
+    const priorHost=document.querySelector('[data-ebook-composer-root="true"]');
+    if(!c?.shell||!c.editor){prior?.remove();priorHost?.removeAttribute('data-ebook-composer-root');return;}
+    const shell=(c.shell.contains(c.editor)&&
+      c.shell.querySelector('img,[data-testid*="attachment" i],[data-testid*="file-preview" i]'))
+      ?c.shell:(c.form||c.shell);
+    const er=c.editor.getBoundingClientRect(),sr=shell.getBoundingClientRect();
+    if(!sr.width||!er.width){return;}
+    const candidates=[];
+    for(const img of shell.querySelectorAll('img')){
+      const ir=img.getBoundingClientRect();
+      if(ir.width>=35&&ir.height>=35 && ir.top>=sr.top-5 &&
+         ir.bottom<er.top+4 && !img.closest('[role="menu"],[role="dialog"]'))
+        candidates.push(ir.bottom);
+    }
+    for(const el of shell.querySelectorAll('[data-testid*="attachment-preview" i],[data-testid*="file-preview" i],[data-testid*="upload-preview" i]')){
+      const r=el.getBoundingClientRect();
+      if(r.height>=32 && r.top>=sr.top-5 && r.bottom<er.top+4)candidates.push(r.bottom);
+    }
+    const bottom=Math.max(0,...candidates);
+    if(!bottom||er.top-bottom<7){
+      prior?.remove();priorHost?.removeAttribute('data-ebook-composer-root');
+      return;
+    }
+    if(prior&&!shell.contains(prior))prior.remove();
+    if(priorHost&&priorHost!==shell)priorHost.removeAttribute('data-ebook-composer-root');
+    let line=shell.querySelector('[data-ebook-upload-divider="true"]');
+    if(!line){
+      line=document.createElement('div');
+      line.setAttribute('data-ebook-upload-divider','true');
+      line.setAttribute('aria-hidden','true');
+      shell.appendChild(line);
+    }
+    if(!shell.hasAttribute('data-ebook-composer-root'))
+      shell.setAttribute('data-ebook-composer-root','true');
+    const gap=er.top-bottom;
+    const offset=Math.max(9,Math.min(er.top-sr.top-7,bottom-sr.top+gap*.48));
+    const top=Math.round(offset*10)/10+'px';
+    if(line.style.top!==top)line.style.top=top;
   }
 
   function update() {
@@ -252,7 +415,10 @@
     attachObservers();
     synchronizeSidebar();
     markDotCounter();
+    watchComposer();
     markEffortPicker();
+    markCurrentChatTitle();
+    markUploadDivider();
     syncClock();
   }
 
@@ -277,11 +443,15 @@
   function dispose() {
     disposed = true;
     observer.disconnect();
+    composerObserver.disconnect();
     bootstrapObserver?.disconnect();
     clearInterval(recoverTimer);
     if (frame) cancelAnimationFrame(frame);
     restore();
     document.querySelectorAll('[data-ebook-effort-picker="true"]').forEach(n=>n.removeAttribute('data-ebook-effort-picker'));
+    document.querySelectorAll('[data-ebook-active-title="true"]').forEach(n=>n.removeAttribute('data-ebook-active-title'));
+    document.querySelectorAll('[data-ebook-upload-divider="true"]').forEach(n=>n.remove());
+    document.querySelectorAll('[data-ebook-composer-root="true"]').forEach(n=>n.removeAttribute('data-ebook-composer-root'));
     shadowStyle?.remove();
     document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`)?.remove();
     document.removeEventListener('visibilitychange', onVisibility);
@@ -300,7 +470,7 @@
   recoverTimer = setInterval(() => { if (!document.hidden) schedule(); }, 4000);
   schedule();
   window[RUNTIME] = {
-    version:'0.2.1',dispose,refresh:schedule,
-    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`)})
+    version:'0.2.2',dispose,refresh:schedule,
+    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]')})
   };
 })();

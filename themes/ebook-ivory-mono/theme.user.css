@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.1
+@version      0.2.2
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -32,7 +32,7 @@
     --eb-mono: "IBM Plex Mono", "Monoplex KR", monospace;
     --eb-font-korean: "Pretendard Variable", "Pretendard", sans-serif;
     --eb-ui-size: 14px;
-    --eb-prose-size: max(12px, calc(var(--eb-ui-size) - 2pt));
+    --eb-prose-size: 11.2px;
     --eb-code-size: 12.5px;
     --eb-weight-normal: 400;
     --eb-weight-strong: 600;
@@ -74,7 +74,7 @@
     --link: var(--eb-ink) !important;
     --link-hover: var(--eb-secondary) !important;
     --jaroo-status-css-version: "6.8.2";
-    --ebook-theme-version: "0.2.1";
+    --ebook-theme-version: "0.2.2";
   }
 
   /* 02. LIGHT-PAPER BASE — do not modify Chrome frame or extension UIs. */
@@ -509,11 +509,11 @@
 
   /* 11. RESPONSIVE — no invented second conversation panel. */
   @media (max-width: 1050px) {
-    :root { --eb-ui-size: 13px; --eb-prose-size: max(12px, calc(var(--eb-ui-size) - 2pt)); }
+    :root { --eb-ui-size: 13px; --eb-prose-size: 11.2px; }
     body [data-message-author-role="assistant"] :is(table,[role="table"],[data-d-component="table"]) { overflow-x: auto !important; }
   }
   @media (max-width: 650px) {
-    :root { --eb-ui-size: 12.8px; --eb-prose-size: max(12px, calc(var(--eb-ui-size) - 2pt)); }
+    :root { --eb-ui-size: 12.8px; --eb-prose-size: 11.2px; }
     body [data-message-author-role="assistant"] :is(h1,h2,h3,h4,h5,h6) { margin-top: .8em; }
   }
   @media (prefers-reduced-motion: reduce) {
@@ -688,76 +688,169 @@
   }
 
 
-  /* 14. EDITORIAL REFINEMENT v0.2.1 — scoped to conversation and composer.
-     Sidebar, live clock, RUN/DONE and account settings are intentionally unchanged. */
-  :root { --eb-monochrome-accent:#1F1E1A; --eb-attachment-separator:#CBC3B5; }
-  body :is([data-message-author-role="assistant"],[data-message-author-role="user"])
-    :is(.markdown,.prose,[data-d-text-flow],[data-d-component="text"])
-    :is(p,li,dd,dt,blockquote,span,a,strong,b,em,i,[data-d-component="text"]):not(
-      :is(pre *,code *,table *,[role="table"] *,h1 *,h2 *,h3 *,h4 *,h5 *,h6 *,
-      button *,[role="button"] *,[contenteditable="true"] *,[data-d-component="math"] *)
+
+  /* 14. E-BOOK EDITORIAL REFINEMENT v0.2.2
+     CSS maps explicit real-text carriers, avoiding the previous rule's
+     dependence on nested TextBase markup. No native app state is changed. */
+  :root {
+    --eb-prose-size:11.2px;
+    --eb-user-prose-size:10.8px;
+    --eb-accent-ink:#1F1E1A;
+    --eb-upload-divider-color:#CFC7B8;
+  }
+  /* Regular conversation text: fixed density regardless of nested DIL spans.
+     Preserve intentionally larger headings, code, table layouts and controls. */
+  html body :is([data-message-author-role="assistant"],[data-message-author-role="user"])
+    :is(p,li,dd,dt,blockquote,[data-d-text-flow],[data-d-component="text"]):not(
+      :is(h1,h2,h3,h4,h5,h6,pre,code,table,button,[role="button"],[contenteditable="true"])
     ) {
-    font-family:var(--eb-font)!important;
     font-size:var(--eb-prose-size)!important;
+    line-height:1.57!important;
   }
-  body [data-message-author-role="assistant"]
-    :is(table,[role="table"],[data-d-component="table"])
-    :is(td,th,[role="cell"],[role="columnheader"],[role="rowheader"],[data-d-component="table-cell"])
-    :is(p,span,div,[data-d-component="text"]) {
+  html body :is([data-message-author-role="assistant"],[data-message-author-role="user"])
+    :is(p,li,dd,dt,blockquote,[data-d-text-flow],[data-d-component="text"],.markdown,.prose)
+    :is(span,div,strong,b,em,i,a,small,[data-d-component="text"]):not(
+      :is(h1 *,h2 *,h3 *,h4 *,h5 *,h6 *,pre *,code *,kbd *,samp *,
+        table *,[role="table"] *,[data-d-component="table"] *,
+        button *,[role="button"] *,[contenteditable="true"] *,
+        [role="textbox"] *,[data-d-component="math"] *)
+    ) {
     font-size:var(--eb-prose-size)!important;
+    line-height:1.57!important;
   }
-  /* User message: 2px accent line, transparent so paper grid shows through. */
-  body [data-message-author-role="user"]
-    :is([data-user-message-bubble="true"],.bg-user-message),
-  body :is([data-user-message-bubble="true"].bg-user-message,[data-user-message-bubble="true"]) {
+  /* User chat bubble: dark outline 2.5px; transparent paper and tighter text. */
+  :root {--color-background-user-message:transparent!important;}
+  html body :is([data-message-author-role="user"] [data-user-message-bubble="true"],
+               [data-message-author-role="user"] .bg-user-message,
+               [data-user-message-bubble="true"].bg-user-message) {
     --color-background-user-message:transparent!important;
     background:transparent!important;
+    background-color:transparent!important;
     background-image:none!important;
-    border:2px solid var(--eb-monochrome-accent)!important;
+    border:2.5px solid var(--eb-accent-ink)!important;
     border-radius:14px!important;
     box-shadow:none!important;
+    -webkit-box-shadow:none!important;
     filter:none!important;
     backdrop-filter:none!important;
     color:var(--eb-ink)!important;
+    -webkit-text-fill-color:var(--eb-ink)!important;
   }
-  /* Input frame: no elevation, single accent keyline. */
-  :is([data-testid="composer"],form:has(#prompt-textarea),form:has([data-testid="prompt-textarea"])) {
-    border:1px solid var(--eb-monochrome-accent)!important;
-    border-radius:var(--eb-composer-radius)!important;
-    background:var(--eb-composer-paper)!important;
+  html body :is([data-message-author-role="user"] [data-user-message-bubble="true"],
+               [data-message-author-role="user"] .bg-user-message,
+               [data-user-message-bubble="true"].bg-user-message)
+    :is(p,span,div,strong,b,em,i,a,[data-d-component="text"]):not(
+      :is(button *,[role="button"] *,pre *,code *,table *,svg *)
+    ) {
+    font-family:var(--eb-font)!important;
+    font-size:var(--eb-user-prose-size)!important;
+    line-height:1.5!important;
+  }
+  /* Composer visible shell is often #composer-background, not the form.
+     Remove elevations from both, but show only one border where possible. */
+  html body :is(#composer-background,[data-testid="composer"],
+      form:has(#prompt-textarea),form:has([data-testid="prompt-textarea"])) {
     box-shadow:none!important;
+    -webkit-box-shadow:none!important;
+    text-shadow:none!important;
     filter:none!important;
     backdrop-filter:none!important;
-    outline:0!important;
   }
-  :is([data-testid="composer"],form:has(#prompt-textarea),form:has([data-testid="prompt-textarea"])):focus-within {
-    border:1px solid var(--eb-monochrome-accent)!important;
-    outline:0!important;
+  html body #composer-background,
+  html body [data-testid="composer"]:not(:has(#composer-background)) {
+    background:var(--eb-composer-paper)!important;
+    border:1px solid var(--eb-accent-ink)!important;
+    border-radius:18px!important;
+    outline:none!important;
+  }
+  html body form:has(#composer-background):not(#composer-background) {
+    border-color:transparent!important;
+    outline:none!important;
     box-shadow:none!important;
   }
-  /* Preview/upload area gets a horizontal line above the text input only
-     when actual image or attachment-preview markup is present. */
-  :is([data-testid="composer"],form:has(#prompt-textarea),form:has([data-testid="prompt-textarea"])):is(
-      :has(img[src]),:has([data-testid*="attachment" i]),:has([data-testid*="file-preview" i])
-    ) :is(#prompt-textarea,[data-testid="prompt-textarea"],[contenteditable="true"][role="textbox"]) {
-    border-top:1px solid var(--eb-attachment-separator)!important;
-    border-radius:0!important;
-    margin-block-start:10px!important;
-    padding-block-start:12px!important;
+  html body form:has(#prompt-textarea):not(:has(#composer-background)),
+  html body form:has([data-testid="prompt-textarea"]):not(:has(#composer-background)) {
+    border:1px solid var(--eb-accent-ink)!important;
+    background:var(--eb-composer-paper)!important;
+    border-radius:18px!important;
   }
-  /* Model/effort dropdown, marked by visual-only E-book helper JS. */
-  :is([data-testid="composer"],form:has(#prompt-textarea),form:has([data-testid="prompt-textarea"]))
-    [data-ebook-effort-picker="true"],
-  :is([data-testid="composer"],form:has(#prompt-textarea),form:has([data-testid="prompt-textarea"]))
-    [data-ebook-effort-picker="true"] :is(span,div,small,svg,svg *) {
-    color:var(--eb-monochrome-accent)!important;
-    -webkit-text-fill-color:var(--eb-monochrome-accent)!important;
-    font-weight:700!important;
-    letter-spacing:-.01em!important;
-    text-shadow:none!important;
+  html body :is(#composer-background,[data-testid="composer"],
+      form:has(#prompt-textarea),form:has([data-testid="prompt-textarea"])):focus-within {
+    box-shadow:none!important;
+    outline:none!important;
+  }
+  /* Upload divider is a visual-only overlay placed by the E-book helper
+     after measuring the actual thumbnail and editor bounds. */
+  html body [data-ebook-composer-root="true"] {position:relative!important;}
+  html body [data-ebook-upload-divider="true"] {
+    pointer-events:none!important;
+    position:absolute!important;
+    display:block!important;
+    z-index:5!important;
+    border-top:1px solid var(--eb-upload-divider-color)!important;
+    height:0!important;
+    inset-inline:17px!important;
+    width:auto!important;
+    background:transparent!important;
+    box-shadow:none!important;
     opacity:1!important;
+    margin:0!important;
+    padding:0!important;
   }
-  :is([data-testid="composer"],form:has(#prompt-textarea),form:has([data-testid="prompt-textarea"]))
-    [data-ebook-effort-picker="true"] svg { stroke:currentColor!important; }
+  /* Current conversation title, not every navigation row. */
+  html body :is(#page-header,[data-testid="conversation-header"])
+    :is([data-testid="conversation-title"],h1,[data-ebook-active-title="true"]),
+  html body [data-ebook-active-title="true"] {
+    font-family:var(--eb-font)!important;
+    font-size:16px!important;
+    font-weight:720!important;
+    letter-spacing:-.03em!important;
+    line-height:1.4!important;
+    color:var(--eb-ink)!important;
+    -webkit-text-fill-color:var(--eb-ink)!important;
+    opacity:1!important;
+    text-shadow:none!important;
+  }
+  /* Actual Dot badge receives a marker on the numeric leaf only. */
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,
+    [data-testid="sidebar"],aside) [data-ebook-dot-counter="true"] {
+    background:transparent!important;
+    background-color:transparent!important;
+    background-image:none!important;
+    border:1.8px solid var(--eb-accent-ink)!important;
+    color:var(--eb-accent-ink)!important;
+    -webkit-text-fill-color:var(--eb-accent-ink)!important;
+    width:19px!important;
+    height:19px!important;
+    min-width:19px!important;
+    border-radius:50%!important;
+    box-shadow:none!important;
+    font-family:var(--eb-mono)!important;
+    font-weight:600!important;
+    font-size:11px!important;
+    line-height:1!important;
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    padding:0!important;
+  }
+  /* Model/effort display and its chevron, marked through the new DOM watcher. */
+  html body [data-ebook-effort-picker="true"],
+  html body [data-ebook-effort-picker="true"] :is(span,div,small,svg,svg *,i) {
+    color:var(--eb-accent-ink)!important;
+    -webkit-text-fill-color:var(--eb-accent-ink)!important;
+    font-family:var(--eb-font)!important;
+    font-weight:750!important;
+    letter-spacing:-.01em!important;
+    opacity:1!important;
+    text-shadow:none!important;
+  }
+  html body [data-ebook-effort-picker="true"] :is(svg,svg *) {
+    stroke:var(--eb-accent-ink)!important;
+  }
+  /* Narrow screens keep readable body, separate from the sidebar title size. */
+  @media(max-width:650px) {
+    :root {--eb-prose-size:11px;--eb-user-prose-size:10.6px;}
+  }
 
 }
