@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.17
+@version      0.2.18
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -1358,6 +1358,49 @@
     font-size:var(--eb-user-sent-optical-size)!important;
     font-weight:var(--eb-prompt-sent-weight)!important;
     line-height:1.55!important;
+  }
+
+
+  /* 25. SENT MESSAGE REAL TEXT FIX — v0.2.18
+     DevTools screenshot showed 14px/400 on the user's rendered message:
+     older rules reached only the legacy bubble class and missed nested text.
+     Match both ChatGPT's author-role and data-user-message structures.
+     Leave the live composer, assistant body, toolbar and file controls alone. */
+  :root {
+    --eb-user-sent-optical-size:21.3333px; /* 16pt */
+    --eb-prompt-sent-weight:900;
+    --eb-prompt-sent-ink:#000000;
+  }
+  html body :is(
+    [data-message-author-role="user"],
+    [data-user-message],
+    [data-user-message-bubble="true"],
+    .bg-user-message
+  ) :is(
+    p,li,span,div,a,strong,b,em,i,small,
+    [data-d-text-flow],[data-d-component="text"],.whitespace-pre-wrap
+  ):not(:is(
+    button,button *,[role="button"],[role="button"] *,
+    [role="toolbar"],[role="toolbar"] *,
+    textarea,[contenteditable="true"],[role="textbox"],
+    pre,pre *,code,code *,kbd,kbd *,samp,samp *,
+    svg,svg *,table,table *,[role="table"],[role="table"] *,
+    [data-d-component="math"],[data-d-component="math"] *,
+    [data-testid*="attachment" i] *,[data-testid*="file" i] *,
+    [data-testid*="upload" i] *
+  )),
+  html body :is(
+    [data-user-message],[data-user-message-bubble="true"],
+    .bg-user-message,[data-ebook-prompt-text="sent"]
+  ) {
+    font-family:var(--eb-font)!important;
+    font-size:var(--eb-user-sent-optical-size)!important;
+    font-weight:var(--eb-prompt-sent-weight)!important;
+    font-synthesis-weight:auto!important;
+    color:var(--eb-prompt-sent-ink)!important;
+    -webkit-text-fill-color:var(--eb-prompt-sent-ink)!important;
+    line-height:1.55!important;
+    text-shadow:none!important;
   }
 
 }
