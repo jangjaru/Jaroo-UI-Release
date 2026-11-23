@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.3
+@version      0.2.4
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -9,6 +9,39 @@
 ==/UserStyle== */
 
 @-moz-document domain("chatgpt.com") {
+
+  /* One-local-font family with an explicitly excluded ASCII space (U+0020).
+     That space, plus Hangul, is resolved from the next font, Pretendard Variable.
+     IBM Plex Mono still renders Latin, numbers, punctuation. */
+  @font-face {
+    font-family:"Jaroo Plex Latin";
+    src:local("IBM Plex Mono Regular"),local("IBMPlexMono-Regular"),local("IBM Plex Mono");
+    font-weight:400;
+    font-style:normal;
+    unicode-range:U+0021-007E,U+00A1-024F,U+1E00-1EFF,U+20AC;
+  }
+  @font-face {
+    font-family:"Jaroo Plex Latin";
+    src:local("IBM Plex Mono Medium"),local("IBMPlexMono-Medium"),local("IBM Plex Mono");
+    font-weight:500;
+    font-style:normal;
+    unicode-range:U+0021-007E,U+00A1-024F,U+1E00-1EFF,U+20AC;
+  }
+  @font-face {
+    font-family:"Jaroo Plex Latin";
+    src:local("IBM Plex Mono SemiBold"),local("IBMPlexMono-SemiBold"),local("IBM Plex Mono");
+    font-weight:600;
+    font-style:normal;
+    unicode-range:U+0021-007E,U+00A1-024F,U+1E00-1EFF,U+20AC;
+  }
+  @font-face {
+    font-family:"Jaroo Plex Latin";
+    src:local("IBM Plex Mono Bold"),local("IBMPlexMono-Bold"),local("IBM Plex Mono");
+    font-weight:700;
+    font-style:normal;
+    unicode-range:U+0021-007E,U+00A1-024F,U+1E00-1EFF,U+20AC;
+  }
+
   /* 01. DESIGN TOKENS — adapt colors here; no other theme is required. */
   :root {
     --eb-paper: #F6F2E8;
@@ -28,7 +61,7 @@
     --eb-teal: #59B8BC;
     --eb-green: #A5D685;
     --eb-orange: #E3AA62;
-    --eb-font: "IBM Plex Mono", "Pretendard Variable", "Pretendard", sans-serif;
+    --eb-font: "Jaroo Plex Latin", "Pretendard Variable", "Pretendard", sans-serif;
     --eb-mono: "IBM Plex Mono", "Pretendard Variable", "Pretendard", monospace;
     --eb-font-korean: "Pretendard Variable", "Pretendard", sans-serif;
     --eb-ui-size: 14px;
@@ -74,7 +107,7 @@
     --link: var(--eb-ink) !important;
     --link-hover: var(--eb-secondary) !important;
     --jaroo-status-css-version: "6.8.2";
-    --ebook-theme-version: "0.2.3";
+    --ebook-theme-version: "0.2.4";
   }
 
   /* 02. LIGHT-PAPER BASE — do not modify Chrome frame or extension UIs. */
@@ -525,7 +558,7 @@
      No DOM reconstruction. Native sidebar and prompt controls retain their
      click/keyboard behavior. Color roles are informational, not decorations. */
   :root {
-    --eb-notebook-grid: rgba(120,114,103,.052);
+    --eb-notebook-grid: rgba(120,114,103,.022);
     --eb-composer-paper: #F4F0E6;
     --eb-composer-line: #D4CDC0;
     --eb-quiet-focus: #9B8F7A;
@@ -863,7 +896,7 @@
     --eb-standard-type-size:var(--eb-ui-size);
     --eb-prose-size:var(--eb-ui-size);
     --eb-user-prose-size:var(--eb-ui-size);
-    --eb-font:"IBM Plex Mono","Pretendard Variable","Pretendard",sans-serif;
+    --eb-font:"Jaroo Plex Latin","Pretendard Variable","Pretendard",sans-serif;
     --eb-mono:"IBM Plex Mono","Pretendard Variable","Pretendard",monospace;
     --eb-outline-thickness:2.5px;
     --eb-upload-divider-color:var(--eb-ink);
@@ -969,5 +1002,30 @@
     border-color:transparent!important;
     box-shadow:none!important;
   }
+
+
+  /* 16. CLASSIC PAPER · 2026-11-24, no external assets.
+     Fine fibrous grain + barely visible notebook grid. Keep cards and text
+     crisp; the texture belongs to the paper surface only. */
+  :root { --eb-classic-paper-grain: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22240%22%20height%3D%22240%22%20viewBox%3D%220%200%20240%20240%22%3E%3Cfilter%20id%3D%22paper%22%20x%3D%220%22%20y%3D%220%22%20width%3D%22100%25%22%20height%3D%22100%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%22.83%22%20numOctaves%3D%223%22%20seed%3D%2217%22%20stitchTiles%3D%22stitch%22%2F%3E%3CfeColorMatrix%20type%3D%22saturate%22%20values%3D%220%22%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%22240%22%20height%3D%22240%22%20opacity%3D%22.12%22%20filter%3D%22url(%23paper)%22%2F%3E%3Cg%20stroke%3D%22%23957F5F%22%20stroke-opacity%3D%22.045%22%20stroke-width%3D%22.55%22%20fill%3D%22none%22%3E%3Cpath%20d%3D%22M14%2025l23%202m80%2036l17%201m67%2038l11%202M35%20183l20-1m99%2037l14%201M187%2013l26%201%22%2F%3E%3Cpath%20d%3D%22M56%2041l2%2015m103%2078l1%2019M89%20208l2%2017M226%20146l1%2013%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
+  html body :is(#thread,[data-testid="conversation-panel"],
+    [data-testid="conversation-thread"],main,[role="main"]) {
+    background-color:var(--eb-paper)!important;
+    background-image:
+      linear-gradient(to right,var(--eb-notebook-grid) 1px,transparent 1px),
+      linear-gradient(to bottom,var(--eb-notebook-grid) 1px,transparent 1px),
+      var(--eb-classic-paper-grain)!important;
+    background-size:28px 28px,28px 28px,240px 240px!important;
+    background-repeat:repeat!important;
+  }
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,
+    #slate-sidebar,[data-testid="sidebar"]) {
+    background-color:var(--eb-rail)!important;
+    background-image:var(--eb-classic-paper-grain)!important;
+    background-size:240px 240px!important;
+    background-repeat:repeat!important;
+  }
+  /* Native fallback and active chat are intentionally unchanged in this
+     visual experiment. Only the glyph source for ordinary spaces changes. */
 
 }
