@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.12
+@version      0.2.13
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -107,7 +107,7 @@
     --link: var(--eb-ink) !important;
     --link-hover: var(--eb-secondary) !important;
     --jaroo-status-css-version: "6.8.2";
-    --ebook-theme-version: "0.2.12";
+    --ebook-theme-version: "0.2.13";
   }
 
   /* 02. LIGHT-PAPER BASE — do not modify Chrome frame or extension UIs. */
@@ -1223,6 +1223,72 @@
     -webkit-box-shadow:none!important;
     filter:none!important;
     outline:none!important;
+  }
+
+
+  /* 22. ONE COMPOSER FRAME + SENT USER TYPOGRAPHY (v0.2.13)
+     Use the inner rounded composer shell as the only border. The helper JS
+     marks that shell and mutes ancestor outlines; no double gray/black rings.
+     Sent-user message text follows the same reading-size token as prose,
+     with a deliberate 600 weight and charcoal accent. */
+  :root {
+    --eb-user-sent-reading: var(--eb-prose-size);
+    --eb-user-sent-weight: 600;
+    --eb-composer-single-stroke: 2.5px solid #1F1E1A;
+  }
+  html body [data-ebook-composer-muted="true"] {
+    border:0 !important;
+    outline:0 !important;
+    box-shadow:none !important;
+    -webkit-box-shadow:none !important;
+    filter:none !important;
+  }
+  html body [data-ebook-composer-frame="true"] {
+    border:var(--eb-composer-single-stroke)!important;
+    border-radius:var(--eb-composer-native-radius,24px)!important;
+    outline:0!important;
+    box-shadow:none!important;
+    -webkit-box-shadow:none!important;
+    filter:none!important;
+  }
+  html body [data-ebook-composer-frame="true"]:focus-within {
+    border:var(--eb-composer-single-stroke)!important;
+    outline:0!important;
+    box-shadow:none!important;
+    -webkit-box-shadow:none!important;
+  }
+  /* Avoid drawing a second border on the form around the selected inner frame. */
+  html body form:has([data-ebook-composer-frame="true"]):not([data-ebook-composer-frame="true"]),
+  html body [data-testid="composer"]:has([data-ebook-composer-frame="true"]):not([data-ebook-composer-frame="true"]) {
+    border:0!important;
+    outline:0!important;
+    box-shadow:none!important;
+    -webkit-box-shadow:none!important;
+  }
+  /* Sent user message only: preserve transparency, border and curved corners. */
+  html body [data-message-author-role="user"]
+    :is([data-user-message-bubble="true"],.bg-user-message) {
+    color:var(--eb-ink)!important;
+    -webkit-text-fill-color:var(--eb-ink)!important;
+    font-family:var(--eb-font)!important;
+    font-size:var(--eb-user-sent-reading)!important;
+    font-weight:var(--eb-user-sent-weight)!important;
+    line-height:1.56!important;
+  }
+  html body [data-message-author-role="user"]
+    :is([data-user-message-bubble="true"],.bg-user-message)
+    :is(p,li,span,div,a,strong,b,em,i,small,
+       [data-d-component="text"],[data-d-text-flow]):not(
+       :is(button *,[role="button"] *,svg *,pre *,code *,
+         [role="img"] *,[data-d-component="table"] *,
+         [data-d-component="math"] *)
+    ) {
+    font-family:var(--eb-font)!important;
+    font-size:var(--eb-user-sent-reading)!important;
+    font-weight:var(--eb-user-sent-weight)!important;
+    color:var(--eb-ink)!important;
+    -webkit-text-fill-color:var(--eb-ink)!important;
+    line-height:1.56!important;
   }
 
 }

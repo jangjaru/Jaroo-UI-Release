@@ -1,26 +1,29 @@
-# Jaroo E-book Classic Paper v0.2.12 / JS v0.2.6
+# Jaroo E-book Classic Paper · CSS v0.2.13 / JS v0.2.7
 
-**2026-11-24 · 세 가지 시각 수정**
+**2026-11-24 · 입력창 겹선 제거 및 작성한 메시지 글꼴 강조**
 
-1. **좌측 채팅명 +0.5pt:** 기존 실제 표시 크기 14.667px → **15.333px**. E-book JS가 실제 글자가 들어 있는 내부 span에 직접 적용하는 크기도 변경.
-2. **좌측 프로젝트명 굵기 강화:** font-weight **650**. 큰 볼드가 아니라 기존 600보다 조금 더 구분되는 수준. 프로젝트 텍스트에만 적용하고 채팅명의 굵기 변경 없음.
-3. **프롬프트 입력창 바깥선:** 액센트 `#1F1E1A`로 **2.5px 실선**, 라운드 **18px**, 그림자와 글로우 제거. 편집 글자가 아닌 실제 외곽 프레임을 E-book JS가 찾아 시각 속성만 설정함.
+## 수정 내용
 
-## 설치 링크
+1. **작성창 단일 테두리:** 이전에는 안쪽 연회색 라인과 바깥쪽 차콜 라인이 겹쳐 보였다. 실제 입력 요소부터 부모를 탐색해 **안쪽 둥근 프레임**을 찾고 그 프레임에만 `2.5px solid #1F1E1A` 액센트 라인을 적용한다. 바깥쪽 중복 테두리와 그림자는 없앤다. 안쪽 라운드는 기존 둥근 곡선을 우선 활용하고 22px보다 작지 않도록 한다.
+2. **이미 보낸 내 메시지 글씨:** 우측 일반 본문과 같은 `var(--eb-prose-size)` (**14px 데스크톱 기준**), 굵기 **600**, 전경·액센트 `#1F1E1A`. 투명 배경, 기존 2.5px 라인과 28px 메시지 라운드는 유지한다.
+3. 좌측 프로젝트명·채팅명 확정 크기, 표 글자 +1.5pt, 종이 질감, 기존 기능·스크립트는 그대로 보존.
 
-- Stylus CSS: [E-book v0.2.12](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/theme.user.css)
-- Tampermonkey JS: [E-book v0.2.6](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/indicators.user.js)
+## 설치/업데이트
 
-**이번에는 CSS와 JS 둘 다 업데이트**한 다음 `Ctrl + Shift + R`로 새로고침해.
+- [Stylus CSS 0.2.13](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/theme.user.css)
+- [Tampermonkey E-book JS 0.2.7](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/indicators.user.js)
 
-기존 Dracula·Flat Neon 스타일은 OFF, E-book만 ON. E-book JS와 핵심 Clock/Status/Mapper는 ON, Flat Neon 시각 보조 JS는 OFF 유지.
+**이번에는 CSS와 JS 모두 업데이트해야 한다.** 기존 E-book 두 항목을 업데이트한 다음 `Ctrl+Shift+R`로 새로고침한다. 다른 시각 테마(Dracula·Flat Neon)는 OFF, E-book CSS/JS와 Life Clock·Status·Mapper는 ON.
 
-## 수정 범위와 검증
-- 우측 본문·표 크기·사용자 메시지 버블·종이질감·메타정보·프로젝트명 크기는 그대로.
-- 사용자 채팅 제목·프로젝트명 데이터나 앱 기능은 전혀 수정하지 않음.
-- 바깥선 적용 대상은 텍스트 편집 요소의 실제 주변 프레임. 프레임이 보이지 않는다면 활성 프레임 식별이 실패했을 수 있으므로 실제 DOM을 확인해야 함.
-- E-book 시각 JS는 인라인 스타일 원본을 저장하고 종료 시 복원함.
-- 공개/비공개 코드 일치, CSS 괄호, JS 구문은 검증. 실제 로그인 Chrome의 테두리·굵기·크기 검수는 별도.
+## 확인할 부분
 
-### 이전 버전으로 복귀
-E-book CSS·JS를 이전 Git 기록의 버전으로 되돌리거나 시각 테마 두 개를 비활성화하면 돼. **개인 Life Clock 프로필과 핵심 기능 JS는 지우지 마.**
+- 프롬프트 작성창 안쪽/바깥쪽에 **두 줄**이 아닌 **차콜 외곽선 한 줄**만 표시되는지
+- 둥근 모서리가 기존 안쪽 연회색 박스처럼 자연스러운지
+- 전송한 메시지의 글씨가 일반 본문 크기와 같고 적절히 진해졌는지
+- 작성, 첨부, 삭제, 모델 선택 버튼 동작이 유지되는지
+
+코드의 JS 문법/CSS 구조와 GitHub 공개·비공개 원본 동일성 검사는 가능하나, **로그인된 Chrome의 실제 DOM과 렌더링은 사용자의 적용 후 확인 필요**하다. 연회색 선이 계속 겹치면 F12로 그 내부 요소를 확인해야 한다.
+
+## 원복
+
+이전 E-book CSS 0.2.12와 JS 0.2.6을 GitHub 커밋 이력에서 다시 적용하거나 신규 두 테마 항목을 비활성화하면 된다. 원본 Clock/Status/Mapper와 개인 프로필은 변경하거나 삭제하지 않는다.

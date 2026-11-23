@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.2.6
+// @version      0.2.7
 // @description  E-book visual dot indicators for role prefixes plus a light Clock skin; keeps original chat titles, React data and RUN/DONE logic intact.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -496,74 +496,148 @@
   /* Decorate the actual outer input-card surface, never the text editor.
      The form can wrap a distinct #composer-background node. Measure the
      candidate geometry and only decorate an element enclosing the editor. */
+
+  /* Single-frame composer restoration.
+     Prefer the first truly bordered, rounded ancestor of the editor, i.e.
+     the inner light-gray line indicated in the user's screenshot. Replace its
+     stroke with charcoal, and mute the outer ancestor rings completely.
+     Original inline values are restored on disable/theme swap. */
   const composerFrameOriginal=new Map();
+  const composerMutedOriginal=new Map();
+  const frameProperties=['border','border-radius','box-shadow','-webkit-box-shadow','outline'];
+  const muteProperties=['border','outline','box-shadow','-webkit-box-shadow'];
+  function snapshotStyle(el,properties){
+    const prev={};
+    for(const p of properties)prev[p]={
+      value:el.style.getPropertyValue(p),
+      priority:el.style.getPropertyPriority(p)
+    };
+    return prev;
+  }
+  function restoreStyle(el,previous){
+    if(!el.isConnected)return;
+    for(const [p,saved] of Object.entries(previous)){
+      if(saved.value)el.style.setProperty(p,saved.value,saved.priority);
+      else el.style.removeProperty(p);
+    }
+  }
+  function makeImportant(el,property,value){
+    if(el.style.getPropertyValue(property)!==value ||
+       el.style.getPropertyPriority(property)!=='important')
+      el.style.setProperty(property,value,'important');
+  }
   function syncComposerFrame() {
     const context=activeComposer();
     const editor=context?.editor;
-    const editorBox=editor?.getBoundingClientRect();
-    const candidates=editor?[
-      editor.closest('#composer-background'),
-      editor.closest('[data-testid="composer"]'),
-      document.querySelector('#composer-background'),
-      editor.closest('form')
-    ].filter(Boolean):[];
-    const unique=[...new Set(candidates)];
-    const chosen=unique.find(el=>{
-      if(!editorBox||editorBox.width<=0)return false;
-      const box=el.getBoundingClientRect();
-      return box.width>=Math.max(180,editorBox.width*.93) &&
-        box.height>=editorBox.height+10 &&
-        box.height<650 &&
-        box.top<=editorBox.top+4 && box.bottom>=editorBox.bottom-4 &&
-        (el.contains(editor) || (box.left<=editorBox.left+6 &&
-          box.right>=editorBox.right-6));
-    });
-    for(const el of composerFrameOriginal.keys()){
+    if(!editor || !editor.isConnected) {
+      restoreComposerFrames();
+      return;
+    }
+    const eb=editor.getBoundingClientRect();
+    if(eb.width<40)return;
+    const ancestors=[];
+    let cur=editor.parentElement;
+    for(let i=0;cur&&cur!==document.body&&i<16;i++,cur=cur.parentElement){
+      ancestors.push(cur);
+      if(cur.matches('form'))break;
+    }
+    const withinComposer=el=>{
+      const r=el.getBoundingClientRect();
+      return r.width>=Math.max(165,eb.width*.87) &&
+        r.height>=eb.height+8 && r.height<=650 &&
+        r.top<=eb.top+8 && r.bottom>=eb.bottom-5;
+    };
+    // Hold a previously chosen frame stable over refreshes; its border is
+    // already black and should not cause another native ancestor to be chosen.
+    let chosen=[...composerFrameOriginal.keys()].find(el=>
+      el.isConnected && el.contains(editor) && withinComposer(el));
+    if(!chosen) {
+      const nativeRounded=ancestors.filter(el=>{
+        if(!withinComposer(el))return false;
+        const s=getComputedStyle(el);
+        const border=parseFloat(s.borderTopWidth)||0;
+        const radius=parseFloat(s.borderTopLeftRadius)||0;
+        const shadowEdge=s.boxShadow && s.boxShadow!=='none';
+        return radius>=8 && ((border>=.5 && s.borderTopStyle!=='none') || shadowEdge);
+      });
+      chosen=nativeRounded[0] ||
+        ancestors.find(el=>el.id==='composer-background' && withinComposer(el)) ||
+        ancestors.find(el=>el.matches('[data-testid="composer"]') && withinComposer(el)) ||
+        ancestors.find(el=>el.matches('form') && withinComposer(el));
+    }
+    if(!chosen) return;
+    const outerAncestors=[];
+    let parent=chosen.parentElement;
+    for(let i=0;parent&&parent!==document.body&&i<12;i++,parent=parent.parentElement){
+      if(!parent.contains(editor))break;
+      outerAncestors.push(parent);
+      if(parent.matches('form'))break;
+    }
+    const muted=new Set(outerAncestors);
+    // In case a formerly selected frame becomes an ancestor after a React
+    // redraw, restore its saved properties before marking it as muted.
+    for(const [el,saved] of composerFrameOriginal){
       if(el===chosen)continue;
-      const previous=composerFrameOriginal.get(el);
-      if(el.isConnected){
-        for(const [property,saved] of Object.entries(previous)){
-          if(saved.value)el.style.setProperty(property,saved.value,saved.priority);
-          else el.style.removeProperty(property);
-        }
-        el.removeAttribute('data-ebook-composer-frame');
-      }
+      restoreStyle(el,saved);
+      el.removeAttribute('data-ebook-composer-frame');
+      el.style.removeProperty('--eb-composer-native-radius');
       composerFrameOriginal.delete(el);
     }
-    if(!chosen)return;
-    const settings={
-      border:'2.5px solid #1F1E1A',
-      'border-radius':'18px',
-      'box-shadow':'none',
-      '-webkit-box-shadow':'none',
-      outline:'none'
-    };
+    for(const [el,saved] of composerMutedOriginal){
+      if(muted.has(el))continue;
+      restoreStyle(el,saved);
+      el.removeAttribute('data-ebook-composer-muted');
+      composerMutedOriginal.delete(el);
+    }
+    // If an older muted ancestor becomes the chosen inner frame, restore
+    // its original style before applying its new accent keyline.
+    if(composerMutedOriginal.has(chosen)){
+      restoreStyle(chosen,composerMutedOriginal.get(chosen));
+      composerMutedOriginal.delete(chosen);
+      chosen.removeAttribute('data-ebook-composer-muted');
+    }
     if(!composerFrameOriginal.has(chosen)){
-      const previous={};
-      for(const property of Object.keys(settings))previous[property]={
-        value:chosen.style.getPropertyValue(property),
-        priority:chosen.style.getPropertyPriority(property)
-      };
-      composerFrameOriginal.set(chosen,previous);
+      const original=getComputedStyle(chosen);
+      const radius=Math.max(22,Math.min(36,
+        parseFloat(original.borderTopLeftRadius)||24));
+      composerFrameOriginal.set(chosen,snapshotStyle(chosen,frameProperties));
+      makeImportant(chosen,'--eb-composer-native-radius',radius+'px');
     }
-    if(!chosen.hasAttribute('data-ebook-composer-frame'))
-      chosen.setAttribute('data-ebook-composer-frame','true');
-    for(const [property,value] of Object.entries(settings)){
-      if(chosen.style.getPropertyValue(property)!==value ||
-         chosen.style.getPropertyPriority(property)!=='important')
-        chosen.style.setProperty(property,value,'important');
+    chosen.setAttribute('data-ebook-composer-frame','true');
+    makeImportant(chosen,'border','2.5px solid #1F1E1A');
+    makeImportant(chosen,'border-radius',
+      chosen.style.getPropertyValue('--eb-composer-native-radius')||'24px');
+    makeImportant(chosen,'box-shadow','none');
+    makeImportant(chosen,'-webkit-box-shadow','none');
+    makeImportant(chosen,'outline','none');
+    for(const el of muted){
+      if(!composerMutedOriginal.has(el))
+        composerMutedOriginal.set(el,snapshotStyle(el,muteProperties));
+      el.setAttribute('data-ebook-composer-muted','true');
+      makeImportant(el,'border','0');
+      makeImportant(el,'outline','none');
+      makeImportant(el,'box-shadow','none');
+      makeImportant(el,'-webkit-box-shadow','none');
     }
+    for(const el of composerFrameOriginal.keys())if(!el.isConnected)
+      composerFrameOriginal.delete(el);
+    for(const el of composerMutedOriginal.keys())if(!el.isConnected)
+      composerMutedOriginal.delete(el);
   }
   function restoreComposerFrames(){
-    for(const [el,previous] of composerFrameOriginal){
-      if(!el.isConnected)continue;
-      for(const [property,saved] of Object.entries(previous)){
-        if(saved.value)el.style.setProperty(property,saved.value,saved.priority);
-        else el.style.removeProperty(property);
+    for(const [el,saved] of composerFrameOriginal){
+      restoreStyle(el,saved);
+      if(el.isConnected){
+        el.removeAttribute('data-ebook-composer-frame');
+        el.style.removeProperty('--eb-composer-native-radius');
       }
-      el.removeAttribute('data-ebook-composer-frame');
     }
     composerFrameOriginal.clear();
+    for(const [el,saved] of composerMutedOriginal){
+      restoreStyle(el,saved);
+      if(el.isConnected)el.removeAttribute('data-ebook-composer-muted');
+    }
+    composerMutedOriginal.clear();
   }
 
   function update() {
@@ -664,7 +738,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.2.6',dispose,refresh:schedule,
-    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,fontAudit:fontAudit()})
+    version:'0.2.7',dispose,refresh:schedule,
+    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,fontAudit:fontAudit()})
   };
 })();
