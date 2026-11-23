@@ -1,0 +1,496 @@
+/* ==UserStyle==
+@name         Jaroo E-book · Ivory Mono
+@namespace    jaroo.theme.ebook.ivory-mono
+@version      0.1.0
+@description  Independent ivory-paper / IBM Plex Mono / Pretendard ChatGPT theme, with fine dividers and role-color dots.
+@author       Jaroo Design Team
+@license      UNLICENSED
+@updateURL    https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/theme.user.css
+==/UserStyle== */
+
+@-moz-document domain("chatgpt.com") {
+  /* 01. DESIGN TOKENS — adapt colors here; no other theme is required. */
+  :root {
+    --eb-paper: #FAF9F3;
+    --eb-panel: #FCFBF6;
+    --eb-rail: #F5F4ED;
+    --eb-soft: #F0EFE8;
+    --eb-ink: #1D1D1B;
+    --eb-secondary: #575751;
+    --eb-muted: #777772;
+    --eb-line: #AAA9A0;
+    --eb-line-strong: #72736F;
+    --eb-amber: #E3AA2A;
+    --eb-blue: #65A4E3;
+    --eb-coral: #F1AD79;
+    --eb-pink: #E97E9B;
+    --eb-purple: #A48BD7;
+    --eb-teal: #59B8BC;
+    --eb-green: #A5D685;
+    --eb-orange: #E3AA62;
+    --eb-font: "IBM Plex Mono", "Pretendard Variable", "Pretendard", "Noto Sans KR", "Noto Sans CJK KR", monospace;
+    --eb-font-korean: "Pretendard Variable", "Pretendard", "Noto Sans KR", "Noto Sans CJK KR", sans-serif;
+    --eb-ui-size: 13.5px;
+    --eb-prose-size: 14px;
+    --eb-code-size: 12.5px;
+    --eb-weight-normal: 400;
+    --eb-weight-strong: 600;
+    --eb-radius: 14px;
+    --eb-composer-radius: 16px;
+
+    /* Native ChatGPT surfaces, including popovers rendered in portals. */
+    --font-sans: var(--eb-font) !important;
+    --main-surface-primary: var(--eb-paper) !important;
+    --main-surface-primary-inverse: var(--eb-ink) !important;
+    --main-surface-secondary: var(--eb-panel) !important;
+    --main-surface-tertiary: var(--eb-soft) !important;
+    --sidebar-surface-primary: var(--eb-rail) !important;
+    --sidebar-surface-secondary: var(--eb-soft) !important;
+    --sidebar-surface-tertiary: var(--eb-panel) !important;
+    --bg-primary: var(--eb-paper) !important;
+    --bg-secondary: var(--eb-panel) !important;
+    --bg-tertiary: var(--eb-soft) !important;
+    --bg-elevated-primary: var(--eb-panel) !important;
+    --bg-elevated-secondary: var(--eb-soft) !important;
+    --bg-scrim: rgb(0 0 0 / 0.25) !important;
+    --text-primary: var(--eb-ink) !important;
+    --text-secondary: var(--eb-secondary) !important;
+    --text-tertiary: var(--eb-muted) !important;
+    --text-quaternary: var(--eb-muted) !important;
+    --text-accent: var(--eb-ink) !important;
+    --border-light: var(--eb-line) !important;
+    --border-medium: var(--eb-line-strong) !important;
+    --border-heavy: var(--eb-line-strong) !important;
+    --border-default: var(--eb-line) !important;
+    --interactive-bg-primary-default: var(--eb-ink) !important;
+    --interactive-bg-primary-hover: #3D3D38 !important;
+    --interactive-label-primary-default: var(--eb-paper) !important;
+    --interactive-bg-secondary-default: var(--eb-panel) !important;
+    --interactive-bg-secondary-hover: var(--eb-soft) !important;
+    --message-surface: var(--eb-panel) !important;
+    --color-background-user-message: var(--eb-panel) !important;
+    --color-text-user-message: var(--eb-ink) !important;
+    --link: var(--eb-ink) !important;
+    --link-hover: var(--eb-secondary) !important;
+    --jaroo-status-css-version: "6.8.2";
+    --ebook-theme-version: "0.1.0";
+  }
+
+  /* 02. LIGHT-PAPER BASE — do not modify Chrome frame or extension UIs. */
+  html, html body, html.light, html.dark,
+  html :is([data-theme="light"],[data-theme="dark"]) {
+    color-scheme: light !important;
+  }
+  html, body { background: var(--eb-paper) !important; color: var(--eb-ink) !important; }
+  body :is(p, a, span, div, label, li, ul, ol, button, input, textarea,
+       select, option, h1, h2, h3, h4, h5, h6, th, td, blockquote,
+       small, strong, b, em, i, summary, [contenteditable="true"]) {
+    font-family: var(--eb-font) !important;
+    font-style: normal !important;
+    text-shadow: none !important;
+  }
+  body :is(button, input, textarea, select, label, nav, aside) {
+    font-size: var(--eb-ui-size);
+  }
+  body :is(.font-bold, [data-d-weight="bold"], [data-d-text-weight="bold"], strong, b) {
+    font-weight: var(--eb-weight-strong) !important;
+  }
+  body :is(.font-semibold, [data-d-weight="semibold"], [data-d-text-weight="semibold"]) {
+    font-weight: 550 !important;
+  }
+  body :is(.font-normal, [data-d-weight="normal"], [data-d-text-weight="normal"]) {
+    font-weight: var(--eb-weight-normal) !important;
+  }
+  body :is(em, i) { font-style: normal !important; }
+  ::selection { background: #D9E9E5 !important; color: var(--eb-ink) !important; }
+
+  /* 03. RAIL, SIDEBAR, HEADER — thin ink lines, no glass or glow. */
+  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]) {
+    background: var(--eb-rail) !important;
+    color: var(--eb-ink) !important;
+    border-inline-end: 1px solid var(--eb-line) !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    backdrop-filter: none !important;
+  }
+  :is(#page-header,[data-testid="conversation-header"]) {
+    background: var(--eb-paper) !important;
+    border-bottom: 1px solid var(--eb-line) !important;
+    color: var(--eb-ink) !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+  }
+  :is(#thread,[data-testid="conversation-panel"],[data-testid="conversation-thread"],main,[role="main"]) {
+    background: var(--eb-paper) !important;
+    color: var(--eb-ink) !important;
+  }
+  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"])
+    :is(a[href="/"],a[href="/new"],[data-testid="create-new-chat-button"]) {
+    color: var(--eb-ink) !important;
+    font-weight: 550 !important;
+    border-radius: 9px !important;
+  }
+  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"])
+    :is(a[href="/"],a[href="/new"],[data-testid="create-new-chat-button"]):hover {
+    background: var(--eb-soft) !important;
+  }
+
+  /* 04. PROJECT LIST — same native row, colored 8px indicators. */
+  [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] {
+    --eb-project-dot: #B6B4AC;
+    color: var(--eb-ink) !important;
+  }
+  [data-app-action-sidebar-project-row][data-jaroo-org="ceo"] { --eb-project-dot: var(--eb-coral) !important; }
+  [data-app-action-sidebar-project-row][data-jaroo-org="strategy"] { --eb-project-dot: var(--eb-pink) !important; }
+  [data-app-action-sidebar-project-row][data-jaroo-org="sales"] { --eb-project-dot: #E78DAC !important; }
+  [data-app-action-sidebar-project-row][data-jaroo-org="bd"] { --eb-project-dot: #DDA875 !important; }
+  [data-app-action-sidebar-project-row][data-jaroo-org="proposal"] { --eb-project-dot: #C3A5E2 !important; }
+  [data-app-action-sidebar-project-row][data-jaroo-org="design"] { --eb-project-dot: var(--eb-blue) !important; }
+  [data-app-action-sidebar-project-row][data-jaroo-org="technical"] { --eb-project-dot: var(--eb-purple) !important; }
+  [data-app-action-sidebar-project-row][data-jaroo-org="people"] { --eb-project-dot: var(--eb-teal) !important; }
+  [data-app-action-sidebar-project-row][data-jaroo-org="management"] { --eb-project-dot: var(--eb-orange) !important; }
+  [data-app-action-sidebar-project-row][data-jaroo-org="assistant"] { --eb-project-dot: var(--eb-green) !important; }
+  [data-app-action-sidebar-project-row][data-jaroo-org="philosophy"] { --eb-project-dot: #B1CFAA !important; }
+  [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row]
+    [data-marquee-content="true"] {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    min-inline-size: 0 !important;
+    max-inline-size: 100% !important;
+    color: var(--eb-ink) !important;
+    -webkit-text-fill-color: var(--eb-ink) !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    filter: none !important;
+    border-radius: 8px !important;
+    padding: 3px 4px !important;
+    font-family: var(--eb-font) !important;
+    font-size: var(--eb-ui-size) !important;
+    font-weight: 530 !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+  }
+  [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row]
+    [data-marquee-content="true"]::before {
+    content: "" !important;
+    display: inline-block !important;
+    flex: none !important;
+    width: 8px !important;
+    height: 8px !important;
+    border-radius: 50% !important;
+    background: var(--eb-project-dot) !important;
+    box-shadow: none !important;
+  }
+  [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row]:hover
+    [data-marquee-content="true"] { background: var(--eb-soft) !important; }
+  [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row][aria-current="page"]
+    [data-marquee-content="true"] { border: 1px solid var(--eb-line-strong) !important; }
+
+  /* 05. CHAT LIST — JS marks only visual prefix, never rewrites chat names. */
+  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)
+    a[href*="/c/"] {
+    color: var(--eb-ink) !important;
+    -webkit-text-fill-color: var(--eb-ink) !important;
+    font-size: var(--eb-ui-size) !important;
+    font-weight: 450 !important;
+    text-shadow: none !important;
+    border-radius: 8px !important;
+  }
+  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)
+    :is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"] {
+    background: var(--eb-panel) !important;
+    border: 1px solid var(--eb-line-strong) !important;
+    border-radius: 10px !important;
+    box-shadow: none !important;
+  }
+  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)
+    :is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"]::before,
+  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)
+    :is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"]::after {
+    display: none !important;
+    content: none !important;
+    animation: none !important;
+  }
+  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)
+    [data-ebook-role] {
+    --eb-role-dot: var(--eb-muted);
+    display: inline-flex !important;
+    align-items: baseline !important;
+    gap: 7px !important;
+    min-inline-size: 0 !important;
+    max-inline-size: 100% !important;
+    color: var(--eb-ink) !important;
+    -webkit-text-fill-color: var(--eb-ink) !important;
+  }
+  [data-ebook-role="master"] { --eb-role-dot: var(--eb-coral) !important; }
+  [data-ebook-role="plan"] { --eb-role-dot: var(--eb-purple) !important; }
+  [data-ebook-role="manage"] { --eb-role-dot: var(--eb-teal) !important; }
+  [data-ebook-role="produce"] { --eb-role-dot: var(--eb-blue) !important; }
+  [data-ebook-role="action"] { --eb-role-dot: var(--eb-pink) !important; }
+  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)
+    [data-ebook-role]::before {
+    content: "" !important;
+    width: 8px !important;
+    height: 8px !important;
+    flex: 0 0 8px !important;
+    border-radius: 50% !important;
+    background: var(--eb-role-dot) !important;
+    box-shadow: none !important;
+    transform: translateY(-1px);
+  }
+  [data-ebook-glyph="true"] {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    overflow: hidden !important;
+    clip-path: inset(50%) !important;
+    white-space: nowrap !important;
+  }
+  [data-ebook-role]:is([data-ebook-life-cycle="done"],[data-ebook-life-cycle="stopped"]) {
+    color: var(--eb-muted) !important;
+    -webkit-text-fill-color: var(--eb-muted) !important;
+  }
+
+  /* 06. STATUS — compatible with status.js; no state decisions here. */
+  [data-jaroo-native-row="true"] .jaroo-native-badge {
+    display: none !important;
+    position: static !important;
+    padding: 1px 4px !important;
+    margin-inline-end: 3px !important;
+    box-sizing: border-box !important;
+    border: 1px solid var(--eb-line-strong) !important;
+    border-radius: 5px !important;
+    background: var(--eb-paper) !important;
+    font-size: 10px !important;
+    line-height: 1.1 !important;
+    font-weight: 600 !important;
+    white-space: nowrap !important;
+    /* Status animation/glow is intentionally retained in the theme rules below. */
+  }
+  [data-jaroo-native-row="true"][data-jaroo-effective-status="working"] .jaroo-native-badge {
+    display: inline-flex !important;
+    align-items: center;
+    color: #986B24 !important;
+    border-color: var(--eb-amber) !important;
+    animation: ebook-run-indicator .28s steps(1,end) infinite !important;
+    text-shadow: 0 0 3px rgba(255,184,108,.84) !important;
+    box-shadow: 0 0 6px rgba(255,184,108,.35) !important;
+  }
+  [data-jaroo-native-row="true"][data-jaroo-effective-status="done"] .jaroo-native-badge {
+    display: inline-flex !important;
+    align-items: center;
+    color: #3E8369 !important;
+    border-color: var(--eb-teal) !important;
+    animation: ebook-done-indicator 1.8s ease-in-out infinite !important;
+    text-shadow: 0 0 3px rgba(80,250,123,.55) !important;
+    box-shadow: 0 0 5px rgba(80,250,123,.28) !important;
+  }
+  @keyframes ebook-run-indicator { 0%,49.999% {opacity:1} 50%,100% {opacity:.3} }
+  @keyframes ebook-done-indicator { 0%,100% {filter:brightness(.85)} 50% {filter:brightness(1.12)} }
+  html[data-jaroo-status-hidden="true"] [data-jaroo-native-row="true"] .jaroo-native-badge { display: none !important; }
+  [data-jaroo-native-row="true"][data-jaroo-badge-layout="inline"]
+    [data-jaroo-badge-host="true"] { display: inline-flex; align-items: center; gap: 4px; min-width: 0; }
+  @media (prefers-reduced-motion: reduce) {
+    .jaroo-native-badge {animation:none!important;}
+  }
+  [data-jaroo-native-leading="true"]:not(:is(a,button,input,textarea,[role="button"],.jaroo-native-badge)) { display: none !important; }
+  [data-jaroo-native-hidden="true"]:not(:is(a,button,input,textarea,[role="button"],.jaroo-native-badge)) {
+    clip-path: inset(50%) !important;
+  }
+
+  /* 07. CONVERSATION BODY: normal roman fonts, readable measure. */
+  body [data-message-author-role="assistant"], body [data-message-author-role="user"] {
+    color: var(--eb-ink) !important;
+    font-family: var(--eb-font) !important;
+  }
+  body [data-message-author-role="assistant"] :is(
+    .markdown p, .markdown li, .prose p, .prose li,
+    p[data-d-text-flow], [data-d-component="text"], [data-d-text-flow],
+    blockquote, dd, dt
+  ) {
+    font-size: var(--eb-prose-size) !important;
+    font-weight: var(--eb-weight-normal) !important;
+    line-height: 1.65 !important;
+    color: var(--eb-ink) !important;
+    -webkit-text-fill-color: var(--eb-ink) !important;
+    letter-spacing: -0.012em;
+  }
+  body [data-message-author-role="assistant"] :is(.markdown, .prose, [data-d-component="text"])
+    :is(strong,b,[data-d-weight="bold"],[data-d-text-weight="bold"]) {
+    font-weight: var(--eb-weight-strong) !important;
+    color: var(--eb-ink) !important;
+    -webkit-text-fill-color: var(--eb-ink) !important;
+  }
+  body [data-message-author-role="assistant"] :is(h1,h2,h3,h4,h5,h6) {
+    color: var(--eb-ink) !important;
+    -webkit-text-fill-color: var(--eb-ink) !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--eb-line) !important;
+    padding: 0 0 5px !important;
+    margin-block: 1em .6em;
+    font-size: 1.1rem !important;
+    font-weight: 650 !important;
+    line-height: 1.4 !important;
+    text-shadow: none !important;
+  }
+  body [data-message-author-role="assistant"] :is(h1,h2) { font-size: 1.22rem !important; }
+  body [data-message-author-role="assistant"] :is(h5,h6) { font-size: 1rem !important; }
+  body [data-message-author-role="assistant"] :is(a,[data-d-component="link"]) {
+    color: #345C68 !important;
+    -webkit-text-fill-color: #345C68 !important;
+    text-decoration-color: var(--eb-teal) !important;
+    text-underline-offset: 2px;
+  }
+  body [data-message-author-role="assistant"] :is(em,i) { font-style: normal !important; }
+  body [data-message-author-role="assistant"] blockquote {
+    background: var(--eb-soft) !important;
+    border-inline-start: 2px solid var(--eb-line-strong) !important;
+    border-radius: 0 8px 8px 0 !important;
+    padding: 8px 13px !important;
+  }
+  body [data-message-author-role="assistant"] :not(pre) > code {
+    font-family: "IBM Plex Mono", ui-monospace, monospace !important;
+    font-size: var(--eb-code-size) !important;
+    background: var(--eb-soft) !important;
+    border: 1px solid var(--eb-line) !important;
+    border-radius: 5px !important;
+    color: var(--eb-ink) !important;
+    -webkit-text-fill-color: var(--eb-ink) !important;
+    padding: 1px 4px;
+  }
+  body :is(pre, pre code, code, kbd, samp) {
+    font-family: "IBM Plex Mono", "Cascadia Mono", "Consolas", monospace !important;
+    font-style: normal !important;
+  }
+  body [data-message-author-role="user"] :is(
+    [data-user-message-bubble="true"], .bg-user-message
+  ) {
+    color: var(--eb-ink) !important;
+    -webkit-text-fill-color: var(--eb-ink) !important;
+    background: var(--eb-panel) !important;
+    border: 1px solid var(--eb-amber) !important;
+    border-radius: 12px !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+  body [data-message-author-role="user"] :is(p,span,[data-d-component="text"]) {
+    color: var(--eb-ink) !important;
+    -webkit-text-fill-color: var(--eb-ink) !important;
+    font-weight: 450 !important;
+    font-size: var(--eb-prose-size) !important;
+  }
+
+  /* 08. EDITABLE TABLES — 1px horizontal structure and no fake metrics. */
+  body [data-message-author-role="assistant"] :is(table,[role="table"],[data-d-component="table"]) {
+    width: 100%;
+    border: 1px solid var(--eb-line-strong) !important;
+    border-radius: 10px !important;
+    border-spacing: 0 !important;
+    border-collapse: separate !important;
+    background: var(--eb-panel) !important;
+    box-shadow: none !important;
+    overflow: hidden;
+  }
+  body [data-message-author-role="assistant"] :is(table,[role="table"],[data-d-component="table"])
+    :is(th,td,[role="cell"],[role="columnheader"],[role="rowheader"],[data-d-component="table-cell"]) {
+    color: var(--eb-ink) !important;
+    -webkit-text-fill-color: var(--eb-ink) !important;
+    font-size: var(--eb-ui-size) !important;
+    line-height: 1.5 !important;
+    padding: 8px 11px !important;
+    border: 0 !important;
+    border-bottom: 1px solid #C8C6BD !important;
+    font-weight: 400 !important;
+    background: transparent !important;
+  }
+  body [data-message-author-role="assistant"] :is(table,[role="table"],[data-d-component="table"])
+    :is(th,[role="columnheader"],[role="rowheader"],[data-d-component="table-cell"][data-header="true"]) {
+    font-weight: 600 !important;
+    background: var(--eb-soft) !important;
+  }
+  body [data-message-author-role="assistant"] :is(table,[role="table"],[data-d-component="table"])
+    :is(tr,[role="row"],[data-d-component="table-row"]):last-child > :is(td,th,[role="cell"],[data-d-component="table-cell"]) {
+    border-bottom: 0 !important;
+  }
+  body [data-message-author-role="assistant"] :is(pre,[data-d-component="code"]) {
+    background: #F3F2EA !important;
+    color: var(--eb-ink) !important;
+    border: 1px solid var(--eb-line) !important;
+    border-radius: 10px !important;
+    box-shadow: none !important;
+  }
+  body [data-message-author-role="assistant"] :is(pre,[data-d-component="code"]) :is(code,span) {
+    font-family: "IBM Plex Mono", "Cascadia Mono", monospace !important;
+  }
+
+  /* 09. COMPOSER + PANEL CONTROLS — retain click, focus, and sizing logic. */
+  :is([data-testid="composer"],[data-testid="composer-input"],#prompt-textarea,[data-testid="prompt-textarea"]) {
+    color: var(--eb-ink) !important;
+    background: var(--eb-panel) !important;
+    font-family: var(--eb-font) !important;
+    border-color: var(--eb-line-strong) !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+  :is([data-testid="composer"], form:has(#prompt-textarea)) {
+    border: 1px solid var(--eb-line-strong) !important;
+    border-radius: var(--eb-composer-radius) !important;
+    background: var(--eb-panel) !important;
+    box-shadow: none !important;
+  }
+  :is([data-testid="composer"],form:has(#prompt-textarea)) :is(textarea,[contenteditable="true"]) {
+    border: 0 !important;
+    box-shadow: none !important;
+    outline-offset: 2px;
+  }
+  body :is([role="dialog"],[role="menu"],[role="listbox"],[data-native-menu-root],[popover]) {
+    color: var(--eb-ink) !important;
+    background: var(--eb-panel) !important;
+    border: 1px solid var(--eb-line-strong) !important;
+    border-radius: 12px !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+  }
+  body :is([role="menuitem"],[role="option"],[role="tab"]):hover {
+    background: var(--eb-soft) !important;
+  }
+  body :is(input,textarea,select,[contenteditable="true"],button,a[href]):focus-visible {
+    outline: 2px solid #517E89 !important;
+    outline-offset: 2px !important;
+  }
+  body :is(svg,svg *,canvas,img,video) { text-shadow: none !important; }
+
+  /* 10. STATUS POPUP — the status JS still owns all content and actions. */
+  #jaroo-v4-quick-panel,#jaroo-v4-title-tip {
+    background: var(--eb-panel) !important;
+    color: var(--eb-ink) !important;
+    border: 1px solid var(--eb-line-strong) !important;
+    border-radius: 12px !important;
+    box-shadow: none !important;
+    font-family: var(--eb-font) !important;
+  }
+  #jaroo-v4-quick-panel :is(.head,a,.empty,.dismiss,.tag),#jaroo-v4-title-tip * {
+    color: var(--eb-ink) !important;
+    font-family: var(--eb-font) !important;
+    text-shadow: none !important;
+  }
+  #jaroo-v4-quick-panel .tag { border: 1px solid var(--eb-line-strong) !important; border-radius: 5px !important; }
+  #jaroo-v4-quick-panel .tag[data-jstatus="working"] { color: #986B24 !important; }
+  #jaroo-v4-quick-panel .tag[data-jstatus="done"] { color: #3E8369 !important; }
+
+  /* 11. RESPONSIVE — no invented second conversation panel. */
+  @media (max-width: 1050px) {
+    :root { --eb-ui-size: 13px; --eb-prose-size: 13.8px; }
+    body [data-message-author-role="assistant"] :is(table,[role="table"],[data-d-component="table"]) { overflow-x: auto !important; }
+  }
+  @media (max-width: 650px) {
+    :root { --eb-ui-size: 12.8px; --eb-prose-size: 13.6px; }
+    body [data-message-author-role="assistant"] :is(h1,h2,h3,h4,h5,h6) { margin-top: .8em; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    /* Only the E-book theme itself has no animations. Existing RUN/DONE motion is owned by original JS. */
+    [data-ebook-role]::before { transition: none !important; }
+  }
+}
