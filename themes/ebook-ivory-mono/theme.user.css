@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.7
+@version      0.2.8
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -107,7 +107,7 @@
     --link: var(--eb-ink) !important;
     --link-hover: var(--eb-secondary) !important;
     --jaroo-status-css-version: "6.8.2";
-    --ebook-theme-version: "0.2.7";
+    --ebook-theme-version: "0.2.8";
   }
 
   /* 02. LIGHT-PAPER BASE — do not modify Chrome frame or extension UIs. */
@@ -1090,6 +1090,30 @@
   html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"])
     [data-ebook-glyph="true"] {
     font-size:1px!important;
+  }
+
+
+  /* 18. ACTUAL NESTED CHAT TITLE GLYPHS v0.2.8
+     Chrome DevTools 2026-11-24 showed the innermost displayed text <span>
+     still at 14px despite the 19.33px title container. The native sidebar
+     structure is [data-sidebar-cycle-item] > ... > a > [data-thread-title]
+     > .clipViewport > .track > .content-marquee > span[dir=auto] > span.
+     Target those REAL visible text leaves, not only their ancestors.
+     Project labels, right prose, prompts and status counters are untouched. */
+  html body [data-sidebar-cycle-item] a[href*="/c/"] [data-thread-title],
+  html body [data-sidebar-cycle-item] a[href*="/c/"] [data-thread-title]
+     :is(span,div):not([data-ebook-glyph="true"]):not([aria-hidden="true"]):not(.sr-only),
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"])
+     a[href*="/c/"] [data-thread-title]
+     :is(span,div):not([data-ebook-glyph="true"]):not([aria-hidden="true"]):not(.sr-only) {
+    font-size:var(--eb-chat-title-size)!important;
+  }
+  /* Specific innermost single span and moving-marquee content. */
+  html body [data-sidebar-cycle-item] a[href*="/c/"]
+    [data-thread-title] [data-marquee-content] :is(span,div):not([data-ebook-glyph="true"]),
+  html body [data-sidebar-cycle-item] a[href*="/c/"]
+    [data-thread-title] span[dir="auto"] > span:not([data-ebook-glyph="true"]) {
+    font-size:var(--eb-chat-title-size)!important;
   }
 
 }

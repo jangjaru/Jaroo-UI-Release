@@ -1,16 +1,17 @@
-# E-book Classic Paper v0.2.7
+# Jaroo E-book Classic Paper CSS v0.2.8
 
-**2026-11-24 · 좌측 채팅명 +1pt 미세 조정**
+**2026-11-24 · actual DOM selector correction**
 
-| 영역 | 기존 v0.2.6 | 신규 v0.2.7 |
-|---|---:|---:|
-| 좌측 프로젝트명 | 15.33px | 15.33px 유지 |
-| 좌측 채팅명 | 18px | **19.33px** |
-| 기타 좌측 탐색 | 16.67px | 16.67px 유지 |
-| 우측 본문 및 프롬프트 | 기존값 | 변경 없음 |
+The user's Chrome F12 capture showed the real visible chat-name span is **14px** (font-weight 450, letter spacing -0.49px), even though v0.2.7 CSS intended **19.33px**. The DOM includes:
+`[data-sidebar-cycle-item] a[href*="/c/"] [data-thread-title] ... span[dir="auto"] > span`
 
-Stylus 설치·업데이트: [E-book CSS v0.2.7](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/theme.user.css)
+The previous selector targeted the outer anchor / title container; nested spans still carried their own 14px. This release targets the nested `span` and `div` text nodes directly with the existing `--eb-chat-title-size` variable.
 
-E-book Tampermonkey JS **0.2.3 유지**. Dracula·Flat Neon·Clock·Status·Mapper 변경 없음. 클래식 종이 질감, 색상, 자간과 테두리도 그대로 유지.
+- Expected inner chat-name size: **19.33px**.
+- Project title remains **15.33px**; other sidebar text remains **16.67px**.
+- No right-side body, composer, font, color, texture, Clock, Status or Mapper changes.
+- **Stylus E-book CSS only** updated to **0.2.8**. E-book Tampermonkey JS remains **0.2.3**.
 
-Stylus에서 E-book CSS 업데이트 후 `Ctrl+Shift+R`. 긴 채팅 제목의 말줄임이 늘 수 있어 실제 로그인 Chrome 화면에서 확인해야 함. 이전 v0.2.6은 Git 커밋 이력에 보존.
+Install/update: [Stylus E-book CSS v0.2.8](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/theme.user.css), then `Ctrl+Shift+R`.
+
+After installation, select the innermost visible chat-title span again in F12 → Computed → `font-size`. Expected: approximately **19.33px**. This has been source-validated, not yet measured in signed-in Chrome after installation.
