@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.20
+@version      0.2.21
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -1337,13 +1337,13 @@
   }
 
 
-  /* 24. SENT USER PROMPT ONLY — 2026-11-24, v0.2.20.
+  /* 24. SENT USER PROMPT ONLY — 2026-11-24, v0.2.21.
      Make messages already sent noticeably larger and bold while keeping
      the live composer (16px), assistant text, sidebar, icons and status intact.
      JS v0.2.11 also applies this to actual text-bearing leaves. */
   :root {
-    --eb-user-sent-optical-size:14px;
-    --eb-prompt-sent-weight:700;
+    --eb-user-sent-optical-size:15px;
+    --eb-prompt-sent-weight:650;
   }
   html body [data-message-author-role="user"]
     :is([data-user-message-bubble="true"],.bg-user-message),
@@ -1361,14 +1361,14 @@
   }
 
 
-  /* 25. SENT MESSAGE REAL TEXT FIX — v0.2.20
+  /* 25. SENT MESSAGE REAL TEXT FIX — v0.2.21
      DevTools screenshot showed 14px/400 on the user's rendered message:
      older rules reached only the legacy bubble class and missed nested text.
      Match both ChatGPT's author-role and data-user-message structures.
      Leave the live composer, assistant body, toolbar and file controls alone. */
   :root {
-    --eb-user-sent-optical-size:14px; /* optical match to sidebar at normal reading density */
-    --eb-prompt-sent-weight:700;
+    --eb-user-sent-optical-size:15px; /* calibrated midpoint between prior 14px and 15.333px styles */
+    --eb-prompt-sent-weight:650;
     --eb-prompt-sent-ink:#000000;
   }
   html body :is(
