@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.1.1
+// @version      0.2.0
 // @description  E-book visual dot indicators for role prefixes plus a light Clock skin; keeps original chat titles, React data and RUN/DONE logic intact.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -39,7 +39,8 @@
       --ebook-ink:#1D1D1B;
       --ebook-muted:#575751;
       --ebook-line:#AAA9A0;
-      --ebook-font:"IBM Plex Mono","Monoplex KR","Pretendard Variable","Pretendard",monospace;
+      --ebook-font:"Pretendard Variable","Pretendard",sans-serif;
+       --ebook-mono:"IBM Plex Mono","Monoplex KR",monospace;
     }
     /* v0.1.1: locally installed Latin and Korean mono font, including status dock.
        Segmented digital digits and all calculations remain unmodified. */
@@ -94,7 +95,8 @@
     /* Keep the original digital segment shapes, blink and color treatment. */
     .clock { border:1px solid var(--ebook-line)!important; border-radius:13px!important; /* Preserve original LED glow. */ }
     .clock-content { border-radius:12px!important; }
-    .date-main,.weather-label { font-family:var(--ebook-font)!important; font-style:normal!important; }
+    .date-main,.weather-label { font-family:var(--ebook-mono)!important; font-style:normal!important; }
+    .life-value,.life-progress-percent,.life-progress-stat strong { font-family:var(--ebook-mono)!important; }
   `;
 
   let disposed = false;
@@ -172,6 +174,26 @@
     // Aggregate DOM text remains identical; React source data and attributes are untouched.
   }
 
+
+  /* Dot unread counter: visual marker only, leaves native content intact.
+     Mark the numeric leaf under the exact sidebar 'Dot' link/button. */
+  function markDotCounter() {
+    for (const root of observedRoots) {
+      if (!root.isConnected) continue;
+      for (const item of root.querySelectorAll('a,button,[role="button"]')) {
+        const label=(item.textContent||'').replace(/\s+/g,' ').trim();
+        if (!/^Dot(?:\s*\d{1,3})?$/iu.test(label)) continue;
+        const nearby=item.parentElement?.textContent?.replace(/\s+/g,' ').trim()||'';
+        const scope=/^Dot\s*\d{1,3}$/iu.test(nearby)?item.parentElement:item;
+        const candidates=[...scope.querySelectorAll('span,div')].filter(el =>
+          el.children.length===0 && /^\d{1,3}$/u.test((el.textContent||'').trim()));
+        const badge=candidates.at(-1);
+        if (badge && !badge.hasAttribute('data-ebook-dot-counter'))
+          badge.setAttribute('data-ebook-dot-counter','true');
+      }
+    }
+  }
+
   function synchronizeSidebar() {
     if (disposed) return;
     for (const root of observedRoots) {
@@ -211,6 +233,7 @@
     if (disposed) return;
     attachObservers();
     synchronizeSidebar();
+    markDotCounter();
     syncClock();
   }
 
@@ -228,6 +251,8 @@
       el.removeAttribute('data-ebook-life-cycle');
     }
     touched.clear();
+    for (const badge of document.querySelectorAll('[data-ebook-dot-counter="true"]'))
+      badge.removeAttribute('data-ebook-dot-counter');
   }
 
   function dispose() {
@@ -255,7 +280,7 @@
   recoverTimer = setInterval(() => { if (!document.hidden) schedule(); }, 4000);
   schedule();
   window[RUNTIME] = {
-    version:'0.1.1',dispose,refresh:schedule,
+    version:'0.2.0',dispose,refresh:schedule,
     diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`)})
   };
 })();
