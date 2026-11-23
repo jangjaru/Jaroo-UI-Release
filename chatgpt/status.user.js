@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo · Status & Command Center
 // @namespace    jaroo-company.local
-// @version      6.7.0
+// @version      6.7.1
 // @description  Neo-Brutalist chat title status, RUN/DONE counters, and ALL/ONLY sidebar view.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -15,7 +15,7 @@
   const RUNTIME = '__jarooCommandCenterRuntimeV4';
   window[RUNTIME]?.dispose?.();
   window.__jarooNativeCapture?.stop?.();
-  const VERSION = '6.7.0';
+  const VERSION = '6.7.1';
   const HOVER_MS = 400;
   const ROOTS = '#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]';
   const ARCHIVE = '[data-sidebar-archive-chatgpt-id]';
@@ -23,6 +23,10 @@
   const TITLE_STATUS = 'data-jaroo-title-status';
   const CHAT_ROLE = 'data-jaroo-chat-role';
   const TITLE_PREFIX = 'data-jaroo-title-prefix';
+  const TITLE_TEXT = 'data-jaroo-title-text';
+  const TITLE_OMIT = 'svg,img,button,script,style,[role="button"],[role="menu"],[role="menuitem"],[popover],[data-native-menu-root],[data-loading-indicator],[hidden],[aria-hidden="true"],.sr-only,.visually-hidden';
+  const NATIVE_TITLE = '[data-thread-title]';
+  const TITLE_SELECTORS = [NATIVE_TITLE, '[data-marquee-content="true"],[data-marquee-text]', '.truncate,[dir="auto"]'];
   const CHAT_ROLES = new Map([
     ['☆', 'lead'], ['★', 'lead'], ['▷', 'plan'], ['▶', 'plan'],
     ['○', 'manage'], ['●', 'produce'], ['>', 'action'], ['›', 'action']
@@ -74,7 +78,7 @@
     html body :is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"] {
       color:var(--jb-ink,#000) !important;
       border-radius:var(--jb-radius,3px) !important;
-      box-shadow:inset 0 0 0 3px var(--jb-ink,#000),var(--jb-shadow-small,2px 2px 0 #000) !important;
+      box-shadow:inset 0 0 0 2px var(--jb-ink,#000) !important;
       --jaroo-selected-title-glow:none;
     }
     html body :is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"]:not(
@@ -84,12 +88,10 @@
     html body :is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"]:focus-visible {
       outline:var(--jb-focus,3px solid #f0f) !important;
       outline-offset:-3px !important;
-      box-shadow:inset 0 0 0 4px var(--jb-ink,#000),var(--jb-shadow-small,2px 2px 0 #000) !important;
+      box-shadow:inset 0 0 0 2px var(--jb-ink,#000) !important;
     }
     html body :is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"]:not([data-jaroo-title-prefix])::before,
-    html body :is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"]:not(
-      a[href*="/c/"]:is([aria-label*="[핵심]"],[aria-label*="[중요]"],[aria-label*="[긴급]"]):not(
-        [aria-label^="[완료]"],[aria-label^="[중단]"]))::after {
+    html body :is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"]::after {
       content:none !important;
     }
   `;
@@ -112,32 +114,46 @@
     return CHAT_ROLES.has(glyph) ? glyph : '';
   };
 
-  function titleDetails(row, link = chatLink(row)) {
-    const title = (link || row)?.querySelector('[data-thread-title="true"]') ||
-      link?.querySelector('[data-marquee-content="true"],[data-marquee-text],span.truncate,div.truncate,span[dir="auto"]');
-    let visible = title?.textContent.trim() || '';
-    if (!visible && link) {
-      visible = [...link.childNodes].filter(node => node.nodeType === Node.TEXT_NODE)
-        .map(node => node.textContent).join('').trim();
-      if (!visible) {
-        const spans = [...link.children].filter(el =>
-          el.matches('span:not([hidden],[aria-hidden="true"])') && !el.childElementCount && el.textContent.trim());
-        if (spans.length === 1) visible = spans[0].textContent.trim();
-      }
+  function readTitleText(container, scope) {
+    const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+    let first = null, last = null, text = '';
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      const blocked = node.parentElement?.closest(TITLE_OMIT);
+      if (blocked && blocked !== scope && scope.contains(blocked)) continue;
+      text += node.data;
+      if (!node.data.trim()) continue;
+      first ||= node;
+      last = node;
     }
+    if (!first) return null;
+    let area = first.parentElement;
+    while (!area.contains(last)) area = area.parentElement;
+    return { area, text: text.trim() };
+  }
+
+  function titleDetails(row, link = chatLink(row)) {
+    let label;
+    const scope = link || row;
+    if (scope) {
+      for (const selector of link ? TITLE_SELECTORS : [NATIVE_TITLE]) {
+        for (const candidate of scope.querySelectorAll(selector)) {
+          if (!link && !ownElement(candidate, row)) continue;
+          label = readTitleText(candidate, scope);
+          if (label) break;
+        }
+        if (label) break;
+      }
+      if (!label && link) label = readTitleText(link, scope);
+    }
+    const visible = label?.text || '';
     const visiblePrefix = chatPrefix(visible);
     const prefix = visiblePrefix || chatPrefix(link?.getAttribute('aria-label')) ||
       chatPrefix(row?.getAttribute('aria-label'));
-    return { target: link || title, visible, visiblePrefix, prefix };
+    return { target: link || label?.area, area: label?.area, visible, visiblePrefix, prefix };
   }
 
-  function labelFor(row) {
-    const link = chatLink(row);
-    const { visible, prefix } = titleDetails(row, link);
-    const label = (visible || row?.getAttribute('aria-label') ||
-      row?.querySelector('[data-thread-title="true"]')?.textContent ||
-      link?.getAttribute('aria-label') ||
-      (link === row ? row?.textContent : '') || '')
+  function labelFor(row, link = chatLink(row), { visible, prefix } = titleDetails(row, link)) {
+    const label = (visible || link?.getAttribute('aria-label') || row?.getAttribute('aria-label') || '')
       .replace(/\s+/g, ' ').trim();
     return (prefix && label && !chatPrefix(label) ? `${prefix} ${label}` : label).slice(0, 180);
   }
@@ -189,21 +205,27 @@
       .sort((a, b) => a.status === b.status ? b.run.clock - a.run.clock : a.status === 'working' ? -1 : 1);
   }
 
-  function releaseTitle(row) {
-    const target = titleTargets.get(row);
-    if (!target) return;
-    const owner = target.closest(OWN_ROW);
-    if (!owner || owner === row) {
-      for (const attr of [TITLE_STATUS, CHAT_ROLE, TITLE_PREFIX]) target.removeAttribute(attr);
+  function setTitleTargets(row, target, area) {
+    const previous = titleTargets.get(row);
+    if (previous?.target && previous.target !== target) {
+      const owner = previous.target.closest(OWN_ROW);
+      if (!owner || owner === row) {
+        for (const attr of [TITLE_STATUS, CHAT_ROLE, TITLE_PREFIX]) previous.target.removeAttribute(attr);
+      }
     }
-    titleTargets.delete(row);
+    if (previous?.area && previous.area !== area) {
+      const owner = previous.area.closest(OWN_ROW);
+      if (!owner || owner === row) previous.area.removeAttribute(TITLE_TEXT);
+    }
+    if (target) titleTargets.set(row, { target, area });
+    else titleTargets.delete(row);
   }
 
   function updateTitle(row, link, status) {
-    const { target, visible, visiblePrefix, prefix } = titleDetails(row, link);
-    if (titleTargets.get(row) !== target) releaseTitle(row);
+    const { target, area, visible, visiblePrefix, prefix } = titleDetails(row, link);
+    setTitleTargets(row, target, area);
     if (!target) return;
-    titleTargets.set(row, target);
+    if (area) setAttr(area, TITLE_TEXT, 'true');
     const role = CHAT_ROLES.get(prefix);
     const missingPrefix = prefix && !visiblePrefix && visible.trim();
     for (const [attr, value] of [[TITLE_STATUS, status], [CHAT_ROLE, role], [TITLE_PREFIX, missingPrefix && prefix]]) {
@@ -214,7 +236,7 @@
 
   function cleanRow(row) {
     if (!row?.querySelectorAll) return;
-    releaseTitle(row);
+    setTitleTargets(row);
     // Clear decorations left by a previous installed version.
     row.querySelectorAll('.jaroo-native-badge,.jaroo-recent-status-badge').forEach(el => {
       if (el.closest('[data-jaroo-native-row="true"]') === row) el.remove();
@@ -310,8 +332,16 @@
   function showTip(anchor) {
     if (!anchor?.isConnected || hoveredAnchor !== anchor) return;
     const row = anchor.closest(OWN_ROW) || anchor;
-    const title = labelFor(row), area = anchor.querySelector('[data-thread-title="true"]');
-    const truncated = area?.getAttribute('data-marquee-overflowing') === 'true' || (area && area.scrollWidth > area.clientWidth + 5);
+    const details = titleDetails(row, anchor);
+    const title = labelFor(row, anchor, details);
+    let truncated = false;
+    for (let area = details.area || anchor; area && anchor.contains(area); area = area.parentElement) {
+      if (area.getAttribute('data-marquee-overflowing') === 'true' ||
+          area.scrollWidth > area.clientWidth + 5 || area.scrollHeight > area.clientHeight + 2) {
+        truncated = true;
+        break;
+      }
+    }
     if (!title || !truncated) return;
     setupPanel(); tooltip.textContent = title; tooltip.style.display = 'block';
     const r = anchor.getBoundingClientRect(), w = tooltip.getBoundingClientRect().width, h = tooltip.getBoundingClientRect().height;
@@ -1084,13 +1114,36 @@
       50%{background-color:color-mix(in srgb,var(--jb-status-fill) 65%,var(--jb-white,#fff))}
     }
   `;
+  const statusTitleCSS = `
+    .jaroo-status-link[data-jaroo-chat-role="lead"]{--jb-role-color:var(--jb-role-lead,#215323)}
+    .jaroo-status-link[data-jaroo-chat-role="plan"]{--jb-role-color:var(--jb-role-plan,#563888)}
+    .jaroo-status-link[data-jaroo-chat-role="manage"]{--jb-role-color:var(--jb-role-manage,#075463)}
+    .jaroo-status-link[data-jaroo-chat-role="produce"]{--jb-role-color:var(--jb-role-produce,#17468a)}
+    .jaroo-status-link[data-jaroo-chat-role="action"]{--jb-role-color:var(--jb-role-action,#8a2958)}
+    .jaroo-status-link[data-jstatus="working"]{
+      --jb-status-fill:var(--jb-title-run-bg,#e9f8f7);
+      --jb-status-line:var(--jb-title-run-line,#168a88);
+      --jb-status-cycles:infinite;
+    }
+    .jaroo-status-link[data-jstatus="done"]{
+      --jb-status-fill:var(--jb-title-done-bg,#fff5ce);
+      --jb-status-line:var(--jb-title-done-line,#967200);
+      --jb-status-cycles:3;
+    }
+    .jaroo-status-link .jaroo-list-title{
+      display:block;min-width:0;flex:1;white-space:normal;overflow-wrap:anywhere;
+      color:var(--jb-role-color,var(--jb-ink,#000));
+      font:var(--jb-weight-regular,400) .875rem/1.4 var(--jb-font,"Pretendard Variable","Pretendard",system-ui,sans-serif);
+    }
+  `;
   // The dock and filtered list live inside Clock's shadow tree.
   const dockCSS = `
   ${titlePulseCSS}
+  ${statusTitleCSS}
   .jaroo-center{
     display:grid;grid-template-columns:repeat(2,minmax(0,1fr)) 52px;gap:6px;
     box-sizing:border-box;min-width:0;max-width:100%;margin:8px 0;
-    color:var(--jb-ink,#000);font-family:"Pretendard Variable","Pretendard",system-ui,sans-serif;
+    color:var(--jb-ink,#000);font-family:var(--jb-font,"Pretendard Variable","Pretendard",system-ui,sans-serif);
     pointer-events:auto;
   }
   .jaroo-center button{
@@ -1099,7 +1152,8 @@
     border:var(--jb-border-light,2px solid #000);border-radius:var(--jb-radius,3px);
     background:var(--jb-white,#fff);color:inherit;
     box-shadow:var(--jb-shadow-small,2px 2px 0 #000);
-    font:800 12px/1.1 "Pretendard Variable","Pretendard",system-ui,sans-serif;cursor:pointer;
+    font:var(--jb-weight-regular,400) 12px/1.1 var(--jb-font,"Pretendard Variable","Pretendard",system-ui,sans-serif);
+    cursor:pointer;
   }
   .jaroo-center .run[data-active="true"]{background:var(--jb-teal,#00c2c8)}
   .jaroo-center .done[data-active="true"]{background:var(--jb-yellow,#ffdd00)}
@@ -1115,9 +1169,9 @@
     gap:4px;min-width:0;white-space:nowrap;
   }
   .jaroo-top-line{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:center;max-width:100%;gap:2px 4px}
-  .jaroo-mini-label{font-size:11px;font-weight:650}
+  .jaroo-mini-label{font-size:11px}
   .jaroo-top-mark,.jaroo-center .count{font-size:13px}
-  .jaroo-center .count{font-weight:900;font-variant-numeric:tabular-nums}
+  .jaroo-center .count{font-variant-numeric:tabular-nums}
   .jaroo-center button:not([data-digits="1"]):not([data-digits="2"]) .jaroo-top-mark{display:none}
   .jaroo-center .jaroo-mode-switch{padding-inline:2px}
   .jaroo-center .jaroo-mode-switch[aria-pressed="true"]{background:var(--jb-teal,#00c2c8)}
@@ -1128,20 +1182,20 @@
   }
   .jaroo-mode-thumb{width:8px;height:7px;background:var(--jb-ink,#000)}
   .jaroo-mode-switch[aria-pressed="true"] .jaroo-mode-track{justify-content:flex-end}
-  .jaroo-mode-caption{font-size:11px;font-weight:900}
+  .jaroo-mode-caption{font-size:11px}
   .jaroo-focus-list{
     display:flex;flex-direction:column;gap:8px;box-sizing:border-box;min-width:0;
     margin:8px 0;padding:8px;border:var(--jb-border,3px solid #000);
     border-radius:var(--jb-radius,3px);box-shadow:var(--jb-shadow-small,2px 2px 0 #000);
     background:var(--jb-paper,#f5f0dc);color:var(--jb-ink,#000);
-    font:600 13px/1.4 "Pretendard Variable","Pretendard",system-ui,sans-serif;
+    font:var(--jb-weight-regular,400) 13px/1.4 var(--jb-font,"Pretendard Variable","Pretendard",system-ui,sans-serif);
   }
   .jaroo-focus-list[hidden]{display:none}
   .jaroo-focus-header{
     display:flex;align-items:center;justify-content:space-between;gap:6px;
     min-width:0;padding-bottom:6px;border-bottom:var(--jb-border-light,2px solid #000);
   }
-  .jaroo-focus-header strong{font-weight:900}
+  .jaroo-focus-header strong{font-weight:var(--jb-weight-emphasis,600)}
   .jaroo-focus-header em{font-style:normal;white-space:nowrap}
   .jaroo-focus-entries{
     display:flex;flex-direction:column;gap:4px;min-height:0;
@@ -1150,19 +1204,17 @@
   }
   .jaroo-focus-row{
     display:flex;align-items:center;gap:6px;box-sizing:border-box;
-    min-width:0;min-height:44px;padding:4px;
+    min-width:0;min-height:44px;padding:6px 8px;
     border:var(--jb-border-light,2px solid #000);border-radius:var(--jb-radius,3px);
+    border-color:var(--jb-status-line,var(--jb-ink,#000));
     background:var(--jb-status-fill,var(--jb-white,#fff));color:inherit;text-decoration:none;cursor:pointer;
   }
   .jaroo-focus-row:hover{text-decoration:underline}
-  .jaroo-focus-row[data-jstatus="working"]{--jb-status-fill:var(--jb-teal,#00c2c8);--jb-status-cycles:infinite}
-  .jaroo-focus-row[data-jstatus="done"]{--jb-status-fill:var(--jb-yellow,#ffdd00);--jb-status-cycles:3}
   @media(prefers-reduced-motion:no-preference){
     .jaroo-focus-row[data-jstatus]:not([aria-disabled="true"]){animation:jaroo-list-title-pulse 1.8s ease-in-out var(--jb-status-cycles)}
     .jaroo-center[data-paused="true"] + .jaroo-focus-list .jaroo-focus-row{animation-play-state:paused}
   }
   .jaroo-focus-row[aria-disabled="true"]{background:var(--jb-muted,#eae5d5);cursor:default;text-decoration:none}
-  .jaroo-focus-name{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .jaroo-focus-empty{padding:8px 0;text-align:center}
   .jaroo-focus-help{font-size:12px}
   :host(:is([data-jaroo-width="compact"],[data-jaroo-width="narrow"])) .jaroo-mini-label,
@@ -1242,11 +1294,13 @@
     const css=document.createElement('style');css.id='jaroo-v4-panel-style';
     css.textContent=`
       ${titlePulseCSS}
+      ${statusTitleCSS}
       #jaroo-v4-quick-panel,#jaroo-v4-title-tip{
         position:fixed;box-sizing:border-box;display:none;overflow-wrap:anywhere;
         border:var(--jb-border,3px solid #000);border-radius:var(--jb-radius,3px);
         box-shadow:var(--jb-shadow,4px 4px 0 #000);
-        color:var(--jb-ink,#000);font:600 14px/1.45 "Pretendard Variable","Pretendard",system-ui,sans-serif;
+        color:var(--jb-ink,#000);
+        font:var(--jb-weight-regular,400) 14px/1.45 var(--jb-font,"Pretendard Variable","Pretendard",system-ui,sans-serif);
       }
       #jaroo-v4-quick-panel{
         z-index:2147483400;width:min(350px,calc(100vw - 20px));max-height:min(360px,65vh);
@@ -1255,8 +1309,8 @@
       #jaroo-v4-quick-panel .head{
         display:flex;align-items:center;justify-content:space-between;gap:8px;
         padding-bottom:8px;margin-bottom:8px;border-bottom:var(--jb-border-light,2px solid #000);
-        font-weight:900;
       }
+      #jaroo-v4-quick-panel .head > [role="heading"]{font-weight:var(--jb-weight-emphasis,600)}
       #jaroo-v4-quick-panel .dismiss,#jaroo-v4-quick-panel a{
         min-height:44px;box-sizing:border-box;color:inherit;background:var(--jb-white,#fff);
         border:var(--jb-border-light,2px solid #000);border-radius:var(--jb-radius,3px);
@@ -1266,7 +1320,8 @@
         padding:4px 8px;font:inherit;box-shadow:var(--jb-shadow-small,2px 2px 0 #000);
       }
       #jaroo-v4-quick-panel a{
-        display:flex;align-items:center;gap:8px;padding:4px;margin-block:4px;text-decoration:none;
+        display:flex;align-items:center;gap:8px;padding:6px 8px;margin-block:4px;text-decoration:none;
+        border-color:var(--jb-status-line,var(--jb-ink,#000));
         background:var(--jb-status-fill,var(--jb-white,#fff));
       }
       #jaroo-v4-quick-panel .dismiss:hover{background:var(--jb-muted,#eae5d5)}
@@ -1275,13 +1330,10 @@
       #jaroo-v4-quick-panel a[aria-disabled="true"] .name{text-decoration:none}
       #jaroo-v4-quick-panel :is(a,.dismiss):focus-visible,
       #jaroo-v4-quick-panel:focus-visible{outline:var(--jb-focus,3px solid #f0f);outline-offset:-5px}
-      #jaroo-v4-quick-panel a[data-jstatus="working"]{--jb-status-fill:var(--jb-teal,#00c2c8);--jb-status-cycles:infinite}
-      #jaroo-v4-quick-panel a[data-jstatus="done"]{--jb-status-fill:var(--jb-yellow,#ffdd00);--jb-status-cycles:3}
       @media(prefers-reduced-motion:no-preference){
         #jaroo-v4-quick-panel a[data-jstatus]:not([aria-disabled="true"]){animation:jaroo-list-title-pulse 1.8s ease-in-out var(--jb-status-cycles)}
         html[data-jaroo-status-hidden="true"] #jaroo-v4-quick-panel a[data-jstatus]{animation-play-state:paused}
       }
-      #jaroo-v4-quick-panel .name{min-width:0}
       #jaroo-v4-quick-panel .empty{padding:8px 4px;font-size:13px}
       #jaroo-v4-title-tip{
         z-index:2147483401;max-width:min(380px,calc(100vw - 22px));padding:8px;
@@ -1297,11 +1349,12 @@
   function closePanel() {panelOpen=false;panelSignature='';if(panel)panel.style.display='none';}
   function createStatusLink(record, href, titleClass) {
     const link = document.createElement('a');
+    link.className = 'jaroo-status-link';
     link.href = href || '#';
     link.dataset.jstatus = record.status;
     link.setAttribute('aria-description', record.status === 'working' ? '진행 중' : '미확인 완료');
     const title = document.createElement('span');
-    title.className = titleClass;
+    title.className = `jaroo-list-title ${titleClass}`;
     title.textContent = record.title || `채팅 ${record.id.slice(0,8)}`;
     const role = CHAT_ROLES.get(chatPrefix(title.textContent));
     if (role) setAttr(link, CHAT_ROLE, role);
@@ -1320,6 +1373,7 @@
     panel.replaceChildren();
     const head=document.createElement('div');head.className='head';
     const title=document.createElement('span');title.textContent=(filter==='working'?'진행 중':'미확인 완료')+` · ${records.length}건`;
+    title.setAttribute('role','heading');title.setAttribute('aria-level','2');
     const close=document.createElement('button');close.className='dismiss';close.type='button';close.textContent='닫기';close.onclick=closePanel;
     head.append(title,close);panel.append(head);
     if (!records.length) {const empty=document.createElement('div');empty.className='empty';empty.textContent='표시할 상태가 없어.';panel.append(empty);}
@@ -1390,7 +1444,7 @@
     for (const record of records) {
       const href=safePath(record.href || `/c/${record.id}`,record.id);
       const row=createStatusLink(record, href, 'jaroo-focus-name');
-      row.className='jaroo-focus-row';
+      row.classList.add('jaroo-focus-row');
       row.setAttribute('role','listitem');
       row.title=row.textContent;
       if (!href) {
@@ -1636,7 +1690,7 @@
       if (event.type === 'characterData') {
         if (event.target.parentElement?.closest('[data-jaroo-native-hidden]')) {
           changed = true; hideLayoutDirty = true;
-        } else if (event.target.parentElement?.closest('a[href*="/c/"],[data-thread-title="true"]')) {
+        } else if (event.target.parentElement?.closest('a[href*="/c/"],' + NATIVE_TITLE)) {
           changed = true;
         }
         continue;
