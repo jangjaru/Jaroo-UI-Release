@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.2.11
+// @version      0.2.12
 // @description  E-book visual dot indicators for role prefixes plus a light Clock skin; keeps original chat titles, React data and RUN/DONE logic intact.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -641,12 +641,12 @@
   }
 
 
-  /* v0.2.11 — user prompt typography on the exact text-bearing elements.
+  /* v0.2.12 — user prompt typography on the exact text-bearing elements.
      Earlier CSS reached the user bubble/editor shell but not its nested DIL
      leaves; this is why font-size looked unchanged. Original inline values
      are restored on disable or script update. */
   const promptTypeOriginal=new Map();
-  const promptTypeProps=['font-size','font-weight','color','-webkit-text-fill-color','line-height'];
+  const promptTypeProps=['font-size','font-weight','font-synthesis-weight','color','-webkit-text-fill-color','line-height'];
   function markPromptTypography() {
     const chosen=new Map();
     const reading=getComputedStyle(document.documentElement)
@@ -654,7 +654,9 @@
     const sentReading=getComputedStyle(document.documentElement)
       .getPropertyValue('--eb-user-sent-optical-size').trim() || '21.3333px';
     const ink=getComputedStyle(document.documentElement)
-      .getPropertyValue('--eb-prompt-accent').trim() || '#1F1E1A';
+      .getPropertyValue('--eb-prompt-sent-ink').trim() || '#000000';
+    const sentWeight=getComputedStyle(document.documentElement)
+      .getPropertyValue('--eb-prompt-sent-weight').trim() || '900';
     const hasDirectText=el=>[...el.childNodes].some(node=>
       node.nodeType===Node.TEXT_NODE && (node.nodeValue||'').trim().length>0);
     const add=(el,kind)=>{
@@ -669,11 +671,16 @@
         if(hasDirectText(el))add(el,'editor');
       }
     }
-    for(const message of document.querySelectorAll('[data-message-author-role="user"]')){
-      const bubble=message.querySelector('[data-user-message-bubble="true"],.bg-user-message');
+    for(const message of document.querySelectorAll(
+      '[data-message-author-role="user"],[data-user-message],[data-user-message-bubble="true"],.bg-user-message'
+    )){
+      const bubble=message.matches('[data-user-message],[data-user-message-bubble="true"],.bg-user-message')
+        ? message
+        : message.querySelector('[data-user-message],[data-user-message-bubble="true"],.bg-user-message');
       const target=bubble||message;
       if(bubble)add(bubble,'sent');
-      const nodes=target.querySelectorAll('p,li,span,div,[data-d-component="text"],[data-d-text-flow]');
+      else if(hasDirectText(message))add(message,'sent');
+      const nodes=target.querySelectorAll('p,li,span,div,[data-d-component="text"],[data-d-text-flow],.whitespace-pre-wrap');
       for(const el of nodes){
         if(hasDirectText(el))add(el,'sent');
       }
@@ -705,7 +712,8 @@
         'line-height':kind==='sent'?'1.55':'1.56'
       };
       if(kind==='sent'){
-        required['font-weight']='800';
+        required['font-weight']=sentWeight;
+        required['font-synthesis-weight']='auto';
         required.color=ink;
         required['-webkit-text-fill-color']=ink;
       }
@@ -830,7 +838,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.2.11',dispose,refresh:schedule,
+    version:'0.2.12',dispose,refresh:schedule,
     diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),fontAudit:fontAudit()})
   };
 })();
