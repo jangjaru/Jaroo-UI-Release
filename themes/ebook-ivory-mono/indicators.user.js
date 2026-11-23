@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.2.17
+// @version      0.2.18
 // @description  E-book visual dot indicators for role prefixes plus a light Clock skin; keeps original chat titles, React data and RUN/DONE logic intact.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -213,33 +213,39 @@
   }
 
 
-  /* Quick-action navigation labels are text only. Do not mutate native links,
-     icons, unread Dot counters, project rows, or React-managed handlers. */
+  /* Identify native quick actions by exact visible label and left-rail position.
+     Unlike the previous version, discovery does NOT rely on observedRoots:
+     ChatGPT now puts '새 채팅' in a button > div > span.text-fade-truncate,
+     and the outer shell may not have any of the legacy sidebar IDs.
+     Only marker attributes on text leaves; no button/React behavior changes. */
   function markQuickActionLabels() {
-    const marked=new Map();
-    for(const root of observedRoots) {
-      if(!root.isConnected)continue;
-      const top=root.getBoundingClientRect().top;
-      for(const el of root.querySelectorAll('span,div,label,a,button,[data-d-component="text"]')) {
-        if(el.closest('a[href*="/c/"],[data-sidebar-cycle-item],[data-sidebar-project-kind="local"],[role="toolbar"],[aria-hidden="true"],.sr-only'))
-          continue;
-        // Exact leaf text avoids styling the entire sidebar or the Dot count.
-        const raw=[...el.childNodes]
-          .filter(node=>node.nodeType===Node.TEXT_NODE)
-          .map(node=>node.nodeValue||'').join('')
-          .replace(/\s+/gu,' ').trim();
-        const kind=/^(?:새 채팅|New chat)$/iu.test(raw)?'new-chat':
-                   raw==='Dot'?'dot':null;
-        if(!kind)continue;
-        const rect=el.getBoundingClientRect();
-        if(!rect.width||!rect.height||rect.top<top-8||rect.top>top+320)continue;
-        marked.set(el,kind);
-      }
+    const found=new Map();
+    const navLeaves=document.querySelectorAll(
+      'button span,a span,[role="button"] span,[role="link"] span,'+
+      'button [data-d-component="text"],a [data-d-component="text"]'
+    );
+    for(const el of navLeaves) {
+      if(el.closest('main,[role="main"],[role="dialog"],[role="menu"],'+
+                    '[data-sidebar-cycle-item],[data-sidebar-project-kind="local"],'+
+                    '[data-thread-title="true"],[aria-hidden="true"],.sr-only'))continue;
+      const raw=(el.textContent||'').replace(/\s+/gu,' ').trim();
+      if(el.children.length>0 || raw.length>16)continue;
+      const kind=(raw==='새 채팅'||raw==='New chat')?'new-chat':
+                 raw==='Dot'?'dot':null;
+      if(!kind)continue;
+      const nav=el.closest('button,a,[role="button"],[role="link"]');
+      if(!nav)continue;
+      const rect=el.getBoundingClientRect();
+      const nrect=nav.getBoundingClientRect();
+      // Native quick actions live near the top of the expanded sidebar.
+      if(rect.width<=0||rect.height<=0||rect.left<0||rect.left>410||
+         rect.top<32||rect.top>360||nrect.left>400)continue;
+      found.set(el,kind);
     }
     for(const el of document.querySelectorAll('[data-ebook-quick-label]')) {
-      if(!marked.has(el))el.removeAttribute('data-ebook-quick-label');
+      if(!found.has(el))el.removeAttribute('data-ebook-quick-label');
     }
-    for(const [el,kind] of marked) {
+    for(const [el,kind] of found) {
       if(el.getAttribute('data-ebook-quick-label')!==kind)
         el.setAttribute('data-ebook-quick-label',kind);
     }
@@ -874,7 +880,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.2.17',dispose,refresh:schedule,
-    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),fontAudit:fontAudit()})
+    version:'0.2.18',dispose,refresh:schedule,
+    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),fontAudit:fontAudit()})
   };
 })();
