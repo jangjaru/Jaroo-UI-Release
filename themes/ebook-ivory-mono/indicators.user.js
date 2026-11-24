@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.3.0-beta.1
+// @version      0.3.0-beta.2
 // @description  E-book standalone beta: native labels, project counts, dynamic geometry; CSS owns static presentation.
 // @match        https://chatgpt.com/*
 // @run-at       document-start
@@ -940,7 +940,7 @@
     }
   }
   const composerResizeObserver=typeof ResizeObserver==='function'?
-    new ResizeObserver(()=>schedule(PASS.DIVIDER)):null;
+    new ResizeObserver(()=>schedule(PASS.DIVIDER|(!composerFrameOriginal.size?PASS.COMPOSER:0))):null;
   const composerObserver=new MutationObserver(records=>{
     let mask=0;
     for(const m of records) {
@@ -1445,35 +1445,54 @@
     if(!muted)for(const corner of ['top-left','top-right','bottom-right','bottom-left'])out['border-'+corner+'-radius']=radius;
     return out;
   }
+  function selectComposerFrame(context) {
+    const {editor,form}=context;
+    const eb=editor.getBoundingClientRect();
+    if(eb.width<40||eb.height<=0)return null;
+    const previous=[...composerFrameOriginal.keys()].find(el=>el.isConnected&&el.contains(editor));
+    function measure(el) {
+      const r=el.getBoundingClientRect();
+      if(r.width<Math.max(165,eb.width*.87)||r.height<eb.height+6||r.height>650||
+         r.top>eb.top+8||r.bottom<eb.bottom-5||r.left>eb.left+8||r.right<eb.right-5)return null;
+      const s=getComputedStyle(el);
+      if(s.display==='contents'||s.visibility!=='visible')return null;
+      const radius=parseFloat(s.borderTopLeftRadius)||0;
+      const edge=(parseFloat(s.borderTopWidth)>=.5&&s.borderTopStyle!=='none')||s.boxShadow!=='none';
+      const paper=s.backgroundColor!=='transparent'&&s.backgroundColor!=='rgba(0, 0, 0, 0)';
+      const known=el.matches('#composer-background,[data-testid="composer"]');
+      const controls=!!el.querySelector('button,[role="button"]');
+      return {el,radius,edge,paper,known,controls};
+    }
+    // Cache the verified surface while the editor remains in it. Only
+    // inspect the ancestor chain again if the surface disappears or changes.
+    if(previous&&editor===framedEditor){const held=measure(previous);if(held)return held;}
+    const ancestors=[];
+    for(let el=editor.parentElement,depth=0;el&&el!==document.body&&depth<12;el=el.parentElement,depth++){
+      if(el.matches('main,[role="main"],[role="dialog"],#thread'))break;
+      const candidate=measure(el);if(candidate)ancestors.push(candidate);
+      if(el===form)break;
+    }
+    // Reject zero-box wrappers and choose the real rounded control surface.
+    return ancestors.find(x=>x.radius>=8&&x.controls&&(x.edge||x.paper))||
+      ancestors.find(x=>x.known)||ancestors.find(x=>x.radius>=8&&(x.edge||x.paper))||
+      ancestors.find(x=>x.el===form)||null;
+  }
   function syncComposerFrame() {
     const context=activeComposer(),editor=context?.editor;
-    if(!editor?.isConnected){restoreComposerFrames();framedEditor=null;return;}
-    const known=editor.closest('#composer-background')||editor.closest('[data-testid="composer"]');
-    let chosen=known;
-    if(!chosen&&editor===framedEditor)chosen=[...composerFrameOriginal.keys()].find(el=>el.isConnected&&el.contains(editor));
-    if(!chosen){
-      // Only unknown structures need layout measurement. Never search past
-      // the editor's form or the page body.
-      const eb=editor.getBoundingClientRect();
-      if(eb.width<40)return;
-      let fallback=context.form||null;
-      for(let el=editor.parentElement,depth=0;el&&el!==document.body&&depth<12;el=el.parentElement,depth++){
-        const r=el.getBoundingClientRect(),s=getComputedStyle(el);
-        if(r.width>=Math.max(165,eb.width*.87)&&r.height>=eb.height+8&&r.height<=650&&
-           r.top<=eb.top+8&&r.bottom>=eb.bottom-5&&parseFloat(s.borderTopLeftRadius)>=8&&
-           (parseFloat(s.borderTopWidth)>=.5||s.boxShadow!=='none')){
-          fallback=el;break;
-        }
-        if(el===context.form)break;
-      }
-      chosen=fallback;
-    }
-    if(!chosen||!chosen.contains(editor)){restoreComposerFrames();framedEditor=null;return;}
+    if(!editor?.isConnected){restoreComposerFrames();return;}
+    const frame=selectComposerFrame(context),chosen=frame?.el;
+    if(!chosen){restoreComposerFrames();return;}
     const muted=new Set();
-    // A form is the outer boundary, not a reason to climb into the page.
+    // Only ancestor wrappers in the same composer can be muted. Never
+    // touch the editor, attachment controls or the rest of the page.
     if(context.form&&chosen!==context.form&&context.form.contains(chosen)){
       for(let el=chosen.parentElement;el&&el!==document.body;el=el.parentElement){
         muted.add(el);if(el===context.form)break;
+      }
+    } else if(!context.form){
+      for(let el=chosen.parentElement,depth=0;el&&el!==document.body&&depth<8;el=el.parentElement,depth++){
+        if(el.matches('main,[role="main"],[role="dialog"],#thread'))break;
+        if(el.matches('#composer-background,[data-testid="composer"]'))muted.add(el);
       }
     }
     for(const [el,saved] of composerFrameOriginal)if(el!==chosen){
@@ -1493,19 +1512,31 @@
     const stroke=tokens.getPropertyValue('--eb-accent-ink').trim()||'#303438';
     if(!composerFrameOriginal.has(chosen)){
       composerFrameOriginal.set(chosen,{});
-      if(!known&&!chosen.matches('form')){
-        const radius=Math.max(22,Math.min(36,parseFloat(getComputedStyle(chosen).borderTopLeftRadius)||24));
-        makeImportant(chosen,'--eb-composer-native-radius',radius+'px');
-      }
+      const radius=Math.max(22,Math.min(36,frame.radius||24));
+      makeImportant(chosen,'--eb-composer-native-radius',radius+'px');
     }
     framedEditor=editor;
     if(chosen.getAttribute('data-ebook-composer-frame')!=='true')chosen.setAttribute('data-ebook-composer-frame','true');
     const radius=getComputedStyle(chosen).getPropertyValue('--eb-composer-native-radius').trim()||'24px';
-    applyStaticExceptions(chosen,borderRequirements(stroke,false,radius),composerFrameOriginal.get(chosen));
+    const saved=composerFrameOriginal.get(chosen);
+    applyStaticExceptions(chosen,borderRequirements(stroke,false,radius),saved);
     for(const el of muted){
       if(!composerMutedOriginal.has(el))composerMutedOriginal.set(el,{});
       if(el.getAttribute('data-ebook-composer-muted')!=='true')el.setAttribute('data-ebook-composer-muted','true');
       applyStaticExceptions(el,borderRequirements(stroke,true,radius),composerMutedOriginal.get(el));
+    }
+    // CSS owns normal rendering. A one-time computed-style check guards
+    // against a native rule winning even without inline !important.
+    const actual=getComputedStyle(chosen);
+    const rgb=/^#[0-9a-f]{6}$/i.test(stroke)?'rgb('+[1,3,5].map(i=>parseInt(stroke.slice(i,i+2),16)).join(', ')+')':stroke;
+    if(actual.borderTopStyle!=='solid'||parseFloat(actual.borderTopWidth)<1.5||actual.borderTopColor!==rgb){
+      for(const p of ['border-top-width','border-right-width','border-bottom-width','border-left-width','border-top-style','border-right-style','border-bottom-style','border-left-style','border-top-color','border-right-color','border-bottom-color','border-left-color']){
+        if(!Object.prototype.hasOwnProperty.call(saved,p))saved[p]={value:chosen.style.getPropertyValue(p),priority:chosen.style.getPropertyPriority(p)};
+      }
+      for(const [p,v] of Object.entries(borderRequirements(stroke,false,radius)))if(p.startsWith('border-')){
+        if(!Object.prototype.hasOwnProperty.call(saved,p))saved[p]={value:chosen.style.getPropertyValue(p),priority:chosen.style.getPropertyPriority(p)};
+        makeImportant(chosen,p,v);
+      }
     }
   }
   function restoreComposerFrames(){
@@ -1826,7 +1857,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.3.0-beta.1',dispose,refresh:schedule,
+    version:'0.3.0-beta.2',dispose,refresh:schedule,
     diagnostics:() => ({...errors,roots:observedRoots.length,dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),cssOwnerReady,firstPaintNav:getComputedStyle(document.documentElement).getPropertyValue('--eb-first-paint-nav').trim()==='1',opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-project-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,quickInlineExceptions:quickDotOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state'),overflow:n.getAttribute('data-ebook-count-overflow')==='true',confirmed:n.getAttribute('data-ebook-count-confirmed')===''?null:Number(n.getAttribute('data-ebook-count-confirmed'))})),lastPassMs:{...timings},performance:{events:{...perfEvents},passes:Object.fromEntries(Object.entries(perfPasses).map(([k,v])=>[k,{runs:v.runs,averageMs:Math.round(v.totalMs/v.runs*100)/100,peakMs:Math.round(v.peakMs*100)/100}]))},fixedSidebarTop:[...topBands.values()].map(n=>({height:n.height,visible:getComputedStyle(n.strip).visibility==='visible',pattern:getComputedStyle(n.strip).backgroundImage})),projectCountBorders:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({border:getComputedStyle(n).borderTopWidth,style:getComputedStyle(n).borderTopStyle,outline:getComputedStyle(n).outlineStyle})),projectCountLayers:countLayers.size,positionResizeTargets:navResizeTargets.size,visibleProjectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].filter(n=>getComputedStyle(n).visibility!=='hidden').length,projectCountAxis:findDotCountReference()?.circle.getBoundingClientRect().left??null,fontAudit:fontAudit()})
   };
 })();
