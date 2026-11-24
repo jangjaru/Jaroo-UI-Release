@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.55
+@version      0.2.56
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -109,7 +109,7 @@
     --link: var(--eb-ink) !important;
     --link-hover: var(--eb-secondary) !important;
     --jaroo-status-css-version: "6.8.2";
-    --ebook-theme-version: "0.2.55";
+    --ebook-theme-version: "0.2.56";
   }
 
   /* 02. LIGHT-PAPER BASE — do not modify Chrome frame or extension UIs. */
@@ -1521,7 +1521,7 @@
     --eb-composer-single-stroke:2.5px solid #303438!important;
     --eb-quick-nav-size:var(--eb-project-optical-size,16px)!important;
     --eb-marker-yellow:#F2D778!important;
-    --ebook-theme-version:"0.2.55";
+    --ebook-theme-version:"0.2.56";
   }
   /* Preserve the existing procedural paper-grain SVG and only refine grid pitch. */
   html body :is(#thread,[data-testid="conversation-panel"],
@@ -2126,7 +2126,7 @@
      native status indicators or counters. Reserve the same 10px slot for
      every dot, keeping the center and title start aligned. */
   [data-ebook-role="master"]  { --eb-role-dot:#E66B91!important; --eb-role-diameter:9px; }
-  [data-ebook-role="plan"]    { --eb-role-dot:#E3D74F!important; --eb-role-diameter:9px; }
+  [data-ebook-role="plan"]    { --eb-role-dot:#F5B900!important; --eb-role-diameter:9px; }
   [data-ebook-role="manage"]  { --eb-role-dot:#71BE63!important; --eb-role-diameter:9px; }
   [data-ebook-role="produce"] { --eb-role-dot:#55CDB2!important; --eb-role-diameter:9px; }
   [data-ebook-role="action"]  { --eb-role-dot:#A48BD7!important; --eb-role-diameter:9px; }
