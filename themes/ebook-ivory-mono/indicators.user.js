@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.2.34
+// @version      0.2.35
 // @description  E-book visual dot indicators for role prefixes plus a light Clock skin; keeps original chat titles, React data and RUN/DONE logic intact.
 // @match        https://chatgpt.com/*
 // @run-at       document-start
@@ -981,8 +981,15 @@
     }
   }
 
+  const NATIVE_NAV_SECTIONS='[data-app-action-sidebar-section-heading]';
+  function sidebarObserverRoots() {
+    const all=[...new Set([...sidebarRoots(),...document.querySelectorAll(
+      '[data-ebook-count-rail="true"],[data-ebook-sidebar-top="overlay"],'+NATIVE_NAV_SECTIONS
+    )])];
+    return all.filter(node=>node.isConnected&&!all.some(parent=>parent!==node&&parent.contains(node)));
+  }
   function attachObservers() {
-    const roots = sidebarRoots();
+    const roots = sidebarObserverRoots();
     if (roots.length === observedRoots.length && roots.every((x,i) => x === observedRoots[i] && x.isConnected)) return;
     observer.disconnect();
     observedRoots = roots;
@@ -1396,64 +1403,75 @@
      without altering any title content, href, click handler or app data. */
   const opticalFontOriginal=new Map();
   const projectWeightOriginal=new Map();
+  // CSS owns initial nav typography. The helper's reversible inline
+  // override is needed only for a genuine conflicting inline !important,
+  // or for compatibility while an older Stylus version is installed.
+  function needsNavInline(el,prop,target,cssReady,previous) {
+    return !cssReady||previous.has(el)||(el.style.getPropertyPriority(prop)==='important'&&
+      el.style.getPropertyValue(prop)!==target);
+  }
   function enforceOpticalSidebarText() {
-    // The old visual script could hold 16px as an inline !important rule.
-    // Set ONLY chat title text to the user's requested 16px - 1pt.
-    const projectSize=getComputedStyle(document.documentElement)
-      .getPropertyValue('--eb-project-optical-size').trim() || '16px';
-    const chatSize='15.333px';
-    const targets=new Map();
-    const projectLeaves=new Set();
-    // The user-provided Chrome Elements tree confirms [data-thread-title]
-    // with several nested spans, often under .content-marquee.
-    for(const title of document.querySelectorAll('[data-thread-title="true"]')) {
-      if(!title.closest('[data-sidebar-cycle-item],#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]'))
-        continue;
-      targets.set(title,chatSize);
-      for(const el of title.querySelectorAll('span,div,[data-d-component="text"]')) {
-        if(el.closest('[data-ebook-glyph="true"],[aria-hidden="true"],.sr-only'))continue;
-        targets.set(el,chatSize);
+    const tokens=getComputedStyle(document.documentElement);
+    const cssReady=tokens.getPropertyValue('--eb-first-paint-nav').trim()==='1';
+    const projectSize=tokens.getPropertyValue('--eb-project-optical-size').trim()||'16px';
+    const chatSize=tokens.getPropertyValue('--eb-chat-corrected-size').trim()||'15.333px';
+    const targets=new Map(),projectLeaves=new Set();
+    const navScope=SIDE_ROOTS+','+NATIVE_NAV_SECTIONS+', [data-ebook-count-rail="true"],[data-sidebar-cycle-item],[data-sidebar-archive-chatgpt-id],aside,[role="complementary"]';
+    const excluded='[data-ebook-glyph="true"],[data-ebook-project-count],[aria-hidden="true"],.sr-only,svg,.jaroo-native-badge,[data-jaroo-status-slot],[role="toolbar"]';
+    function add(el,project) {
+      if(!el?.isConnected||el.closest(excluded))return;
+      const size=project?projectSize:chatSize;
+      if(needsNavInline(el,'font-size',size,cssReady,opticalFontOriginal))targets.set(el,size);
+      if(project&&needsNavInline(el,'font-weight','650',cssReady,projectWeightOriginal))projectLeaves.add(el);
+    }
+    if(cssReady) {
+      // Only inspect nodes that actually have inline styles, not every
+      // text node in every project on every sidebar mutation.
+      const candidates='[data-thread-title="true"][style],[data-thread-title="true"] [style],'+
+        '[data-app-action-sidebar-project-row] [data-marquee-content="true"][style],'+
+        '[data-app-action-sidebar-project-row] [data-marquee-content="true"] [style],'+
+        '[data-app-action-sidebar-project-row] [data-marquee-text="true"][style],'+
+        '[data-app-action-sidebar-project-row] [data-marquee-text="true"] [style],'+
+        'a[href*="/c/"][style],a[href*="/c/"] [style]';
+      for(const el of document.querySelectorAll(candidates)) {
+        if(!el.matches('a,span,div,p,[data-d-component="text"]'))continue;
+        if(el.style.getPropertyPriority('font-size')!=='important'&&el.style.getPropertyPriority('font-weight')!=='important'&&
+           !opticalFontOriginal.has(el)&&!projectWeightOriginal.has(el))continue;
+        const project=el.closest('[data-marquee-content="true"],[data-marquee-text="true"]')?.closest(PROJECT_ROW);
+        if(project){add(el,true);continue;}
+        if(el.closest(navScope)&&el.closest('a[href*="/c/"],[data-thread-title="true"]')&&!el.closest('button'))add(el,false);
+      }
+    } else {
+      for(const title of document.querySelectorAll('[data-thread-title="true"]')) {
+        if(!title.closest(navScope))continue;
+        add(title,false);
+        for(const el of title.querySelectorAll('span,div,[data-d-component="text"]'))add(el,false);
+      }
+      for(const title of document.querySelectorAll('[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] [data-marquee-content="true"]')) {
+        add(title,true);
+        for(const el of title.querySelectorAll('span,div,[data-d-component="text"]'))add(el,true);
       }
     }
-    // Apply the same optical size to the displayed project name, not the
-    // folder glyph or other unrelated sidebar controls.
-    for(const title of document.querySelectorAll(
-        '[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] [data-marquee-content="true"]')) {
-      targets.set(title,projectSize);
-      projectLeaves.add(title);
-      for(const el of title.querySelectorAll('span,div,[data-d-component="text"]')) {
-        if(el.closest('[aria-hidden="true"],.sr-only'))continue;
-        targets.set(el,projectSize);
-        projectLeaves.add(el);
-      }
+    for(const [el,original] of opticalFontOriginal)if(!el.isConnected||!targets.has(el)){
+      if(el.isConnected){if(original.value)el.style.setProperty('font-size',original.value,original.priority);else el.style.removeProperty('font-size');}
+      opticalFontOriginal.delete(el);
+    }
+    for(const [el,original] of projectWeightOriginal)if(!el.isConnected||!projectLeaves.has(el)){
+      if(el.isConnected){if(original.value)el.style.setProperty('font-weight',original.value,original.priority);else el.style.removeProperty('font-weight');}
+      projectWeightOriginal.delete(el);
     }
     for(const [el,targetSize] of targets) {
-      if(!opticalFontOriginal.has(el))
-        opticalFontOriginal.set(el,{
-          value:el.style.getPropertyValue('font-size'),
-          priority:el.style.getPropertyPriority('font-size')
-        });
-      if(el.style.getPropertyValue('font-size')!==targetSize ||
-         el.style.getPropertyPriority('font-size')!=='important')
-        el.style.setProperty('font-size',targetSize,'important');
+      if(!opticalFontOriginal.has(el))opticalFontOriginal.set(el,{
+        value:el.style.getPropertyValue('font-size'),priority:el.style.getPropertyPriority('font-size')});
+      makeImportant(el,'font-size',targetSize);
     }
-    // On real project text leaves, old child styles may win over parent CSS.
-    // Apply a moderately strong 650 weight without changing any chat row.
     for(const el of projectLeaves) {
-      if(!projectWeightOriginal.has(el))
-        projectWeightOriginal.set(el,{
-          value:el.style.getPropertyValue('font-weight'),
-          priority:el.style.getPropertyPriority('font-weight')
-        });
-      if(el.style.getPropertyValue('font-weight')!=='650' ||
-         el.style.getPropertyPriority('font-weight')!=='important')
-        el.style.setProperty('font-weight','650','important');
+      if(!projectWeightOriginal.has(el))projectWeightOriginal.set(el,{
+        value:el.style.getPropertyValue('font-weight'),priority:el.style.getPropertyPriority('font-weight')});
+      makeImportant(el,'font-weight','650');
     }
-    for(const el of projectWeightOriginal.keys())if(!el.isConnected)
-      projectWeightOriginal.delete(el);
-    for(const el of opticalFontOriginal.keys())if(!el.isConnected)
-      opticalFontOriginal.delete(el);
   }
+
   function restoreOpticalSidebarText() {
     for(const [el,original] of opticalFontOriginal) {
       if(!el.isConnected)continue;
@@ -1746,6 +1764,7 @@
       markFixedSidebarTop();
       markProjectTitles();
       markProjectCounts();
+      attachObservers();
     });
     if(mask&PASS.COMPOSER)timed('composer',()=>{
       watchComposer();
@@ -1783,7 +1802,7 @@
     if(document.hidden){dirty|=ALL;return;}
     if(location.pathname!==lastRoute){lastRoute=location.pathname;schedule(ALL);return;}
     let mask=0;
-    const structure=SIDE_ROOTS+','+PROJECT_ROW+','+EDITOR_NODE+',#composer-background,[data-testid="composer"],'+USER_NODE+','+HEADER_NODE+',#'+CLOCK_HOST;
+    const structure=SIDE_ROOTS+','+NATIVE_NAV_SECTIONS+','+PROJECT_ROW+','+EDITOR_NODE+',#composer-background,[data-testid="composer"],'+USER_NODE+','+HEADER_NODE+',#'+CLOCK_HOST;
     for(const m of records) {
       const target=m.target.nodeType===1?m.target:m.target.parentElement;
       // Streaming assistant output and ordinary editor/sidebar mutations
@@ -1792,11 +1811,12 @@
       if(composerObserved?.contains(target))continue;
       if(observedRoots.some(root=>root.contains(target)))continue;
       if(ownMutation(m))continue;
+      if(target?.closest?.(NATIVE_NAV_SECTIONS)){mask|=PASS.NAV|PASS.HEADER;continue;}
       if(target?.closest?.(USER_NODE)){mask|=PASS.SENT;continue;}
       if(target?.closest?.(HEADER_NODE)){mask|=PASS.HEADER;continue;}
       for(const n of [...m.addedNodes,...m.removedNodes]) {
         if(n.nodeType!==1||isOwnNode(n)||!matchesOrContains(n,structure))continue;
-        if(matchesOrContains(n,SIDE_ROOTS+','+PROJECT_ROW))mask|=PASS.NAV|PASS.HEADER;
+        if(matchesOrContains(n,SIDE_ROOTS+','+NATIVE_NAV_SECTIONS+','+PROJECT_ROW))mask|=PASS.NAV|PASS.HEADER;
         if(matchesOrContains(n,EDITOR_NODE+',#composer-background,[data-testid="composer"]'))
           mask|=PASS.COMPOSER|PASS.EDITOR|PASS.DIVIDER;
         if(matchesOrContains(n,USER_NODE))mask|=PASS.SENT;
@@ -1819,7 +1839,7 @@
     if(document.hidden||disposed||!document.body)return;
     if(location.pathname!==lastRoute){lastRoute=location.pathname;schedule(ALL);return;}
     let mask=0;
-    const roots=sidebarRoots();
+    const roots=sidebarObserverRoots();
     if(roots.length!==observedRoots.length||roots.some((r,i)=>r!==observedRoots[i]))mask|=PASS.NAV|PASS.HEADER;
     const c=activeComposer();
     if((c?.editor||null)!==composerEditor||(c?.form||c?.shell||null)!==composerObserved)
@@ -1937,7 +1957,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.2.34',dispose,refresh:schedule,
-    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state'),overflow:n.getAttribute('data-ebook-count-overflow')==='true',confirmed:n.getAttribute('data-ebook-count-confirmed')===''?null:Number(n.getAttribute('data-ebook-count-confirmed'))})),lastPassMs:{...timings},performance:{events:{...perfEvents},passes:Object.fromEntries(Object.entries(perfPasses).map(([k,v])=>[k,{runs:v.runs,averageMs:Math.round(v.totalMs/v.runs*100)/100,peakMs:Math.round(v.peakMs*100)/100}]))},fixedSidebarTop:[...topBands.values()].map(n=>({height:n.height,visible:getComputedStyle(n.strip).visibility==='visible',pattern:getComputedStyle(n.strip).backgroundImage})),projectCountBorders:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({border:getComputedStyle(n).borderTopWidth,style:getComputedStyle(n).borderTopStyle,outline:getComputedStyle(n).outlineStyle})),projectCountLayers:countLayers.size,positionResizeTargets:navResizeTargets.size,visibleProjectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].filter(n=>getComputedStyle(n).visibility!=='hidden').length,projectCountAxis:findDotCountReference()?.circle.getBoundingClientRect().left??null,fontAudit:fontAudit()})
+    version:'0.2.35',dispose,refresh:schedule,
+    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),firstPaintNav:getComputedStyle(document.documentElement).getPropertyValue('--eb-first-paint-nav').trim()==='1',opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-project-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state'),overflow:n.getAttribute('data-ebook-count-overflow')==='true',confirmed:n.getAttribute('data-ebook-count-confirmed')===''?null:Number(n.getAttribute('data-ebook-count-confirmed'))})),lastPassMs:{...timings},performance:{events:{...perfEvents},passes:Object.fromEntries(Object.entries(perfPasses).map(([k,v])=>[k,{runs:v.runs,averageMs:Math.round(v.totalMs/v.runs*100)/100,peakMs:Math.round(v.peakMs*100)/100}]))},fixedSidebarTop:[...topBands.values()].map(n=>({height:n.height,visible:getComputedStyle(n.strip).visibility==='visible',pattern:getComputedStyle(n.strip).backgroundImage})),projectCountBorders:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({border:getComputedStyle(n).borderTopWidth,style:getComputedStyle(n).borderTopStyle,outline:getComputedStyle(n).outlineStyle})),projectCountLayers:countLayers.size,positionResizeTargets:navResizeTargets.size,visibleProjectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].filter(n=>getComputedStyle(n).visibility!=='hidden').length,projectCountAxis:findDotCountReference()?.circle.getBoundingClientRect().left??null,fontAudit:fontAudit()})
   };
 })();
