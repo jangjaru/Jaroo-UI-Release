@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.31
+@version      0.2.32
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -1521,7 +1521,7 @@
     --eb-composer-single-stroke:2.5px solid #303438!important;
     --eb-quick-nav-size:var(--eb-project-optical-size,16px)!important;
     --eb-marker-yellow:#F2D778!important;
-    --ebook-theme-version:"0.2.31";
+    --ebook-theme-version:"0.2.32";
   }
   /* Preserve the existing procedural paper-grain SVG and only refine grid pitch. */
   html body :is(#thread,[data-testid="conversation-panel"],
@@ -1585,6 +1585,100 @@
     font-weight:var(--eb-prompt-sent-weight)!important;
     color:var(--eb-prompt-sent-ink)!important;
     -webkit-text-fill-color:var(--eb-prompt-sent-ink)!important;
+  }
+
+
+  /* 29. QUIET SIDEBAR PAPER + EDITORIAL WRITING BLOCK · v0.2.32
+     User-selected option 3: no sidebar cards, bands, decorative shadows
+     or structural changes. The existing embedded paper grain is retained
+     behind an 88% rail-color veil, producing a whisper-light e-ink texture.
+     This release is CSS-only; all UI actions and other userscripts remain
+     governed by their original owners. */
+
+  /* Sidebar remains one continuous e-paper sheet, never a card stack. */
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,
+    #slate-sidebar,[data-testid="sidebar"]) {
+    background-color:var(--eb-rail)!important;
+    background-image:
+      linear-gradient(rgba(231,234,235,.88),rgba(231,234,235,.88)),
+      var(--eb-classic-paper-grain)!important;
+    background-size:100% 100%,240px 240px!important;
+    background-repeat:no-repeat,repeat!important;
+    box-shadow:none!important;
+  }
+
+  /* Only dedicated writing/instruction blocks inside assistant messages.
+     Avoid styling generic cards, code blocks, dialogs or editable composer.
+     Known dedicated classes/data markers are kept as narrowly scoped
+     alternatives because the signed-in live DOM is not accessible here. */
+  html body [data-message-author-role="assistant"] :is(
+    .instruction-block,.writing-block,
+    [data-testid="instruction-block"],
+    [data-testid="writing-block"],
+    [data-d-component="instruction-block"],
+    [data-d-component="writing-block"]
+  ) {
+    background:transparent!important;
+    background-color:transparent!important;
+    background-image:none!important;
+    border-top:1px solid rgba(65,75,85,.25)!important;
+    border-bottom:1px solid rgba(65,75,85,.25)!important;
+    border-left:0!important;
+    border-right:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+    -webkit-box-shadow:none!important;
+    backdrop-filter:none!important;
+    padding:14px 10px!important;
+    margin-block:16px!important;
+  }
+
+  /* Clear only the immediate paper-card wrappers inside those blocks.
+     Inner typography and the native copy/edit handlers are unchanged. */
+  html body [data-message-author-role="assistant"] :is(
+    .instruction-block,.writing-block,
+    [data-testid="instruction-block"],
+    [data-testid="writing-block"],
+    [data-d-component="instruction-block"],
+    [data-d-component="writing-block"]
+  ) > :is(div,section,article),
+  html body [data-message-author-role="assistant"] :is(
+    .instruction-block,.writing-block,
+    [data-testid="instruction-block"],
+    [data-testid="writing-block"],
+    [data-d-component="instruction-block"],
+    [data-d-component="writing-block"]
+  ) :is(
+    [data-testid="writing-block-content"],
+    [data-testid="writing-block-body"],
+    [data-testid="instruction-content"],
+    [data-d-component="writing-block-content"],
+    .instruction-content,.instruction-block__content
+  ) {
+    background-color:transparent!important;
+    background-image:none!important;
+    box-shadow:none!important;
+    -webkit-box-shadow:none!important;
+  }
+
+  /* Keep the copy control interactive, without the old pill background. */
+  html body [data-message-author-role="assistant"] :is(
+    .instruction-block,.writing-block,
+    [data-testid="instruction-block"],
+    [data-testid="writing-block"],
+    [data-d-component="instruction-block"],
+    [data-d-component="writing-block"]
+  ) :is(
+    .copy-btn,
+    [data-testid="copy-button"],
+    button[aria-label*="복사"],
+    button[aria-label*="copy" i]
+  ) {
+    background:transparent!important;
+    background-image:none!important;
+    border:0!important;
+    box-shadow:none!important;
+    -webkit-box-shadow:none!important;
   }
 
 }
