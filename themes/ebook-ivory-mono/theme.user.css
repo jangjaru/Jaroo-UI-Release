@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.64
+@version      0.2.65
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -109,7 +109,7 @@
     --link: var(--eb-ink) !important;
     --link-hover: var(--eb-secondary) !important;
     --jaroo-status-css-version: "6.8.2";
-    --ebook-theme-version: "0.2.64";
+    --ebook-theme-version: "0.2.65";
   }
 
   /* 02. LIGHT-PAPER BASE — do not modify Chrome frame or extension UIs. */
@@ -238,9 +238,10 @@
   }
   :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)
     :is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"] {
-    background: var(--eb-panel) !important;
-    border: 1px solid var(--eb-line-strong) !important;
-    border-radius: 10px !important;
+    /* Match the original native selected/hover gray; Status must not introduce a frame. */
+    background: #E4E6E8 !important;
+    border: 0 !important;
+    border-radius: 8px !important;
     box-shadow: none !important;
   }
   :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)
@@ -1542,7 +1543,7 @@
     --eb-composer-single-stroke:2.5px solid #303438!important;
     --eb-quick-nav-size:var(--eb-project-optical-size,16px)!important;
     --eb-marker-yellow:#F2D778!important;
-    --ebook-theme-version:"0.2.64";
+    --ebook-theme-version:"0.2.65";
   }
   /* Preserve the existing procedural paper-grain SVG and only refine grid pitch. */
   html body :is(#thread,[data-testid="conversation-panel"],
