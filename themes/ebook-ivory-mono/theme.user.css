@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.37
+@version      0.2.38
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -1521,7 +1521,7 @@
     --eb-composer-single-stroke:2.5px solid #303438!important;
     --eb-quick-nav-size:var(--eb-project-optical-size,16px)!important;
     --eb-marker-yellow:#F2D778!important;
-    --ebook-theme-version:"0.2.37";
+    --ebook-theme-version:"0.2.38";
   }
   /* Preserve the existing procedural paper-grain SVG and only refine grid pitch. */
   html body :is(#thread,[data-testid="conversation-panel"],
@@ -1691,13 +1691,13 @@
     --eb-project-mark-exec:#F3B9CB;
     --eb-project-mark-strategy:#CFC1EF;
     --eb-project-mark-sales:#FFE08A;
-    --eb-project-mark-bd:#FFEBAD;
-    --eb-project-mark-proposal:#FFD68A;
-    --eb-project-mark-design:#9FE8D3;
-    --eb-project-mark-tech:#B5EFDE;
-    --eb-project-mark-people:#C9F4E7;
-    --eb-project-mark-management:#B8D9FF;
-    --eb-project-mark-assistant:#D0E6FF;
+    --eb-project-mark-bd:#FFD36A;
+    --eb-project-mark-proposal:#FFEDB3;
+    --eb-project-mark-design:#8FE3CD;
+    --eb-project-mark-tech:#AEEBDD;
+    --eb-project-mark-people:#CFF5EA;
+    --eb-project-mark-management:#AFCFF7;
+    --eb-project-mark-assistant:#D7E9FF;
     --eb-project-mark-philosophy:#DDE0E2;
   }
   html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,
