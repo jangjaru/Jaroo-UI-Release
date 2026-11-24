@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.2.22
+// @version      0.2.23
 // @description  E-book visual dot indicators for role prefixes plus a light Clock skin; keeps original chat titles, React data and RUN/DONE logic intact.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -244,6 +244,167 @@
     for(const [el,kind] of found)
       if(el.getAttribute('data-ebook-quick-label')!==kind)
         el.setAttribute('data-ebook-quick-label',kind);
+  }
+
+
+  /* v0.2.23 — presentation only, restricted to known project labels,
+     one visible outer sidebar, and a paired native Chat/Work switch. */
+  const projectMarkerGroups=new Map([
+    ['대표실','exec'],['전략기획본부','strategy'],
+    ['영업팀','sales'],['BD팀','bd'],['제안팀','proposal'],
+    ['디자인팀','design'],['기술운영팀','tech'],['인재개발팀','people'],
+    ['경영관리실','management'],['개인비서실','assistant'],
+    ['CEO 경영철학과 판단','philosophy']
+  ]);
+  const normalizeLabel=s=>(s||'').replace(/\s+/gu,' ').trim();
+  const visibleBox=el=>{
+    if(!el?.isConnected||el.closest('[aria-hidden="true"],.sr-only,[hidden]'))return null;
+    const r=el.getBoundingClientRect();
+    return r.width>0&&r.height>0?r:null;
+  };
+  function syncPresentationMarks(attr,wanted) {
+    for(const el of document.querySelectorAll('['+attr+']'))
+      if(!wanted.has(el))el.removeAttribute(attr);
+    for(const [el,value] of wanted)
+      if(el.getAttribute(attr)!==value)el.setAttribute(attr,value);
+  }
+  function markProjectTitles() {
+    const wanted=new Map();
+    for(const row of document.querySelectorAll('[data-app-action-sidebar-project-row]')) {
+      const root=row.querySelector('[data-marquee-content="true"]');
+      if(!root)continue;
+      // The actual nested visible text leaf, not the wide row or folder icon.
+      // Exact names only: do not classify similarly named child conversations.
+      const leaves=[...root.querySelectorAll('span,div,[data-d-component="text"]')].filter(el=>
+        el.children.length===0&&visibleBox(el)&&
+        !el.closest('svg,button,[role="button"],[data-thread-title="true"],a[href*="/c/"]')
+      );
+      let matched=false;
+      for(const leaf of leaves) {
+        const group=projectMarkerGroups.get(normalizeLabel(leaf.textContent));
+        if(group){wanted.set(leaf,group);matched=true;}
+      }
+      // Some native project titles are split into several text runs.
+      // The marquee container may itself be the smallest safe text box.
+      if(!matched&&visibleBox(root)) {
+        const group=projectMarkerGroups.get(normalizeLabel(root.textContent));
+        if(group)wanted.set(root,group);
+      }
+    }
+    syncPresentationMarks('data-ebook-project-marker',wanted);
+  }
+  function markSidebarSeam() {
+    const roots=[...sidebarRoots()];
+    // A native sidebar root can be an aside on a newer app-shell layout.
+    for(const row of document.querySelectorAll('[data-app-action-sidebar-project-row]')) {
+      const aside=row.closest('aside');
+      if(aside&&!roots.includes(aside))roots.push(aside);
+    }
+    const valid=roots.filter(el=>{
+      const r=visibleBox(el);
+      return r&&r.left>=-2&&r.left<180&&r.width>=130&&r.width<=720&&
+        r.height>140&&r.top<180;
+    });
+    const outer=valid.filter(el=>!valid.some(p=>p!==el&&p.contains(el)));
+    syncPresentationMarks('data-ebook-sidebar-seam',new Map(outer.map(el=>[el,'true'])));
+  }
+  const modeControlSelector='button,a[href],[role="button"],[role="tab"],[role="radio"]';
+  const modeExclude='[data-message-author-role],[role="dialog"],[role="menu"],'+
+    '[data-thread-title="true"],[data-app-action-sidebar-project-row],[data-testid="composer"],'+
+    '[data-ebook-quick-label],.sr-only,[aria-hidden="true"]';
+  function nativeModeState(el) {
+    // Use native semantic state only. Unknown/contradictory state fails open.
+    let yes=false,no=false;
+    for(const key of ['aria-selected','aria-pressed','aria-checked','data-selected','data-active','data-checked']) {
+      const value=el.getAttribute(key);
+      if(value==='true')yes=true;
+      else if(value==='false')no=true;
+    }
+    const current=el.getAttribute('aria-current');
+    if(current&&current!=='false')yes=true;
+    else if(current==='false')no=true;
+    const state=el.getAttribute('data-state');
+    if(['active','on','checked','selected'].includes(state))yes=true;
+    if(['inactive','off','unchecked','unselected'].includes(state))no=true;
+    if(['active','selected','is-active','is-selected'].some(c=>el.classList.contains(c)))yes=true;
+    return yes===no?null:yes;
+  }
+  function pairedModeControls() {
+    const chat=[],work=[];
+    for(const el of document.querySelectorAll(modeControlSelector)) {
+      if(el.closest(modeExclude))continue;
+      const raw=normalizeLabel(el.textContent).toLowerCase();
+      if(raw!=='chat'&&raw!=='work')continue;
+      const r=visibleBox(el);
+      if(!r||r.top< -3||r.top>180||r.height>80||r.width>280)continue;
+      (raw==='chat'?chat:work).push(el);
+    }
+    let best=null;
+    for(const a of chat)for(const b of work) {
+      if(a.contains(b)||b.contains(a))continue;
+      const ar=a.getBoundingClientRect(),br=b.getBoundingClientRect();
+      if(Math.abs((ar.top+ar.bottom)-(br.top+br.bottom))>24||
+         Math.max(ar.left,br.left)-Math.min(ar.right,br.right)>32)continue;
+      let host=a.parentElement;
+      for(let depth=0;host&&depth<6;depth++,host=host.parentElement) {
+        if(!host.contains(b))continue;
+        if(host.matches('body,html,header,main,aside,nav,[role="banner"]'))break;
+        const r=visibleBox(host);
+        if(!r||r.width>560||r.height>92)break;
+        // The paired labels must be the complete mode selector, not a page header.
+        const label=normalizeLabel(host.textContent).toLowerCase().replace(/\s+/g,'');
+        if(label!=='chatwork'&&label!=='workchat')break;
+        const score=r.width*r.height;
+        if(!best||score<best.score)best={host,a,b,score};
+        break;
+      }
+    }
+    return best;
+  }
+  let modeObserved=null;
+  const modeObserver=new MutationObserver(()=>schedule());
+  function markWorkSwitcher() {
+    const pair=pairedModeControls();
+    const hosts=new Map(),tabs=new Map();
+    if(pair) {
+      const {host,a,b}=pair;
+      hosts.set(host,'true');
+      const sa=nativeModeState(a),sb=nativeModeState(b);
+      let active=null;
+      if(sa===true&&sb!==true)active=a;
+      else if(sb===true&&sa!==true)active=b;
+      else if(sa===false&&sb===null)active=b;
+      else if(sb===false&&sa===null)active=a;
+      // Optional native app-shell page marker, never fabricate selection.
+      if(!active&&sa===null&&sb===null) {
+        const shell=host.closest('[data-app-shell-active-page]')||
+          (document.documentElement.hasAttribute('data-app-shell-active-page')?document.documentElement:null);
+        const mode=shell?.getAttribute('data-app-shell-active-page')?.toLowerCase();
+        if(mode==='chat')active=a;
+        if(mode==='work')active=b;
+      }
+      tabs.set(a,active?(active===a?'active':'idle'):'unknown');
+      tabs.set(b,active?(active===b?'active':'idle'):'unknown');
+    }
+    syncPresentationMarks('data-ebook-work-switcher',hosts);
+    syncPresentationMarks('data-ebook-switch-tab',tabs);
+    const next=pair?.host||null;
+    if(next!==modeObserved) {
+      modeObserver.disconnect();
+      modeObserved=next;
+      if(next)modeObserver.observe(next,{subtree:true,childList:true,characterData:true,attributes:true,
+        attributeFilter:['aria-selected','aria-pressed','aria-checked','aria-current','data-selected','data-active','data-state','data-checked','class']});
+    }
+  }
+  function onModeInteraction(event) {
+    if(event.target?.closest?.('[data-ebook-work-switcher="true"]'))schedule();
+  }
+  function restoreNotebookMarks() {
+    modeObserver.disconnect();
+    modeObserved=null;
+    document.removeEventListener('click',onModeInteraction,true);
+    for(const attr of ['data-ebook-project-marker','data-ebook-sidebar-seam','data-ebook-work-switcher','data-ebook-switch-tab'])
+      syncPresentationMarks(attr,new Map());
   }
 
   function synchronizeSidebar() {
@@ -780,6 +941,9 @@
     enforceOpticalSidebarText();
     markDotCounter();
     markQuickActionLabels();
+    markSidebarSeam();
+    markProjectTitles();
+    markWorkSwitcher();
     watchComposer();
     syncComposerFrame();
     markPromptTypography();
@@ -818,6 +982,7 @@
     restoreOpticalSidebarText();
     restoreComposerFrames();
     restorePromptTypography();
+    restoreNotebookMarks();
     document.querySelectorAll('[data-ebook-quick-label]').forEach(n=>n.removeAttribute('data-ebook-quick-label'));
     document.querySelectorAll('[data-ebook-effort-picker="true"]').forEach(n=>n.removeAttribute('data-ebook-effort-picker'));
     document.querySelectorAll('[data-ebook-active-title="true"]').forEach(n=>n.removeAttribute('data-ebook-active-title'));
@@ -837,6 +1002,7 @@
     bootstrapObserver.observe(document.body,{childList:true,subtree:true});
   }
   document.addEventListener('visibilitychange', onVisibility);
+  document.addEventListener('click',onModeInteraction,true);
   window.addEventListener('focus', schedule);
   recoverTimer = setInterval(() => { if (!document.hidden) schedule(); }, 4000);
   schedule();
@@ -875,7 +1041,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.2.22',dispose,refresh:schedule,
-    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),fontAudit:fontAudit()})
+    version:'0.2.23',dispose,refresh:schedule,
+    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),fontAudit:fontAudit()})
   };
 })();
