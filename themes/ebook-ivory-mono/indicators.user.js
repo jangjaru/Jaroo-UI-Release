@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.3.0-beta.2
+// @version      0.3.0-beta.3
 // @description  E-book standalone beta: native labels, project counts, dynamic geometry; CSS owns static presentation.
 // @match        https://chatgpt.com/*
 // @run-at       document-start
@@ -864,6 +864,242 @@
     pruneCountLayers();cachedCountReference=null;
   }
 
+
+  /* Fixed visual sidebar ordering. React DOM order, native data, names,
+     hrefs, counters and event handlers are not changed. Only vertical
+     flex/grid siblings with independently verified row boundaries are
+     eligible; unfamiliar layouts deliberately retain their native order. */
+  const SIDEBAR_SORT_PROJECTS=Object.freeze([
+    '대표실','전략기획본부','개인비서실','영업팀','BD팀','제안팀','디자인팀',
+    '경영관리실','기술운영팀','인재개발팀','CEO 경영철학과 판단'
+  ]);
+  const sidebarProjectRank=new Map(SIDEBAR_SORT_PROJECTS.map((name,i)=>[name,i]));
+  const sidebarRoleRank=Object.freeze({master:0,plan:1,manage:2,produce:3,action:4});
+  const sidebarStatusRank=Object.freeze({'보류':1,'완료':2,'중단':3});
+  const sidebarTitleCollator=new Intl.Collator('ko-KR',{numeric:true,sensitivity:'base'});
+  const sidebarSortSaved=new Map();
+  const sidebarSortDiagnostics={projectLists:0,projectRows:0,chatLists:0,chatRows:0,changedLists:0,skippedLayouts:0,error:null};
+  const SORT_CHAT_LINK='a[href*="/c/"]';
+  const SORT_RAIL=SIDE_ROOTS+',aside,[role="complementary"],[data-ebook-count-rail="true"],[data-ebook-sidebar-seam="true"]';
+  const SORT_EXCLUDED='[aria-hidden="true"],[hidden],.sr-only,svg,button,[role="button"],[role="toolbar"],.jaroo-native-badge,[data-jaroo-status-slot]';
+
+  function sidebarCompareTitle(a,b) {
+    return sidebarTitleCollator.compare(a,b)||(a<b?-1:a>b?1:0);
+  }
+  function sidebarProjectKey(label) {
+    const name=normalizeLabel(label);
+    return {rank:sidebarProjectRank.get(name)??SIDEBAR_SORT_PROJECTS.length,name};
+  }
+  function sidebarChatKey(label,id) {
+    const raw=normalizeLabel(label);
+    const tag=/^\[(완료|중단|보류)\]/u.exec(raw)?.[1];
+    const role=roleIn(raw)?.role;
+    const name=normalizeLabel(raw.replace(ROLE_MARKER,'').replace(/^\[(완료|중단|보류)\]\s*/u,''));
+    return {state:sidebarStatusRank[tag]??0,role:sidebarRoleRank[role]??5,name,id:id||''};
+  }
+  const sidebarCompareProject=(a,b)=>a.rank-b.rank||sidebarCompareTitle(a.name,b.name);
+  const sidebarCompareChat=(a,b)=>a.state-b.state||a.role-b.role||
+    sidebarCompareTitle(a.name,b.name)||sidebarCompareTitle(a.id,b.id);
+
+  function sidebarProjectLabel(row) {
+    const title=row.querySelector('[data-marquee-content="true"]')||
+      row.querySelector('[data-marquee-text="true"]');
+    return normalizeLabel(title?.textContent||row.getAttribute('aria-label')||'');
+  }
+  function sidebarChatLabel(anchor) {
+    const title=anchor.querySelector('[data-thread-title="true"]')||
+      anchor.querySelector('[data-thread-title]')||
+      [...anchor.querySelectorAll('[data-ebook-role],[data-marquee-content="true"],[data-marquee-text],span[dir="auto"],span.truncate,div.truncate')]
+        .find(n=>!n.closest(SORT_EXCLUDED));
+    return normalizeLabel(title?.textContent||anchor.getAttribute('aria-label')||anchor.textContent);
+  }
+
+  // Gather common parents by walking upward from an entire native group,
+  // never by moving a header away from its associated expanded chat list.
+  function sidebarSortCandidates(entries,boundary,maxDepth=12) {
+    const parents=new Map();
+    for(const entry of entries) {
+      for(let child=entry.node,depth=0;child&&child!==boundary&&depth<maxDepth;depth++,child=child.parentElement) {
+        const parent=child.parentElement;
+        if(!parent||parent.matches('html,body,main,[role="main"],header,[role="banner"]'))break;
+        if(boundary&&!boundary.contains(parent))break;
+        let byChild=parents.get(parent);
+        if(!byChild)parents.set(parent,byChild=new Map());
+        let members=byChild.get(child);
+        if(!members)byChild.set(child,members=[]);
+        members.push(entry);
+        if(parent===boundary)break;
+      }
+    }
+    return parents;
+  }
+  function sidebarHas(el,selector) {
+    return el.matches(selector)||!!el.querySelector(selector);
+  }
+  function sidebarSingleTrack(parent,style) {
+    if((style.display==='flex'||style.display==='inline-flex')&&
+       style.flexDirection==='column'&&style.flexWrap==='nowrap')return true;
+    if(style.display!=='grid'&&style.display!=='inline-grid')return false;
+    const tracks=style.gridTemplateColumns.trim();
+    return style.gridAutoFlow==='row'&&(tracks==='none'||/^\d+(?:\.\d+)?px$/u.test(tracks));
+  }
+  function sidebarInlineOrder(el) {
+    return {value:el.style.getPropertyValue('order'),priority:el.style.getPropertyPriority('order')};
+  }
+  function sidebarSortBaseOrder(el,style) {
+    const old=sidebarSortSaved.get(el),current=sidebarInlineOrder(el);
+    if(old&&current.value===old.applied&&current.priority==='important')return old.base;
+    // Do not restore stale values over a new native inline declaration.
+    if(old)sidebarSortSaved.delete(el);
+    return Number.parseInt(style.order,10)||0;
+  }
+  function sidebarRestoreOrder(el,old) {
+    const current=sidebarInlineOrder(el);
+    if(current.value!==old.applied||current.priority!=='important')return;
+    if(old.value)el.style.setProperty('order',old.value,old.priority);
+    else el.style.removeProperty('order');
+  }
+  function sidebarApplyOrder(wanted) {
+    for(const [el,old] of sidebarSortSaved)if(!wanted.has(el)||!el.isConnected) {
+      sidebarRestoreOrder(el,old);sidebarSortSaved.delete(el);
+    }
+    for(const [el,desired] of wanted) {
+      if(!el.isConnected)continue;
+      const current=sidebarInlineOrder(el);
+      let saved=sidebarSortSaved.get(el);
+      if(saved&&(current.value!==saved.applied||current.priority!=='important')) {
+        sidebarSortSaved.delete(el);saved=null;
+      }
+      if(!saved) {
+        if(current.value===String(desired.order)&&current.priority==='important')continue;
+        saved={...current,base:desired.base,applied:null};
+        sidebarSortSaved.set(el,saved);
+      }
+      const next=String(desired.order);
+      if(current.value!==next||current.priority!=='important')el.style.setProperty('order',next,'important');
+      saved.applied=next;
+    }
+  }
+
+  // Preserve all non-target sibling positions (section titles, More buttons,
+  // menus, etc.). Only swap target rows into their original visual slots.
+  // Do not force display:flex on an unknown or virtualized list.
+  function sidebarPlanSiblingOrder(parent,byChild,compare,kind,wanted) {
+    const diag=sidebarSortDiagnostics;
+    if(byChild.size<2||[...byChild.values()].some(members=>members.length!==1))return;
+    const entries=[...byChild.values()].flat();
+    const children=[...parent.children];
+    if(kind==='project') {
+      if(parent.querySelectorAll(PROJECT_ROW).length!==entries.length)return;
+      // A separate conversation list sibling indicates an unverified
+      // header/list relationship: moving just the headers would be unsafe.
+      if(children.some(el=>!byChild.has(el)&&sidebarHas(el,countLinkSelector)))return;
+      if(entries.some(e=>!e.node.contains(e.row)))return;
+    } else {
+      if(children.some(el=>byChild.has(el)&&sidebarHas(el,PROJECT_ROW)))return;
+      // Do not sort only part of a sibling list if another conversation
+      // wrapper could not be identified.
+      if(children.some(el=>!byChild.has(el)&&sidebarHas(el,SORT_CHAT_LINK)))return;
+    }
+    const style=getComputedStyle(parent);
+    if(!sidebarSingleTrack(parent,style)||
+       [...parent.childNodes].some(n=>n.nodeType===3&&n.textContent.trim())) {
+      diag.skippedLayouts++;return;
+    }
+    for(const pseudo of ['::before','::after']) {
+      const p=getComputedStyle(parent,pseudo);
+      if(p.content&&p.content!=='none'&&p.content!=='normal'&&p.display!=='none'&&
+         p.position!=='absolute'&&p.position!=='fixed') {
+        diag.skippedLayouts++;return;
+      }
+    }
+    const flow=[];
+    for(let i=0;i<children.length;i++) {
+      const el=children[i],s=getComputedStyle(el),target=byChild.get(el)?.[0];
+      if(s.display==='none'||s.position==='absolute'||s.position==='fixed') {
+        if(target){diag.skippedLayouts++;return;}
+        continue;
+      }
+      if(s.display==='contents'||(target&&s.transform!=='none')||
+        ((style.display==='grid'||style.display==='inline-grid')&&
+          [s.gridRowStart,s.gridRowEnd,s.gridColumnStart,s.gridColumnEnd].some(v=>v&&v!=='auto'))) {
+        diag.skippedLayouts++;return;
+      }
+      flow.push({el,index:i,base:sidebarSortBaseOrder(el,s),target});
+    }
+    const native=flow.sort((a,b)=>a.base-b.base||a.index-b.index);
+    const targets=native.filter(x=>x.target);
+    if(targets.length!==entries.length||targets.length<2)return;
+    // Do not overlap another already-planned sibling set.
+    if(native.some(x=>wanted.has(x.el)))return;
+    diag[kind==='project'?'projectLists':'chatLists']++;
+    diag[kind==='project'?'projectRows':'chatRows']+=targets.length;
+    const ranked=[...targets].sort((a,b)=>compare(a.target.key,b.target.key)||a.index-b.index);
+    if(ranked.every((x,i)=>x===targets[i]))return;
+    let next=0;
+    const arranged=native.map(x=>x.target?ranked[next++]:x);
+    for(let i=0;i<arranged.length;i++) {
+      const item=arranged[i];
+      wanted.set(item.el,{order:i,base:item.base});
+    }
+    diag.changedLists++;
+  }
+
+  function sortSidebarOrder() {
+    const diag=sidebarSortDiagnostics;
+    Object.assign(diag,{projectLists:0,projectRows:0,chatLists:0,chatRows:0,changedLists:0,skippedLayouts:0,error:null});
+    const wanted=new Map();
+    try {
+      const projectRows=[...document.querySelectorAll(PROJECT_ROW)]
+        .filter(row=>row.closest(SORT_RAIL)||observedRoots.some(root=>root.contains(row)));
+      const groups=[];
+      for(const row of projectRows) {
+        const group=nativeProjectScope(row);
+        if(!group||!group.contains(row))continue;
+        const name=sidebarProjectLabel(row);
+        if(!name)continue;
+        groups.push({row,node:group,key:sidebarProjectKey(name)});
+      }
+      // Scope project lists to a common verified sidebar/section. Starting
+      // from the full native project scope prevents header-only movement.
+      const byRail=new Map();
+      for(const entry of groups) {
+        const rail=entry.node.closest(SORT_RAIL)||
+          observedRoots.find(root=>root.contains(entry.node));
+        if(!rail)continue;
+        if(!byRail.has(rail))byRail.set(rail,[]);
+        byRail.get(rail).push(entry);
+      }
+      for(const [rail,entries] of byRail) {
+        for(const [parent,byChild] of sidebarSortCandidates(entries,rail)) {
+          sidebarPlanSiblingOrder(parent,byChild,sidebarCompareProject,'project',wanted);
+        }
+      }
+      // Project child chats only; pinned and global Recent sections never
+      // enter the project-scoped traversal. Do not fetch unloaded rows.
+      for(const {node:group,row} of groups) {
+        const entries=[],seen=new Set();
+        let valid=true;
+        for(const anchor of group.querySelectorAll(SORT_CHAT_LINK)) {
+          if(row.contains(anchor)||anchor.closest('[aria-hidden="true"],[hidden],.sr-only,[data-pinned="true"],[data-sidebar-pinned="true"],[data-is-pinned="true"]'))continue;
+          const id=conversationKey(anchor),name=sidebarChatLabel(anchor);
+          if(!id||!name||seen.has(id)){valid=false;break;}
+          seen.add(id);entries.push({node:anchor,key:sidebarChatKey(name,id)});
+        }
+        if(!valid||entries.length<2)continue;
+        // All identified native chat rows remain inside this project.
+        for(const [parent,byChild] of sidebarSortCandidates(entries,group)) {
+          sidebarPlanSiblingOrder(parent,byChild,sidebarCompareChat,'chat',wanted);
+        }
+      }
+      sidebarApplyOrder(wanted);
+    } catch(error) {
+      diag.error=String(error?.message||error);
+      // A failed structure check must never block the existing NAV pass.
+      sidebarApplyOrder(new Map());
+    }
+  }
+
   function synchronizeSidebar() {
     if (disposed) return;
     for (const root of observedRoots) {
@@ -1655,6 +1891,7 @@
       markQuickActionLabels();
       markDotCounter();
       markSidebarSeam();
+      sortSidebarOrder();
       markFixedSidebarTop();
       markProjectTitles();
       markProjectCounts();
@@ -1753,6 +1990,7 @@
   }
 
   function restore() {
+    sidebarApplyOrder(new Map());
     // Best-effort cleanup of visual wrappers. Title content remains untouched.
     const list = [...document.querySelectorAll(CLEANUP_GLYPH)];
     for (const hidden of list) hidden.replaceWith(document.createTextNode(hidden.textContent || ''));
@@ -1857,7 +2095,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.3.0-beta.2',dispose,refresh:schedule,
-    diagnostics:() => ({...errors,roots:observedRoots.length,dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),cssOwnerReady,firstPaintNav:getComputedStyle(document.documentElement).getPropertyValue('--eb-first-paint-nav').trim()==='1',opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-project-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,quickInlineExceptions:quickDotOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state'),overflow:n.getAttribute('data-ebook-count-overflow')==='true',confirmed:n.getAttribute('data-ebook-count-confirmed')===''?null:Number(n.getAttribute('data-ebook-count-confirmed'))})),lastPassMs:{...timings},performance:{events:{...perfEvents},passes:Object.fromEntries(Object.entries(perfPasses).map(([k,v])=>[k,{runs:v.runs,averageMs:Math.round(v.totalMs/v.runs*100)/100,peakMs:Math.round(v.peakMs*100)/100}]))},fixedSidebarTop:[...topBands.values()].map(n=>({height:n.height,visible:getComputedStyle(n.strip).visibility==='visible',pattern:getComputedStyle(n.strip).backgroundImage})),projectCountBorders:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({border:getComputedStyle(n).borderTopWidth,style:getComputedStyle(n).borderTopStyle,outline:getComputedStyle(n).outlineStyle})),projectCountLayers:countLayers.size,positionResizeTargets:navResizeTargets.size,visibleProjectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].filter(n=>getComputedStyle(n).visibility!=='hidden').length,projectCountAxis:findDotCountReference()?.circle.getBoundingClientRect().left??null,fontAudit:fontAudit()})
+    version:'0.3.0-beta.3',dispose,refresh:schedule,
+    diagnostics:() => ({...errors,sorting:{...sidebarSortDiagnostics,styledRows:sidebarSortSaved.size},roots:observedRoots.length,dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),cssOwnerReady,firstPaintNav:getComputedStyle(document.documentElement).getPropertyValue('--eb-first-paint-nav').trim()==='1',opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-project-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,quickInlineExceptions:quickDotOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state'),overflow:n.getAttribute('data-ebook-count-overflow')==='true',confirmed:n.getAttribute('data-ebook-count-confirmed')===''?null:Number(n.getAttribute('data-ebook-count-confirmed'))})),lastPassMs:{...timings},performance:{events:{...perfEvents},passes:Object.fromEntries(Object.entries(perfPasses).map(([k,v])=>[k,{runs:v.runs,averageMs:Math.round(v.totalMs/v.runs*100)/100,peakMs:Math.round(v.peakMs*100)/100}]))},fixedSidebarTop:[...topBands.values()].map(n=>({height:n.height,visible:getComputedStyle(n.strip).visibility==='visible',pattern:getComputedStyle(n.strip).backgroundImage})),projectCountBorders:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({border:getComputedStyle(n).borderTopWidth,style:getComputedStyle(n).borderTopStyle,outline:getComputedStyle(n).outlineStyle})),projectCountLayers:countLayers.size,positionResizeTargets:navResizeTargets.size,visibleProjectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].filter(n=>getComputedStyle(n).visibility!=='hidden').length,projectCountAxis:findDotCountReference()?.circle.getBoundingClientRect().left??null,fontAudit:fontAudit()})
   };
 })();
