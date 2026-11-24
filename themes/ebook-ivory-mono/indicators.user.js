@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.2.23
+// @version      0.2.24
 // @description  E-book visual dot indicators for role prefixes plus a light Clock skin; keeps original chat titles, React data and RUN/DONE logic intact.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -213,11 +213,110 @@
   }
 
 
-  /* Only mark the true visible text span. CSS v0.2.27 constrains the
-     marker by its intrinsic text width; no Range measurement or inline
-     width mutation is needed. Native buttons and click handlers are untouched. */
+  /* v0.2.24 — keep the known New Chat detector; find the real Dot text
+     even when the native app uses a div/label or an alternate navigation
+     wrapper. Only the literal label is styled, never its count or icon.
+     Direct reversible inline typography avoids stale native leaf rules. */
+  const quickDotOriginal=new Map();
+  const quickDotProps=['font-family','font-size','font-weight','line-height',
+    'letter-spacing','color','-webkit-text-fill-color'];
+  const quickControl='button,a,[role="button"],[role="link"],[data-testid*="dot" i]';
+  const quickTextCandidates='span,div,p,label,a,button,[role="link"],[role="button"],[data-d-component="text"]';
+  const quickDotExclude='[data-message-author-role],[role="dialog"],[role="menu"],'+
+    '[data-sidebar-project-kind="local"],[data-app-action-sidebar-project-row],'+
+    '[data-thread-title="true"],a[href*="/c/"],[aria-hidden="true"],.sr-only,[hidden],'+
+    'svg,[data-ebook-dot-counter="true"],[data-testid="composer"]';
+  function isExactDotText(el) {
+    if(!el?.isConnected||el.closest(quickDotExclude))return false;
+    if(normalizeLabel(el.textContent)!=='Dot')return false;
+    // An outer control can contain a nested label with identical aggregate
+    // text: accept only the element that actually owns the direct text.
+    const direct=[...el.childNodes].filter(n=>n.nodeType===3)
+      .map(n=>n.nodeValue||'').join('');
+    return normalizeLabel(direct)==='Dot';
+  }
+  function collectDotLabels(newChatLabels) {
+    const result=new Set(),candidates=new Set();
+    const roots=new Set([...sidebarRoots(),...document.querySelectorAll('aside,[data-ebook-sidebar-seam="true"]')]);
+    for(const el of document.querySelectorAll(
+      '[data-app-action-sidebar-project-row],'+
+      '[data-ebook-quick-label="new-chat"]')) {
+      const root=el.closest(SIDE_ROOTS+',aside,[role="complementary"]');
+      if(root)roots.add(root);
+    }
+    for(const root of roots) {
+      const r=visibleBox(root);
+      if(!r||r.left< -3||r.left>180||r.width<100||r.width>720)continue;
+      for(const el of root.querySelectorAll(quickTextCandidates))candidates.add(el);
+    }
+    // Safe geometry + exact text fallback for newer app-shells without the
+    // legacy sidebar IDs. Search only controls and their text descendants.
+    for(const control of document.querySelectorAll(quickControl)) {
+      const label=normalizeLabel(control.textContent);
+      if(!/^Dot(?:\s*\d{1,3})?$/u.test(label))continue;
+      candidates.add(control);
+      for(const el of control.querySelectorAll(quickTextCandidates))candidates.add(el);
+    }
+    for(const el of candidates) {
+      if(!isExactDotText(el))continue;
+      const r=visibleBox(el);
+      if(!r||r.left<0||r.left>410||r.top<0)continue;
+      if(getComputedStyle(el).visibility==='hidden')continue;
+      const native=el.closest(quickControl);
+      const root=el.closest(SIDE_ROOTS+',aside,[role="complementary"],[data-ebook-sidebar-seam="true"]');
+      const rootRect=root&&visibleBox(root);
+      const inRail=!!(rootRect&&rootRect.left>=-3&&rootRect.left<=180&&
+        rootRect.width>=100&&rootRect.width<=720);
+      const nearNewChat=newChatLabels.some(n=>{
+        const q=n.getBoundingClientRect();
+        return Math.abs(r.left-q.left)<100&&r.top>=q.top-8&&r.top-q.top<200;
+      });
+      // When the app-shell differs, a nearby existing New Chat label plus
+      // native interactive parent is needed. Otherwise fail open.
+      if(!inRail&&!(native&&nearNewChat))continue;
+      if(!nearNewChat&&r.top>(rootRect?.top||0)+480)continue;
+      if(native&&native.getBoundingClientRect().left>400)continue;
+      // If a native label includes an icon or badge element, avoid applying
+      // inline typography to the entire interactive container.
+      if(el.children.length>0&&[...el.children].some(n=>
+        !n.matches('svg,[aria-hidden="true"],.sr-only')||
+        normalizeLabel(n.textContent)!==''))continue;
+      result.add(el);
+    }
+    return result;
+  }
+  function restoreQuickDotTypography() {
+    for(const [el,previous] of quickDotOriginal)restoreStyle(el,previous);
+    quickDotOriginal.clear();
+  }
+  function syncQuickDotTypography(found) {
+    const dotEls=new Set([...found].filter(([,kind])=>kind==='dot').map(([el])=>el));
+    for(const [el,previous] of quickDotOriginal) {
+      if(dotEls.has(el))continue;
+      restoreStyle(el,previous);
+      quickDotOriginal.delete(el);
+    }
+    const ref=[...found].find(([,kind])=>kind==='new-chat')?.[0];
+    const reference=ref?getComputedStyle(ref):null;
+    const tokens=getComputedStyle(document.documentElement);
+    const color=reference?.color||tokens.getPropertyValue('--eb-ink').trim()||'#292D30';
+    const values={
+      'font-family':reference?.fontFamily||tokens.getPropertyValue('--eb-font').trim()||'"Jaroo Plex Latin","Pretendard Variable","Pretendard",sans-serif',
+      'font-size':reference?.fontSize||tokens.getPropertyValue('--eb-project-optical-size').trim()||'16px',
+      'font-weight':reference?.fontWeight||'650',
+      'line-height':reference?.lineHeight||'1.42',
+      'letter-spacing':reference?.letterSpacing||'normal',
+      'color':color,
+      '-webkit-text-fill-color':reference?.getPropertyValue('-webkit-text-fill-color')||color
+    };
+    for(const el of dotEls) {
+      if(!quickDotOriginal.has(el))quickDotOriginal.set(el,snapshotStyle(el,quickDotProps));
+      for(const [p,v] of Object.entries(values))makeImportant(el,p,v);
+    }
+  }
   function markQuickActionLabels() {
     const found=new Map();
+    // Preserve the original working New Chat path and its marker geometry.
     const leaves=document.querySelectorAll(
       'button span,a span,[role="button"] span,[role="link"] span,'+
       'button [data-d-component="text"],a [data-d-component="text"]'
@@ -227,23 +326,19 @@
                     '[data-sidebar-cycle-item],[data-sidebar-project-kind="local"],'+
                     '[data-thread-title="true"],[aria-hidden="true"],.sr-only'))continue;
       if(el.children.length>0)continue;
-      const raw=(el.textContent||'').replace(/\s+/gu,' ').trim();
-      if(raw.length>16)continue;
-      const kind=(raw==='새 채팅'||raw==='New chat')?'new-chat':
-                 raw==='Dot'?'dot':null;
-      if(!kind)continue;
+      const raw=normalizeLabel(el.textContent);
+      if(raw!=='새 채팅'&&raw!=='New chat')continue;
       const nav=el.closest('button,a,[role="button"],[role="link"]');
       if(!nav)continue;
       const rect=el.getBoundingClientRect(),nrect=nav.getBoundingClientRect();
       if(rect.width<=0||rect.height<=0||rect.left<0||rect.left>410||
          rect.top<32||rect.top>360||nrect.left>400)continue;
-      found.set(el,kind);
+      found.set(el,'new-chat');
     }
-    for(const el of document.querySelectorAll('[data-ebook-quick-label]'))
-      if(!found.has(el))el.removeAttribute('data-ebook-quick-label');
-    for(const [el,kind] of found)
-      if(el.getAttribute('data-ebook-quick-label')!==kind)
-        el.setAttribute('data-ebook-quick-label',kind);
+    const newChatLabels=[...found.keys()];
+    for(const el of collectDotLabels(newChatLabels))found.set(el,'dot');
+    syncPresentationMarks('data-ebook-quick-label',found);
+    syncQuickDotTypography(found);
   }
 
 
@@ -982,6 +1077,7 @@
     restoreOpticalSidebarText();
     restoreComposerFrames();
     restorePromptTypography();
+    restoreQuickDotTypography();
     restoreNotebookMarks();
     document.querySelectorAll('[data-ebook-quick-label]').forEach(n=>n.removeAttribute('data-ebook-quick-label'));
     document.querySelectorAll('[data-ebook-effort-picker="true"]').forEach(n=>n.removeAttribute('data-ebook-effort-picker'));
@@ -1041,7 +1137,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.2.23',dispose,refresh:schedule,
-    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),fontAudit:fontAudit()})
+    version:'0.2.24',dispose,refresh:schedule,
+    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),fontAudit:fontAudit()})
   };
 })();
