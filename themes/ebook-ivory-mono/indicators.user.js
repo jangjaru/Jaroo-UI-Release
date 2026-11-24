@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.2.35
-// @description  E-book visual dot indicators for role prefixes plus a light Clock skin; keeps original chat titles, React data and RUN/DONE logic intact.
+// @version      0.3.0-beta.1
+// @description  E-book standalone beta: native labels, project counts, dynamic geometry; CSS owns static presentation.
 // @match        https://chatgpt.com/*
 // @run-at       document-start
 // @grant        none
-// @updateURL    https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/indicators.user.js
-// @downloadURL  https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/indicators.user.js
+// @updateURL    https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/ebook-v0.3.0/themes/ebook-ivory-mono/indicators.user.js
+// @downloadURL  https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/ebook-v0.3.0/themes/ebook-ivory-mono/indicators.user.js
 // ==/UserScript==
 
 (() => {
@@ -16,7 +16,6 @@
   const RUNTIME = '__jarooEbookIvoryMonoV1';
   try { window[RUNTIME]?.dispose?.(); } catch (_) {}
   const CLOCK_HOST = 'jaroo-clock-overlay-v25';
-  const CLOCK_CSS_ID = 'jaroo-ebook-clock-css-v01';
   const SIDE_ROOTS = '#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]';
   const TITLE_SELECTORS = '[data-thread-title="true"],[data-marquee-text],span.truncate,div.truncate,span[dir="auto"]';
   const ROLE_NAMES = Object.freeze({
@@ -29,91 +28,23 @@
   const ROLE_MARKER = /^\s*((?:\[(?:완료|중단|보류)\]\s*)?)([☆★▷▶○●>›])(?=\s|$)/u;
   const CLEANUP_GLYPH = '[data-ebook-glyph="true"]';
 
-  // Only E-book-specific presentation rules are injected into the open Clock ShadowRoot.
-  // Existing visual pulses, LEDs, progress calculations and RUN/DONE controls remain owned by Clock/Status.
-  const clockCSS = String.raw`
-    :host {
-      --ebook-paper:#EFF1F2;
-      --ebook-panel:#F5F6F6;
-      --ebook-soft:#E7EAEB;
-      --ebook-ink:#292D30;
-      --ebook-muted:#535B60;
-      --ebook-line:#BFC8CC;
-      --ebook-font:"IBM Plex Mono","Pretendard Variable","Pretendard",sans-serif;
-       --ebook-mono:"IBM Plex Mono","Pretendard Variable","Pretendard",monospace;
-    }
-    /* v0.1.1: locally installed Latin and Korean mono font, including status dock.
-       Segmented digital digits and all calculations remain unmodified. */
-    :host .fallback-brand,
-    :host .fallback-brand :is(.brand-word,.brand-title,.brand-jaroo,.brand-company,.brand-subtitle),
-    :host .life-clock, :host .life-clock :is(div,span,strong),
-    :host .clock :is(.date-main,.weather-label),
-    :host .jaroo-center, :host .jaroo-center :is(div,span,button,strong,em),
-    :host .jaroo-focus-list, :host .jaroo-focus-list :is(a,button,div,span,strong,em) {
-      font-family:var(--ebook-font)!important;
-      font-style:normal!important;
-    }
-    /* Preserve all existing RUN/DONE visual pulses and click behavior. */
-    .life-clock {
-      background:var(--ebook-panel)!important;
-      border:1px solid var(--ebook-line)!important;
-      border-radius:13px!important;
-      box-shadow:none!important;
-      color:var(--ebook-ink)!important;
-    }
-    .life-head { border-bottom:1px solid #C5CDD0!important; }
-    .life-title,.life-title-full,.life-title-short,
-    .life-progress-title,.life-progress-percent {
-      color:var(--ebook-ink)!important;
-      text-shadow:none!important;
-      font-family:var(--ebook-font)!important;
-      font-style:normal!important;
-    }
-    .life-sub,.life-progress-scale,.life-meta,
-    .life-progress-stat span { color:var(--ebook-muted)!important; }
-    .life-card,.life-card.retire,.life-card.work,.life-card.after {
-      background:var(--ebook-panel)!important;
-      border:0!important;
-      border-bottom:1px solid #C5CDD0!important;
-      border-radius:0!important;
-      box-shadow:none!important;
-    }
-    .life-card.retire .life-label,.life-card.work .life-label,.life-card.after .life-label,
-    .life-value,.life-progress-stat strong {
-      color:var(--ebook-ink)!important;
-      text-shadow:none!important;
-      font-family:var(--ebook-font)!important;
-      font-style:normal!important;
-    }
-    .life-title .ico { color:var(--ebook-ink)!important; /* Preserve original glow filter. */ }
-    .life-bar {
-      border:1px solid var(--ebook-line)!important;
-      background:#E7EAEB!important;
-      border-radius:999px!important;
-      /* Preserve the original animated progress fill and glow. */
-    }
-    /* Keep the original digital segment shapes, blink and color treatment. */
-    .clock { border:1px solid var(--ebook-line)!important; border-radius:13px!important; /* Preserve original LED glow. */ }
-    .clock-content { border-radius:12px!important; }
-    .date-main,.weather-label { font-family:var(--ebook-mono)!important; font-style:normal!important; }
-    .life-value,.life-progress-percent,.life-progress-stat strong { font-family:var(--ebook-mono)!important; }
-  `;
-
   let disposed = false;
   let frame = 0;
   let recoverTimer = 0;
-  let shadowStyle = null;
+  let cssOwnerReady=false,cssReadyTimer=0,cssReadyAttempts=0;
   let observedRoots = [];
-  const PASS={NAV:1,COMPOSER:2,SENT:4,HEADER:8,CLOCK:16,EDITOR:32,DIVIDER:64};
-  const ALL=127;
+  const PASS={NAV:1,COMPOSER:2,SENT:4,HEADER:8,EDITOR:16,DIVIDER:32};
+  const ALL=63;
   let dirty=0,lastRoute=location.pathname,lastRecovery=0;
-  const timings={nav:0,composer:0,sent:0,header:0,clock:0,editor:0,divider:0,runs:0};
+  const timings={nav:0,composer:0,sent:0,header:0,editor:0,divider:0,runs:0};
   const perfPasses={},perfEvents={scheduled:0,coalesced:0,hiddenDeferred:0};
   const OWN_NODE='[data-ebook-top-hatch-layer="true"],[data-ebook-project-count-layer="true"],[data-ebook-project-count],[data-ebook-upload-divider="true"],[data-ebook-glyph="true"]';
   const USER_NODE='[data-message-author-role="user"],[data-user-message-bubble="true"],[data-user-message]';
   const EDITOR_NODE='#prompt-textarea,[data-testid="prompt-textarea"],[data-composer-input] .ProseMirror[contenteditable="true"]';
   const HEADER_NODE='#page-header,[data-testid="conversation-header"],[role="banner"]';
   const PROJECT_ROW='[data-app-action-sidebar-project-row]';
+  let navPassRows=null;
+  const projectRows=()=>navPassRows||[...document.querySelectorAll(PROJECT_ROW)];
   const isOwnNode=node=>{
     const el=node?.nodeType===1?node:node?.parentElement;
     return !!el?.closest?.(OWN_NODE);
@@ -240,8 +171,6 @@
      wrapper. Only the literal label is styled, never its count or icon.
      Direct reversible inline typography avoids stale native leaf rules. */
   const quickDotOriginal=new Map();
-  const quickDotProps=['font-family','font-size','font-weight','line-height',
-    'letter-spacing','color','-webkit-text-fill-color'];
   const quickControl='button,a,[role="button"],[role="link"],[data-testid*="dot" i]';
   const quickTextCandidates='span,div,p,label,a,button,[role="link"],[role="button"],[data-d-component="text"]';
   const quickDotExclude='[data-message-author-role],[role="dialog"],[role="menu"],'+
@@ -304,28 +233,21 @@
     quickDotOriginal.clear();
   }
   function syncQuickDotTypography(found) {
-    const dotEls=new Set([...found].filter(([,kind])=>kind==='dot').map(([el])=>el));
-    for(const [el,previous] of quickDotOriginal) {
-      if(dotEls.has(el))continue;
-      restoreStyle(el,previous);
-      quickDotOriginal.delete(el);
-    }
-    const ref=[...found].find(([,kind])=>kind==='new-chat')?.[0];
-    const reference=ref?getComputedStyle(ref):null;
     const tokens=getComputedStyle(document.documentElement);
-    const color=reference?.color||tokens.getPropertyValue('--eb-ink').trim()||'#292D30';
-    const values={
-      'font-family':reference?.fontFamily||tokens.getPropertyValue('--eb-font').trim()||'"Jaroo Plex Latin","Pretendard Variable","Pretendard",sans-serif',
-      'font-size':reference?.fontSize||tokens.getPropertyValue('--eb-project-optical-size').trim()||'16px',
-      'font-weight':reference?.fontWeight||'650',
-      'line-height':reference?.lineHeight||'1.42',
-      'letter-spacing':reference?.letterSpacing||'normal',
-      'color':color,
-      '-webkit-text-fill-color':reference?.getPropertyValue('-webkit-text-fill-color')||color
-    };
-    for(const el of dotEls) {
-      if(!quickDotOriginal.has(el))quickDotOriginal.set(el,snapshotStyle(el,quickDotProps));
-      for(const [p,v] of Object.entries(values))makeImportant(el,p,v);
+    const required={'font-family':tokens.getPropertyValue('--eb-font').trim(),
+      'font-size':tokens.getPropertyValue('--eb-project-optical-size').trim()||'16px',
+      'font-weight':tokens.getPropertyValue('--eb-project-emphasis-weight').trim()||'650',
+      'line-height':'1.42','letter-spacing':'normal',
+      'color':tokens.getPropertyValue('--eb-ink').trim()||'#292D30',
+      '-webkit-text-fill-color':tokens.getPropertyValue('--eb-ink').trim()||'#292D30'};
+    for(const [el,saved] of quickDotOriginal)if(!found.has(el)||!el.isConnected){
+      restoreStyle(el,saved);quickDotOriginal.delete(el);
+    }
+    for(const el of found.keys()){
+      if(!el.hasAttribute('style')&&!quickDotOriginal.has(el))continue;
+      const saved=quickDotOriginal.get(el)||{};
+      if(applyStaticExceptions(el,required,saved))quickDotOriginal.set(el,saved);
+      else quickDotOriginal.delete(el);
     }
   }
   function markQuickActionLabels() {
@@ -371,15 +293,18 @@
     const r=el.getBoundingClientRect();
     return r.width>0&&r.height>0?r:null;
   };
+  const presentationMarks=new Map();
   function syncPresentationMarks(attr,wanted) {
-    for(const el of document.querySelectorAll('['+attr+']'))
-      if(!wanted.has(el))el.removeAttribute(attr);
-    for(const [el,value] of wanted)
-      if(el.getAttribute(attr)!==value)el.setAttribute(attr,value);
+    // The attribute belongs exclusively to this userscript. Discover any
+    // orphaned previous marker once, then reuse the last set.
+    const previous=presentationMarks.get(attr)||new Set(document.querySelectorAll('['+attr+']'));
+    for(const el of previous)if(!wanted.has(el)&&el.isConnected)el.removeAttribute(attr);
+    for(const [el,value] of wanted)if(el.getAttribute(attr)!==value)el.setAttribute(attr,value);
+    presentationMarks.set(attr,new Set(wanted.keys()));
   }
   function markProjectTitles() {
     const wanted=new Map();
-    for(const row of document.querySelectorAll('[data-app-action-sidebar-project-row]')) {
+    for(const row of projectRows()) {
       const root=row.querySelector('[data-marquee-content="true"]');
       if(!root)continue;
       // The actual nested visible text leaf, not the wide row or folder icon.
@@ -405,7 +330,7 @@
   function markSidebarSeam() {
     const roots=[...sidebarRoots()];
     // A native sidebar root can be an aside on a newer app-shell layout.
-    for(const row of document.querySelectorAll('[data-app-action-sidebar-project-row]')) {
+    for(const row of projectRows()) {
       const aside=row.closest('aside');
       if(aside&&!roots.includes(aside))roots.push(aside);
     }
@@ -489,10 +414,6 @@
     layer.setAttribute('data-ebook-top-hatch-layer','true');
     layer.setAttribute('aria-hidden','true');
     strip.setAttribute('data-ebook-top-hatch-strip','true');
-    // Explicitly preserve the correction even if Stylus still has the
-    // previous CSS cached. The two new nodes are not native controls.
-    layer.style.cssText='position:fixed!important;inset:0!important;display:block!important;width:auto!important;height:auto!important;padding:0!important;margin:0!important;border:0!important;background:transparent!important;pointer-events:none!important;z-index:10!important;';
-    strip.style.cssText='position:absolute!important;display:block!important;visibility:hidden!important;pointer-events:none!important;box-sizing:border-box!important;border:0!important;border-bottom:1px solid rgba(90,98,105,.12)!important;border-radius:0!important;background-color:rgba(242,244,245,.13)!important;background-image:repeating-linear-gradient(135deg,transparent 0px,transparent 9px,rgba(108,116,124,.09) 9px,rgba(108,116,124,.09) 10px)!important;box-shadow:none!important;';
     layer.appendChild(strip);
     root.appendChild(layer);
     return {root,n,dot,height,layer,strip,prior:root.getAttribute('data-ebook-sidebar-top'),
@@ -794,13 +715,13 @@
   }
   function counterAppearance(ref) {
     const fallback={'--eb-count-diameter':'19px','--eb-count-bg':'#C9CDCF',
-      '--eb-count-border':'0 solid transparent','--eb-count-ink':'#292D30',
+      '--eb-count-ink':'#292D30',
       '--eb-count-font':'var(--eb-mono)','--eb-count-font-size':'11px','--eb-count-weight':'500'};
     if(!ref)return fallback;
     const box=getComputedStyle(ref.circle),num=getComputedStyle(ref.number),r=ref.circle.getBoundingClientRect();
     if(r.width<12||r.width>36||r.height<12||r.height>36)return fallback;
     return {'--eb-count-diameter':Math.round(r.height*10)/10+'px',
-      '--eb-count-bg':box.backgroundColor,'--eb-count-border':'0 solid transparent',
+      '--eb-count-bg':box.backgroundColor,
       '--eb-count-ink':num.color,'--eb-count-font':num.fontFamily,
       '--eb-count-font-size':num.fontSize,'--eb-count-weight':num.fontWeight};
   }
@@ -875,7 +796,7 @@
         const band=parseFloat(rail.style.getPropertyValue('--eb-sidebar-top-height'));
         if(Number.isFinite(band))baseTop=Math.max(baseTop,rr.top+band);
         if(labelRect&&ref&&rail.contains(ref.dot))baseTop=Math.max(baseTop,labelRect.bottom+3);
-        g={rr,lr,center,baseTop,appearance,diameter:parseFloat(appearance['--eb-count-diameter']),lw:layer.offsetWidth,lh:layer.offsetHeight};boxes.set(rail,g);
+        g={rr,lr,center,baseTop,appearance,layer,diameter:parseFloat(appearance['--eb-count-diameter']),lw:layer.offsetWidth,lh:layer.offsetHeight};boxes.set(rail,g);
       }
       const r=visibleBox(row),tr=visibleBox(title);
       if(!tr){plans.push({badge,hidden:true});continue;}
@@ -883,11 +804,12 @@
       const viewport=countViewport(row,rail,g.rr,g.baseTop,clips);
       const p=countCoordinates(g.center,y,g.diameter,g.rr,viewport,g.lr,g.lw,g.lh);
       if(!p){plans.push({badge,hidden:true});continue;}
-      plans.push({badge,p,appearance:g.appearance,hidden:row.matches(':hover,:focus-within')});
+      plans.push({badge,p,hidden:row.matches(':hover,:focus-within')});
     }
-    for(const {badge,p,appearance,hidden} of plans) {
+    // Shared Dot appearance is inherited from one layer, not written to each badge.
+    for(const {layer,appearance} of boxes.values())for(const [k,v] of Object.entries(appearance))makeImportant(layer,k,v);
+    for(const {badge,p,hidden} of plans) {
       if(p) {
-        for(const [k,v] of Object.entries(appearance))makeImportant(badge,k,v);
         makeImportant(badge,'--eb-count-x',Math.round(p.x*10)/10+'px');
         makeImportant(badge,'--eb-count-y',Math.round(p.y*10)/10+'px');
       }
@@ -907,21 +829,9 @@
     }
     if(!countPositionFrame)countPositionFrame=requestAnimationFrame(()=>{countPositionFrame=0;refreshPositionNow();});
   }
-  // Apply directly to our own noninteractive badges, independent of
-  // the installed Stylus version. No changes to native Dot or focus rings.
-  function forceBorderlessCount(badge) {
-    if(badge.style.getPropertyValue('border-style')!=='none'||
-       badge.style.getPropertyPriority('border-style')!=='important')
-      badge.style.setProperty('border','0 none transparent','important');
-    if(badge.style.getPropertyValue('outline-style')!=='none'||
-       badge.style.getPropertyPriority('outline-style')!=='important')
-      badge.style.setProperty('outline','0 none transparent','important');
-    makeImportant(badge,'box-shadow','none');
-    makeImportant(badge,'background-image','none');
-  }
   function markProjectCounts() {
     const ref=findDotCountReference(),live=new Set();
-    for(const row of document.querySelectorAll(PROJECT_ROW)) {
+    for(const row of projectRows()) {
       const title=row.querySelector('[data-marquee-content="true"]');
       const rail=projectRail(row,ref);
       if(!title||!visibleBox(title)||!rail)continue;
@@ -936,7 +846,6 @@
       }
       item.title=title;item.layer=layer;
       const {badge}=item;
-      forceBorderlessCount(badge);
       if(badge.parentElement!==layer)layer.appendChild(badge);
       if(badge.textContent!==state.label)badge.textContent=state.label;
       for(const [k,v] of Object.entries({'data-ebook-count-state':state.kind,
@@ -961,23 +870,6 @@
       if (!root.isConnected) continue;
       const anchors = root.querySelectorAll('a[href*="/c/"]');
       for (const anchor of anchors) decorate(anchor);
-    }
-  }
-
-  function syncClock() {
-    const shadow = document.getElementById(CLOCK_HOST)?.shadowRoot;
-    if (!shadow) return;
-    const current = shadow.querySelector(`#${CLOCK_CSS_ID}`);
-    if (!current) {
-      const style = document.createElement('style');
-      style.id = CLOCK_CSS_ID;
-      style.textContent = clockCSS;
-      shadow.appendChild(style);
-      shadowStyle = style;
-    } else {
-      shadowStyle = current;
-      // Status can append a new style on reattachment. This stylesheet only
-      // covers Life Clock, never Status' own buttons, so ordering is safe.
     }
   }
 
@@ -1144,7 +1036,7 @@
     const id=(location.pathname.match(/\/c\/([^/?#]+)/)||[])[1]||'';
     const selected=[...document.querySelectorAll('a[href*="/c/"]')].find(a=>
       id && (a.getAttribute('href')||'').includes('/c/'+id))||
-      document.querySelector('[data-jaroo-selected="true"] a[href*="/c/"],a[aria-current="page"][href*="/c/"]');
+      document.querySelector('a[aria-current="page"][href*="/c/"]');
     const normalize=s=>(s||'').replace(/^\[(?:RUN|DONE)[^\]]*\]\s*/iu,'')
       .replace(/^[☆★▷▶○●>›]\s*/u,'').replace(/\s+/g,'').trim();
     const names=[normalize(selected?.getAttribute('aria-label')),normalize(selected?.textContent),
@@ -1412,7 +1304,8 @@
   }
   function enforceOpticalSidebarText() {
     const tokens=getComputedStyle(document.documentElement);
-    const cssReady=tokens.getPropertyValue('--eb-first-paint-nav').trim()==='1';
+    const cssReady=tokens.getPropertyValue('--eb-css-owner').trim()==='1';
+    if(!cssReady)return;
     const projectSize=tokens.getPropertyValue('--eb-project-optical-size').trim()||'16px';
     const chatSize=tokens.getPropertyValue('--eb-chat-corrected-size').trim()||'15.333px';
     const targets=new Map(),projectLeaves=new Set();
@@ -1440,16 +1333,6 @@
         const project=el.closest('[data-marquee-content="true"],[data-marquee-text="true"]')?.closest(PROJECT_ROW);
         if(project){add(el,true);continue;}
         if(el.closest(navScope)&&el.closest('a[href*="/c/"],[data-thread-title="true"]')&&!el.closest('button'))add(el,false);
-      }
-    } else {
-      for(const title of document.querySelectorAll('[data-thread-title="true"]')) {
-        if(!title.closest(navScope))continue;
-        add(title,false);
-        for(const el of title.querySelectorAll('span,div,[data-d-component="text"]'))add(el,false);
-      }
-      for(const title of document.querySelectorAll('[data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] [data-marquee-content="true"]')) {
-        add(title,true);
-        for(const el of title.querySelectorAll('span,div,[data-d-component="text"]'))add(el,true);
       }
     }
     for(const [el,original] of opticalFontOriginal)if(!el.isConnected||!targets.has(el)){
@@ -1501,8 +1384,6 @@
      Original inline values are restored on disable/theme swap. */
   const composerFrameOriginal=new Map();
   const composerMutedOriginal=new Map();
-  const frameProperties=['border','border-radius','box-shadow','-webkit-box-shadow','outline'];
-  const muteProperties=['border','outline','box-shadow','-webkit-box-shadow'];
   function snapshotStyle(el,properties){
     const prev={};
     for(const p of properties)prev[p]={
@@ -1529,103 +1410,103 @@
     if(!values){values=new Map();importantValues.set(el,values);}
     values.set(property,{requested:value,actual:el.style.getPropertyValue(property)});
   }
+  // Static styles are never written by default. An explicit native inline
+  // important declaration is the sole reason for a reversible exception.
+  function inlineException(el,property,value,saved) {
+    const priority=el.style.getPropertyPriority(property);
+    const actual=el.style.getPropertyValue(property);
+    if(priority!=='important'){
+      delete saved[property];
+      return false;
+    }
+    if(actual===value&&!Object.prototype.hasOwnProperty.call(saved,property))return false;
+    const owned=importantValues.get(el)?.get(property);
+    if(!Object.prototype.hasOwnProperty.call(saved,property)||owned&&owned.actual!==actual)
+      saved[property]={value:actual,priority};
+    makeImportant(el,property,value);
+    return true;
+  }
+  function applyStaticExceptions(el,required,saved) {
+    for(const [p,v] of Object.entries(required))inlineException(el,p,v,saved);
+    return Object.keys(saved).length>0;
+  }
+  function isStaticOwner() {
+    return !!document.documentElement&&getComputedStyle(document.documentElement).getPropertyValue('--eb-css-owner').trim()==='1';
+  }
+  let framedEditor=null;
+  const borderSides=['top','right','bottom','left'];
+  function borderRequirements(stroke,muted,radius) {
+    const out={'box-shadow':'none','-webkit-box-shadow':'none','outline-style':'none','outline-width':'0px'};
+    for(const side of borderSides) {
+      out['border-'+side+'-width']=muted?'0px':'2.5px';
+      out['border-'+side+'-style']=muted?'none':'solid';
+      if(!muted)out['border-'+side+'-color']=stroke;
+    }
+    if(!muted)for(const corner of ['top-left','top-right','bottom-right','bottom-left'])out['border-'+corner+'-radius']=radius;
+    return out;
+  }
   function syncComposerFrame() {
-    const context=activeComposer();
-    const editor=context?.editor;
-    if(!editor || !editor.isConnected) {
-      restoreComposerFrames();
-      return;
+    const context=activeComposer(),editor=context?.editor;
+    if(!editor?.isConnected){restoreComposerFrames();framedEditor=null;return;}
+    const known=editor.closest('#composer-background')||editor.closest('[data-testid="composer"]');
+    let chosen=known;
+    if(!chosen&&editor===framedEditor)chosen=[...composerFrameOriginal.keys()].find(el=>el.isConnected&&el.contains(editor));
+    if(!chosen){
+      // Only unknown structures need layout measurement. Never search past
+      // the editor's form or the page body.
+      const eb=editor.getBoundingClientRect();
+      if(eb.width<40)return;
+      let fallback=context.form||null;
+      for(let el=editor.parentElement,depth=0;el&&el!==document.body&&depth<12;el=el.parentElement,depth++){
+        const r=el.getBoundingClientRect(),s=getComputedStyle(el);
+        if(r.width>=Math.max(165,eb.width*.87)&&r.height>=eb.height+8&&r.height<=650&&
+           r.top<=eb.top+8&&r.bottom>=eb.bottom-5&&parseFloat(s.borderTopLeftRadius)>=8&&
+           (parseFloat(s.borderTopWidth)>=.5||s.boxShadow!=='none')){
+          fallback=el;break;
+        }
+        if(el===context.form)break;
+      }
+      chosen=fallback;
     }
-    const eb=editor.getBoundingClientRect();
-    if(eb.width<40)return;
-    const ancestors=[];
-    let cur=editor.parentElement;
-    for(let i=0;cur&&cur!==document.body&&i<16;i++,cur=cur.parentElement){
-      ancestors.push(cur);
-      if(cur.matches('form'))break;
+    if(!chosen||!chosen.contains(editor)){restoreComposerFrames();framedEditor=null;return;}
+    const muted=new Set();
+    // A form is the outer boundary, not a reason to climb into the page.
+    if(context.form&&chosen!==context.form&&context.form.contains(chosen)){
+      for(let el=chosen.parentElement;el&&el!==document.body;el=el.parentElement){
+        muted.add(el);if(el===context.form)break;
+      }
     }
-    const withinComposer=el=>{
-      const r=el.getBoundingClientRect();
-      return r.width>=Math.max(165,eb.width*.87) &&
-        r.height>=eb.height+8 && r.height<=650 &&
-        r.top<=eb.top+8 && r.bottom>=eb.bottom-5;
-    };
-    // Hold a previously chosen frame stable over refreshes; its border is
-    // already black and should not cause another native ancestor to be chosen.
-    let chosen=[...composerFrameOriginal.keys()].find(el=>
-      el.isConnected && el.contains(editor) && withinComposer(el));
-    if(!chosen) {
-      const nativeRounded=ancestors.filter(el=>{
-        if(!withinComposer(el))return false;
-        const s=getComputedStyle(el);
-        const border=parseFloat(s.borderTopWidth)||0;
-        const radius=parseFloat(s.borderTopLeftRadius)||0;
-        const shadowEdge=s.boxShadow && s.boxShadow!=='none';
-        return radius>=8 && ((border>=.5 && s.borderTopStyle!=='none') || shadowEdge);
-      });
-      chosen=nativeRounded[0] ||
-        ancestors.find(el=>el.id==='composer-background' && withinComposer(el)) ||
-        ancestors.find(el=>el.matches('[data-testid="composer"]') && withinComposer(el)) ||
-        ancestors.find(el=>el.matches('form') && withinComposer(el));
-    }
-    if(!chosen) return;
-    const outerAncestors=[];
-    let parent=chosen.parentElement;
-    for(let i=0;parent&&parent!==document.body&&i<12;i++,parent=parent.parentElement){
-      if(!parent.contains(editor))break;
-      outerAncestors.push(parent);
-      if(parent.matches('form'))break;
-    }
-    const muted=new Set(outerAncestors);
-    // In case a formerly selected frame becomes an ancestor after a React
-    // redraw, restore its saved properties before marking it as muted.
-    for(const [el,saved] of composerFrameOriginal){
-      if(el===chosen)continue;
+    for(const [el,saved] of composerFrameOriginal)if(el!==chosen){
       restoreStyle(el,saved);
-      el.removeAttribute('data-ebook-composer-frame');
-      el.style.removeProperty('--eb-composer-native-radius');
+      if(el.isConnected){el.removeAttribute('data-ebook-composer-frame');el.style.removeProperty('--eb-composer-native-radius');}
       composerFrameOriginal.delete(el);
     }
-    for(const [el,saved] of composerMutedOriginal){
-      if(muted.has(el))continue;
-      restoreStyle(el,saved);
-      el.removeAttribute('data-ebook-composer-muted');
+    for(const [el,saved] of composerMutedOriginal)if(!muted.has(el)){
+      restoreStyle(el,saved);if(el.isConnected)el.removeAttribute('data-ebook-composer-muted');
       composerMutedOriginal.delete(el);
     }
-    // If an older muted ancestor becomes the chosen inner frame, restore
-    // its original style before applying its new accent keyline.
     if(composerMutedOriginal.has(chosen)){
-      restoreStyle(chosen,composerMutedOriginal.get(chosen));
-      composerMutedOriginal.delete(chosen);
+      restoreStyle(chosen,composerMutedOriginal.get(chosen));composerMutedOriginal.delete(chosen);
       chosen.removeAttribute('data-ebook-composer-muted');
     }
+    const tokens=getComputedStyle(document.documentElement);
+    const stroke=tokens.getPropertyValue('--eb-accent-ink').trim()||'#303438';
     if(!composerFrameOriginal.has(chosen)){
-      const original=getComputedStyle(chosen);
-      const radius=Math.max(22,Math.min(36,
-        parseFloat(original.borderTopLeftRadius)||24));
-      composerFrameOriginal.set(chosen,snapshotStyle(chosen,frameProperties));
-      makeImportant(chosen,'--eb-composer-native-radius',radius+'px');
+      composerFrameOriginal.set(chosen,{});
+      if(!known&&!chosen.matches('form')){
+        const radius=Math.max(22,Math.min(36,parseFloat(getComputedStyle(chosen).borderTopLeftRadius)||24));
+        makeImportant(chosen,'--eb-composer-native-radius',radius+'px');
+      }
     }
-    if(!chosen.hasAttribute('data-ebook-composer-frame'))chosen.setAttribute('data-ebook-composer-frame','true');
-    makeImportant(chosen,'border',getComputedStyle(document.documentElement).getPropertyValue('--eb-composer-single-stroke').trim()||'2.5px solid #303438');
-    makeImportant(chosen,'border-radius',
-      chosen.style.getPropertyValue('--eb-composer-native-radius')||'24px');
-    makeImportant(chosen,'box-shadow','none');
-    makeImportant(chosen,'-webkit-box-shadow','none');
-    makeImportant(chosen,'outline','none');
+    framedEditor=editor;
+    if(chosen.getAttribute('data-ebook-composer-frame')!=='true')chosen.setAttribute('data-ebook-composer-frame','true');
+    const radius=getComputedStyle(chosen).getPropertyValue('--eb-composer-native-radius').trim()||'24px';
+    applyStaticExceptions(chosen,borderRequirements(stroke,false,radius),composerFrameOriginal.get(chosen));
     for(const el of muted){
-      if(!composerMutedOriginal.has(el))
-        composerMutedOriginal.set(el,snapshotStyle(el,muteProperties));
-      if(!el.hasAttribute('data-ebook-composer-muted'))el.setAttribute('data-ebook-composer-muted','true');
-      makeImportant(el,'border','0');
-      makeImportant(el,'outline','none');
-      makeImportant(el,'box-shadow','none');
-      makeImportant(el,'-webkit-box-shadow','none');
+      if(!composerMutedOriginal.has(el))composerMutedOriginal.set(el,{});
+      if(el.getAttribute('data-ebook-composer-muted')!=='true')el.setAttribute('data-ebook-composer-muted','true');
+      applyStaticExceptions(el,borderRequirements(stroke,true,radius),composerMutedOriginal.get(el));
     }
-    for(const el of composerFrameOriginal.keys())if(!el.isConnected)
-      composerFrameOriginal.delete(el);
-    for(const el of composerMutedOriginal.keys())if(!el.isConnected)
-      composerMutedOriginal.delete(el);
   }
   function restoreComposerFrames(){
     for(const [el,saved] of composerFrameOriginal){
@@ -1635,7 +1516,7 @@
         el.style.removeProperty('--eb-composer-native-radius');
       }
     }
-    composerFrameOriginal.clear();
+    composerFrameOriginal.clear();framedEditor=null;
     for(const [el,saved] of composerMutedOriginal){
       restoreStyle(el,saved);
       if(el.isConnected)el.removeAttribute('data-ebook-composer-muted');
@@ -1649,87 +1530,55 @@
      leaves; this is why font-size looked unchanged. Original inline values
      are restored on disable or script update. */
   const promptTypeOriginal=new Map();
-  const promptTypeProps=['font-size','font-weight','font-synthesis-weight','letter-spacing','color','-webkit-text-fill-color','line-height'];
+  const promptSurface='[data-message-author-role="user"],[data-user-message],[data-user-message-bubble="true"],.bg-user-message';
+  const promptExclusion='button,[role="button"],[role="toolbar"],svg,pre,code,kbd,samp,table,[role="table"],[data-d-component="math"],[aria-hidden="true"],.sr-only,[data-testid*="attachment" i],[data-testid*="file" i],[data-testid*="upload" i]';
   function markPromptTypography(scope='all') {
-    const chosen=new Map();
     const tokens=getComputedStyle(document.documentElement);
-    const reading=tokens.getPropertyValue('--eb-prompt-optical-size').trim() || '16px';
-    // Fixed sent-message values prevent a stale Stylus CSS token (14px / 700)
-    // from silently overriding this newer userscript's 15px / 650 target.
-    // Keep composer, assistant and sidebar typography unchanged.
+    const font=tokens.getPropertyValue('--eb-font').trim();
+    const reading=tokens.getPropertyValue('--eb-prompt-optical-size').trim()||'16px';
     const sentReading=tokens.getPropertyValue('--eb-user-sent-optical-size').trim()||'16.067px';
     const ink=tokens.getPropertyValue('--eb-prompt-sent-ink').trim()||'#292D30';
     const sentWeight=tokens.getPropertyValue('--eb-prompt-sent-weight').trim()||'572';
-    const hasDirectText=el=>[...el.childNodes].some(node=>
-      node.nodeType===Node.TEXT_NODE && (node.nodeValue||'').trim().length>0);
-    const add=(el,kind)=>{
-      if(el.closest('button,[role="button"],[role="toolbar"],svg,pre,code,kbd,samp,table,[role="table"],[data-d-component="math"]'))return;
-      if(el.closest('[aria-hidden="true"],.sr-only'))return;
-      chosen.set(el,kind);
-    };
-    const editor=activeComposer()?.editor;
-    if(scope!=='sent'&&editor?.isConnected){
-      add(editor,'editor');
-      for(const el of editor.querySelectorAll('p,li,span,div,[data-d-component="text"],[data-d-text-flow]')){
-        if(hasDirectText(el))add(el,'editor');
+    const styles={editor:{'font-family':font,'font-size':reading,'line-height':'1.56'},
+      sent:{'font-family':font,'font-size':sentReading,'font-weight':sentWeight,'font-synthesis-weight':'none',
+        'letter-spacing':'-0.01em','color':ink,'-webkit-text-fill-color':ink,'line-height':'1.55'}};
+    const chosen=new Map(),direct=new Set();
+    const hasDirectText=el=>[...el.childNodes].some(n=>n.nodeType===3&&(n.nodeValue||'').trim());
+    function add(el,kind,needsMarker=false){
+      if(!el?.isConnected||el.closest(promptExclusion))return;
+      if(!el.matches('p,li,span,div,[data-d-component="text"],[data-d-text-flow],.whitespace-pre-wrap,[contenteditable="true"]'))return;
+      if(needsMarker)direct.add(el);
+      if(needsMarker||el.hasAttribute('style')||promptTypeOriginal.has(el))chosen.set(el,kind);
+    }
+    if(scope!=='sent'){
+      const editor=activeComposer()?.editor;
+      if(editor?.isConnected){
+        add(editor,'editor');
+        for(const el of editor.querySelectorAll('[style]'))add(el,'editor');
       }
     }
-    if(scope!=='editor') {
-      const targets=new Map();
-      for(const message of document.querySelectorAll(
-        '[data-message-author-role="user"],[data-user-message],[data-user-message-bubble="true"],.bg-user-message'
-      )) {
-        const bubble=message.matches('[data-user-message],[data-user-message-bubble="true"],.bg-user-message')
-          ? message : message.querySelector('[data-user-message],[data-user-message-bubble="true"],.bg-user-message');
-        const target=bubble||message;
-        targets.set(target,!!bubble||hasDirectText(message)||!!targets.get(target));
-      }
-      // The native outer turn and nested bubble often identify the same
-      // target. Scan and apply its text descendants only once per pass.
-      for(const [target,include] of targets) {
-        if(include)add(target,'sent');
-        for(const el of target.querySelectorAll('p,li,span,div,[data-d-component="text"],[data-d-text-flow],.whitespace-pre-wrap'))
-          if(hasDirectText(el))add(el,'sent');
-      }
+    if(scope!=='editor'){
+      for(const root of document.querySelectorAll(promptSurface))
+        if(root.matches('[data-message-author-role="user"]')&&hasDirectText(root))add(root,'sent',true);
+      for(const el of document.querySelectorAll(':is('+promptSurface+')[style],:is('+promptSurface+') [style]'))add(el,'sent');
     }
     for(const [el,record] of promptTypeOriginal){
       if(scope!=='all'&&record.kind!==scope)continue;
       if(chosen.has(el))continue;
-      if(el.isConnected){
-        for(const [property,saved] of Object.entries(record.previous)){
-          if(saved.value)el.style.setProperty(property,saved.value,saved.priority);
-          else el.style.removeProperty(property);
-        }
-        el.removeAttribute('data-ebook-prompt-text');
-      }
+      restoreStyle(el,record.previous);
+      if(el.isConnected)el.removeAttribute('data-ebook-prompt-text');
       promptTypeOriginal.delete(el);
     }
     for(const [el,kind] of chosen){
-      if(!promptTypeOriginal.has(el)){
-        const previous={};
-        for(const property of promptTypeProps)previous[property]={
-          value:el.style.getPropertyValue(property),
-          priority:el.style.getPropertyPriority(property)
-        };
-        promptTypeOriginal.set(el,{kind,previous});
+      const prev=promptTypeOriginal.get(el),saved=prev?.previous||{};
+      const changed=applyStaticExceptions(el,styles[kind],saved);
+      if(direct.has(el)||changed){
+        if(el.getAttribute('data-ebook-prompt-text')!==kind)el.setAttribute('data-ebook-prompt-text',kind);
+        promptTypeOriginal.set(el,{kind,previous:saved});
+      } else if(prev){
+        el.removeAttribute('data-ebook-prompt-text');promptTypeOriginal.delete(el);
       }
-      if(el.getAttribute('data-ebook-prompt-text')!==kind)
-        el.setAttribute('data-ebook-prompt-text',kind);
-      const required={
-        'font-size':kind==='sent'?sentReading:reading,
-        'line-height':kind==='sent'?'1.55':'1.56'
-      };
-      if(kind==='sent'){
-        required['font-weight']=sentWeight;
-        required['font-synthesis-weight']='none';
-        required['letter-spacing']='-0.01em';
-        required.color=ink;
-        required['-webkit-text-fill-color']=ink;
-      }
-      for(const [p,v] of Object.entries(required))makeImportant(el,p,v);
     }
-    for(const el of promptTypeOriginal.keys())if(!el.isConnected)
-      promptTypeOriginal.delete(el);
   }
   function restorePromptTypography(){
     for(const [el,record] of promptTypeOriginal){
@@ -1753,8 +1602,22 @@
   }
   function update(mask) {
     if(disposed||!document.body||!document.documentElement)return;
+    if(!cssOwnerReady){
+      cssOwnerReady=isStaticOwner();
+      if(!cssOwnerReady){
+        dirty|=mask;
+        if(cssReadyAttempts<20&&!cssReadyTimer){
+          cssReadyAttempts++;
+          cssReadyTimer=setTimeout(()=>{cssReadyTimer=0;schedule(ALL);},80);
+        }
+        return;
+      }
+      clearTimeout(cssReadyTimer);cssReadyTimer=0;
+    }
     timings.runs++;
     if(mask&PASS.NAV)timed('nav',()=>{
+      navPassRows=[...document.querySelectorAll(PROJECT_ROW)];
+      try {
       attachObservers();
       synchronizeSidebar();
       enforceOpticalSidebarText();
@@ -1765,6 +1628,7 @@
       markProjectTitles();
       markProjectCounts();
       attachObservers();
+      } finally {navPassRows=null;}
     });
     if(mask&PASS.COMPOSER)timed('composer',()=>{
       watchComposer();
@@ -1778,7 +1642,6 @@
       markWorkSwitcher();
       markCurrentChatTitle();
     });
-    if(mask&PASS.CLOCK)timed('clock',syncClock);
   }
   function schedule(mask=ALL) {
     if(disposed)return;
@@ -1802,7 +1665,7 @@
     if(document.hidden){dirty|=ALL;return;}
     if(location.pathname!==lastRoute){lastRoute=location.pathname;schedule(ALL);return;}
     let mask=0;
-    const structure=SIDE_ROOTS+','+NATIVE_NAV_SECTIONS+','+PROJECT_ROW+','+EDITOR_NODE+',#composer-background,[data-testid="composer"],'+USER_NODE+','+HEADER_NODE+',#'+CLOCK_HOST;
+    const structure=SIDE_ROOTS+','+NATIVE_NAV_SECTIONS+','+PROJECT_ROW+','+EDITOR_NODE+',#composer-background,[data-testid="composer"],'+USER_NODE+','+HEADER_NODE;
     for(const m of records) {
       const target=m.target.nodeType===1?m.target:m.target.parentElement;
       // Streaming assistant output and ordinary editor/sidebar mutations
@@ -1821,7 +1684,6 @@
           mask|=PASS.COMPOSER|PASS.EDITOR|PASS.DIVIDER;
         if(matchesOrContains(n,USER_NODE))mask|=PASS.SENT;
         if(matchesOrContains(n,HEADER_NODE))mask|=PASS.HEADER;
-        if(matchesOrContains(n,'#'+CLOCK_HOST))mask|=PASS.CLOCK;
       }
     }
     if(mask)schedule(mask);
@@ -1837,6 +1699,7 @@
   }
   function recoverLightly() {
     if(document.hidden||disposed||!document.body)return;
+    if(!cssOwnerReady){if(isStaticOwner())schedule(ALL);return;}
     if(location.pathname!==lastRoute){lastRoute=location.pathname;schedule(ALL);return;}
     let mask=0;
     const roots=sidebarObserverRoots();
@@ -1847,7 +1710,14 @@
     const now=performance.now();
     // Low-frequency safety net for native changes not emitted as DOM
     // child mutations; no full scan every four seconds.
-    if(now-lastRecovery>60000){lastRecovery=now;mask|=ALL;}
+    if(now-lastRecovery>60000){
+      lastRecovery=now;
+      // Rare structural recovery only; never restyle historical messages
+      // or walk all static typography as a periodic task.
+      if(!observedRoots.length||[...countHosts.keys()].some(n=>!n.isConnected)||
+         (document.querySelector(PROJECT_ROW)&&!countHosts.size))mask|=PASS.NAV;
+      if(c?.editor&&!composerFrameOriginal.size)mask|=PASS.COMPOSER|PASS.DIVIDER;
+    }
     if(mask)schedule(mask);
   }
 
@@ -1876,6 +1746,7 @@
     uploadResizeTargets.clear();
     clearTimeout(uploadIntentTimer);
     clearInterval(recoverTimer);
+    clearTimeout(cssReadyTimer);cssReadyTimer=0;
     if (frame) cancelAnimationFrame(frame);
     restore();
     restoreOpticalSidebarText();
@@ -1884,14 +1755,12 @@
     restoreQuickDotTypography();
     restoreProjectCounts();
     restoreFixedSidebarTop();
-    restoreNotebookMarks();
+    restoreNotebookMarks();presentationMarks.clear();
     document.querySelectorAll('[data-ebook-quick-label]').forEach(n=>n.removeAttribute('data-ebook-quick-label'));
     document.querySelectorAll('[data-ebook-effort-picker="true"]').forEach(n=>n.removeAttribute('data-ebook-effort-picker'));
     document.querySelectorAll('[data-ebook-active-title="true"]').forEach(n=>n.removeAttribute('data-ebook-active-title'));
     document.querySelectorAll('[data-ebook-upload-divider="true"]').forEach(n=>n.remove());
     document.querySelectorAll('[data-ebook-composer-root="true"]').forEach(n=>n.removeAttribute('data-ebook-composer-root'));
-    shadowStyle?.remove();
-    document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`)?.remove();
     document.removeEventListener('visibilitychange', onVisibility);
     for(const type of ['change','drop','paste'])document.removeEventListener(type,onUploadIntent,true);
     document.removeEventListener('load',onComposerImageLoad,true);
@@ -1957,7 +1826,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.2.35',dispose,refresh:schedule,
-    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),firstPaintNav:getComputedStyle(document.documentElement).getPropertyValue('--eb-first-paint-nav').trim()==='1',opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-project-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state'),overflow:n.getAttribute('data-ebook-count-overflow')==='true',confirmed:n.getAttribute('data-ebook-count-confirmed')===''?null:Number(n.getAttribute('data-ebook-count-confirmed'))})),lastPassMs:{...timings},performance:{events:{...perfEvents},passes:Object.fromEntries(Object.entries(perfPasses).map(([k,v])=>[k,{runs:v.runs,averageMs:Math.round(v.totalMs/v.runs*100)/100,peakMs:Math.round(v.peakMs*100)/100}]))},fixedSidebarTop:[...topBands.values()].map(n=>({height:n.height,visible:getComputedStyle(n.strip).visibility==='visible',pattern:getComputedStyle(n.strip).backgroundImage})),projectCountBorders:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({border:getComputedStyle(n).borderTopWidth,style:getComputedStyle(n).borderTopStyle,outline:getComputedStyle(n).outlineStyle})),projectCountLayers:countLayers.size,positionResizeTargets:navResizeTargets.size,visibleProjectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].filter(n=>getComputedStyle(n).visibility!=='hidden').length,projectCountAxis:findDotCountReference()?.circle.getBoundingClientRect().left??null,fontAudit:fontAudit()})
+    version:'0.3.0-beta.1',dispose,refresh:schedule,
+    diagnostics:() => ({...errors,roots:observedRoots.length,dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),cssOwnerReady,firstPaintNav:getComputedStyle(document.documentElement).getPropertyValue('--eb-first-paint-nav').trim()==='1',opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-project-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,quickInlineExceptions:quickDotOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state'),overflow:n.getAttribute('data-ebook-count-overflow')==='true',confirmed:n.getAttribute('data-ebook-count-confirmed')===''?null:Number(n.getAttribute('data-ebook-count-confirmed'))})),lastPassMs:{...timings},performance:{events:{...perfEvents},passes:Object.fromEntries(Object.entries(perfPasses).map(([k,v])=>[k,{runs:v.runs,averageMs:Math.round(v.totalMs/v.runs*100)/100,peakMs:Math.round(v.peakMs*100)/100}]))},fixedSidebarTop:[...topBands.values()].map(n=>({height:n.height,visible:getComputedStyle(n.strip).visibility==='visible',pattern:getComputedStyle(n.strip).backgroundImage})),projectCountBorders:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({border:getComputedStyle(n).borderTopWidth,style:getComputedStyle(n).borderTopStyle,outline:getComputedStyle(n).outlineStyle})),projectCountLayers:countLayers.size,positionResizeTargets:navResizeTargets.size,visibleProjectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].filter(n=>getComputedStyle(n).visibility!=='hidden').length,projectCountAxis:findDotCountReference()?.circle.getBoundingClientRect().left??null,fontAudit:fontAudit()})
   };
 })();
