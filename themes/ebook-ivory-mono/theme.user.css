@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.49
+@version      0.2.50
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -2102,6 +2102,22 @@
     text-decoration-line:line-through!important;
     text-decoration-color:var(--eb-chat-lifecycle-ink)!important;
     text-decoration-thickness:1px!important;
+  }
+
+  /* v0.2.50 — lower the visual priority of recent chat titles only.
+     The helper identifies native Recent sections; project and pinned rows,
+     status markers, controls and lifecycle styles stay independent. */
+  a[href*="/c/"][data-ebook-recent-chat] { --eb-recent-ink:#70777C; }
+  a[href*="/c/"][data-ebook-recent-chat]:is([data-ebook-recent-chat="active"],:hover,:focus-visible,:focus-within,[aria-current="page"],[aria-selected="true"]),
+  :is([data-jaroo-selected="true"],[data-selected="true"],[aria-current="page"]) a[href*="/c/"][data-ebook-recent-chat] {
+    --eb-recent-ink:#292D30;
+  }
+  html body :is(#stage-sidebar a,a[data-ebook-recent-chat])[href*="/c/"][data-ebook-recent-chat]:not([data-ebook-chat-lifecycle]):not(:has([data-ebook-chat-lifecycle])),
+  html body :is(#stage-sidebar a,a[data-ebook-recent-chat])[href*="/c/"][data-ebook-recent-chat]:not([data-ebook-chat-lifecycle]):not(:has([data-ebook-chat-lifecycle]))
+    :is(span,div,p,[data-d-component="text"]):not(:is(svg *,button,button *,[role="button"],[role="button"] *,[role="toolbar"],[role="toolbar"] *,[aria-hidden="true"],[aria-hidden="true"] *, .sr-only,.sr-only *,[data-ebook-glyph="true"],[data-ebook-project-count],.jaroo-native-badge,.jaroo-native-badge *,[data-jaroo-status-slot],[data-jaroo-status-slot] *)) {
+    color:var(--eb-recent-ink)!important;
+    -webkit-text-fill-color:var(--eb-recent-ink)!important;
+    font-weight:400!important;
   }
 
 }
