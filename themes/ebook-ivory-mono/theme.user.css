@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.38
+@version      0.2.39
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -1521,7 +1521,7 @@
     --eb-composer-single-stroke:2.5px solid #303438!important;
     --eb-quick-nav-size:var(--eb-project-optical-size,16px)!important;
     --eb-marker-yellow:#F2D778!important;
-    --ebook-theme-version:"0.2.38";
+    --ebook-theme-version:"0.2.39";
   }
   /* Preserve the existing procedural paper-grain SVG and only refine grid pitch. */
   html body :is(#thread,[data-testid="conversation-panel"],
@@ -1939,6 +1939,46 @@
   html body [role="menu"] [role="separator"]:not([aria-orientation="vertical"]) {
     border-color:var(--eb-line,#C5CDD0)!important;
     background-color:var(--eb-line,#C5CDD0)!important;
+  }
+
+
+  /* 34. FIXED SIDEBAR HEADER · QUIET DIAGONAL PAPER — v0.2.39
+     Only the existing top band above the native scrolling list.
+     A 1px / 10px low-contrast hatch, no layout or stacking changes. */
+  :root {
+    --eb-top-paper:#EDF0F1;
+    --eb-top-pattern:repeating-linear-gradient(135deg,
+      transparent 0px,transparent 9px,rgba(108,116,124,.06) 9px,
+      rgba(108,116,124,.06) 10px);
+    --eb-top-edge:linear-gradient(to bottom,
+      transparent calc(100% - 1px),rgba(90,98,105,.12) 0);
+  }
+  html body [data-ebook-sidebar-top="band"] {
+    background-image:
+      var(--eb-top-edge),
+      var(--eb-top-pattern),
+      linear-gradient(var(--eb-top-paper),var(--eb-top-paper)),
+      linear-gradient(rgba(231,234,235,.88),rgba(231,234,235,.88)),
+      var(--eb-classic-paper-grain)!important;
+    background-size:
+      100% var(--eb-sidebar-top-height),
+      100% var(--eb-sidebar-top-height),
+      100% var(--eb-sidebar-top-height),
+      100% 100%,240px 240px!important;
+    background-position:top left!important;
+    background-repeat:no-repeat,no-repeat,no-repeat,no-repeat,repeat!important;
+  }
+  /* Some native builds use opaque full-width wrappers above the scroll
+     viewport. Paint those safe surfaces in the same band coordinate space.
+     Do not paint action buttons, project rows, scroll lists or the Clock. */
+  html body [data-ebook-sidebar-top="band"] [data-ebook-sidebar-top="surface"] {
+    background-color:var(--eb-top-paper)!important;
+    background-image:var(--eb-top-edge),var(--eb-top-pattern)!important;
+    background-size:
+      var(--eb-sidebar-top-width) var(--eb-sidebar-top-height),
+      var(--eb-sidebar-top-width) var(--eb-sidebar-top-height)!important;
+    background-position:var(--eb-top-x,0px) var(--eb-top-y,0px)!important;
+    background-repeat:no-repeat!important;
   }
 
 }
