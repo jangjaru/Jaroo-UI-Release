@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.2.44
+// @version      0.2.45
 // @description  E-book visual dot indicators for role prefixes plus a light Clock skin; keeps original chat titles, React data and RUN/DONE logic intact.
 // @match        https://chatgpt.com/*
 // @run-at       document-start
@@ -1316,6 +1316,102 @@
       copy.replaceWith(document.createTextNode(copy.textContent||''));
   }
 
+
+  /* v0.2.45 — pixel-snap only the paint of existing role markers.
+     No new title nodes, no layout/ordering changes. The CSS slot is 10px
+     and the nominal circle diameter is 7px. At fractional DPR, snap the
+     diameter to a whole device pixel, and place its bounding box on the
+     device-pixel lattice. Read geometry first, then update paint variables.
+     Unsupported layouts use the CSS circular-gradient fallback. */
+  const roleDotPixelProps=['x','y','inner','outer'].map(key=>'--eb-role-snap-'+key);
+  const roleDotPixelMarks=new Set();
+  let roleDotPixelFrame=0,roleDotScrollTimer=0,lastRoleDotDpr=0;
+  function roleDotPixelGeometry(dpr,left,top) {
+    if(!Number.isFinite(dpr)||dpr<0.5||dpr>8||
+       !Number.isFinite(left)||!Number.isFinite(top))return null;
+    const diameter=Math.max(1,Math.round(7*dpr));
+    const inner=(diameter-1)/(2*dpr),outer=(diameter+1)/(2*dpr);
+    const phase=(diameter%2)/2;
+    const center=origin=>{
+      const c=(Math.round((origin+5)*dpr-phase)+phase)/dpr-origin;
+      return c>=outer&&c<=10-outer?c:5;
+    };
+    return [center(left),center(top),inner,outer];
+  }
+  function clearRoleDotPixelMark(el) {
+    for(const prop of roleDotPixelProps)el.style.removeProperty(prop);
+    roleDotPixelMarks.delete(el);
+  }
+  function syncRoleDotPixels() {
+    roleDotPixelFrame=0;
+    if(disposed||document.hidden||!document.documentElement)return;
+    const dpr=window.devicePixelRatio||1;
+    lastRoleDotDpr=dpr;
+    if(getComputedStyle(document.documentElement).getPropertyValue('--eb-role-pixel-snap-ready').trim()!=='1'){
+      for(const el of roleDotPixelMarks)clearRoleDotPixelMark(el);
+      return;
+    }
+    const pending=[],stale=new Set();
+    for(const el of roleDotPixelMarks) {
+      if(!el.isConnected||!touched.has(el)||!el.hasAttribute('data-ebook-role')||
+         el.closest('a[data-ebook-recent-chat]'))stale.add(el);
+    }
+    for(const el of touched) {
+      if(!el.isConnected||!el.hasAttribute('data-ebook-role')||
+         el.closest('a[data-ebook-recent-chat]'))continue;
+      const rect=el.getBoundingClientRect();
+      if(!rect.width||!rect.height||rect.bottom<=0||rect.top>=window.innerHeight||
+         rect.right<=0||rect.left>=window.innerWidth)continue;
+      const c=getComputedStyle(el),marker=getComputedStyle(el,'::before');
+      // Restrict positional math to the single-row, start-aligned flex
+      // layout used by the theme. Avoid guessing scaled/transformed boxes.
+      if(marker.getPropertyValue('--eb-role-pixel-snap').trim()!=='1'||
+         !['flex','inline-flex'].includes(c.display)||c.flexDirection!=='row'||
+         c.flexWrap!=='nowrap'||c.direction!=='ltr'||
+         !['normal','start','flex-start','left'].includes(c.justifyContent)||
+         Math.abs(rect.width-el.offsetWidth)>1||Math.abs(rect.height-el.offsetHeight)>1){
+        if(roleDotPixelMarks.has(el))stale.add(el);
+        continue;
+      }
+      const px=value=>parseFloat(value)||0;
+      const left=rect.left+px(c.borderLeftWidth)+px(c.paddingLeft);
+      const before=px(c.borderTopWidth)+px(c.paddingTop);
+      const after=px(c.borderBottomWidth)+px(c.paddingBottom);
+      const top=rect.top+before+(rect.height-before-after-10)/2;
+      const geometry=roleDotPixelGeometry(dpr,left,top);
+      if(!geometry){if(roleDotPixelMarks.has(el))stale.add(el);continue;}
+      pending.push([el,geometry.map(value=>value.toFixed(4)+'px')]);
+    }
+    for(const el of stale)clearRoleDotPixelMark(el);
+    for(const [el,values] of pending) {
+      roleDotPixelProps.forEach((prop,i)=>{
+        if(el.style.getPropertyValue(prop)!==values[i])el.style.setProperty(prop,values[i]);
+      });
+      roleDotPixelMarks.add(el);
+    }
+  }
+  function queueRoleDotPixels() {
+    if(disposed||document.hidden||roleDotPixelFrame)return;
+    roleDotPixelFrame=requestAnimationFrame(syncRoleDotPixels);
+  }
+  function onRoleDotScroll(event) {
+    if(disposed||document.hidden)return;
+    const target=event.target;
+    if(target!==document&&target!==document.documentElement&&
+       (target?.nodeType!==1||!observedRoots.some(root=>root.contains(target)||target.contains(root))))return;
+    // The default gradient stays circular during scrolling; settle after
+    // motion stops instead of measuring all titles on every scroll frame.
+    clearTimeout(roleDotScrollTimer);
+    roleDotScrollTimer=setTimeout(()=>{roleDotScrollTimer=0;queueRoleDotPixels();},80);
+  }
+  function disposeRoleDotPixels() {
+    if(roleDotPixelFrame)cancelAnimationFrame(roleDotPixelFrame);
+    roleDotPixelFrame=0;
+    clearTimeout(roleDotScrollTimer);roleDotScrollTimer=0;
+    document.removeEventListener('scroll',onRoleDotScroll,true);
+    for(const el of roleDotPixelMarks)clearRoleDotPixelMark(el);
+  }
+
   function synchronizeSidebar() {
     if (disposed) return;
     for (const root of observedRoots) {
@@ -2437,6 +2533,7 @@
       markProjectTitles();
       markProjectCounts();
       attachObservers();
+      queueRoleDotPixels();
     });
     if(mask&PASS.COMPOSER)timed('composer',()=>{
       watchComposer();
@@ -2500,6 +2597,7 @@
   }
   function onRouteOrResize(event) {
     if(event?.type==='resize') {
+      queueRoleDotPixels();
       queueProjectCountPosition(event);
       scheduleResizeReconcile();
     } else {
@@ -2511,6 +2609,7 @@
     if(document.hidden||disposed||!document.body)return;
     if(location.pathname!==lastRoute){lastRoute=location.pathname;schedule(ALL);return;}
     let mask=0;
+    if((window.devicePixelRatio||1)!==lastRoleDotDpr)queueRoleDotPixels();
     const roots=sidebarObserverRoots();
     if(roots.length!==observedRoots.length||roots.some((r,i)=>r!==observedRoots[i]))mask|=PASS.NAV|PASS.HEADER;
     const c=activeComposer();
@@ -2543,6 +2642,7 @@
 
   function dispose() {
     disposed = true;
+    disposeRoleDotPixels();
     disposeConversationOutline();
     observer.disconnect();
     composerObserver.disconnect();
@@ -2594,6 +2694,7 @@
     document.addEventListener(type,queueProjectCountPosition,true);
   for(const type of ['change','drop','paste'])document.addEventListener(type,onUploadIntent,true);
   document.addEventListener('load',onComposerImageLoad,true);
+  document.addEventListener('scroll',onRoleDotScroll,{capture:true,passive:true});
   window.addEventListener('focus',schedule);
   window.addEventListener('popstate',onRouteOrResize);
   window.addEventListener('resize',onRouteOrResize);
@@ -2635,7 +2736,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.2.44',dispose,refresh:schedule,outlineDiagnostic,
+    version:'0.2.45',dispose,refresh:schedule,outlineDiagnostic,
     diagnostics:() => ({...errors,sorting:{...sidebarSortDiagnostics,styledRows:sidebarSortSaved.size},roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),firstPaintNav:getComputedStyle(document.documentElement).getPropertyValue('--eb-first-paint-nav').trim()==='1',opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-project-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state'),overflow:n.getAttribute('data-ebook-count-overflow')==='true',confirmed:n.getAttribute('data-ebook-count-confirmed')===''?null:Number(n.getAttribute('data-ebook-count-confirmed'))})),lastPassMs:{...timings},performance:{events:{...perfEvents},passes:Object.fromEntries(Object.entries(perfPasses).map(([k,v])=>[k,{runs:v.runs,averageMs:Math.round(v.totalMs/v.runs*100)/100,peakMs:Math.round(v.peakMs*100)/100}]))},fixedSidebarTop:[...topBands.values()].map(n=>({height:n.height,visible:getComputedStyle(n.strip).visibility==='visible',pattern:getComputedStyle(n.strip).backgroundImage})),projectCountBorders:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({border:getComputedStyle(n).borderTopWidth,style:getComputedStyle(n).borderTopStyle,outline:getComputedStyle(n).outlineStyle})),projectCountLayers:countLayers.size,positionResizeTargets:navResizeTargets.size,visibleProjectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].filter(n=>getComputedStyle(n).visibility!=='hidden').length,projectCountAxis:findDotCountReference()?.circle.getBoundingClientRect().left??null,fontAudit:fontAudit()})
   };
 })();
