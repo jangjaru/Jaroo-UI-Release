@@ -1,8 +1,15 @@
 # Jaroo E-book · Cool E-Ink Graph Paper
 
-**2026-11-24 · Stylus CSS v0.2.39 / Tampermonkey JS v0.2.28**
+**2026-11-24 · Stylus CSS v0.2.40 / Tampermonkey JS v0.2.29**
 
 This update modifies the existing Classic Paper theme; it is **not** a separate mockup or a second overlay.
+
+## v0.2.40 / v0.2.29 · 2026-11-24 — 전송 프롬프트 글자 미세 조정
+
+- 전송된 사용자 메시지 본문만 15.667px → 16.333px(11.75pt → 12.25pt, +0.5pt), 글꼴 굵기 520 → 572(+10%) 적용.
+- CSS의 최종 적용 토큰과 초기 표시 기본값, JS 인라인 보정 기본값을 일치시킴. 글꼴 굵기 값은 10% 증가이며 실제 시각적 두께의 증가율은 폰트 렌더링에 따라 달라질 수 있음.
+- 작성 중인 입력창, 답변, 사이드바, 말풍선 색·테두리·라운드, 프로젝트 카운터, 상단 사선 패턴, 첨부파일 구분선 수정 및 기존 로딩 최적화 유지.
+- 검증: 변경된 토큰·기본값·버전 외 CSS/JS 바이트 동일성, JS 구문, 기존 공개/비공개 원본 및 SHA-256 대조. 실제 로그인 Chrome에서 크기와 굵기 검수 필요.
 
 ## v0.2.39 / v0.2.28 · 2026-11-24 — 첨부파일 구분선 겹침 수정
 
@@ -86,12 +93,12 @@ This update modifies the existing Classic Paper theme; it is **not** a separate 
 - Subtle 22px square notebook grid, preserving the existing embedded paper-grain image.
 - '새 채팅' and 'Dot' labels now match project labels: 16px / weight 650.
 - Current selected conversation heading: 16px → 24px and soft lime marker `#D8EA8B`, only on the active breadcrumb.
-- **Sent** user prompts: 15px → 15.667px (+0.5pt), weight 650 → 520, charcoal ink. Editable composer remains 16px.
+- **Sent** user prompts: 16.333px (12.25pt), weight 572, charcoal ink. Editable composer remains 16px.
 - E-book Clock skin follows the cooler neutrals while preserving segmented digits, Life Clock and existing animations.
 
 ## Install / update in place
-- [Stylus CSS v0.2.39](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/theme.user.css)
-- [Tampermonkey JS v0.2.28](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/indicators.user.js)
+- [Stylus CSS v0.2.40](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/theme.user.css)
+- [Tampermonkey JS v0.2.29](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/indicators.user.js)
 
 Update the **existing** two extension entries rather than installing duplicates. In Stylus and Tampermonkey, run the built-in **Check for updates**, then reload ChatGPT with `Ctrl + Shift + R`.
 
@@ -102,7 +109,7 @@ Use the ChatGPT page console:
 ```js
 window.__jarooEbookIvoryMonoV1?.diagnostics?.()
 ```
-Expected: JS `version: '0.2.28'`, `sentPromptTarget: '15.667px'`; a selected chat should produce `headerMarkers: 1` when its title is visible. CSS version is `0.2.39`. `fixedSidebarTop` reports the matched top band height and marked surfaces. `projectCounts` reports the one-character display, exact/partial/unknown state, overflow and confirmed count, `lastPassMs` reports the most recent scoped update durations (ms), not end-to-end page load time. `quickNavMarkers` reports the actual size, weight and color of New Chat/Dot labels. Diagnostics include `projectMarkers`, `sidebarSeams` and `workSwitcher`; live DOM matching still requires visual confirmation.
+Expected: JS `version: '0.2.29'`, `sentPromptTarget: '16.333px'`; a selected chat should produce `headerMarkers: 1` when its title is visible. CSS version is `0.2.40`. `fixedSidebarTop` reports the matched top band height and marked surfaces. `projectCounts` reports the one-character display, exact/partial/unknown state, overflow and confirmed count, `lastPassMs` reports the most recent scoped update durations (ms), not end-to-end page load time. `quickNavMarkers` reports the actual size, weight and color of New Chat/Dot labels. Diagnostics include `projectMarkers`, `sidebarSeams` and `workSwitcher`; live DOM matching still requires visual confirmation.
 
 To roll back, use the extensions' version history or the previous Git commit of the two E-book files. This release is code-published and statically checked, but **the user's signed-in Chrome rendering and updates have not been verified in this chat**.
 
