@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.2.29
+// @version      0.2.30
 // @description  E-book visual dot indicators for role prefixes plus a light Clock skin; keeps original chat titles, React data and RUN/DONE logic intact.
 // @match        https://chatgpt.com/*
 // @run-at       document-start
@@ -108,7 +108,7 @@
   const ALL=127;
   let dirty=0,lastRoute=location.pathname,lastRecovery=0;
   const timings={nav:0,composer:0,sent:0,header:0,clock:0,editor:0,divider:0,runs:0};
-  const OWN_NODE='[data-ebook-project-count],[data-ebook-upload-divider="true"],[data-ebook-glyph="true"]';
+  const OWN_NODE='[data-ebook-project-count-layer="true"],[data-ebook-project-count],[data-ebook-upload-divider="true"],[data-ebook-glyph="true"]';
   const USER_NODE='[data-message-author-role="user"],[data-user-message-bubble="true"],[data-user-message]';
   const EDITOR_NODE='#prompt-textarea,[data-testid="prompt-textarea"],[data-composer-input] .ProseMirror[contenteditable="true"]';
   const HEADER_NODE='#page-header,[data-testid="conversation-header"],[role="banner"]';
@@ -655,24 +655,26 @@
   function nativeProjectScope(row) {
     const local=row.closest('[data-sidebar-project-kind="local"]');
     if(!local)return null;
-    // The local project wrapper is the reliable grouping boundary. Some
-    // builds put the list in an adjacent child of the same exclusive group.
-    if(local.querySelector(PROJECT_ROW)!==row||
-       local.querySelectorAll(PROJECT_ROW).length>1)return null;
-    let group=local;
-    if(local.querySelector(countLinkSelector))return group;
-    let p=local.parentElement;
-    for(let i=0;p&&i<3;i++,p=p.parentElement) {
-      if(p.matches(SIDE_ROOTS+',aside,nav,[role="navigation"],[role="complementary"]')||
-         p.querySelectorAll(PROJECT_ROW).length!==1||
-         p.querySelectorAll('[data-sidebar-project-kind="local"]').length!==1)break;
-      // Only accept a parent with an explicit list-like sibling area, not
-      // the global sidebar or unrelated conversations.
+    const exclusive=el=>{
+      const headers=[...el.querySelectorAll(PROJECT_ROW)];
+      if(el.matches(PROJECT_ROW))headers.unshift(el);
+      return headers.length===1&&headers[0]===row;
+    };
+    if(!exclusive(local))return null;
+    if(local.querySelector(countLinkSelector))return local;
+    // Support the native layout where the title is a short button and the
+    // conversation list is its sibling inside a repeated project group.
+    for(let p=local.parentElement,depth=0;p&&depth<4;p=p.parentElement,depth++) {
+      if(p.matches(SIDE_ROOTS+',aside,nav,main,[role="navigation"],[role="complementary"],body,html')||
+         !exclusive(p)||p.querySelectorAll('[data-sidebar-project-kind="local"]').length!==1)break;
       const list=[...p.querySelectorAll('[role="list"],[role="group"],[data-sidebar-cycle-list],[data-testid*="project-conversation" i]')]
         .find(n=>!n.contains(row)&&n.querySelector(countLinkSelector));
-      if(list){group=p;break;}
+      if(list)return p;
+      const peers=[...(p.parentElement?.children||[])].some(n=>n!==p&&n.querySelector(PROJECT_ROW));
+      const sibling=[...p.children].find(n=>!n.contains(row)&&!n.querySelector(PROJECT_ROW)&&n.querySelector(countLinkSelector));
+      if(peers&&sibling)return p;
     }
-    return group;
+    return local;
   }
   function explicitProjectTotal(row,group,loaded) {
     for(const el of [row,group])for(const attr of totalAttrs) {
@@ -707,7 +709,7 @@
     if(!group)return formatProjectCount(null,'unknown');
     const ids=new Set();
     for(const el of group.querySelectorAll(countLinkSelector)) {
-      if(row.contains(el)||el.closest('[data-ebook-project-count]'))continue;
+      if(el.closest('[data-ebook-project-count]'))continue;
       const nearest=el.closest('[data-sidebar-project-kind="local"]');
       if(nearest&&nearest!==row.closest('[data-sidebar-project-kind="local"]'))continue;
       const key=conversationKey(el);
@@ -717,7 +719,7 @@
       row.querySelector('[aria-expanded]')?.getAttribute('aria-expanded')||
       group.getAttribute('aria-expanded');
     const expanded=expandedValue==='true'?true:expandedValue==='false'?false:null;
-    const controls=[...group.querySelectorAll('button,a,[role="button"]')].filter(el=>!row.contains(el));
+    const controls=[...group.querySelectorAll('button,a,[role="button"]')];
     const more=controls.some(el=>{
       const label=normalizeLabel(el.textContent);
       const aria=normalizeLabel(el.getAttribute('aria-label'));
@@ -728,111 +730,180 @@
     const empty=!!group.querySelector('[data-testid="project-empty-state"],[data-testid="empty-conversations"]');
     return countProjectState(ids.size,explicitProjectTotal(row,group,ids.size),expanded,more,busy,empty,true);
   }
+  // v0.2.30: keep badges in a separate, noninteractive layer. The native
+  // project button may be narrower than the Dot axis or clip its children.
+  const countLayers=new Map(),countLooks=new WeakMap();
+  let countPositionFrame=0;
+  function validCountRail(el) {
+    const r=visibleBox(el);
+    return !!r&&r.width>=110&&r.width<=720&&r.height>=90&&r.left>=-4&&r.left<=180&&
+      !el.matches('html,body,main,[role="main"],[role="dialog"],[role="menu"]');
+  }
   function findDotCountReference() {
-    for(const dot of document.querySelectorAll('[data-ebook-quick-label="dot"]')) {
-      if(!visibleBox(dot))continue;
-      let p=dot;
-      for(let depth=0;p&&depth<6;depth++,p=p.parentElement) {
-        const aggregate=normalizeLabel(p.textContent).replace(/\s+/g,'');
-        if(!/^Dot\d{1,5}$/u.test(aggregate))continue;
-        const n=[...p.querySelectorAll('span,div,small')].find(el=>
-          el.children.length===0&&/^\d{1,5}$/u.test(normalizeLabel(el.textContent))&&
-          visibleBox(el)&&el.getBoundingClientRect().left>dot.getBoundingClientRect().left);
-        if(!n)continue;
-        let circle=n;
-        for(let a=n;a&&a!==p;a=a.parentElement) {
+    const dots=[...document.querySelectorAll('[data-ebook-quick-label="dot"]')];
+    for(const dot of dots) {
+      const dr=visibleBox(dot);if(!dr)continue;
+      for(let p=dot.parentElement,depth=0;p&&depth<8;p=p.parentElement,depth++) {
+        if(p.querySelector(PROJECT_ROW)||p.matches('body,html,main,[role="main"]'))break;
+        const pr=visibleBox(p);if(!pr||pr.height>120)break;
+        const candidates=[...p.querySelectorAll('[data-ebook-dot-counter="true"],span,div,small')].filter(el=>{
+          if(el.children.length||!/^\d{1,5}$/u.test(normalizeLabel(el.textContent)))return false;
+          const r=visibleBox(el);
+          return !!r&&r.left>dr.left+20&&Math.abs((r.top+r.bottom-dr.top-dr.bottom)/2)<=18&&r.width<=45;
+        });
+        if(!candidates.length)continue;
+        candidates.sort((a,b)=>b.getBoundingClientRect().right-a.getBoundingClientRect().right);
+        const number=candidates[0];let circle=number;
+        for(let a=number;a&&a!==p;a=a.parentElement) {
           const r=a.getBoundingClientRect(),s=getComputedStyle(a);
-          if(r.width>=12&&r.width<=36&&r.height>=12&&r.height<=36&&
-            Math.abs(r.width-r.height)<=9&&
-            (parseFloat(s.borderRadius)>=5||s.borderRadius.includes('%'))) {
-            circle=a;break;
-          }
+          if(r.width>=12&&r.width<=36&&r.height>=12&&r.height<=36&&Math.abs(r.width-r.height)<=9&&
+             (parseFloat(s.borderRadius)>=5||s.borderRadius.includes('%'))) {circle=a;break;}
         }
-        return {circle,number:n,dot};
+        return {circle,number,dot};
       }
     }
     return null;
   }
-  function projectRail(row) {
-    return row.closest('[data-ebook-sidebar-seam="true"]')||
-      row.closest(SIDE_ROOTS+',aside,[role="complementary"]');
+  function projectRail(row,ref=null) {
+    const known=row.closest('[data-ebook-sidebar-seam="true"]')||row.closest(SIDE_ROOTS+',aside,[role="complementary"]');
+    if(validCountRail(known)&&(!ref||known.contains(ref.dot)))return known;
+    let fallback=null;
+    for(let p=row.parentElement;p&&p!==document.body;p=p.parentElement) {
+      if(!validCountRail(p))continue;
+      if(ref&&p.contains(ref.dot))return p;
+      if(p.querySelectorAll(PROJECT_ROW).length>1)fallback=p;
+    }
+    return validCountRail(known)?known:fallback;
   }
   function counterAppearance(ref) {
-    if(!ref)return {'--eb-count-diameter':'19px','--eb-count-bg':'#C9CDCF',
+    const fallback={'--eb-count-diameter':'19px','--eb-count-bg':'#C9CDCF',
       '--eb-count-border':'0 solid transparent','--eb-count-ink':'#292D30',
       '--eb-count-font':'var(--eb-mono)','--eb-count-font-size':'11px','--eb-count-weight':'500'};
+    if(!ref)return fallback;
     const box=getComputedStyle(ref.circle),num=getComputedStyle(ref.number),r=ref.circle.getBoundingClientRect();
-    return {'--eb-count-diameter':Math.max(15,Math.min(26,Math.round(r.height)))+'px',
+    if(r.width<12||r.width>36||r.height<12||r.height>36)return fallback;
+    return {'--eb-count-diameter':Math.round(r.height*10)/10+'px',
       '--eb-count-bg':box.backgroundColor,'--eb-count-border':box.borderTopWidth+' '+box.borderTopStyle+' '+box.borderTopColor,
       '--eb-count-ink':num.color,'--eb-count-font':num.fontFamily,
       '--eb-count-font-size':num.fontSize,'--eb-count-weight':num.fontWeight};
   }
-  function restoreProjectCount(row,record) {
-    record.badge.remove();
-    if(row.isConnected) {
-      if(record.prior===null)row.removeAttribute('data-ebook-count-host');
-      else row.setAttribute('data-ebook-count-host',record.prior);
+  function countLayer(rail) {
+    let layer=countLayers.get(rail);
+    if(!layer) {
+      layer=document.createElement('div');layer.setAttribute('data-ebook-project-count-layer','true');
+      layer.setAttribute('aria-hidden','true');countLayers.set(rail,layer);
     }
-    countHosts.delete(row);
+    if(layer.parentElement!==rail)rail.appendChild(layer);
+    return layer;
+  }
+  function restoreProjectCount(row,record) {
+    record.badge.remove();countHosts.delete(row);
+  }
+  function pruneCountLayers() {
+    const used=new Set([...countHosts.values()].map(x=>x.rail));
+    for(const [rail,layer] of countLayers)if(!rail.isConnected||!used.has(rail)) {
+      layer.remove();countLayers.delete(rail);
+    }
+  }
+  function countViewport(row,rail,rr,ref) {
+    let top=rr.top,bottom=rr.bottom;
+    for(let p=row.parentElement;p&&p!==rail;p=p.parentElement) {
+      const s=getComputedStyle(p);
+      if(!/^(auto|scroll|overlay|hidden|clip)$/u.test(s.overflowY))continue;
+      const r=p.getBoundingClientRect();
+      if(/^(hidden|clip)$/u.test(s.overflowY)&&(r.height<60||r.width<rr.width*.6))continue;
+      top=Math.max(top,r.top);bottom=Math.min(bottom,r.bottom);
+    }
+    const band=parseFloat(rail.style.getPropertyValue('--eb-sidebar-top-height'));
+    if(Number.isFinite(band))top=Math.max(top,rr.top+band);
+    if(ref&&rail.contains(ref.dot)) {
+      const dr=ref.dot.getBoundingClientRect();top=Math.max(top,dr.bottom+3);
+    }
+    return {top,bottom};
+  }
+  function countCoordinates(center,y,diameter,rr,viewport,lr,layerWidth,layerHeight) {
+    const rad=diameter/2;
+    if(!Number.isFinite(center)||!Number.isFinite(y)||center-rad<rr.left||center+rad>rr.right||
+       y-rad<viewport.top||y+rad>viewport.bottom||lr.width<=0||lr.height<=0)return null;
+    return {x:(center-lr.left)*layerWidth/lr.width,y:(y-lr.top)*layerHeight/lr.height};
+  }
+  function setCountHidden(badge,hidden) {
+    const value=hidden?'true':'false';
+    if(badge.getAttribute('data-ebook-count-hidden')!==value)badge.setAttribute('data-ebook-count-hidden',value);
+  }
+  function positionProjectCounts(ref=findDotCountReference()) {
+    const boxes=new Map();
+    for(const [row,item] of countHosts) {
+      const {badge,rail,layer,title}=item;
+      if(!row.isConnected||!rail.isConnected||!title.isConnected){setCountHidden(badge,true);continue;}
+      let g=boxes.get(rail);
+      if(!g) {
+        const rr=rail.getBoundingClientRect(),lr=layer.getBoundingClientRect();
+        let appearance=countLooks.get(rail)||counterAppearance(null),center=rr.right-(dotInsets.get(rail)??22);
+        if(ref) {
+          const b=ref.circle.getBoundingClientRect();
+          if(b.left>=rr.left&&b.right<=rr.right) {
+            center=b.left+b.width/2;dotInsets.set(rail,rr.right-center);
+            appearance=counterAppearance(ref);countLooks.set(rail,appearance);
+          }
+        }
+        g={rr,lr,center,appearance,diameter:parseFloat(appearance['--eb-count-diameter'])};boxes.set(rail,g);
+      }
+      const r=visibleBox(row),tr=visibleBox(title);
+      if(!tr){setCountHidden(badge,true);continue;}
+      const y=r&&r.height>=12&&r.height<=70?(r.top+r.bottom)/2:(tr.top+tr.bottom)/2;
+      const viewport=countViewport(row,rail,g.rr,ref);
+      const p=countCoordinates(g.center,y,g.diameter,g.rr,viewport,g.lr,layer.offsetWidth,layer.offsetHeight);
+      if(!p){setCountHidden(badge,true);continue;}
+      for(const [k,v] of Object.entries(g.appearance))makeImportant(badge,k,v);
+      makeImportant(badge,'--eb-count-x',Math.round(p.x*10)/10+'px');
+      makeImportant(badge,'--eb-count-y',Math.round(p.y*10)/10+'px');
+      // Native row action buttons must remain available on hover/focus.
+      setCountHidden(badge,row.matches(':hover,:focus-within'));
+    }
+  }
+  function queueProjectCountPosition(event) {
+    if(disposed||!countHosts.size)return;
+    const target=event?.target;
+    if(event&&event.type==='scroll'&&target!==document&&target!==document.documentElement&&
+       ![...countLayers.keys()].some(r=>r.contains(target)))return;
+    if(event&&event.type!=='scroll'&&event.type!=='resize'&&
+       !target?.closest?.(PROJECT_ROW)&&!event.relatedTarget?.closest?.(PROJECT_ROW))return;
+    if(!countPositionFrame)countPositionFrame=requestAnimationFrame(()=>{countPositionFrame=0;positionProjectCounts();});
   }
   function markProjectCounts() {
-    const ref=findDotCountReference();
-    const appearance=counterAppearance(ref);
-    const diameter=parseFloat(appearance['--eb-count-diameter']);
-    const live=new Set();
-    const refRail=ref&&projectRail(ref.dot);
-    if(ref&&refRail) {
-      const b=ref.circle.getBoundingClientRect(),r=refRail.getBoundingClientRect();
-      dotInsets.set(refRail,r.right-(b.left+b.width/2));
-    }
+    const ref=findDotCountReference(),live=new Set();
     for(const row of document.querySelectorAll(PROJECT_ROW)) {
-      const rail=projectRail(row),r=visibleBox(row);
-      if(!rail||!r||r.width<90)continue;
-      const rr=rail.getBoundingClientRect();
-      if(rr.left< -3||rr.left>180||rr.width>720)continue;
       const title=row.querySelector('[data-marquee-content="true"]');
-      if(!title)continue;
-      let center=rr.right-(dotInsets.get(rail)??25);
-      if(ref&&(!refRail||refRail===rail)) {
-        const b=ref.circle.getBoundingClientRect();
-        if(b.left>=rr.left&&b.right<=rr.right)center=b.left+b.width/2;
-      }
-      const borderLeft=parseFloat(getComputedStyle(row).borderLeftWidth)||0;
-      const x=center-r.left-borderLeft;
-      if(x<diameter/2||x>r.width-diameter/2)continue;
-      // Avoid obscuring long labels when the native sidebar is very narrow.
-      const leaf=title.querySelector('[data-ebook-project-marker]')||title;
-      const range=document.createRange();
-      range.selectNodeContents(leaf);
-      const end=range.getBoundingClientRect().right;
-      if(end>0&&end>center-diameter/2-2)continue;
-      const state=readProjectCount(row);
+      const rail=projectRail(row,ref);
+      if(!title||!visibleBox(title)||!rail)continue;
+      const state=readProjectCount(row),layer=countLayer(rail);
       live.add(row);
       let item=countHosts.get(row);
+      if(item&&item.rail!==rail){restoreProjectCount(row,item);item=null;}
       if(!item) {
-        const badge=document.createElement('span');
-        badge.setAttribute('data-ebook-project-count','');
-        badge.setAttribute('aria-hidden','true');
-        item={badge,prior:row.getAttribute('data-ebook-count-host')};
-        countHosts.set(row,item);
+        const badge=document.createElement('span');badge.setAttribute('data-ebook-project-count','');
+        badge.setAttribute('aria-hidden','true');badge.setAttribute('data-ebook-count-hidden','true');
+        item={badge,rail,layer,title};countHosts.set(row,item);
       }
+      item.title=title;item.layer=layer;
       const {badge}=item;
-      if(!row.contains(badge))row.appendChild(badge);
-      if(!row.hasAttribute('data-ebook-count-host'))
-        row.setAttribute('data-ebook-count-host',getComputedStyle(row).position==='static'?'relative':'native');
+      if(badge.parentElement!==layer)layer.appendChild(badge);
       if(badge.textContent!==state.label)badge.textContent=state.label;
-      if(badge.getAttribute('data-ebook-count-state')!==state.kind)badge.setAttribute('data-ebook-count-state',state.kind);
-      const overflow=state.overflow?'true':'false';
-      if(badge.getAttribute('data-ebook-count-overflow')!==overflow)badge.setAttribute('data-ebook-count-overflow',overflow);
-      const confirmed=state.count===null?'':String(state.count);
-      if(badge.getAttribute('data-ebook-count-confirmed')!==confirmed)badge.setAttribute('data-ebook-count-confirmed',confirmed);
-      makeImportant(badge,'--eb-count-x',Math.round(x*10)/10+'px');
-      for(const [k,v] of Object.entries(appearance))makeImportant(badge,k,v);
+      for(const [k,v] of Object.entries({'data-ebook-count-state':state.kind,
+        'data-ebook-count-overflow':state.overflow?'true':'false',
+        'data-ebook-count-confirmed':state.count===null?'':String(state.count)}))
+        if(badge.getAttribute(k)!==v)badge.setAttribute(k,v);
     }
     for(const [row,record] of countHosts)if(!live.has(row)||!row.isConnected)restoreProjectCount(row,record);
+    pruneCountLayers();positionProjectCounts(ref);
   }
   function restoreProjectCounts() {
+    if(countPositionFrame)cancelAnimationFrame(countPositionFrame);countPositionFrame=0;
+    for(const type of ['scroll','pointerover','pointerout','focusin','focusout'])
+      document.removeEventListener(type,queueProjectCountPosition,true);
     for(const [row,record] of countHosts)restoreProjectCount(row,record);
+    pruneCountLayers();
   }
 
   function synchronizeSidebar() {
@@ -1704,6 +1775,8 @@
   document.addEventListener('DOMContentLoaded',onRouteOrResize,{once:true});
   document.addEventListener('visibilitychange', onVisibility);
   document.addEventListener('click',onModeInteraction,true);
+  for(const type of ['scroll','pointerover','pointerout','focusin','focusout'])
+    document.addEventListener(type,queueProjectCountPosition,true);
   for(const type of ['change','drop','paste'])document.addEventListener(type,onUploadIntent,true);
   document.addEventListener('load',onComposerImageLoad,true);
   window.addEventListener('focus',schedule);
@@ -1746,7 +1819,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.2.29',dispose,refresh:schedule,
-    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state'),overflow:n.getAttribute('data-ebook-count-overflow')==='true',confirmed:n.getAttribute('data-ebook-count-confirmed')===''?null:Number(n.getAttribute('data-ebook-count-confirmed'))})),lastPassMs:{...timings},fixedSidebarTop:[...document.querySelectorAll('[data-ebook-sidebar-top="band"]')].map(n=>({height:n.style.getPropertyValue('--eb-sidebar-top-height'),surfaces:n.querySelectorAll('[data-ebook-sidebar-top="surface"]').length})),fontAudit:fontAudit()})
+    version:'0.2.30',dispose,refresh:schedule,
+    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state'),overflow:n.getAttribute('data-ebook-count-overflow')==='true',confirmed:n.getAttribute('data-ebook-count-confirmed')===''?null:Number(n.getAttribute('data-ebook-count-confirmed'))})),lastPassMs:{...timings},fixedSidebarTop:[...document.querySelectorAll('[data-ebook-sidebar-top="band"]')].map(n=>({height:n.style.getPropertyValue('--eb-sidebar-top-height'),surfaces:n.querySelectorAll('[data-ebook-sidebar-top="surface"]').length})),projectCountLayers:countLayers.size,visibleProjectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].filter(n=>getComputedStyle(n).visibility!=='hidden').length,projectCountAxis:findDotCountReference()?.circle.getBoundingClientRect().left??null,fontAudit:fontAudit()})
   };
 })();
