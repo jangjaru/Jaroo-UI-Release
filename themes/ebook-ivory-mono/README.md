@@ -1,8 +1,18 @@
 # Jaroo E-book · Cool E-Ink Graph Paper
 
-**2026-11-24 · Stylus CSS v0.2.45 / Tampermonkey JS v0.2.34**
+**2026-11-24 · Stylus CSS v0.2.46 / Tampermonkey JS v0.2.35**
 
 This update modifies the existing Classic Paper theme; it is **not** a separate mockup or a second overlay.
+
+## v0.2.46 / v0.2.35 · 2026-11-24 — 채팅 제목 최초 렌더링 및 고정/해제 시 글꼴 안정화
+
+- 기존 채팅 제목 14px/14.667px/15.333px의 중첩 규칙에서 생기는 크기 차이를 줄이기 위해 기존 제목 크기 토큰을 승인값 15.333px로, 프로젝트명 토큰을 16px로 통일.
+- 네이티브 고정·최근·프로젝트 목록 및 신규 마크업의 제목/텍스트 leaf를 CSS에서 직접 매칭. 제목 이동이나 React 재생성 시 JavaScript의 사후 보정을 기다리지 않음. 카운터, 아이콘, 숨은 접근성 텍스트, 본문 링크는 별도 유지.
+- 일반 제목/프로젝트 글꼴은 CSS가 담당. JS 인라인 보정은 실제로 충돌하는 인라인 !important 또는 구버전 CSS 호환 상황에 한정. 고정/최근 네이티브 section과 실제 레일을 관찰하여 새 노드 및 목록 변경 감지 보완.
+- 이전 전송 프롬프트 읽기 토큰도 16.067px/572 승인값과 연결하여 경쟁 규칙을 줄임. 입력 중 16px, 기존 색상·패턴·외곽선 및 다른 디자인 유지.
+- 직전 JS v0.2.34의 사이드바 실시간 위치 갱신, 160ms 후 구조 보완 검사, 카운터 집계/색상/정렬 및 첨부 구분선 로직 유지.
+- 검증: 실제 과거 규칙을 재현한 Chromium 모의 DOM에서 고정/최근 간 재생성 20회 직후(별도 JS 보정 없이) 15.333px 유지. 프로젝트 16px, 카운터/본문 테스트 요소 크기 유지, 신규 section 매칭 확인. 동일 CSS 패치 SHA-256 대조 및 전체 JS 구문/인라인 예외 5건/직전 주요 함수 동일성 검증. 로그인된 Chrome에서의 전체 첫 페인트 및 실측 지연은 아직 미검증.
+- 진단 `firstPaintNav`는 CSS 최초 표시 규칙의 존재 여부, `opticalLeaves`와 `projectWeightLeaves`는 JS 예외 보정 수를 나타냄.
 
 ## v0.2.45 / v0.2.34 · 2026-11-24 — 사이드바 폭 변경 시 카운터 실시간 추적
 
@@ -146,8 +156,8 @@ This update modifies the existing Classic Paper theme; it is **not** a separate 
 - E-book Clock skin follows the cooler neutrals while preserving segmented digits, Life Clock and existing animations.
 
 ## Install / update in place
-- [Stylus CSS v0.2.45](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/theme.user.css)
-- [Tampermonkey JS v0.2.34](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/indicators.user.js)
+- [Stylus CSS v0.2.46](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/theme.user.css)
+- [Tampermonkey JS v0.2.35](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/indicators.user.js)
 
 Update the **existing** two extension entries rather than installing duplicates. In Stylus and Tampermonkey, run the built-in **Check for updates**, then reload ChatGPT with `Ctrl + Shift + R`.
 
@@ -158,7 +168,7 @@ Use the ChatGPT page console:
 ```js
 window.__jarooEbookIvoryMonoV1?.diagnostics?.()
 ```
-Expected: JS `version: '0.2.34'`, `sentPromptTarget: '16.067px'`; a selected chat should produce `headerMarkers: 1` when its title is visible. CSS version is `0.2.45`. `performance` gives scoped pass execution counts/average/peak times and scheduling stats. `fixedSidebarTop` reports the actual overlay height, visibility and computed pattern. `projectCountBorders` reports computed border/outline styles. `projectCounts` reports the one-character display, exact/partial/unknown state, overflow and confirmed count, `lastPassMs` reports the most recent scoped update durations (ms), not end-to-end page load time. `quickNavMarkers` reports the actual size, weight and color of New Chat/Dot labels. Diagnostics include `projectMarkers`, `sidebarSeams` and `workSwitcher`; live DOM matching still requires visual confirmation.
+Expected: JS `version: '0.2.35'`, `sentPromptTarget: '16.067px'`; a selected chat should produce `headerMarkers: 1` when its title is visible. CSS version is `0.2.46`. `firstPaintNav` reports the CSS first-paint rule; `opticalLeaves` and `projectWeightLeaves` count inline exceptions. `performance` gives scoped pass execution counts/average/peak times and scheduling stats. `fixedSidebarTop` reports the actual overlay height, visibility and computed pattern. `projectCountBorders` reports computed border/outline styles. `projectCounts` reports the one-character display, exact/partial/unknown state, overflow and confirmed count, `lastPassMs` reports the most recent scoped update durations (ms), not end-to-end page load time. `quickNavMarkers` reports the actual size, weight and color of New Chat/Dot labels. Diagnostics include `projectMarkers`, `sidebarSeams` and `workSwitcher`; live DOM matching still requires visual confirmation.
 
 To roll back, use the extensions' version history or the previous Git commit of the two E-book files. This release is code-published and statically checked, but **the user's signed-in Chrome rendering and updates have not been verified in this chat**.
 
