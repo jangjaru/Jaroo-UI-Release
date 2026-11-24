@@ -1,8 +1,18 @@
 # Jaroo E-book · Cool E-Ink Graph Paper
 
-**2026-11-24 · Stylus CSS v0.2.33 / Tampermonkey JS v0.2.23**
+**2026-11-24 · Stylus CSS v0.2.34 / Tampermonkey JS v0.2.24**
 
 This update modifies the existing Classic Paper theme; it is **not** a separate mockup or a second overlay.
+
+## v0.2.34 / v0.2.24 · 2026-11-24 — 상큼한 파스텔 그룹 색상 및 Dot 글꼴 통일
+
+- 대표실 핑크 `#F3B9CB`, 전략기획본부 라벤더 `#CFC1EF` 유지.
+- 영업팀 `#FFE08A` / BD팀 `#FFEBAD` / 제안팀 `#FFD68A`: 밝은 레몬 옐로 계열.
+- 디자인팀 `#9FE8D3` / 기술운영팀 `#B5EFDE` / 인재개발팀 `#C9F4E7`: 같은 민트 계열의 밝기 차등.
+- 경영관리실 `#B8D9FF` / 개인비서실 `#D0E6FF`: 맑은 스카이 블루. CEO 경영철학과 판단 `#DDE0E2`: 연회색.
+- Dot: 실제 텍스트를 찾아 새 채팅의 글자색, 크기, 굵기, 글꼴을 일치시킴(기준 #292D30 / 16px / 650). 노란 형광펜은 새 채팅만 유지. Dot 아이콘·알림 숫자와 클릭 기능은 변경하지 않음.
+- 기존 경계 그림자, Chat/Work, 글꼴·본문 격자·입력창·지시문·RUN/DONE·Life Clock과 다른 테마를 변경하지 않음.
+- 공개/비공개 이전 소스 동일성·SHA-256, JS 구문, CSS 구조, Dot 텍스트 식별 단위 테스트 확인. 로그인 Chrome의 실제 DOM/렌더링 검수 대기.
 
 ## v0.2.33 / v0.2.23 · 2026-11-24 — 종이 경계와 조직별 형광펜
 
@@ -29,8 +39,8 @@ This update modifies the existing Classic Paper theme; it is **not** a separate 
 - E-book Clock skin follows the cooler neutrals while preserving segmented digits, Life Clock and existing animations.
 
 ## Install / update in place
-- [Stylus CSS v0.2.33](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/theme.user.css)
-- [Tampermonkey JS v0.2.23](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/indicators.user.js)
+- [Stylus CSS v0.2.34](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/theme.user.css)
+- [Tampermonkey JS v0.2.24](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/indicators.user.js)
 
 Update the **existing** two extension entries rather than installing duplicates. In Stylus and Tampermonkey, run the built-in **Check for updates**, then reload ChatGPT with `Ctrl + Shift + R`.
 
@@ -41,7 +51,7 @@ Use the ChatGPT page console:
 ```js
 window.__jarooEbookIvoryMonoV1?.diagnostics?.()
 ```
-Expected: JS `version: '0.2.23'`, `sentPromptTarget: '15.667px'`; a selected chat should produce `headerMarkers: 1` when its title is visible. CSS version is `0.2.33`. Diagnostics include `projectMarkers`, `sidebarSeams` and `workSwitcher`; live DOM matching still requires visual confirmation.
+Expected: JS `version: '0.2.24'`, `sentPromptTarget: '15.667px'`; a selected chat should produce `headerMarkers: 1` when its title is visible. CSS version is `0.2.34`. `quickNavMarkers` reports the actual size, weight and color of New Chat/Dot labels. Diagnostics include `projectMarkers`, `sidebarSeams` and `workSwitcher`; live DOM matching still requires visual confirmation.
 
 To roll back, use the extensions' version history or the previous Git commit of the two E-book files. This release is code-published and statically checked, but **the user's signed-in Chrome rendering and updates have not been verified in this chat**.
 
