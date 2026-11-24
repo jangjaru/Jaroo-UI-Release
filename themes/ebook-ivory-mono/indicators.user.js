@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.3.0
+// @version      0.3.1
 // @description  E-book role markers, sidebar presentation, outline and safe composer attachment layout. No editable text mutation; Clock owns its first paint.
 // @match        https://chatgpt.com/*
 // @run-at       document-start
@@ -35,10 +35,10 @@
   let frame = 0;
   let recoverTimer = 0;
   let observedRoots = [];
-  const PASS={NAV:1,COMPOSER:2,SENT:4,HEADER:8,STATUS:16,DIVIDER:32};
-  const ALL=63;
+  const PASS={NAV:1,COMPOSER:2,SENT:4,HEADER:8,DIVIDER:32};
+  const ALL=47;
   let dirty=0,lastRoute=location.pathname,lastRecovery=0;
-  const timings={nav:0,composer:0,sent:0,header:0,status:0,divider:0,runs:0};
+  const timings={nav:0,composer:0,sent:0,header:0,divider:0,runs:0};
   const perfPasses={},perfEvents={scheduled:0,coalesced:0,hiddenDeferred:0};
   const OWN_NODE='[data-ebook-top-hatch-layer="true"],[data-ebook-project-count-layer="true"],[data-ebook-project-count],[data-ebook-upload-divider="true"],[data-ebook-glyph="true"],.jaroo-native-badge';
   const USER_NODE='[data-message-author-role="user"],[data-user-message-bubble="true"],[data-user-message]';
@@ -58,8 +58,7 @@
     let mask=0;
     for(const m of records){
       if(ownMutation(m))continue;
-      if(m.type==='attributes'&&['data-jaroo-native-row','data-jaroo-effective-status'].includes(m.attributeName))mask|=PASS.STATUS;
-      else mask|=PASS.NAV|PASS.HEADER;
+      mask|=PASS.NAV|PASS.HEADER;
     }
     if(mask)schedule(mask);
   });
@@ -1360,22 +1359,6 @@
     }
   }
 
-  // Mark only verified title wrappers in positively RUN-marked native rows.
-  function markPenTitles() {
-    const wanted=new Map();
-    for(const row of document.querySelectorAll('[data-jaroo-native-row="true"][data-jaroo-effective-status="working"]')) {
-      const scope=(row.matches('a[href*="/c/"]')?row:row.querySelector('a[href*="/c/"]'))||row;
-      const excluded='button,[role="button"],svg,[aria-hidden="true"],.sr-only,.jaroo-native-badge,[data-jaroo-status-slot]';
-      const options=[...scope.querySelectorAll('[data-ebook-role-copy="true"],[data-thread-title="true"],[data-marquee-text="true"],span.truncate,div.truncate,span[dir="auto"]')].filter(el=>!el.closest(excluded)&&!el.querySelector('.jaroo-native-badge,button,[role="button"]')&&(el.textContent||'').trim());
-      const title=options.find(el=>el.matches('[data-ebook-role-copy="true"]'))||options.find(el=>el.matches('[data-thread-title="true"]'))||options.find(el=>el.matches('[data-ebook-role]'))||options[0];
-      if(!title||!title.isConnected||!title.getClientRects().length)continue;
-      const position=getComputedStyle(title).position;
-      if(position!=='static'&&position!=='relative')continue;
-      wanted.set(title,position==='static'||title.getAttribute('data-ebook-pen-title')==='relative'?'relative':'positioned');
-    }
-    syncPresentationMarks('data-ebook-pen-title',wanted);
-  }
-
   const NATIVE_NAV_SECTIONS='[data-app-action-sidebar-section-heading]';
   function sidebarObserverRoots() {
     const all=[...new Set([...sidebarRoots(),...document.querySelectorAll(
@@ -1389,7 +1372,7 @@
     observer.disconnect();
     observedRoots = roots;
     for (const root of roots) observer.observe(root,{subtree:true,childList:true,characterData:true,
-      attributes:true,attributeFilter:['aria-expanded','aria-busy','data-has-more','data-conversation-count','data-chat-count','data-thread-count','data-total-conversations','data-total-threads','data-total-chats','aria-current','aria-selected','data-selected','data-jaroo-selected','data-pinned','data-sidebar-pinned','data-is-pinned','data-jaroo-native-row','data-jaroo-effective-status']});
+      attributes:true,attributeFilter:['aria-expanded','aria-busy','data-has-more','data-conversation-count','data-chat-count','data-thread-count','data-total-conversations','data-total-threads','data-total-chats','aria-current','aria-selected','data-selected','data-jaroo-selected','data-pinned','data-sidebar-pinned','data-is-pinned']});
     // Actual geometry targets are reconciled after the project overlays are mounted.
   }
 
@@ -2367,7 +2350,6 @@
       synchronizeSidebar();
       markRecentChats();
       markRoleTitleHierarchy();
-      markPenTitles();
       enforceOpticalSidebarText();
       markQuickActionLabels();
       markDotCounter();
@@ -2384,7 +2366,6 @@
       markEffortPicker();
     });
     if(mask&PASS.SENT)timed('sent',markSentPromptTypography);
-    if((mask&PASS.STATUS)&&!(mask&PASS.NAV))timed('status',markPenTitles);
     if(mask&PASS.DIVIDER)timed('divider',markUploadDivider);
     if(mask&PASS.HEADER)timed('header',()=>{
       markWorkSwitcher();
@@ -2467,7 +2448,6 @@
   function restore() {
     sidebarApplyOrder(new Map());
     restoreRoleTitleHierarchy();
-    syncPresentationMarks('data-ebook-pen-title',new Map());
     // Best-effort cleanup of visual wrappers. Title content remains untouched.
     const list = [...document.querySelectorAll(CLEANUP_GLYPH)];
     for (const hidden of list) hidden.replaceWith(document.createTextNode(hidden.textContent || ''));
@@ -2579,7 +2559,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.3.0',dispose,refresh:schedule,outlineDiagnostic,
+    version:'0.3.1',dispose,refresh:schedule,outlineDiagnostic,
     diagnostics:() => ({...errors,sorting:{...sidebarSortDiagnostics,styledRows:sidebarSortSaved.size},roots:observedRoots.length,clockSkinned:document.getElementById(CLOCK_HOST)?.getAttribute('data-ebook-clock-ready')==='true',dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),firstPaintNav:getComputedStyle(document.documentElement).getPropertyValue('--eb-first-paint-nav').trim()==='1',opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-project-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:'css-only',mutedComposerFrames:0,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state'),overflow:n.getAttribute('data-ebook-count-overflow')==='true',confirmed:n.getAttribute('data-ebook-count-confirmed')===''?null:Number(n.getAttribute('data-ebook-count-confirmed'))})),lastPassMs:{...timings},performance:{events:{...perfEvents},passes:Object.fromEntries(Object.entries(perfPasses).map(([k,v])=>[k,{runs:v.runs,averageMs:Math.round(v.totalMs/v.runs*100)/100,peakMs:Math.round(v.peakMs*100)/100}]))},fixedSidebarTop:[...topBands.values()].map(n=>({height:n.height,visible:getComputedStyle(n.strip).visibility==='visible',pattern:getComputedStyle(n.strip).backgroundImage})),projectCountBorders:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({border:getComputedStyle(n).borderTopWidth,style:getComputedStyle(n).borderTopStyle,outline:getComputedStyle(n).outlineStyle})),projectCountLayers:countLayers.size,positionResizeTargets:navResizeTargets.size,visibleProjectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].filter(n=>getComputedStyle(n).visibility!=='hidden').length,projectCountAxis:findDotCountReference()?.circle.getBoundingClientRect().left??null,fontAudit:fontAudit()})
   };
 })();

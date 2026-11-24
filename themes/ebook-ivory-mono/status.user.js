@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo · Status & Command Center
 // @namespace    jaroo-company.local
-// @version      6.9.0
+// @version      6.9.1
 // @description  E-book RUN/DONE and ALL/ONLY; first-paint quiet controls, verified native-state detection and cross-tab synchronization.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -15,21 +15,19 @@
   const RUNTIME = '__jarooCommandCenterRuntimeV4';
   window[RUNTIME]?.dispose?.();
   window.__jarooNativeCapture?.stop?.();
-  const VERSION = '6.9.0';
+  const VERSION = '6.9.1';
   const HOVER_MS = 400;
   const ROOTS = '#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]';
   const ARCHIVE = '[data-sidebar-archive-chatgpt-id]';
   const OWN_ROW = '[data-jaroo-native-row="true"]';
   const OWN_BADGE = '.jaroo-native-badge';
-  const PROTECTED = 'a,button,input,textarea,select,option,summary,label,audio,video,iframe,object,embed,[contenteditable],[role="button"],[role="link"],[tabindex],[data-thread-title],[data-thread-title-trigger],[data-marquee-text],[data-marquee-content],[data-native-menu-root],[popover]';
-  const DECORATION = '.jaroo-native-badge,.jaroo-recent-status-badge,[data-jaroo-status-slot]';
   let disposed = false, scheduled = 0, discoveryTimer = 0, rowDirty = true;
   let watchedSidebars = [], rowNodes = [], lastRoute = '', lastSignature = '', lastError = '';
   let nativeTitle = document.title, lastAppliedTitle = '', generatedFavicon = null;
   let dock = null, dockStyle = null, panel = null, panelOpen = false;
   let hoverTimer = 0, hoveredAnchor = null, tooltip = null, tooltipStyle = null;
   let lastDockHost = null, panelSignature = '';
-  let observedClock = null, hideLayoutDirty = true;
+  let observedClock = null;
   // v6.5: View preference belongs to this browser tab. The chat/status store
   // remains untouched; only presentation of the native navigation changes.
   const FOCUS_PREF = 'jaroo:sidebar:run-done-only:v71';
@@ -58,7 +56,7 @@
     }
   `;
   (document.head || document.documentElement).append(focusStyle);
-  const iconCache = new Map(), hidePlans = new WeakMap();
+  const iconCache = new Map();
   document.getElementById('jaroo-selected-frame-fit-v6312')?.remove();
 
   const idFromPath = () => location.pathname.match(/\/c\/([0-9a-f-]{8,})\b/i)?.[1]?.toLowerCase() || '';
@@ -137,93 +135,10 @@
     for (const attr of ['data-jaroo-native-row','data-jaroo-chat-row','data-jaroo-selected','data-jaroo-live-status','data-jaroo-badge-layout','data-jaroo-badge-host','data-jaroo-sync-status','data-jaroo-last-badge-state','data-jaroo-effective-status']) row.removeAttribute(attr);
     row.style.removeProperty('--jaroo-selected-frame-left');
     row.style.removeProperty('--jaroo-selected-frame-right');
-    hidePlans.delete(row);
   }
 
-  function ownElement(el, row) {
-    if (!(el instanceof Element) || el === row || !row.contains(el)) return false;
-    const owner = el.closest(ARCHIVE);
-    return !owner || owner === row;
-  }
-  function safeIcon(el, row) {
-    const protectedAncestor = el?.closest?.(PROTECTED);
-    return ownElement(el, row) && !el.closest(DECORATION) &&
-      (!protectedAncestor || protectedAncestor === row) && !el.matches(PROTECTED) && !el.querySelector(PROTECTED) &&
-      !(el.textContent || '').trim();
-  }
-  function emptyLeadingSlot(row) {
-    const trigger = row.querySelector('[data-thread-title-trigger="true"]');
-    const slot = trigger?.previousElementSibling;
-    // Native width utility classes can change; only a verified empty
-    // div/span directly preceding the title is a removable leading spacer.
-    if (!slot?.matches('div,span') || !safeIcon(slot, row)) return null;
-    const graphic = 'svg,img,canvas,[role="status"],[data-loading-indicator]';
-    if (slot.matches(graphic) || slot.querySelector(graphic)) return null;
-    return slot;
-  }
-  function clearMarks(row, name, keep = []) {
-    for (const el of row.querySelectorAll(`[${name}]`)) if (!keep.includes(el)) el.removeAttribute(name);
-  }
-
-  function nativeIconsToHide(row, status) {
-    if (!status) return [];
-    const explicit = [...row.querySelectorAll('[data-loading-indicator]')]
-      .filter(el => safeIcon(el, row));
-    if (status === 'working') return explicit;
-
-    // The unread value is verified; its pink-dot markup was not retained in the
-    // capture. Geometry is used ONLY to hide a tiny inert right-side decoration,
-    // never to decide RUN/DONE. Uncertain elements remain untouched.
-    const box = row.getBoundingClientRect();
-    if (box.width < 70 || box.height < 12) return [];
-    const dots = [];
-    for (const el of [...row.querySelectorAll('div,span,svg')].slice(0, 120)) {
-      if (!safeIcon(el, row) || el.querySelector('svg,img,canvas,[data-loading-indicator]')) continue;
-      const r = el.getBoundingClientRect();
-      if (r.width < 3 || r.height < 3 || r.width > 16 || r.height > 16) continue;
-      if (r.width / r.height < .7 || r.width / r.height > 1.4) continue;
-      if (r.left < box.left + box.width * .6 || box.right - r.right > 44 || r.right > box.right + 1) continue;
-      if (Math.abs((r.top + r.bottom - box.top - box.bottom) / 2) > Math.max(6, box.height * .3)) continue;
-      const css = getComputedStyle(el);
-      const radius = parseFloat(css.borderTopLeftRadius) || 0;
-      const painted = css.backgroundColor && !['transparent','rgba(0, 0, 0, 0)'].includes(css.backgroundColor);
-      const circle = el.matches('svg') && !!el.querySelector('circle,ellipse');
-      if ((painted && radius >= Math.min(r.width, r.height) * .4) || circle) dots.push(el);
-    }
-    return dots.filter(el => !dots.some(other => other !== el && other.contains(el)));
-  }
-
-  function placeBadge(row, link, badge) {
-    // Share the native title's actual flex host instead of estimating its
-    // horizontal offset from the outer row. Never move a native node.
-    let host = null, before = null;
-    const trigger = link?.parentElement;
-    if (trigger?.matches('[data-thread-title-trigger="true"]') && ownElement(trigger, row)) {
-      host = trigger; before = link;
-    } else if (link && (link === row || ownElement(link, row))) {
-      const title = [...link.children].find(el =>
-        el.matches('[data-thread-title="true"],span.truncate,div.truncate,span[dir="auto"]'));
-      if (title) { host = link; before = title; }
-    }
-    for (const old of row.querySelectorAll('[data-jaroo-badge-host]')) {
-      if (old !== host && old.closest('[data-jaroo-native-row="true"]') === row) old.removeAttribute('data-jaroo-badge-host');
-    }
-    if (host !== row) row.removeAttribute('data-jaroo-badge-host');
-    if (host) {
-      setAttr(host, 'data-jaroo-badge-host', 'true');
-      setAttr(row, 'data-jaroo-badge-layout', 'inline');
-      if (badge.parentElement !== host || badge.nextSibling !== before) host.insertBefore(badge, before);
-    } else {
-      row.removeAttribute('data-jaroo-badge-layout');
-      if (badge.parentElement !== row) row.append(badge);
-    }
-  }
-
-  // v6.3.12: The neon frame is sized by CSS, not text or status badges.
-  // Its left edge stays at 8px, while the right edge follows the selected
-  // row's responsive width with a 2px inner gutter. This eliminates jitter
-  // when the title or RUN/DONE label changes. No native row is resized here.
-
+  // The native chat list owns visual RUN/unread indicators. Our aggregate
+  // state observer only marks the selected row and keeps its row identity.
   function renderRows() {
     const current = idFromPath();
     for (const row of rows()) {
@@ -233,30 +148,7 @@
       const link = row.matches('a[href*="/c/"]') ? row : row.querySelector('a[href*="/c/"]');
       if (id === current || row.getAttribute('aria-current') === 'page' || link?.getAttribute('aria-current') === 'page') setAttr(row, 'data-jaroo-selected', 'true');
       else row.removeAttribute('data-jaroo-selected');
-      let badge = [...row.querySelectorAll('.jaroo-native-badge')].find(el =>
-        el.closest('[data-jaroo-native-row="true"]') === row);
-      const effective = statusBus.get(id)?.status;
-      if(effective==='working'||effective==='done'){
-        setAttr(row,'data-jaroo-effective-status',effective);
-        if(!badge){badge=document.createElement('span');badge.className='jaroo-native-badge';badge.setAttribute('aria-hidden','true');}
-        placeBadge(row,link,badge);
-      }else{
-        row.removeAttribute('data-jaroo-effective-status');
-        badge?.remove();row.removeAttribute('data-jaroo-badge-layout');
-        row.removeAttribute('data-jaroo-badge-host');
-        for(const el of row.querySelectorAll('[data-jaroo-badge-host]'))if(el.closest('[data-jaroo-native-row="true"]')===row)el.removeAttribute('data-jaroo-badge-host');
-      }
-      const slot = emptyLeadingSlot(row);
-      clearMarks(row, 'data-jaroo-native-leading', slot ? [slot] : []);
-      if (slot) setAttr(slot, 'data-jaroo-native-leading', 'true');
-      const status = nativeStatus(row), old = hidePlans.get(row);
-      if (!hideLayoutDirty && old?.status === status && old.icons.every(el => el.isConnected && safeIcon(el, row))) continue;
-      const icons = nativeIconsToHide(row, status);
-      clearMarks(row, 'data-jaroo-native-hidden', icons);
-      for (const el of icons) setAttr(el, 'data-jaroo-native-hidden', 'true');
-      hidePlans.set(row, { status, icons });
     }
-    hideLayoutDirty = false;
   }
 
   function hideTip() {
@@ -1043,33 +935,39 @@
   // State discovery, DONE acknowledgements, and cross-tab synchronization are unchanged.
   // The counters remain in Clock's shadow tree; displayed numbers NEVER animate.
   const dockCSS = `
-    .jaroo-center,.jaroo-focus-list{box-sizing:border-box;color:#292D30;font-family:var(--eb-font,"IBM Plex Mono","Pretendard Variable","Pretendard",sans-serif)}
+    .jaroo-center,.jaroo-focus-list{--widget-main:var(--eb-chat-corrected-size,15.333px);--widget-meta:13px;box-sizing:border-box;color:#292D30;font:400 var(--widget-main)/1.3 var(--eb-font,"IBM Plex Mono","Pretendard Variable","Pretendard",sans-serif);min-width:0}
     .jaroo-center *, .jaroo-focus-list *{box-sizing:border-box}
-    .jaroo-center{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 36px;gap:6px;margin:0;padding:8px 0;border-top:1px solid #C5CDD0}
-    .jaroo-center button{display:flex;align-items:center;justify-content:center;width:100%;min-width:0;height:50px;padding:0;margin:0;background:none;border:0;border-radius:3px;cursor:pointer;color:inherit;font-family:inherit}
+    .jaroo-center{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 44px;gap:6px;margin:0;padding:8px 0;border-top:1px solid #C5CDD0;align-items:stretch}
+    .jaroo-center button{display:flex;align-items:center;justify-content:center;width:100%;min-width:0;height:100%;min-height:52px;padding:0;margin:0;background:none;border:0;border-radius:3px;cursor:pointer;color:inherit;font-family:inherit}
     .jaroo-center button:focus-visible,.jaroo-focus-row:focus-visible{outline:1px solid #879398;outline-offset:1px}
-    .jaroo-center .jaroo-top-badge{display:flex;flex-direction:column;justify-content:center;align-items:stretch;gap:4px;width:100%;min-width:0;height:50px;padding:5px 6px;background:#DFE3E5;border:0;border-radius:3px}
-    .jaroo-center .jaroo-top-line{display:flex;align-items:center;gap:3px;min-width:0;white-space:nowrap;line-height:1}
+    .jaroo-center .jaroo-top-badge{display:flex;flex-direction:column;justify-content:center;align-items:stretch;gap:4px;width:100%;min-width:0;height:100%;min-height:52px;padding:6px;background:#DFE3E5;border:0;border-radius:3px}
+    .jaroo-center .jaroo-top-line{display:flex;flex-wrap:wrap;align-items:center;gap:4px;min-width:0;white-space:nowrap;line-height:1.15}
     .jaroo-center button{--status-ink:#9099A2}
     .jaroo-center .run[data-active="true"]{--status-ink:#A57900}
     .jaroo-center .done[data-active="true"]{--status-ink:#218C77}
-    .jaroo-top-word,.jaroo-top-mark{color:var(--status-ink);font-size:14px;font-weight:600;line-height:1;font-family:inherit}
+    .jaroo-top-word,.jaroo-top-mark{color:var(--status-ink);font-size:var(--widget-main);font-weight:600;line-height:1.15;font-family:inherit}
     .jaroo-center .run .jaroo-top-mark{font-size:0;flex:0 0 7px;width:7px;height:7px;border-radius:50%;background:var(--status-ink)}
     .jaroo-center .count{font-family:var(--eb-mono,"IBM Plex Mono",monospace);font-size:22px;font-weight:600;letter-spacing:-.04em;margin-left:auto;color:#292D30;font-variant-numeric:tabular-nums;line-height:1}
     .jaroo-center button[data-active="false"] .count{color:#9099A2;font-weight:500}
-    .jaroo-center .jaroo-mini-label{display:block;font:450 11px/1.2 "Pretendard Variable","Pretendard",sans-serif;color:#737D83;text-align:left;white-space:normal;letter-spacing:-.03em}
+    .jaroo-center .jaroo-mini-label{display:block;font:450 var(--widget-meta)/1.3 "Pretendard Variable","Pretendard",sans-serif;color:#535B60;text-align:left;white-space:normal;letter-spacing:-.03em}
     .jaroo-mode-frame{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#737D83}
     .jaroo-mode-track{position:relative;width:28px;height:14px;border:0;border-radius:8px;background:#C9D0D3}
     .jaroo-mode-thumb{position:absolute;width:10px;height:10px;left:2px;top:2px;border-radius:50%;background:#F5F6F6}
     .jaroo-mode-switch[aria-pressed="true"] .jaroo-mode-track{background:#879398}
     .jaroo-mode-switch[aria-pressed="true"] .jaroo-mode-thumb{left:16px}
     .jaroo-mode-switch:disabled{opacity:.45;cursor:not-allowed}
-    .jaroo-mode-caption{font-size:11px;font-weight:600}
-    :host([data-jaroo-width="narrow"]) .jaroo-center{grid-template-columns:repeat(2,minmax(0,1fr))}
-    :host([data-jaroo-width="narrow"]) .jaroo-mode-switch{grid-column:2;height:28px}
-    :host([data-jaroo-micro="true"]) .jaroo-mini-label{font-size:10px}
-    :host([data-jaroo-micro="true"]) .jaroo-top-badge{padding-inline:3px}
-    :host([data-jaroo-micro="true"]) .jaroo-center .count{font-size:18px}
+    .jaroo-mode-caption{font-size:var(--widget-main);font-weight:600}
+    @container jaroo-dashboard (max-width: 299px){
+      .jaroo-center{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .jaroo-mode-switch{grid-column:1/-1;min-height:28px}
+      .jaroo-mode-frame{flex-direction:row;justify-content:flex-end;width:100%;gap:6px}
+    }
+    @container jaroo-dashboard (max-width: 184px){
+      .jaroo-center{grid-template-columns:minmax(0,1fr)}
+      .jaroo-center button,.jaroo-center .jaroo-top-badge{min-height:32px}
+      .jaroo-center .jaroo-mini-label,.jaroo-focus-help{display:none}
+      .jaroo-mode-switch{min-height:28px}
+    }
     .jaroo-focus-list{display:flex;flex-direction:column;gap:6px;border-top:1px solid #C5CDD0;margin:0;padding:8px 0;background:transparent}
     .jaroo-focus-list[hidden]{display:none!important}
     .jaroo-focus-header{display:flex;align-items:center;justify-content:space-between;gap:4px}
@@ -1078,10 +976,14 @@
     .jaroo-focus-row{display:flex;align-items:center;gap:5px;min-width:0;padding:5px 2px;color:#292D30;text-decoration:none;border-radius:3px;cursor:pointer}
     .jaroo-focus-row:hover,.jaroo-focus-row:focus-visible{background:#DFE3E5}
     .jaroo-focus-row[aria-disabled="true"]{opacity:.55;cursor:default}
-    .jaroo-focus-name{flex:1 1 auto;min-width:0;font-size:14px;line-height:1.35;overflow-wrap:anywhere}
-    .jaroo-focus-tag{display:inline-flex;align-items:center;order:2;flex:0 0 68px;width:68px;height:25px;margin-left:auto;font-size:0}
-    .jaroo-focus-tag::before{content:"";display:block;width:100%;height:25px;background:var(--eb-pen-run-ink,#526982);mask:var(--eb-pen-run) right center / contain no-repeat}
-    .jaroo-focus-tag[data-jstatus="done"]::before{background:var(--eb-pen-done-ink,#39786C);mask:var(--eb-pen-done) right center / contain no-repeat}
+    .jaroo-focus-name{flex:1 1 auto;min-width:0;font-size:var(--widget-main);line-height:1.35;overflow-wrap:anywhere}
+    /* Only the explicitly filtered list needs a plain state label. */
+    .jaroo-focus-tag{order:2;flex:0 0 auto;margin-left:auto;font:600 var(--widget-meta)/1.3 var(--eb-font,"IBM Plex Mono",monospace);color:#986B24}
+    .jaroo-focus-tag[data-jstatus="done"]{color:#3E8369}
+    @container jaroo-dashboard (max-width: 184px){
+      .jaroo-focus-row{flex-wrap:wrap}
+      .jaroo-focus-name{flex-basis:100%}
+    }
   `;
   function alignDockToClock() {
     if(!dock?.isConnected || !lastDockHost?.isConnected) return;
@@ -1153,7 +1055,7 @@
       #jaroo-v4-quick-panel .dismiss{border:1px solid #C5CDD0;background:#E7EAEB;color:#535B60;border-radius:3px;cursor:pointer;padding:3px 7px;font:inherit}
       #jaroo-v4-quick-panel a{display:flex;align-items:center;gap:4px;padding:8px 5px;color:#535B60;text-decoration:none;border-radius:3px;cursor:pointer}
       #jaroo-v4-quick-panel a:hover,#jaroo-v4-quick-panel a:focus-visible{background:#E7EAEB;outline:1px solid #879398}
-      #jaroo-v4-quick-panel .tag{display:inline-flex;order:2;align-items:center;justify-content:center;flex:0 0 68px;width:68px;height:25px;font-size:0;margin-left:auto}
+      #jaroo-v4-quick-panel .tag{display:inline-flex;order:2;align-items:center;justify-content:center;flex:0 0 auto;font:600 13px/1.3 "IBM Plex Mono",monospace;margin-left:auto}
       #jaroo-v4-quick-panel .name{flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
       #jaroo-v4-quick-panel .empty{padding:8px;color:#737D83}
       #jaroo-v4-title-tip{position:fixed;z-index:2147483401;max-width:min(380px,calc(100vw - 22px));padding:9px 12px;border:1px solid #C5CDD0;border-radius:5px;background:#F5F6F6;color:#292D30;font:14px/1.4 "Pretendard Variable","Pretendard",sans-serif;pointer-events:none;display:none;overflow-wrap:anywhere;box-sizing:border-box}
@@ -1498,9 +1400,7 @@
     let changed = pendingNative.length > 0;
     for (const event of events) {
       if (event.type === 'characterData') {
-        if (event.target.parentElement?.closest('[data-jaroo-native-hidden],[data-jaroo-native-leading]')) {
-          changed = true; hideLayoutDirty = true;
-        } else if (event.target.parentElement?.closest('[data-jaroo-selected="true"] a[href*="/c/"]')) {
+        if (event.target.parentElement?.closest('[data-jaroo-selected="true"] a[href*="/c/"]')) {
           // The selected title was renamed; refresh only its visual fit.
           changed = true;
         }
@@ -1516,7 +1416,7 @@
       if (target?.closest('[data-native-menu-root],[popover],#jaroo-v4-quick-panel,#jaroo-v4-title-tip')) continue;
       const changedNodes=[...event.addedNodes,...event.removedNodes];
       if(changedNodes.length&&changedNodes.every(node=>node.nodeType===1&&node.matches(OWN_BADGE)))continue;
-      changed = true; rowDirty = true; hideLayoutDirty = true;
+      changed = true; rowDirty = true;
     }
     if (changed) scheduleRefresh('native-mutation');
   }
@@ -1554,7 +1454,7 @@
         attributeFilter: ['data-sidebar-indicator','aria-current','aria-label','href','data-sidebar-archive-chatgpt-id','data-jaroo-native-row'] });
       resizeObserver?.observe(root);
     }
-    rowDirty = true; hideLayoutDirty = true;
+    rowDirty = true;
     return true;
   }
   function bindProbeObservers() {
@@ -1591,7 +1491,7 @@
       statusBus.tick(); scheduleRefresh('document-hidden'); return;
     }
     statusBus.refreshFromStorage(); bindSidebarObservers();
-    rowDirty = true; hideLayoutDirty = true; scheduleRefresh('document-resumed');
+    rowDirty = true; scheduleRefresh('document-resumed');
   }
   function onPageHide() {
     composerProbe.suspend('document-suspended');
@@ -1600,7 +1500,7 @@
     localObservations.clear();
   }
   function onRoute() { rowDirty = true; hideTip(); composerProbe.suspend('route-changed'); scheduleRefresh('route-changed'); }
-  function onResize() { hideLayoutDirty = true; scheduleRefresh('resize'); }
+  function onResize() { scheduleRefresh('resize'); }
   function onEscape(event) { if (event.key === 'Escape') { closePanel(); hideTip(); } }
   function submitHandler(event) { composerProbe.noteSubmit(event); }
   function clickHandler(event) {

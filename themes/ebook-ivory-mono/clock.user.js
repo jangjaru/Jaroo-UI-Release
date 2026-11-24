@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.1
+// @version      3.11.2
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -130,17 +130,20 @@
         --ink:#292D30;--muted:#535B60;--quiet:#737D83;--line:#C5CDD0;
         --font:var(--eb-font,"IBM Plex Mono","Pretendard Variable","Pretendard",sans-serif);
         --mono:var(--eb-mono,"IBM Plex Mono","Pretendard Variable","Pretendard",monospace);
-        --jaroo-ui-scale:1;color:var(--ink);font:400 14px/1.3 var(--font);
+        --widget-main:var(--eb-chat-corrected-size,15.333px);
+        --widget-meta:13px;
+        --jaroo-ui-scale:1;color:var(--ink);font:400 var(--widget-main)/1.3 var(--font);
+        container:jaroo-dashboard / inline-size;
       }
       *,*::before,*::after{box-sizing:border-box}
       button{font-family:var(--font);color:inherit}
       .fallback-brand{display:flex;align-items:center;width:100%;padding:7px 29px 9px 0;margin:0;border:0;border-bottom:1px solid var(--line);background:none;cursor:pointer;text-align:left;color:var(--ink)}
       .fallback-brand[aria-disabled="true"]{cursor:default}
       .fallback-brand:focus-visible,.ebook-time-toggle:focus-visible{outline:1px solid #879398;outline-offset:1px}
-      .brand-word{display:flex;flex-direction:column;align-items:flex-start;min-width:0;gap:4px}
-      .brand-title{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 .38em;font:600 22px/1.16 var(--font);letter-spacing:-.055em;text-align:left}
-      .brand-title span{white-space:nowrap}
-      .brand-subtitle{font:450 11px/1.2 var(--font);letter-spacing:.09em;color:var(--quiet)}
+      .brand-word{display:flex;flex:1 1 auto;flex-direction:column;align-items:flex-start;min-width:0;max-width:100%;gap:4px}
+      .brand-title{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 .38em;font:700 22px/1.18 var(--font);font-synthesis:weight;letter-spacing:-.045em;text-align:left;min-width:0;max-width:100%}
+      .brand-title span{max-width:100%;overflow-wrap:anywhere}
+      .brand-subtitle{font:450 12px/1.3 var(--font);letter-spacing:.075em;color:var(--muted);max-width:100%;overflow-wrap:normal}
       .brand-arrow{display:none}
       .ebook-time-toggle{position:absolute;inset-block-start:6px;inset-inline-end:0;width:25px;height:25px;display:grid;place-items:center;z-index:2;border:0;border-radius:3px;background:transparent;color:var(--muted);cursor:pointer;padding:0}
       .ebook-time-toggle:hover{background:#DFE3E5}
@@ -148,46 +151,46 @@
       :host([data-ebook-time-collapsed="true"]) .ebook-time-toggle svg{transform:rotate(-90deg)}
       :host([data-ebook-time-collapsed="true"]) :is(.life-clock,.clock){display:none}
       .life-clock{margin:0;padding:10px 0 9px;background:transparent}
-      .life-head{display:flex;align-items:baseline;justify-content:space-between;gap:4px;margin:0 0 5px}
-      .life-title{font:650 13px/1.3 var(--font);letter-spacing:.045em;text-transform:uppercase;color:var(--muted)}
+      .life-head{display:flex;flex-direction:column;align-items:flex-start;gap:3px;margin:0 0 5px}
+      .life-title{font:650 var(--widget-main)/1.3 var(--font);letter-spacing:.025em;text-transform:uppercase;color:var(--ink);max-width:100%;overflow-wrap:normal}
       .life-title .ico,.life-title-short,.life-progress-percent{display:none}
-      .life-sub,.life-meta,.life-progress-scale{font:400 11px/1.3 var(--font);color:var(--quiet)}
-      .life-sub{text-align:right}
+      .life-sub,.life-meta,.life-progress-scale{font:450 var(--widget-meta)/1.35 var(--font);color:var(--muted);max-width:100%;overflow-wrap:normal}
+      .life-sub{text-align:left}
       .life-setup[hidden],.life-setup form[hidden]{display:none}
-      .life-setup{margin:5px 0;padding:6px 0;border-bottom:1px solid #D4DADC;font:400 11px/1.4 var(--font);color:var(--muted)}
+      .life-setup{margin:5px 0;padding:6px 0;border-bottom:1px solid #D4DADC;font:400 var(--widget-meta)/1.4 var(--font);color:var(--muted)}
       .life-setup-line{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px}
-      .life-setup button{padding:3px 6px;border:1px solid var(--line);border-radius:3px;background:transparent;color:var(--ink);font:500 11px/1.3 var(--font);cursor:pointer}
+      .life-setup button{padding:3px 6px;border:1px solid var(--line);border-radius:3px;background:transparent;color:var(--ink);font:500 var(--widget-meta)/1.3 var(--font);cursor:pointer}
       .life-setup form{display:grid;gap:5px;margin-top:6px}
       .life-setup input{min-width:0;max-width:100%;padding:4px;border:1px solid var(--line);border-radius:3px;background:#F5F6F6;color:var(--ink);font:400 12px/1.3 var(--font)}
-      .life-setup .life-setup-message{font-size:10px;color:var(--muted)}
+      .life-setup .life-setup-message{font-size:var(--widget-meta);color:var(--muted)}
       .life-setup .life-setup-error{color:#A33F46;min-height:0}
       .life-grid{display:flex;flex-direction:column}
       .life-card{margin:0;padding:8px 0;border-bottom:1px solid #D4DADC;min-width:0}
       .life-card.after{border:0}
-      .life-card-main{display:flex;justify-content:space-between;align-items:baseline;gap:5px;min-width:0}
-      .life-caption{display:flex;align-items:baseline;flex:1 1 auto;flex-wrap:wrap;gap:2px 5px;min-width:0}
-      .life-label{font:500 14px/1.3 var(--font);letter-spacing:-.025em;white-space:nowrap}
+      .life-card-main{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:6px 10px;min-width:0}
+      .life-caption{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0}
+      .life-label{font:500 var(--widget-main)/1.35 var(--font);letter-spacing:-.025em;max-width:100%;overflow-wrap:normal;word-break:keep-all}
       .life-meta{letter-spacing:-.035em}
-      .life-value{flex:0 0 auto;max-width:100%;font:600 19px/1.2 var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.045em;text-align:right;white-space:nowrap}
+      .life-value{min-width:0;max-width:100%;font:600 19px/1.25 var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.045em;text-align:right;white-space:normal;word-break:keep-all;overflow-wrap:normal;justify-self:end}
       .life-progress{margin:6px 0 0;padding:7px 0 0;border-top:1px solid #D4DADC}
-      .life-progress-head{display:flex;gap:4px;align-items:baseline;justify-content:space-between;margin-bottom:6px}
-      .life-progress-title{font:650 12px/1.3 var(--font);color:var(--muted);letter-spacing:.045em;text-transform:uppercase}
+      .life-progress-head{display:flex;flex-direction:column;gap:3px;align-items:flex-start;margin-bottom:6px}
+      .life-progress-title{font:650 var(--widget-main)/1.3 var(--font);color:var(--ink);letter-spacing:.025em;text-transform:uppercase}
       .life-bar{height:4px;border-radius:2px;background:#D0D5D7;overflow:hidden}
       .life-bar-fill{height:100%;width:0;border-radius:2px;background:#879398}
       .life-bar-glow{display:none}
       .life-progress-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin-top:7px}
       .life-progress-stat{display:flex;flex-direction:column;gap:3px;min-width:0;align-items:flex-start}
       .life-progress-stat.remaining{align-items:flex-end;text-align:right}
-      .life-progress-stat span{font:400 11px/1.3 var(--font);color:var(--quiet);overflow-wrap:anywhere}
-      .life-progress-stat strong{font:500 13px/1.2 var(--mono);font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+      .life-progress-stat span{font:450 var(--widget-meta)/1.35 var(--font);color:var(--muted);overflow-wrap:anywhere}
+      .life-progress-stat strong{font:500 var(--widget-main)/1.25 var(--mono);font-variant-numeric:tabular-nums;color:var(--muted);max-width:100%;white-space:normal;word-break:keep-all}
       .life-progress-stat.remaining strong{font-weight:600;color:var(--ink)}
       .clock{margin:0;padding:0;border-top:1px solid var(--line);user-select:none}
       .clock-content{display:flex;flex-direction:column;min-width:0}
       .clock-line{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:53px;padding:7px 0}
-      .date-chip{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;flex:0 0 90px;width:90px;height:44px;padding:0 6px 0 0;gap:5px;border-right:1px solid var(--line)}
-      .date-main{font:550 15px/1.2 var(--mono);white-space:nowrap}
-      .weather-line{display:flex;align-items:center;gap:3px;max-width:100%;min-width:0;color:var(--quiet);font:400 11px/1.15 var(--font)}
-      .weather-symbol{flex:0 0 auto}.weather-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .date-chip{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;flex:1 1 120px;min-width:0;min-height:44px;padding:0 8px 0 0;gap:4px;border-right:1px solid var(--line)}
+      .date-main{font:550 var(--widget-main)/1.3 var(--font);white-space:normal;word-break:keep-all}
+      .weather-line{display:flex;align-items:center;gap:3px;max-width:100%;min-width:0;color:var(--muted);font:450 var(--widget-meta)/1.3 var(--font)}
+      .weather-symbol{flex:0 0 auto}.weather-label{min-width:0;overflow-wrap:normal;white-space:normal;word-break:keep-all}
       .digital-time{display:flex;align-items:center;justify-content:flex-end;flex:0 0 auto;height:38px;color:#41494D;white-space:nowrap}
       .pair{display:inline-flex;align-items:center;gap:0;flex:0 0 auto}
       .digit{display:inline-block;position:relative;flex:0 0 21px;width:21px;height:38px}
@@ -198,18 +201,38 @@
       .seg-f,.seg-e,.seg-b,.seg-c{width:3.7px;height:15px;clip-path:polygon(50% 0,100% 11%,100% 89%,50% 100%,0 89%,0 11%)}
       .seg-f{left:1px;top:3px}.seg-e{left:1px;top:20px}.seg-b{right:1px;top:3px}.seg-c{right:1px;top:20px}
       .separator{display:inline-flex;align-items:center;justify-content:center;flex:0 0 8px;width:8px;height:38px;margin-inline:4px;color:#41494D;font:380 30px/1 Consolas,monospace}
-      :host([data-jaroo-width="compact"]) .brand-title,:host([data-jaroo-width="narrow"]) .brand-title{font-size:18px}
-      :host([data-jaroo-width="compact"]) .life-value{font-size:18px}
-      :host([data-jaroo-width="narrow"]) .life-card-main{display:grid;grid-template-columns:minmax(0,1fr);gap:4px}
-      :host([data-jaroo-width="narrow"]) .life-value{justify-self:end;font-size:17px}
-      :host([data-jaroo-width="narrow"]) .life-title-full{display:none}
-      :host([data-jaroo-width="narrow"]) .life-title-short{display:inline}
-      :host(:is([data-jaroo-width="compact"],[data-jaroo-width="narrow"])) .clock-line{flex-direction:column;align-items:stretch;gap:4px;min-height:0}
-      :host(:is([data-jaroo-width="compact"],[data-jaroo-width="narrow"])) .date-chip{flex:0 0 auto;width:100%;height:auto;flex-direction:row;justify-content:space-between;align-items:center;padding:0;border:0}
-      :host(:is([data-jaroo-width="compact"],[data-jaroo-width="narrow"])) .digital-time{justify-content:center;align-self:center;max-width:100%}
-      :host([data-jaroo-micro="true"]) .digital-time{zoom:.76}
-      :host([data-jaroo-micro="true"]) .life-progress-stat strong{font-size:11px}
-      :host([data-jaroo-micro="true"]) .life-value{font-size:16px}
+      /* Reflow before hiding secondary detail; never shrink the core type.
+         Named container queries respond to the actual dashboard content width. */
+      @container jaroo-dashboard (max-width: 279px){
+        .life-card-main{grid-template-columns:minmax(0,1fr);gap:4px}
+        .life-value{justify-self:end}
+      }
+      @container jaroo-dashboard (max-width: 309px){
+        .clock-line{flex-direction:column;align-items:stretch;gap:6px;min-height:0}
+        .date-chip{flex:0 0 auto;min-height:0;width:100%;flex-direction:row;flex-wrap:wrap;justify-content:space-between;align-items:center;padding:0;border:0}
+        .digital-time{justify-content:center;align-self:center;max-width:100%}
+      }
+      @container jaroo-dashboard (max-width: 229px){
+        .life-progress-meta{grid-template-columns:minmax(0,1fr);gap:7px}
+        .life-progress-stat{flex-direction:row;align-items:baseline;justify-content:space-between;gap:6px}
+        .life-progress-stat.remaining{text-align:left;align-items:baseline}
+        .life-progress-stat span{flex:1;min-width:0}
+        .life-progress-stat strong{text-align:right;flex:0 1 auto}
+      }
+      @container jaroo-dashboard (max-width: 184px){
+        .life-meta,.life-sub,.life-progress-scale,.brand-subtitle{display:none}
+        .life-title-full{display:none}
+        .life-title-short{display:inline}
+        .life-card{padding:5px 0}
+        .life-progress-stat,.life-progress-stat.remaining{flex-direction:column;align-items:stretch;gap:2px}
+        .life-progress-stat strong{text-align:right}
+        .life-head,.life-progress-head{gap:0}
+      }
+      /* Below the six-digit physical width, show HH:MM at the same glyph
+         size. The actual seconds still tick and remain in the accessible label. */
+      @container jaroo-dashboard (max-width: 159px){
+        .digital-time>.pair:last-child,.digital-time>.separator:nth-last-child(2){display:none}
+      }
       /* An old Status installation cannot briefly paint a neon dock here. */
       :host .jaroo-center:not([data-ebook-status-ready="true"]),
       :host .jaroo-focus-list:not([data-ebook-status-ready="true"]){display:none!important}
@@ -856,6 +879,7 @@
     observedSidebar = sidebar;
     observedHeader = header;
     resizeObserver.observe(sidebar);
+    resizeObserver.observe(host);
     resizeObserver.observe(clockEl);
     if (header && header !== sidebar) resizeObserver.observe(header);
     // Also catch a flex/grid slot shrinking while the sidebar keeps its width.
@@ -1022,9 +1046,9 @@
     if (window[RUNTIME_KEY]?.dispose === dispose) delete window[RUNTIME_KEY];
   }
   window[RUNTIME_KEY] = {
-    version: '3.11.1', dispose,
+    version: '3.11.2', dispose,
     diagnostics: () => ({
-      version: '3.11.1', ...placementReport,
+      version: '3.11.2', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),

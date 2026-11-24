@@ -25,16 +25,16 @@ Colors, font sizes, layout, icons, animations, message body (including variable 
 
 The reversible flat saturated Monokai/pixel-edge layer is available as [CSS](chatgpt/flat-neon-pixel.user.css) and [JS](chatgpt/flat-neon-pixel.user.js). Install each once, leaving Dracula 8.3.4 and Clock/Status/Mapper enabled; these existing files are unchanged. See [Korean installation and rollback instructions](docs/INSTALL_FLAT_NEON_PIXEL_v0.1.0_KO.md). Signed-in Chrome visual acceptance remains pending.
 
-## E-book Cool E-Ink Graph Paper — 0.3.0 stability release
+## E-book Cool E-Ink Graph Paper — 0.3.1 responsive release
 
 E-book is an independent, opt-in theme. Disable Dracula / Flat Neon visual styles when using it. The dedicated E-book Clock and Status render the final design directly, without the legacy neon layer. Replace the previous Clock/Status entries (same script names and namespaces); do not enable duplicate copies. Existing local private profile remains local.
 
 | E-book component | Version |
 |---|---|
-| [Stylus CSS](themes/ebook-ivory-mono/theme.user.css) | 0.3.0 |
-| [Indicators JS](themes/ebook-ivory-mono/indicators.user.js) | 0.3.0 |
-| [Clock JS](themes/ebook-ivory-mono/clock.user.js) | 3.11.1 |
-| [Status JS](themes/ebook-ivory-mono/status.user.js) | 6.9.0 |
+| [Stylus CSS](themes/ebook-ivory-mono/theme.user.css) | 0.3.1 |
+| [Indicators JS](themes/ebook-ivory-mono/indicators.user.js) | 0.3.1 |
+| [Clock JS](themes/ebook-ivory-mono/clock.user.js) | 3.11.2 |
+| [Status JS](themes/ebook-ivory-mono/status.user.js) | 6.9.1 |
 
 - [Release and installation details](themes/ebook-ivory-mono/README.md)
 - Legacy shared Clock/Status and Calendar/Dracula files remain unchanged.
