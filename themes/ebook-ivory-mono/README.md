@@ -1,8 +1,18 @@
 # Jaroo E-book · Cool E-Ink Graph Paper
 
-**2026-11-24 · Stylus CSS v0.2.44 / Tampermonkey JS v0.2.32**
+**2026-11-24 · Stylus CSS v0.2.45 / Tampermonkey JS v0.2.33**
 
 This update modifies the existing Classic Paper theme; it is **not** a separate mockup or a second overlay.
+
+## v0.2.45 / v0.2.33 · 2026-11-24 — E-book 단독 실행 성능 개선 1차
+
+- 기존 3개 보조 스크립트(Clock, Status, Mapper)는 사용자가 삭제한 상태이므로 최적화 대상에서 제외. 저장소 원본 및 선택적 호환 기능은 유지하며 재설치하지 않음.
+- 카운터 위치 계산: 공유 조상 클리핑/레이어 좌표 캐시, 모든 레이아웃 읽기 후 일괄 스타일 쓰기, Dot 참조 재사용, 프로젝트 내부 포인터 이동 재계산 제외.
+- 새 채팅/Dot·모델 선택 UI는 네이티브 사이드바/입력창 범위 우선 탐색. 필요한 경우에만 전역 탐색. Chat/Work의 유효한 기존 요소 재사용, 헤더 후보 문구 대조 후 좌표 측정, 전송 메시지 동일 버블 중복 탐색 제거.
+- 화면 표시 코드만 숨긴 탭에서 보류하고 복귀 시 재동기화. 구조 회복 검사 2초→5초, 전체 보완 검사 20초→60초. 리사이즈에서 과거 메시지 글꼴 전수 보정 제외. CSSOM 동일값 쓰기 방지 및 첨부 없는 입력창에서 구분선 위치 계산 생략.
+- 스크롤바 숨김 선택자를 식별된 사이드바로 제한하고 광범위한 :has() 사용 제거. 기존 스크롤 기능 및 본문 스크롤바 유지. 다른 CSS 선언·순서·색상·글꼴·사선·종이 질감은 변경하지 않음.
+- 로컬 Chromium의 프로젝트 11개/스크롤 6개 상태 비교에서 모든 배지 숫자·색·정렬·표시 여부 동일. 위치 갱신 100회: 스타일 조회 3,600→2,300, 좌표 조회 5,200→2,700, 해당 모의 테스트 시간 46.3→28.6ms. 전체 페이지 실제 성능 개선율은 미측정. 별도 스크롤바 모의 DOM의 사이드바 숨김/본문 유지/스크롤 가능 검증, CSSOM 동일값 및 스케줄 보류/병합 단위 테스트, JS 구문 및 기존·신규 SHA-256 검증.
+- 진단의 performance.events / performance.passes에 실행·병합·숨김 보류 및 영역별 평균/최대 실행시간 기록. 사용자 브라우저에서 전체 기능/초기 렌더링/타이핑/스크롤 성능 검수 필요. 대규모 CSS 정리나 질감 교체는 회귀 방지를 위해 다음 단계로 보류.
 
 ## v0.2.44 / v0.2.32 · 2026-11-24 — 상단 빗금 및 카운터 테두리 재수정
 
@@ -127,8 +137,8 @@ This update modifies the existing Classic Paper theme; it is **not** a separate 
 - E-book Clock skin follows the cooler neutrals while preserving segmented digits, Life Clock and existing animations.
 
 ## Install / update in place
-- [Stylus CSS v0.2.44](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/theme.user.css)
-- [Tampermonkey JS v0.2.32](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/indicators.user.js)
+- [Stylus CSS v0.2.45](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/theme.user.css)
+- [Tampermonkey JS v0.2.33](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/indicators.user.js)
 
 Update the **existing** two extension entries rather than installing duplicates. In Stylus and Tampermonkey, run the built-in **Check for updates**, then reload ChatGPT with `Ctrl + Shift + R`.
 
@@ -139,7 +149,7 @@ Use the ChatGPT page console:
 ```js
 window.__jarooEbookIvoryMonoV1?.diagnostics?.()
 ```
-Expected: JS `version: '0.2.32'`, `sentPromptTarget: '16.067px'`; a selected chat should produce `headerMarkers: 1` when its title is visible. CSS version is `0.2.44`. `fixedSidebarTop` reports the actual overlay height, visibility and computed pattern. `projectCountBorders` reports computed border/outline styles. `projectCounts` reports the one-character display, exact/partial/unknown state, overflow and confirmed count, `lastPassMs` reports the most recent scoped update durations (ms), not end-to-end page load time. `quickNavMarkers` reports the actual size, weight and color of New Chat/Dot labels. Diagnostics include `projectMarkers`, `sidebarSeams` and `workSwitcher`; live DOM matching still requires visual confirmation.
+Expected: JS `version: '0.2.33'`, `sentPromptTarget: '16.067px'`; a selected chat should produce `headerMarkers: 1` when its title is visible. CSS version is `0.2.45`. `performance` gives scoped pass execution counts/average/peak times and scheduling stats. `fixedSidebarTop` reports the actual overlay height, visibility and computed pattern. `projectCountBorders` reports computed border/outline styles. `projectCounts` reports the one-character display, exact/partial/unknown state, overflow and confirmed count, `lastPassMs` reports the most recent scoped update durations (ms), not end-to-end page load time. `quickNavMarkers` reports the actual size, weight and color of New Chat/Dot labels. Diagnostics include `projectMarkers`, `sidebarSeams` and `workSwitcher`; live DOM matching still requires visual confirmation.
 
 To roll back, use the extensions' version history or the previous Git commit of the two E-book files. This release is code-published and statically checked, but **the user's signed-in Chrome rendering and updates have not been verified in this chat**.
 
