@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.63
+@version      0.2.64
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -109,7 +109,7 @@
     --link: var(--eb-ink) !important;
     --link-hover: var(--eb-secondary) !important;
     --jaroo-status-css-version: "6.8.2";
-    --ebook-theme-version: "0.2.63";
+    --ebook-theme-version: "0.2.64";
   }
 
   /* 02. LIGHT-PAPER BASE — do not modify Chrome frame or extension UIs. */
@@ -292,7 +292,7 @@
   }
 
 
-  /* 06. E-BOOK F pen status: existing Status owns detection and acknowledgement. */
+  /* 06. E-BOOK F pen status: larger, readable 68x25 note; state logic unchanged. */
   :root {
     --eb-dashboard-ready:1;
     --eb-pen-run-ink:#526982;--eb-pen-done-ink:#39786C;
@@ -302,8 +302,8 @@
   }
   html body [data-jaroo-native-row="true"] .jaroo-native-badge {
     display:none!important;position:static!important;order:99!important;
-    flex:0 0 53px!important;width:53px!important;min-width:53px!important;max-width:53px!important;
-    height:20px!important;min-height:20px!important;align-self:center!important;
+    flex:0 0 68px!important;width:68px!important;min-width:68px!important;max-width:68px!important;
+    height:25px!important;min-height:25px!important;align-self:center!important;
     margin:0 0 0 auto!important;padding:0!important;box-sizing:border-box!important;
     border:0!important;border-radius:0!important;background:none!important;color:transparent!important;
     font-size:0!important;line-height:0!important;text-shadow:none!important;box-shadow:none!important;
@@ -311,7 +311,7 @@
     pointer-events:none!important;opacity:1!important;
   }
   html body [data-jaroo-native-row="true"] .jaroo-native-badge::before,html body #jaroo-v4-quick-panel .tag::before {
-    content:""!important;display:block!important;flex:0 0 100%!important;width:100%!important;height:20px!important;
+    content:""!important;display:block!important;flex:0 0 100%!important;width:100%!important;height:25px!important;
     margin:0!important;padding:0!important;border:0!important;border-radius:0!important;
     background:var(--eb-pen-run-ink)!important;
     -webkit-mask:var(--eb-pen-run) right center / contain no-repeat!important;
@@ -355,8 +355,9 @@
   html body #jaroo-v4-quick-panel :is(.head,.name,.empty,.dismiss,a) {color:#535B60!important;font-family:var(--eb-font)!important}
   html body #jaroo-v4-quick-panel .dismiss {border:1px solid #C5CDD0!important;background:#E7EAEB!important;border-radius:3px!important}
   html body #jaroo-v4-quick-panel a:is(:hover,:focus-visible) {background:#E7EAEB!important;outline-color:#879398!important}
-  html body #jaroo-v4-quick-panel .tag {order:2!important;flex:0 0 53px!important;width:53px!important;height:20px!important;min-height:20px!important;border:0!important;background:none!important;margin-left:auto!important;padding:0!important;font-size:0!important;text-shadow:none!important;box-shadow:none!important;animation:none!important}
+  html body #jaroo-v4-quick-panel .tag {order:2!important;flex:0 0 68px!important;width:68px!important;height:25px!important;min-height:25px!important;border:0!important;background:none!important;margin-left:auto!important;padding:0!important;font-size:0!important;text-shadow:none!important;box-shadow:none!important;animation:none!important}
   html body #jaroo-v4-quick-panel .name {flex:1 1 auto;min-width:0}
+  html body #jaroo-v4-quick-panel :is(.head,.name,.empty,.dismiss),html body #jaroo-v4-title-tip {font-size:14px!important;line-height:1.4!important}
 
   /* 07. CONVERSATION BODY: normal roman fonts, readable measure. */
   body [data-message-author-role="assistant"], body [data-message-author-role="user"] {
@@ -1541,7 +1542,7 @@
     --eb-composer-single-stroke:2.5px solid #303438!important;
     --eb-quick-nav-size:var(--eb-project-optical-size,16px)!important;
     --eb-marker-yellow:#F2D778!important;
-    --ebook-theme-version:"0.2.63";
+    --ebook-theme-version:"0.2.64";
   }
   /* Preserve the existing procedural paper-grain SVG and only refine grid pitch. */
   html body :is(#thread,[data-testid="conversation-panel"],

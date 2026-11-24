@@ -1,3 +1,8 @@
+# E-Book CSS v0.2.64 / JS v0.2.47 — 위젯 및 펜 메모 가독성 개선
+
+- 브랜드, LIFE CLOCK, LIFE PROGRESS, 날짜·날씨, RUN/DONE 글씨 및 숫자 확대. F안 메모 표시 영역 53×20px → 68×25px. 좁은 사이드바에는 줄바꿈 및 2열 배치 적용. 색상, 벡터, 5.6초 애니메이션, 7px 역할 원, 기존 Clock/Status 계산·상태 로직 유지. 전자시계 세그먼트 모양과 크기는 유지.
+- CSS/Indicators만 업데이트. 배포 원본 및 JS 문법 검증, 실제 로그인 Chrome에서 크기와 배치 확인 필요.
+
 # E-Book CSS v0.2.63 / JS v0.2.46 — 대시보드 복원 및 F안 펜 메모
 
 - 브랜드 헤더, Life Clock, Life Progress, LCD 시계와 날짜·날씨, RUN/DONE 및 ALL/ONLY에 무채색 E-Book 스킨 적용.
