@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.32
+@version      0.2.33
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -1521,7 +1521,7 @@
     --eb-composer-single-stroke:2.5px solid #303438!important;
     --eb-quick-nav-size:var(--eb-project-optical-size,16px)!important;
     --eb-marker-yellow:#F2D778!important;
-    --ebook-theme-version:"0.2.32";
+    --ebook-theme-version:"0.2.33";
   }
   /* Preserve the existing procedural paper-grain SVG and only refine grid pitch. */
   html body :is(#thread,[data-testid="conversation-panel"],
@@ -1679,6 +1679,112 @@
     border:0!important;
     box-shadow:none!important;
     -webkit-box-shadow:none!important;
+  }
+
+
+  /* 30. PAPER SEAM + CHAT/WORK + ORGANIZATION MARKERS — v0.2.33
+     Approved first-seam mockup, neutral cool paper palette retained.
+     Only one outer visible sidebar receives depth; never lift or resize it.
+     Project marks target actual label glyph boxes, not full rows or children.
+     Native mode controls keep their original dimensions, events and state. */
+  :root {
+    --eb-project-mark-exec:#F3B9CB;
+    --eb-project-mark-strategy:#CFC1EF;
+    --eb-project-mark-sales:#F4D384;
+    --eb-project-mark-bd:#F7DE9C;
+    --eb-project-mark-proposal:#EFC38C;
+    --eb-project-mark-design:#A9DCCF;
+    --eb-project-mark-tech:#B5CFF0;
+    --eb-project-mark-people:#C2DEA9;
+    --eb-project-mark-management:#EFC2A1;
+    --eb-project-mark-assistant:#F4D5B8;
+    --eb-project-mark-philosophy:#DAD1E4;
+  }
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,
+    [data-testid="sidebar"],aside)[data-ebook-sidebar-seam="true"] {
+    box-shadow:3px 0 7px -4px rgba(39,47,54,.20),
+      inset -1px 0 0 rgba(255,255,255,.64),
+      inset -4px 0 7px -7px rgba(39,47,54,.15)!important;
+  }
+
+  /* Shade the existing segmented control in its native header location.
+     Only a paired Chat + Work control gets marked; unknown state is left
+     to the native UI rather than guessed or changed. */
+  html body [data-ebook-work-switcher="true"] {
+    border-radius:999px!important;
+    background-color:#E1E5E7!important;
+    box-shadow:inset 0 1px 2px rgba(45,54,62,.055),
+      0 1px 4px rgba(45,54,62,.09)!important;
+  }
+  html body [data-ebook-work-switcher="true"] [data-ebook-switch-tab="idle"] {
+    background-color:transparent!important;
+    box-shadow:none!important;
+    color:#777F85!important;
+    -webkit-text-fill-color:#777F85!important;
+    font-weight:400!important;
+  }
+  html body [data-ebook-work-switcher="true"] [data-ebook-switch-tab="active"] {
+    background-color:var(--eb-panel)!important;
+    color:var(--eb-accent-ink)!important;
+    -webkit-text-fill-color:var(--eb-accent-ink)!important;
+    font-weight:700!important;
+    border-radius:999px!important;
+    box-shadow:0 1px 3px rgba(45,54,62,.11),
+      inset 0 1px 0 rgba(255,255,255,.65)!important;
+  }
+  html body [data-ebook-work-switcher="true"] [data-ebook-switch-tab="active"]
+    :is(span,div,strong,b,[data-d-component="text"]):not(:is([aria-hidden="true"],[aria-hidden="true"] *,svg *, .sr-only,.sr-only *)) {
+    color:var(--eb-accent-ink)!important;
+    -webkit-text-fill-color:var(--eb-accent-ink)!important;
+    font-weight:700!important;
+  }
+  html body [data-ebook-work-switcher="true"] [data-ebook-switch-tab="idle"]
+    :is(span,div,strong,b,[data-d-component="text"]):not(:is([aria-hidden="true"],[aria-hidden="true"] *,svg *, .sr-only,.sr-only *)) {
+    color:#777F85!important;
+    -webkit-text-fill-color:#777F85!important;
+    font-weight:400!important;
+  }
+
+  /* Group palette. Warm gold variants represent the revenue/proposal chain;
+     distinct mint, blue and sage represent design, technical and people. */
+  [data-ebook-project-marker="exec"] {--eb-org-marker:var(--eb-project-mark-exec);}
+  [data-ebook-project-marker="strategy"] {--eb-org-marker:var(--eb-project-mark-strategy);}
+  [data-ebook-project-marker="sales"] {--eb-org-marker:var(--eb-project-mark-sales);}
+  [data-ebook-project-marker="bd"] {--eb-org-marker:var(--eb-project-mark-bd);}
+  [data-ebook-project-marker="proposal"] {--eb-org-marker:var(--eb-project-mark-proposal);}
+  [data-ebook-project-marker="design"] {--eb-org-marker:var(--eb-project-mark-design);}
+  [data-ebook-project-marker="tech"] {--eb-org-marker:var(--eb-project-mark-tech);}
+  [data-ebook-project-marker="people"] {--eb-org-marker:var(--eb-project-mark-people);}
+  [data-ebook-project-marker="management"] {--eb-org-marker:var(--eb-project-mark-management);}
+  [data-ebook-project-marker="assistant"] {--eb-org-marker:var(--eb-project-mark-assistant);}
+  [data-ebook-project-marker="philosophy"] {--eb-org-marker:var(--eb-project-mark-philosophy);}
+
+  html body [data-app-action-sidebar-project-row] [data-ebook-project-marker] {
+    position:relative!important;
+    isolation:isolate!important;
+    display:inline-block!important;
+    inline-size:max-content!important;
+    max-inline-size:100%!important;
+    min-inline-size:0!important;
+    flex:0 1 auto!important;
+  }
+  /* Keep the native marquee wrapper intact except when it directly owns
+     the project text. Only the marked leaf has a small horizontal margin. */
+  html body [data-app-action-sidebar-project-row] [data-ebook-project-marker]:not([data-marquee-content="true"]) {
+    padding-inline:3px!important;
+    margin-inline:-2px!important;
+  }
+  html body [data-app-action-sidebar-project-row] [data-ebook-project-marker]::after {
+    content:""!important;
+    position:absolute!important;
+    pointer-events:none!important;
+    z-index:-1!important;
+    inset-inline:0!important;
+    inset-block:12% 8%!important;
+    background-color:var(--eb-org-marker)!important;
+    opacity:.81!important;
+    clip-path:polygon(0% 19%,8% 9%,26% 12%,43% 5%,65% 10%,84% 4%,98% 13%,100% 31%,98% 44%,100% 63%,97% 84%,79% 93%,57% 90%,35% 97%,15% 91%,1% 100%,2% 72%,0% 51%,2% 34%)!important;
+    transform:rotate(-.45deg)!important;
   }
 
 }
