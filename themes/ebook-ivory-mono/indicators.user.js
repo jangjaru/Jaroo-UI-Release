@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.2.47
-// @description  E-book visual dot indicators for role prefixes plus a light Clock skin; keeps original chat titles, React data and RUN/DONE logic intact.
+// @version      0.3.0
+// @description  E-book role markers, sidebar presentation, outline and safe composer attachment layout. No editable text mutation; Clock owns its first paint.
 // @match        https://chatgpt.com/*
 // @run-at       document-start
 // @grant        none
@@ -16,7 +16,6 @@
   const RUNTIME = '__jarooEbookIvoryMonoV1';
   try { window[RUNTIME]?.dispose?.(); } catch (_) {}
   const CLOCK_HOST = 'jaroo-clock-overlay-v25';
-  const CLOCK_CSS_ID = 'jaroo-ebook-clock-css-v01';
   const SIDE_ROOTS = '#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]';
   const TITLE_SELECTORS = '[data-thread-title="true"],[data-marquee-text],span.truncate,div.truncate,span[dir="auto"]';
   const ROLE_NAMES = Object.freeze({
@@ -29,158 +28,19 @@
   const ROLE_MARKER = /^\s*((?:\[(?:완료|중단|보류)\]\s*)?)([☆★▷▶○●>›])(?=\s|$)/u;
   const CLEANUP_GLYPH = '[data-ebook-glyph="true"]';
 
-  // Quiet E-book dashboard skin; original Clock and Status supply behavior.
-  const clockCSS = String.raw`
-    :host {
-      --ebook-ink:#292D30;--ebook-muted:#535B60;--ebook-quiet:#737D83;
-      --ebook-line:#C5CDD0;--ebook-soft:#DFE3E5;
-      --ebook-font:"IBM Plex Mono","Pretendard Variable","Pretendard",sans-serif;
-      --ebook-mono:"IBM Plex Mono","Pretendard Variable","Pretendard",monospace;
-      --ebook-status-run:#A57900;--ebook-status-done:#218C77;
-    }
-    /* E-book skin only: Clock and Status retain their state and placement. */
-    :host(#jaroo-clock-overlay-v25) :is(.fallback-brand,.life-clock,.clock,.jaroo-center,.jaroo-focus-list),
-    :host(#jaroo-clock-overlay-v25) :is(.fallback-brand,.life-clock,.clock,.jaroo-center,.jaroo-focus-list) * {
-      font-family:var(--ebook-font)!important;font-style:normal!important;
-      text-shadow:none!important;box-shadow:none!important;filter:none!important;
-    }
-    :host(#jaroo-clock-overlay-v25) .fallback-brand {
-      display:flex!important;align-items:center!important;justify-content:flex-start!important;
-      width:100%!important;margin:0!important;padding:7px 29px 9px 0!important;gap:0!important;
-      border:0!important;border-bottom:1px solid var(--ebook-line)!important;border-radius:0!important;
-      background:transparent!important;animation:none!important;isolation:auto!important;
-      color:var(--ebook-ink)!important;min-height:0!important;
-    }
-    :host(#jaroo-clock-overlay-v25) .fallback-brand::before,:host(#jaroo-clock-overlay-v25) .fallback-brand::after {content:none!important;animation:none!important}
-    :host(#jaroo-clock-overlay-v25) .brand-word {align-items:flex-start!important;gap:4px!important;min-width:0!important;overflow:visible!important}
-    :host(#jaroo-clock-overlay-v25) .brand-title {
-      display:flex!important;flex-wrap:wrap!important;justify-content:flex-start!important;align-items:baseline!important;
-      gap:0 .38em!important;width:auto!important;max-width:100%!important;text-align:left!important;
-      font-size:22px!important;font-weight:600!important;line-height:1.16!important;letter-spacing:-.055em!important;
-    }
-    :host(#jaroo-clock-overlay-v25) :is(.brand-title,.brand-jaroo,.brand-company,.brand-subtitle) {
-      background:none!important;color:var(--ebook-ink)!important;-webkit-text-fill-color:var(--ebook-ink)!important;
-      -webkit-text-stroke:0!important;animation:none!important;opacity:1!important;text-align:left!important;
-    }
-    :host(#jaroo-clock-overlay-v25) .brand-title :is(.brand-jaroo,.brand-company) {font-size:inherit!important;font-weight:inherit!important;line-height:inherit!important;letter-spacing:inherit!important;white-space:nowrap!important}
-    :host(#jaroo-clock-overlay-v25) .brand-subtitle {
-      font-size:11px!important;font-weight:450!important;letter-spacing:.09em!important;line-height:1.15!important;
-      color:var(--ebook-quiet)!important;-webkit-text-fill-color:var(--ebook-quiet)!important;white-space:normal!important;
-    }
-    :host(#jaroo-clock-overlay-v25) .brand-arrow {display:none!important}
-    :host(#jaroo-clock-overlay-v25[data-jaroo-width='narrow']) .brand-title,:host(#jaroo-clock-overlay-v25[data-jaroo-width='compact']) .brand-title {font-size:18px!important;letter-spacing:-.05em!important}
-    :host(#jaroo-clock-overlay-v25) .ebook-time-toggle {
-      position:absolute!important;inset-block-start:6px;inset-inline-end:0;
-      width:25px;height:25px;display:grid;place-items:center;z-index:2;
-      border:0;border-radius:3px;background:transparent;color:var(--ebook-muted);
-      cursor:pointer;padding:0;box-sizing:border-box;
-    }
-    :host(#jaroo-clock-overlay-v25) .ebook-time-toggle:hover {background:var(--ebook-soft)}
-    :host(#jaroo-clock-overlay-v25) .ebook-time-toggle:focus-visible {outline:1px solid #879398;outline-offset:1px}
-    :host(#jaroo-clock-overlay-v25) .ebook-time-toggle svg {width:13px;height:13px;display:block}
-    :host(#jaroo-clock-overlay-v25[data-ebook-time-collapsed="true"]) .ebook-time-toggle svg {transform:rotate(-90deg)}
-    :host(#jaroo-clock-overlay-v25[data-ebook-time-collapsed="true"]) :is(.life-clock,.clock) {display:none!important}
-    :host(#jaroo-clock-overlay-v25) .life-clock {margin:0!important;padding:10px 0 9px!important;border:0!important;border-radius:0!important;background:transparent!important;color:var(--ebook-ink)!important;animation:none!important}
-    :host(#jaroo-clock-overlay-v25) .life-head {display:flex!important;align-items:baseline!important;justify-content:space-between!important;gap:4px!important;margin:0 0 5px!important;padding:0!important;border:0!important}
-    :host(#jaroo-clock-overlay-v25) .life-title {font-size:13px!important;line-height:1.3!important;font-weight:650!important;color:var(--ebook-muted)!important;letter-spacing:.055em!important;text-transform:uppercase!important}
-    :host(#jaroo-clock-overlay-v25) .life-title .ico {display:none!important}
-    :host(#jaroo-clock-overlay-v25) .life-sub {display:block!important;font-size:11px!important;color:var(--ebook-quiet)!important;white-space:normal!important;text-align:right!important}
-    :host(#jaroo-clock-overlay-v25[data-jaroo-width='narrow']) .life-title-full {display:none!important}
-    :host(#jaroo-clock-overlay-v25[data-jaroo-width='narrow']) .life-title-short {display:inline!important}
-    :host(#jaroo-clock-overlay-v25) .life-grid {display:flex!important;flex-direction:column!important;gap:0!important}
-    :host(#jaroo-clock-overlay-v25) .life-card {display:block!important;margin:0!important;padding:8px 0!important;border:0!important;border-bottom:1px solid #D4DADC!important;border-radius:0!important;background:transparent!important;min-width:0!important;animation:none!important}
-    :host(#jaroo-clock-overlay-v25) .life-card.after {border-bottom:0!important}
-    :host(#jaroo-clock-overlay-v25) .life-card-main {display:flex!important;justify-content:space-between!important;align-items:baseline!important;gap:5px!important;min-width:0!important}
-    :host(#jaroo-clock-overlay-v25) .life-caption {display:flex!important;align-items:baseline!important;flex:1 1 auto!important;flex-wrap:wrap!important;gap:2px 5px!important;overflow:visible!important;min-width:0!important;white-space:normal!important}
-    :host(#jaroo-clock-overlay-v25) .life-card .life-label {display:block!important;color:var(--ebook-ink)!important;font-size:14px!important;font-weight:500!important;line-height:1.3!important;letter-spacing:-.025em!important;white-space:nowrap!important}
-    :host(#jaroo-clock-overlay-v25) .life-card .life-meta {display:block!important;min-width:0!important;color:var(--ebook-quiet)!important;font-size:11px!important;font-weight:450!important;line-height:1.3!important;letter-spacing:-.035em!important;white-space:normal!important;overflow:visible!important}
-    :host(#jaroo-clock-overlay-v25) .life-value {flex:0 0 auto!important;width:auto!important;max-width:100%!important;text-align:right!important;color:var(--ebook-ink)!important;font-family:var(--ebook-mono)!important;font-size:19px!important;font-weight:600!important;line-height:1.2!important;font-variant-numeric:tabular-nums!important;letter-spacing:-.045em!important;white-space:nowrap!important}
-    :host(#jaroo-clock-overlay-v25[data-jaroo-width='narrow']) .life-card-main {display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:4px!important}
-    :host(#jaroo-clock-overlay-v25[data-jaroo-width='narrow']) .life-value {justify-self:end!important;font-size:17px!important}
-    :host(#jaroo-clock-overlay-v25[data-jaroo-width='compact']) .life-value {font-size:18px!important}
-    :host(#jaroo-clock-overlay-v25) .life-progress {display:block!important;margin:6px 0 0!important;padding:7px 0 0!important;border:0!important;border-top:1px solid #D4DADC!important}
-    :host(#jaroo-clock-overlay-v25) .life-progress-head {display:flex!important;gap:4px!important;justify-content:space-between!important;margin-bottom:6px!important}
-    :host(#jaroo-clock-overlay-v25) .life-progress-title {font-size:12px!important;font-weight:650!important;color:var(--ebook-muted)!important;letter-spacing:.045em!important}
-    :host(#jaroo-clock-overlay-v25) .life-progress-scale {display:block!important;color:var(--ebook-quiet)!important;font-size:11px!important}
-    :host(#jaroo-clock-overlay-v25) .life-progress-percent {display:none!important}
-    :host(#jaroo-clock-overlay-v25) .life-bar {height:4px!important;border:0!important;border-radius:2px!important;background:#D0D5D7!important;overflow:hidden!important}
-    :host(#jaroo-clock-overlay-v25) .life-bar-fill {height:100%!important;border:0!important;border-radius:2px!important;background:#879398!important;animation:none!important;transition:none!important}
-    :host(#jaroo-clock-overlay-v25) .life-bar-glow {display:none!important;animation:none!important}
-    :host(#jaroo-clock-overlay-v25) .life-progress-meta {display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:5px!important;margin-top:7px!important}
-    :host(#jaroo-clock-overlay-v25) .life-progress-stat {gap:3px!important;min-width:0!important}
-    :host(#jaroo-clock-overlay-v25) .life-progress-stat span {font-size:11px!important;color:var(--ebook-quiet)!important;line-height:1.3!important;white-space:normal!important;overflow-wrap:anywhere!important}
-    :host(#jaroo-clock-overlay-v25) .life-progress-stat strong {font-family:var(--ebook-mono)!important;color:var(--ebook-muted)!important;font-size:13px!important;font-weight:500!important;line-height:1.2!important;white-space:nowrap!important}
-    :host(#jaroo-clock-overlay-v25) .life-progress-stat.remaining strong {font-weight:600!important;color:var(--ebook-ink)!important}
-    :host(#jaroo-clock-overlay-v25[data-jaroo-micro='true']) .life-progress-stat strong {font-size:11px!important}
-    :host(#jaroo-clock-overlay-v25) .clock {margin:0!important;padding:0!important;border:0!important;border-top:1px solid var(--ebook-line)!important;background:transparent!important;border-radius:0!important}
-    :host(#jaroo-clock-overlay-v25) .clock-content {border:0!important;background:none!important}
-    :host(#jaroo-clock-overlay-v25) .clock-line {display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;min-height:53px!important;padding:7px 0!important;border:0!important;border-radius:0!important;background:transparent!important}
-    :host(#jaroo-clock-overlay-v25) .date-chip {box-sizing:border-box!important;flex:0 0 90px!important;width:90px!important;height:44px!important;padding:0 6px 0 0!important;gap:5px!important;align-items:flex-start!important;border:0!important;border-right:1px solid var(--ebook-line)!important;border-radius:0!important;background:none!important}
-    :host(#jaroo-clock-overlay-v25) .date-main {font-size:15px!important;color:var(--ebook-ink)!important;font-weight:550!important;line-height:1.2!important}
-    :host(#jaroo-clock-overlay-v25) .weather-line {font-size:11px!important;color:var(--ebook-quiet)!important;gap:3px!important;max-width:100%!important}
-    :host(#jaroo-clock-overlay-v25) :is(.weather-symbol,.weather-label) {color:var(--ebook-quiet)!important;font-size:11px!important;line-height:1.15!important}
-    :host(#jaroo-clock-overlay-v25) .weather-label {overflow:hidden!important;text-overflow:ellipsis!important}
-    :host(#jaroo-clock-overlay-v25) .digital-time {animation:none!important;color:#41494D!important;justify-content:flex-end!important;overflow:visible!important}
-    :host(#jaroo-clock-overlay-v25) .digit .seg {background:#D5DADC!important;opacity:1!important;box-shadow:none!important;filter:none!important}
-    :host(#jaroo-clock-overlay-v25) .digit .seg.on {background:#41494D!important;opacity:1!important;box-shadow:none!important;filter:none!important}
-    :host(#jaroo-clock-overlay-v25) .separator {color:#41494D!important;opacity:1!important;animation:none!important;font-family:Consolas,monospace!important}
-    :host(#jaroo-clock-overlay-v25[data-jaroo-width='narrow']) .clock-line {flex-direction:column!important;align-items:stretch!important;gap:4px!important;min-height:0!important}
-    :host(#jaroo-clock-overlay-v25[data-jaroo-width='narrow']) .date-chip {flex:0 0 auto!important;width:100%!important;height:auto!important;flex-direction:row!important;justify-content:space-between!important;align-items:center!important;padding:0!important;border:0!important}
-    :host(#jaroo-clock-overlay-v25[data-jaroo-width='narrow']) .digital-time {justify-content:center!important;align-self:center!important;max-width:100%!important}
-    :host(#jaroo-clock-overlay-v25[data-jaroo-width='compact']) .clock-line {gap:5px!important}
-    :host(#jaroo-clock-overlay-v25[data-jaroo-width='compact']) .date-chip {flex-basis:84px!important;width:84px!important}
-    :host(#jaroo-clock-overlay-v25[data-jaroo-micro='true']) .digital-time {zoom:.82!important}
-    /* RUN/DONE remain available even if the time widget is folded. */
-    :host(#jaroo-clock-overlay-v25) .jaroo-center {box-sizing:border-box!important;display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 36px!important;grid-template-rows:auto!important;gap:6px!important;margin:0!important;padding:8px 0!important;border:0!important;border-top:1px solid var(--ebook-line)!important;background:transparent!important}
-    :host(#jaroo-clock-overlay-v25) .jaroo-center button {min-width:0!important;width:100%!important;height:50px!important;padding:0!important;margin:0!important;background:none!important;border:0!important;border-radius:3px!important;animation:none!important}
-    :host(#jaroo-clock-overlay-v25) .jaroo-center button:focus-visible {outline:1px solid #879398!important;outline-offset:1px!important}
-    :host(#jaroo-clock-overlay-v25) .jaroo-center .jaroo-top-badge {width:100%!important;min-width:0!important;height:50px!important;padding:5px 6px!important;gap:4px!important;background:var(--ebook-soft)!important;border:0!important;border-radius:3px!important;align-items:stretch!important;justify-content:center!important;animation:none!important}
-    :host(#jaroo-clock-overlay-v25) .jaroo-center .jaroo-top-badge::before,:host(#jaroo-clock-overlay-v25) .jaroo-center .jaroo-top-badge::after {content:none!important;animation:none!important;box-shadow:none!important}
-    :host(#jaroo-clock-overlay-v25) .jaroo-center .jaroo-top-line {display:flex!important;width:100%!important;min-width:0!important;gap:4px!important;justify-content:flex-start!important;align-items:center!important;line-height:1!important}
-    :host(#jaroo-clock-overlay-v25) .jaroo-center :is(.jaroo-top-word,.jaroo-top-mark,.count,.jaroo-mini-label) {animation:none!important;transform:none!important;opacity:1!important;filter:none!important;text-shadow:none!important;box-shadow:none!important}
-    :host(#jaroo-clock-overlay-v25) .jaroo-center button[data-active="false"] {--jaroo-neon-color:#9099A2!important}
-    :host(#jaroo-clock-overlay-v25) .jaroo-center .run[data-active="true"] {--jaroo-neon-color:var(--ebook-status-run)!important}
-    :host(#jaroo-clock-overlay-v25) .jaroo-center .done[data-active="true"] {--jaroo-neon-color:var(--ebook-status-done)!important}
-    :host(#jaroo-clock-overlay-v25) .jaroo-center :is(.jaroo-top-word,.jaroo-top-mark) {font-size:14px!important;font-weight:600!important;color:var(--jaroo-neon-color)!important;line-height:1!important;height:auto!important}
-    :host(#jaroo-clock-overlay-v25) .jaroo-center .run .jaroo-top-mark {font-size:0!important;flex:0 0 7px!important;width:7px!important;height:7px!important;border-radius:50%!important;background:var(--jaroo-neon-color)!important}
-    :host(#jaroo-clock-overlay-v25) .jaroo-center .run .jaroo-top-mark::before,:host(#jaroo-clock-overlay-v25) .jaroo-center .run .jaroo-top-mark::after {content:none!important}
-    :host(#jaroo-clock-overlay-v25) .jaroo-center .jaroo-top-line {flex-wrap:nowrap!important;gap:3px!important}
-    :host(#jaroo-clock-overlay-v25) .jaroo-center .count {font-family:var(--ebook-mono)!important;font-size:22px!important;font-weight:600!important;letter-spacing:-.04em!important;margin-left:auto!important;color:var(--ebook-ink)!important;height:auto!important;line-height:1!important}
-    :host(#jaroo-clock-overlay-v25) .jaroo-center button[data-active="false"] .count {color:#9099A2!important;font-weight:500!important}
-    :host(#jaroo-clock-overlay-v25) .jaroo-center .jaroo-mini-label {display:block!important;font-size:11px!important;font-weight:450!important;color:var(--ebook-quiet)!important;text-align:left!important;line-height:1.2!important;white-space:normal!important;letter-spacing:-.03em!important}
-    :host(#jaroo-clock-overlay-v25) .jaroo-center .jaroo-mode-frame {gap:4px!important;height:auto!important;color:var(--ebook-quiet)!important;background:none!important}
-    :host(#jaroo-clock-overlay-v25) .jaroo-center .jaroo-mode-track {width:28px!important;height:14px!important;border:0!important;border-radius:8px!important;background:#C9D0D3!important}
-    :host(#jaroo-clock-overlay-v25) .jaroo-center .jaroo-mode-thumb {width:10px!important;height:10px!important;left:2px!important;top:2px!important;background:#F5F6F6!important}
-    :host(#jaroo-clock-overlay-v25) .jaroo-center .jaroo-mode-switch[aria-pressed="true"] .jaroo-mode-track {background:#879398!important}
-    :host(#jaroo-clock-overlay-v25) .jaroo-center .jaroo-mode-switch[aria-pressed="true"] .jaroo-mode-thumb {left:16px!important}
-    :host(#jaroo-clock-overlay-v25) .jaroo-center .jaroo-mode-caption {font-size:11px!important;font-weight:600!important;color:var(--ebook-quiet)!important}
-    :host(#jaroo-clock-overlay-v25[data-jaroo-width='narrow']) .jaroo-center {grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-template-rows:auto auto!important}
-    :host(#jaroo-clock-overlay-v25[data-jaroo-width='narrow']) .jaroo-center .jaroo-mode-switch {grid-column:2!important;height:28px!important}
-    :host(#jaroo-clock-overlay-v25[data-jaroo-micro='true']) .jaroo-center .jaroo-mini-label {font-size:10px!important}
-    :host(#jaroo-clock-overlay-v25[data-jaroo-micro='true']) .jaroo-center .jaroo-top-badge {padding-inline:3px!important}
-    :host(#jaroo-clock-overlay-v25[data-jaroo-micro='true']) .jaroo-center .count {font-size:18px!important}
-    :host(#jaroo-clock-overlay-v25) .jaroo-focus-list {background:transparent!important;border:0!important;border-top:1px solid var(--ebook-line)!important;border-radius:0!important;color:var(--ebook-ink)!important;margin:0!important;padding:8px 0!important;gap:6px!important}
-    :host(#jaroo-clock-overlay-v25) .jaroo-focus-list[hidden] {display:none!important}
-    :host(#jaroo-clock-overlay-v25) .jaroo-focus-list :is(.jaroo-focus-header strong,.jaroo-focus-header em,.jaroo-focus-help,.jaroo-focus-empty) {color:var(--ebook-muted)!important;font-size:12px!important;line-height:1.3!important}
-    :host(#jaroo-clock-overlay-v25) .jaroo-focus-row {background:none!important;border:0!important;border-radius:3px!important;color:var(--ebook-ink)!important;gap:5px!important;padding:5px 2px!important}
-    :host(#jaroo-clock-overlay-v25) .jaroo-focus-row:is(:hover,:focus-visible) {background:var(--ebook-soft)!important;outline-color:#879398!important}
-    :host(#jaroo-clock-overlay-v25) .jaroo-focus-name {flex:1 1 auto!important;min-width:0!important;color:var(--ebook-ink)!important;font-size:14px!important;line-height:1.35!important}
-    :host(#jaroo-clock-overlay-v25) .jaroo-focus-tag {order:2!important;flex:0 0 68px!important;width:68px!important;height:25px!important;margin-left:auto!important;background:none!important;border:0!important;font-size:0!important;padding:0!important;animation:none!important;opacity:1!important}
-    :host(#jaroo-clock-overlay-v25) .jaroo-focus-tag::before {content:""!important;width:100%!important;height:25px!important;background:var(--eb-pen-run-ink)!important;-webkit-mask:var(--eb-pen-run) right center / contain no-repeat!important;mask:var(--eb-pen-run) right center / contain no-repeat!important}
-    :host(#jaroo-clock-overlay-v25) .jaroo-focus-tag[data-jstatus="done"]::before {background:var(--eb-pen-done-ink)!important;-webkit-mask:var(--eb-pen-done) right center / contain no-repeat!important;mask:var(--eb-pen-done) right center / contain no-repeat!important}
-  `;
+
+  // Clock and Status are independent first-paint E-book modules.
 
   let disposed = false;
   let frame = 0;
   let recoverTimer = 0;
-  let shadowStyle = null;
   let observedRoots = [];
-  const PASS={NAV:1,COMPOSER:2,SENT:4,HEADER:8,CLOCK:16,EDITOR:32,DIVIDER:64};
-  const ALL=127;
+  const PASS={NAV:1,COMPOSER:2,SENT:4,HEADER:8,STATUS:16,DIVIDER:32};
+  const ALL=63;
   let dirty=0,lastRoute=location.pathname,lastRecovery=0;
-  const timings={nav:0,composer:0,sent:0,header:0,clock:0,editor:0,divider:0,runs:0};
+  const timings={nav:0,composer:0,sent:0,header:0,status:0,divider:0,runs:0};
   const perfPasses={},perfEvents={scheduled:0,coalesced:0,hiddenDeferred:0};
-  const OWN_NODE='[data-ebook-top-hatch-layer="true"],[data-ebook-project-count-layer="true"],[data-ebook-project-count],[data-ebook-upload-divider="true"],[data-ebook-glyph="true"]';
+  const OWN_NODE='[data-ebook-top-hatch-layer="true"],[data-ebook-project-count-layer="true"],[data-ebook-project-count],[data-ebook-upload-divider="true"],[data-ebook-glyph="true"],.jaroo-native-badge';
   const USER_NODE='[data-message-author-role="user"],[data-user-message-bubble="true"],[data-user-message]';
   const EDITOR_NODE='#prompt-textarea,[data-testid="prompt-textarea"],[data-composer-input] .ProseMirror[contenteditable="true"]';
   const HEADER_NODE='#page-header,[data-testid="conversation-header"],[role="banner"]';
@@ -195,7 +55,13 @@
     return changed.length>0&&changed.every(n=>isOwnNode(n));
   }
   const observer=new MutationObserver(records=>{
-    if(records.some(m=>!ownMutation(m)))schedule(PASS.NAV|PASS.HEADER);
+    let mask=0;
+    for(const m of records){
+      if(ownMutation(m))continue;
+      if(m.type==='attributes'&&['data-jaroo-native-row','data-jaroo-effective-status'].includes(m.attributeName))mask|=PASS.STATUS;
+      else mask|=PASS.NAV|PASS.HEADER;
+    }
+    if(mask)schedule(mask);
   });
   let pageObserver=null;
   const touched = new Set();
@@ -1390,17 +1256,17 @@
 
   /* v0.2.45 — pixel-snap only the paint of existing role markers.
      No new title nodes, no layout/ordering changes. The CSS slot is 10px
-     and the nominal circle diameter is 7px. At fractional DPR, snap the
+     and the nominal circle diameter is supplied by CSS (8px by default). At fractional DPR, snap the
      diameter to a whole device pixel, and place its bounding box on the
      device-pixel lattice. Read geometry first, then update paint variables.
      Unsupported layouts use the CSS circular-gradient fallback. */
   const roleDotPixelProps=['x','y','inner','outer'].map(key=>'--eb-role-snap-'+key);
   const roleDotPixelMarks=new Set();
   let roleDotPixelFrame=0,roleDotScrollTimer=0,lastRoleDotDpr=0;
-  function roleDotPixelGeometry(dpr,left,top) {
+  function roleDotPixelGeometry(dpr,left,top,nominal=8) {
     if(!Number.isFinite(dpr)||dpr<0.5||dpr>8||
        !Number.isFinite(left)||!Number.isFinite(top))return null;
-    const diameter=Math.max(1,Math.round(7*dpr));
+    const diameter=Math.max(1,Math.round(nominal*dpr));
     const inner=(diameter-1)/(2*dpr),outer=(diameter+1)/(2*dpr);
     const phase=(diameter%2)/2;
     const center=origin=>{
@@ -1418,7 +1284,9 @@
     if(disposed||document.hidden||!document.documentElement)return;
     const dpr=window.devicePixelRatio||1;
     lastRoleDotDpr=dpr;
-    if(getComputedStyle(document.documentElement).getPropertyValue('--eb-role-pixel-snap-ready').trim()!=='1'){
+    const rootStyle=getComputedStyle(document.documentElement);
+    const nominal=parseFloat(rootStyle.getPropertyValue('--eb-role-diameter'))||8;
+    if(rootStyle.getPropertyValue('--eb-role-pixel-snap-ready').trim()!=='1'){
       for(const el of roleDotPixelMarks)clearRoleDotPixelMark(el);
       return;
     }
@@ -1449,7 +1317,7 @@
       const before=px(c.borderTopWidth)+px(c.paddingTop);
       const after=px(c.borderBottomWidth)+px(c.paddingBottom);
       const top=rect.top+before+(rect.height-before-after-10)/2;
-      const geometry=roleDotPixelGeometry(dpr,left,top);
+      const geometry=roleDotPixelGeometry(dpr,left,top,nominal);
       if(!geometry){if(roleDotPixelMarks.has(el))stale.add(el);continue;}
       pending.push([el,geometry.map(value=>value.toFixed(4)+'px')]);
     }
@@ -1508,60 +1376,6 @@
     syncPresentationMarks('data-ebook-pen-title',wanted);
   }
 
-  let clockSkinShadow=null,clockSkinObserver=null,clockFoldButton=null;
-  const clockLabelOriginal=new Map();
-  const CLOCK_FOLD_PREF='jaroo:ebook:time-collapsed:v1';
-  let clockFolded=false;
-  try{clockFolded=sessionStorage.getItem(CLOCK_FOLD_PREF)==='true';}catch(_){}
-  function applyClockFold(host) {
-    host.setAttribute('data-ebook-time-collapsed',String(clockFolded));
-    if(clockFoldButton){
-      clockFoldButton.setAttribute('aria-expanded',String(!clockFolded));
-      clockFoldButton.title=clockFolded?'시간 정보 펼치기':'시간 정보 접기';
-      clockFoldButton.setAttribute('aria-label',clockFoldButton.title);
-    }
-  }
-  function restoreClockSkin() {
-    clockSkinObserver?.disconnect();clockSkinObserver=null;
-    clockFoldButton?.remove();clockFoldButton=null;
-    for(const [el,original] of clockLabelOriginal)if(el.isConnected)el.textContent=original;
-    clockLabelOriginal.clear();
-    clockSkinShadow?.host?.removeAttribute('data-ebook-time-collapsed');
-    shadowStyle?.remove();shadowStyle=null;clockSkinShadow=null;
-  }
-  function syncClock() {
-    const host=document.getElementById(CLOCK_HOST),shadow=host?.shadowRoot;
-    const ready=getComputedStyle(document.documentElement).getPropertyValue('--eb-dashboard-ready').trim()==='1';
-    if(!shadow||!ready){if(clockSkinShadow)restoreClockSkin();return;}
-    if(clockSkinShadow!==shadow){
-      restoreClockSkin();clockSkinShadow=shadow;
-      // Direct Shadow DOM children only: late Status mount, not live seconds/counters.
-      clockSkinObserver=new MutationObserver(()=>schedule(PASS.CLOCK));
-      clockSkinObserver.observe(shadow,{childList:true});
-    }
-    shadowStyle=shadow.querySelector('#'+CLOCK_CSS_ID);
-    if(!shadowStyle){shadowStyle=document.createElement('style');shadowStyle.id=CLOCK_CSS_ID;shadowStyle.textContent=clockCSS;}
-    if(shadow.lastElementChild!==shadowStyle)shadow.append(shadowStyle);
-    for(const el of shadow.querySelectorAll('.life-label')){
-      if(clockLabelOriginal.has(el))continue;
-      const original=el.textContent||'',clean=original.replace(/^(?:▣|⌛|✦)\s*/u,'');
-      if(clean!==original){clockLabelOriginal.set(el,original);el.textContent=clean;}
-    }
-    const brand=shadow.querySelector('.fallback-brand');
-    if(brand&&!clockFoldButton?.isConnected){
-      clockFoldButton=document.createElement('button');
-      clockFoldButton.type='button';clockFoldButton.className='ebook-time-toggle';
-      clockFoldButton.innerHTML='<svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3.5 6 4.5 4.5L12.5 6"/></svg>';
-      clockFoldButton.addEventListener('click',()=>{
-        clockFolded=!clockFolded;
-        try{sessionStorage.setItem(CLOCK_FOLD_PREF,String(clockFolded));}catch(_){}
-        applyClockFold(host);
-        window.dispatchEvent(new Event('resize'));
-      });
-      brand.after(clockFoldButton);applyClockFold(host);
-    }
-  }
-
   const NATIVE_NAV_SECTIONS='[data-app-action-sidebar-section-heading]';
   function sidebarObserverRoots() {
     const all=[...new Set([...sidebarRoots(),...document.querySelectorAll(
@@ -1583,6 +1397,37 @@
   /* Find effort/model display inside the composer without modifying its state. */
 
   let composerObserved=null,composerEditor=null;
+  let composing=false,composerQuietUntil=0,deferredComposer=0,composerQuietTimer=0;
+  function isEditableTarget(target) {
+    return !!target?.closest?.(EDITOR_NODE+',[contenteditable="true"],textarea');
+  }
+  function armComposerQuietTimer() {
+    clearTimeout(composerQuietTimer);composerQuietTimer=0;
+    if(disposed||composing||!deferredComposer)return;
+    composerQuietTimer=setTimeout(()=>{
+      composerQuietTimer=0;
+      if(disposed||composing)return;
+      if(performance.now()<composerQuietUntil){armComposerQuietTimer();return;}
+      const work=deferredComposer;deferredComposer=0;
+      if(work)schedule(work);
+    },Math.max(0,composerQuietUntil-performance.now())+16);
+  }
+  function observeEditing(event) {
+    if(!isEditableTarget(event.target))return;
+    if(event.type==='compositionstart')composing=true;
+    else if(event.type==='compositionend'||event.type==='focusout')composing=false;
+    composerQuietUntil=performance.now()+180;
+    armComposerQuietTimer();
+  }
+  function deferComposerLayout(mask) {
+    if(composing&&!isEditableTarget(document.activeElement))composing=false;
+    const composerMask=mask&(PASS.COMPOSER|PASS.DIVIDER);
+    if(composerMask&&(composing||performance.now()<composerQuietUntil)){
+      deferredComposer|=composerMask;armComposerQuietTimer();
+      return mask&~composerMask;
+    }
+    return mask;
+  }
   // Keep the decoration attached to the *actual* sidebar geometry, not
   // just the legacy sidebar IDs. ResizeObserver runs after layout and before
   // paint. Read/write the existing overlays only; never rescan chat lists
@@ -1632,19 +1477,19 @@
     new ResizeObserver(()=>schedule(PASS.DIVIDER)):null;
   const composerObserver=new MutationObserver(records=>{
     let mask=0;
-    for(const m of records) {
+    for(const m of records){
       if(ownMutation(m))continue;
       const target=m.target.nodeType===1?m.target:m.target.parentElement;
-      if(composerEditor?.contains(target)) {
-        // Typing ordinary text needs no full-page restyle. New editor
-        // elements can require typography fallback, but never sent scans.
-        if(m.type==='childList'&&[...m.addedNodes].some(n=>n.nodeType===1))mask|=PASS.EDITOR;
-      } else mask|=PASS.COMPOSER|PASS.EDITOR|PASS.DIVIDER;
+      // Native editor text, new paragraphs and IME composition never trigger styling.
+      if(composerEditor?.contains(target)||isEditableTarget(target))continue;
+      mask|=PASS.COMPOSER|PASS.DIVIDER;
     }
     if(mask)schedule(mask);
   });
   function activeComposer() {
-    const editor=document.querySelector('#prompt-textarea,[data-testid="prompt-textarea"],[contenteditable="true"][role="textbox"]');
+    const editor=document.querySelector('#prompt-textarea')||
+      document.querySelector('[data-testid="prompt-textarea"]')||
+      document.querySelector('[data-testid="composer"] [contenteditable="true"][role="textbox"],#composer-background .ProseMirror[contenteditable="true"]');
     if(!editor) return null;
     const shell=editor.closest('#composer-background')||
       document.querySelector('#composer-background')||
@@ -1666,7 +1511,6 @@
       composerObserver.observe(root,{subtree:true,childList:true,attributes:true,
         attributeFilter:['aria-busy','data-state','data-testid','src','hidden','aria-hidden']});
       composerResizeObserver?.observe(root);
-      if(composerEditor)composerResizeObserver?.observe(composerEditor);
       if(item?.shell&&item.shell!==root)composerResizeObserver?.observe(item.shell);
     }
   }
@@ -1926,8 +1770,7 @@
   function markUploadDivider() {
     const c=activeComposer();
     if(!c?.shell||!c.editor){clearUploadDivider();return;}
-    const selected=[...composerFrameOriginal.keys()].find(el=>el.isConnected&&el.contains(c.editor));
-    const roots=[...new Set([selected,c.shell,c.form].filter(el=>el?.isConnected&&el.contains(c.editor)))];
+    const roots=[...new Set([c.shell,c.form].filter(el=>el?.isConnected&&el!==c.editor&&el.contains(c.editor)&&!isEditableTarget(el)))];
     const intent=performance.now()<uploadIntentUntil;
     if(!intent&&!roots.some(root=>root.querySelector(attachmentCandidates))){clearUploadDivider();return;}
     const er=c.editor.getBoundingClientRect();
@@ -2080,10 +1923,6 @@
      the inner light-gray line indicated in the user's screenshot. Replace its
      stroke with charcoal, and mute the outer ancestor rings completely.
      Original inline values are restored on disable/theme swap. */
-  const composerFrameOriginal=new Map();
-  const composerMutedOriginal=new Map();
-  const frameProperties=['border','border-radius','box-shadow','-webkit-box-shadow','outline'];
-  const muteProperties=['border','outline','box-shadow','-webkit-box-shadow'];
   function snapshotStyle(el,properties){
     const prev={};
     for(const p of properties)prev[p]={
@@ -2101,6 +1940,7 @@
   }
   const importantValues=new WeakMap();
   function makeImportant(el,property,value){
+    if(isEditableTarget(el))return; // never write an editable node or its descendants
     const actual=el.style.getPropertyValue(property),priority=el.style.getPropertyPriority(property);
     if(actual===value&&priority==='important')return;
     const previous=importantValues.get(el)?.get(property);
@@ -2110,131 +1950,15 @@
     if(!values){values=new Map();importantValues.set(el,values);}
     values.set(property,{requested:value,actual:el.style.getPropertyValue(property)});
   }
-  function syncComposerFrame() {
-    const context=activeComposer();
-    const editor=context?.editor;
-    if(!editor || !editor.isConnected) {
-      restoreComposerFrames();
-      return;
-    }
-    const eb=editor.getBoundingClientRect();
-    if(eb.width<40)return;
-    const ancestors=[];
-    let cur=editor.parentElement;
-    for(let i=0;cur&&cur!==document.body&&i<16;i++,cur=cur.parentElement){
-      ancestors.push(cur);
-      if(cur.matches('form'))break;
-    }
-    const withinComposer=el=>{
-      const r=el.getBoundingClientRect();
-      return r.width>=Math.max(165,eb.width*.87) &&
-        r.height>=eb.height+8 && r.height<=650 &&
-        r.top<=eb.top+8 && r.bottom>=eb.bottom-5;
-    };
-    // Hold a previously chosen frame stable over refreshes; its border is
-    // already black and should not cause another native ancestor to be chosen.
-    let chosen=[...composerFrameOriginal.keys()].find(el=>
-      el.isConnected && el.contains(editor) && withinComposer(el));
-    if(!chosen) {
-      const nativeRounded=ancestors.filter(el=>{
-        if(!withinComposer(el))return false;
-        const s=getComputedStyle(el);
-        const border=parseFloat(s.borderTopWidth)||0;
-        const radius=parseFloat(s.borderTopLeftRadius)||0;
-        const shadowEdge=s.boxShadow && s.boxShadow!=='none';
-        return radius>=8 && ((border>=.5 && s.borderTopStyle!=='none') || shadowEdge);
-      });
-      chosen=nativeRounded[0] ||
-        ancestors.find(el=>el.id==='composer-background' && withinComposer(el)) ||
-        ancestors.find(el=>el.matches('[data-testid="composer"]') && withinComposer(el)) ||
-        ancestors.find(el=>el.matches('form') && withinComposer(el));
-    }
-    if(!chosen) return;
-    const outerAncestors=[];
-    let parent=chosen.parentElement;
-    for(let i=0;parent&&parent!==document.body&&i<12;i++,parent=parent.parentElement){
-      if(!parent.contains(editor))break;
-      outerAncestors.push(parent);
-      if(parent.matches('form'))break;
-    }
-    const muted=new Set(outerAncestors);
-    // In case a formerly selected frame becomes an ancestor after a React
-    // redraw, restore its saved properties before marking it as muted.
-    for(const [el,saved] of composerFrameOriginal){
-      if(el===chosen)continue;
-      restoreStyle(el,saved);
-      el.removeAttribute('data-ebook-composer-frame');
-      el.style.removeProperty('--eb-composer-native-radius');
-      composerFrameOriginal.delete(el);
-    }
-    for(const [el,saved] of composerMutedOriginal){
-      if(muted.has(el))continue;
-      restoreStyle(el,saved);
-      el.removeAttribute('data-ebook-composer-muted');
-      composerMutedOriginal.delete(el);
-    }
-    // If an older muted ancestor becomes the chosen inner frame, restore
-    // its original style before applying its new accent keyline.
-    if(composerMutedOriginal.has(chosen)){
-      restoreStyle(chosen,composerMutedOriginal.get(chosen));
-      composerMutedOriginal.delete(chosen);
-      chosen.removeAttribute('data-ebook-composer-muted');
-    }
-    if(!composerFrameOriginal.has(chosen)){
-      const original=getComputedStyle(chosen);
-      const radius=Math.max(22,Math.min(36,
-        parseFloat(original.borderTopLeftRadius)||24));
-      composerFrameOriginal.set(chosen,snapshotStyle(chosen,frameProperties));
-      makeImportant(chosen,'--eb-composer-native-radius',radius+'px');
-    }
-    if(!chosen.hasAttribute('data-ebook-composer-frame'))chosen.setAttribute('data-ebook-composer-frame','true');
-    makeImportant(chosen,'border',getComputedStyle(document.documentElement).getPropertyValue('--eb-composer-single-stroke').trim()||'2.5px solid #303438');
-    makeImportant(chosen,'border-radius',
-      chosen.style.getPropertyValue('--eb-composer-native-radius')||'24px');
-    makeImportant(chosen,'box-shadow','none');
-    makeImportant(chosen,'-webkit-box-shadow','none');
-    makeImportant(chosen,'outline','none');
-    for(const el of muted){
-      if(!composerMutedOriginal.has(el))
-        composerMutedOriginal.set(el,snapshotStyle(el,muteProperties));
-      if(!el.hasAttribute('data-ebook-composer-muted'))el.setAttribute('data-ebook-composer-muted','true');
-      makeImportant(el,'border','0');
-      makeImportant(el,'outline','none');
-      makeImportant(el,'box-shadow','none');
-      makeImportant(el,'-webkit-box-shadow','none');
-    }
-    for(const el of composerFrameOriginal.keys())if(!el.isConnected)
-      composerFrameOriginal.delete(el);
-    for(const el of composerMutedOriginal.keys())if(!el.isConnected)
-      composerMutedOriginal.delete(el);
-  }
-  function restoreComposerFrames(){
-    for(const [el,saved] of composerFrameOriginal){
-      restoreStyle(el,saved);
-      if(el.isConnected){
-        el.removeAttribute('data-ebook-composer-frame');
-        el.style.removeProperty('--eb-composer-native-radius');
-      }
-    }
-    composerFrameOriginal.clear();
-    for(const [el,saved] of composerMutedOriginal){
-      restoreStyle(el,saved);
-      if(el.isConnected)el.removeAttribute('data-ebook-composer-muted');
-    }
-    composerMutedOriginal.clear();
-  }
-
-
   /* v0.2.16 — user prompt typography on the exact text-bearing elements.
      Earlier CSS reached the user bubble/editor shell but not its nested DIL
      leaves; this is why font-size looked unchanged. Original inline values
      are restored on disable or script update. */
   const promptTypeOriginal=new Map();
   const promptTypeProps=['font-size','font-weight','font-synthesis-weight','letter-spacing','color','-webkit-text-fill-color','line-height'];
-  function markPromptTypography(scope='all') {
+  function markSentPromptTypography() {
     const chosen=new Map();
     const tokens=getComputedStyle(document.documentElement);
-    const reading=tokens.getPropertyValue('--eb-prompt-optical-size').trim() || '16px';
     // Fixed sent-message values prevent a stale Stylus CSS token (14px / 700)
     // from silently overriding this newer userscript's 15px / 650 target.
     // Keep composer, assistant and sidebar typography unchanged.
@@ -2244,18 +1968,12 @@
     const hasDirectText=el=>[...el.childNodes].some(node=>
       node.nodeType===Node.TEXT_NODE && (node.nodeValue||'').trim().length>0);
     const add=(el,kind)=>{
+      if(isEditableTarget(el))return;
       if(el.closest('button,[role="button"],[role="toolbar"],svg,pre,code,kbd,samp,table,[role="table"],[data-d-component="math"]'))return;
       if(el.closest('[aria-hidden="true"],.sr-only'))return;
       chosen.set(el,kind);
     };
-    const editor=activeComposer()?.editor;
-    if(scope!=='sent'&&editor?.isConnected){
-      add(editor,'editor');
-      for(const el of editor.querySelectorAll('p,li,span,div,[data-d-component="text"],[data-d-text-flow]')){
-        if(hasDirectText(el))add(el,'editor');
-      }
-    }
-    if(scope!=='editor') {
+    {
       const targets=new Map();
       for(const message of document.querySelectorAll(
         '[data-message-author-role="user"],[data-user-message],[data-user-message-bubble="true"],.bg-user-message'
@@ -2274,8 +1992,7 @@
       }
     }
     for(const [el,record] of promptTypeOriginal){
-      if(scope!=='all'&&record.kind!==scope)continue;
-      if(chosen.has(el))continue;
+      if(chosen.has(el)||isEditableTarget(el))continue;
       if(el.isConnected){
         for(const [property,saved] of Object.entries(record.previous)){
           if(saved.value)el.style.setProperty(property,saved.value,saved.priority);
@@ -2297,8 +2014,8 @@
       if(el.getAttribute('data-ebook-prompt-text')!==kind)
         el.setAttribute('data-ebook-prompt-text',kind);
       const required={
-        'font-size':kind==='sent'?sentReading:reading,
-        'line-height':kind==='sent'?'1.55':'1.56'
+        'font-size':sentReading,
+        'line-height':'1.55'
       };
       if(kind==='sent'){
         required['font-weight']=sentWeight;
@@ -2314,7 +2031,7 @@
   }
   function restorePromptTypography(){
     for(const [el,record] of promptTypeOriginal){
-      if(!el.isConnected)continue;
+      if(!el.isConnected||isEditableTarget(el))continue;
       for(const [p,saved] of Object.entries(record.previous)){
         if(saved.value)el.style.setProperty(p,saved.value,saved.priority);
         else el.style.removeProperty(p);
@@ -2639,6 +2356,8 @@
 
   function update(mask) {
     if(disposed||!document.body||!document.documentElement)return;
+    mask=deferComposerLayout(mask);
+    if(!mask)return;
     // Outline owns its Shadow DOM styles, independent of the beta CSS gate.
     // An outline failure must never block core sidebar/composer behavior.
     try{syncConversationOutline();}catch(e){console.warn('[Jaroo] Outline initialization:',e?.name||'Error');}
@@ -2662,17 +2381,15 @@
     });
     if(mask&PASS.COMPOSER)timed('composer',()=>{
       watchComposer();
-      syncComposerFrame();
       markEffortPicker();
     });
-    if(mask&PASS.EDITOR)timed('editor',()=>markPromptTypography('editor'));
-    if(mask&PASS.SENT)timed('sent',()=>markPromptTypography('sent'));
+    if(mask&PASS.SENT)timed('sent',markSentPromptTypography);
+    if((mask&PASS.STATUS)&&!(mask&PASS.NAV))timed('status',markPenTitles);
     if(mask&PASS.DIVIDER)timed('divider',markUploadDivider);
     if(mask&PASS.HEADER)timed('header',()=>{
       markWorkSwitcher();
       markCurrentChatTitle();
     });
-    if(mask&(PASS.CLOCK|PASS.NAV))timed('clock',syncClock);
   }
   function schedule(mask=ALL) {
     if(disposed)return;
@@ -2712,10 +2429,10 @@
         if(n.nodeType!==1||isOwnNode(n)||!matchesOrContains(n,structure))continue;
         if(matchesOrContains(n,SIDE_ROOTS+','+NATIVE_NAV_SECTIONS+','+PROJECT_ROW))mask|=PASS.NAV|PASS.HEADER;
         if(matchesOrContains(n,EDITOR_NODE+',#composer-background,[data-testid="composer"]'))
-          mask|=PASS.COMPOSER|PASS.EDITOR|PASS.DIVIDER;
+          mask|=PASS.COMPOSER|PASS.DIVIDER;
         if(matchesOrContains(n,USER_NODE))mask|=PASS.SENT;
         if(matchesOrContains(n,HEADER_NODE))mask|=PASS.HEADER;
-        if(matchesOrContains(n,'#'+CLOCK_HOST))mask|=PASS.CLOCK;
+        if(matchesOrContains(n,'#'+CLOCK_HOST))mask|=PASS.NAV;
       }
     }
     if(mask)schedule(mask);
@@ -2739,7 +2456,7 @@
     if(roots.length!==observedRoots.length||roots.some((r,i)=>r!==observedRoots[i]))mask|=PASS.NAV|PASS.HEADER;
     const c=activeComposer();
     if((c?.editor||null)!==composerEditor||(c?.form||c?.shell||null)!==composerObserved)
-      mask|=PASS.COMPOSER|PASS.EDITOR|PASS.DIVIDER;
+      mask|=PASS.COMPOSER|PASS.DIVIDER;
     const now=performance.now();
     // Low-frequency safety net for native changes not emitted as DOM
     // child mutations; no full scan every four seconds.
@@ -2783,7 +2500,6 @@
     if (frame) cancelAnimationFrame(frame);
     restore();
     restoreOpticalSidebarText();
-    restoreComposerFrames();
     restorePromptTypography();
     restoreQuickDotTypography();
     restoreProjectCounts();
@@ -2794,7 +2510,8 @@
     document.querySelectorAll('[data-ebook-active-title="true"]').forEach(n=>n.removeAttribute('data-ebook-active-title'));
     document.querySelectorAll('[data-ebook-upload-divider="true"]').forEach(n=>n.remove());
     document.querySelectorAll('[data-ebook-composer-root="true"]').forEach(n=>n.removeAttribute('data-ebook-composer-root'));
-    restoreClockSkin();
+    clearTimeout(composerQuietTimer);composerQuietTimer=0;deferredComposer=0;composing=false;
+    for(const type of ['compositionstart','compositionend','beforeinput','input','focusout'])document.removeEventListener(type,observeEditing,true);
     document.removeEventListener('visibilitychange', onVisibility);
     for(const type of ['change','drop','paste'])document.removeEventListener(type,onUploadIntent,true);
     document.removeEventListener('load',onComposerImageLoad,true);
@@ -2819,6 +2536,7 @@
     document.addEventListener(type,queueProjectCountPosition,true);
   for(const type of ['change','drop','paste'])document.addEventListener(type,onUploadIntent,true);
   document.addEventListener('load',onComposerImageLoad,true);
+  for(const type of ['compositionstart','compositionend','beforeinput','input','focusout'])document.addEventListener(type,observeEditing,true);
   document.addEventListener('scroll',onRoleDotScroll,{capture:true,passive:true});
   window.addEventListener('focus',schedule);
   window.addEventListener('popstate',onRouteOrResize);
@@ -2861,7 +2579,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.2.47',dispose,refresh:schedule,outlineDiagnostic,
-    diagnostics:() => ({...errors,sorting:{...sidebarSortDiagnostics,styledRows:sidebarSortSaved.size},roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),firstPaintNav:getComputedStyle(document.documentElement).getPropertyValue('--eb-first-paint-nav').trim()==='1',opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-project-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state'),overflow:n.getAttribute('data-ebook-count-overflow')==='true',confirmed:n.getAttribute('data-ebook-count-confirmed')===''?null:Number(n.getAttribute('data-ebook-count-confirmed'))})),lastPassMs:{...timings},performance:{events:{...perfEvents},passes:Object.fromEntries(Object.entries(perfPasses).map(([k,v])=>[k,{runs:v.runs,averageMs:Math.round(v.totalMs/v.runs*100)/100,peakMs:Math.round(v.peakMs*100)/100}]))},fixedSidebarTop:[...topBands.values()].map(n=>({height:n.height,visible:getComputedStyle(n.strip).visibility==='visible',pattern:getComputedStyle(n.strip).backgroundImage})),projectCountBorders:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({border:getComputedStyle(n).borderTopWidth,style:getComputedStyle(n).borderTopStyle,outline:getComputedStyle(n).outlineStyle})),projectCountLayers:countLayers.size,positionResizeTargets:navResizeTargets.size,visibleProjectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].filter(n=>getComputedStyle(n).visibility!=='hidden').length,projectCountAxis:findDotCountReference()?.circle.getBoundingClientRect().left??null,fontAudit:fontAudit()})
+    version:'0.3.0',dispose,refresh:schedule,outlineDiagnostic,
+    diagnostics:() => ({...errors,sorting:{...sidebarSortDiagnostics,styledRows:sidebarSortSaved.size},roots:observedRoots.length,clockSkinned:document.getElementById(CLOCK_HOST)?.getAttribute('data-ebook-clock-ready')==='true',dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),firstPaintNav:getComputedStyle(document.documentElement).getPropertyValue('--eb-first-paint-nav').trim()==='1',opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-project-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:'css-only',mutedComposerFrames:0,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state'),overflow:n.getAttribute('data-ebook-count-overflow')==='true',confirmed:n.getAttribute('data-ebook-count-confirmed')===''?null:Number(n.getAttribute('data-ebook-count-confirmed'))})),lastPassMs:{...timings},performance:{events:{...perfEvents},passes:Object.fromEntries(Object.entries(perfPasses).map(([k,v])=>[k,{runs:v.runs,averageMs:Math.round(v.totalMs/v.runs*100)/100,peakMs:Math.round(v.peakMs*100)/100}]))},fixedSidebarTop:[...topBands.values()].map(n=>({height:n.height,visible:getComputedStyle(n.strip).visibility==='visible',pattern:getComputedStyle(n.strip).backgroundImage})),projectCountBorders:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({border:getComputedStyle(n).borderTopWidth,style:getComputedStyle(n).borderTopStyle,outline:getComputedStyle(n).outlineStyle})),projectCountLayers:countLayers.size,positionResizeTargets:navResizeTargets.size,visibleProjectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].filter(n=>getComputedStyle(n).visibility!=='hidden').length,projectCountAxis:findDotCountReference()?.circle.getBoundingClientRect().left??null,fontAudit:fontAudit()})
   };
 })();

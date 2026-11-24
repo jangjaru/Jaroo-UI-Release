@@ -25,12 +25,20 @@ Colors, font sizes, layout, icons, animations, message body (including variable 
 
 The reversible flat saturated Monokai/pixel-edge layer is available as [CSS](chatgpt/flat-neon-pixel.user.css) and [JS](chatgpt/flat-neon-pixel.user.js). Install each once, leaving Dracula 8.3.4 and Clock/Status/Mapper enabled; these existing files are unchanged. See [Korean installation and rollback instructions](docs/INSTALL_FLAT_NEON_PIXEL_v0.1.0_KO.md). Signed-in Chrome visual acceptance remains pending.
 
-## E-book Cool E-Ink Graph Paper CSS v0.2.47 / JS v0.2.36 (independent theme)
+## E-book Cool E-Ink Graph Paper — 0.3.0 stability release
 
-An updated, opt-in **E-book Editorial Notebook** with cool graphite paper, 22px square grid, fine grain, lime active-chat marker, and lighter sent user prompts has been published in [`themes/ebook-ivory-mono/`](themes/ebook-ivory-mono/README.md). It does not replace Dracula/Flat Neon; disable the old visual styles when using E-book. Clock, Status and Mapper are optional compatibility components; E-book can run without them.
+E-book is an independent, opt-in theme. Disable Dracula / Flat Neon visual styles when using it. The dedicated E-book Clock and Status render the final design directly, without the legacy neon layer. Replace the previous Clock/Status entries (same script names and namespaces); do not enable duplicate copies. Existing local private profile remains local.
 
-- [Stylus CSS installer](themes/ebook-ivory-mono/theme.user.css)
-- [Tampermonkey JS installer](themes/ebook-ivory-mono/indicators.user.js)
-- [Korean setup, font and rollback guidance](themes/ebook-ivory-mono/README.md)
+| E-book component | Version |
+|---|---|
+| [Stylus CSS](themes/ebook-ivory-mono/theme.user.css) | 0.3.0 |
+| [Indicators JS](themes/ebook-ivory-mono/indicators.user.js) | 0.3.0 |
+| [Clock JS](themes/ebook-ivory-mono/clock.user.js) | 3.11.0 |
+| [Status JS](themes/ebook-ivory-mono/status.user.js) | 6.9.0 |
 
-**2026-11-24 최신 변경:** `[완료]` 연회색·취소선, `[중단]` 적색·취소선. 역할 기호 유무와 무관하게 적용. CSS v0.2.47 / JS v0.2.36 단위 검증 완료, 실제 Chrome 검수 대기.
+- [Release and installation details](themes/ebook-ivory-mono/README.md)
+- Legacy shared Clock/Status and Calendar/Dracula files remain unchanged.
+- Source/algorithm checks completed; signed-in Chrome / Korean IME visual acceptance remains pending.
+
+
+

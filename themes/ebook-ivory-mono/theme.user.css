@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.65
+@version      0.3.0
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -108,8 +108,8 @@
     --color-text-user-message: var(--eb-ink) !important;
     --link: var(--eb-ink) !important;
     --link-hover: var(--eb-secondary) !important;
-    --jaroo-status-css-version: "6.8.2";
-    --ebook-theme-version: "0.2.65";
+    --jaroo-status-css-version: "6.9.0";
+    --ebook-theme-version: "0.3.0";
   }
 
   /* 02. LIGHT-PAPER BASE — do not modify Chrome frame or extension UIs. */
@@ -295,7 +295,7 @@
 
   /* 06. E-BOOK F pen status: larger, readable 68x25 note; state logic unchanged. */
   :root {
-    --eb-dashboard-ready:1;
+    --eb-dashboard-ready:2;
     --eb-pen-run-ink:#526982;--eb-pen-done-ink:#39786C;
     --eb-pen-run:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%22-2%20-2%20127%2046%22%20%3E%3Cpath%20d%3D%22M82%2C29L83%2C30L82%2C32L79%2C35L76%2C36L75%2C35L75%2C33L79%2C29ZM54%2C25L56%2C27L56%2C28L52%2C32L50%2C32L49%2C30ZM57%2C26L53%2C24L49%2C28L48%2C30L48%2C32L49%2C33L52%2C33L54%2C32L56%2C30L57%2C28ZM24%2C21L21%2C21L20%2C22L18%2C22L14%2C24L14%2C25L15%2C25L21%2C22L23%2C23L17%2C29L16%2C29L14%2C31L14%2C32L19%2C29L21%2C29L22%2C30L14%2C38L13%2C41L17%2C39L19%2C39L20%2C38L25%2C37L28%2C35L26%2C35L25%2C36L20%2C37L17%2C39L16%2C38L16%2C37L18%2C35L19%2C35L20%2C33L24%2C29L24%2C28L22%2C28L21%2C29L20%2C28L20%2C27L24%2C24L25%2C22ZM120%2C17L119%2C19L121%2C20L122%2C18ZM111%2C17L110%2C18L110%2C20L112%2C19ZM102%2C17L100%2C20L101%2C21L103%2C19ZM43%2C16L45%2C18L43%2C21L40%2C22L39%2C21L39%2C19L42%2C16ZM92%2C15L90%2C15L89%2C16L85%2C16L84%2C17L81%2C17L80%2C18L77%2C18L76%2C19L74%2C19L70%2C21L67%2C21L66%2C22L73%2C21L74%2C20L76%2C20L80%2C18L81%2C19L81%2C21L79%2C25L79%2C28L77%2C29L74%2C33L74%2C36L75%2C37L78%2C37L80%2C35L81%2C35L84%2C31L84%2C29L83%2C28L80%2C28L79%2C27L83%2C19L85%2C17L92%2C16ZM44%2C14L43%2C14L38%2C19L37%2C21L38%2C23L41%2C23L45%2C20L46%2C17L43%2C15ZM49%2C9L47%2C9L46%2C10L43%2C10L42%2C11L37%2C12L35%2C13L35%2C14L37%2C13L39%2C13L40%2C12L42%2C12L43%2C11L45%2C11L46%2C10L49%2C10ZM18%2C4L17%2C4L6%2C16L6%2C17L0%2C24L1%2C25L1%2C24L4%2C21L4%2C20L10%2C14L15%2C16L17%2C18L17%2C16L16%2C16L11%2C12L16%2C7L16%2C6L18%2C5ZM64%2C3L62%2C9L60%2C11L58%2C11L55%2C13L54%2C12L55%2C10L55%2C8L56%2C7L56%2C6L55%2C6L53%2C10L52%2C15L51%2C16L51%2C19L52%2C19L52%2C17L54%2C14L56%2C14L58%2C12L59%2C12L60%2C13L60%2C15L58%2C19L58%2C21L59%2C21L59%2C19L60%2C18L60%2C16L61%2C15L62%2C10L65%2C5ZM84%2C2L80%2C2L79%2C3L77%2C3L73%2C5L75%2C5L79%2C3L82%2C3L83%2C4L81%2C6L81%2C7L72%2C16L72%2C17L73%2C17L74%2C15L80%2C9L84%2C9L85%2C10L87%2C10L89%2C11L89%2C10L87%2C9L85%2C9L82%2C7L85%2C3ZM47%2C1L45%2C3L45%2C5L43%2C8L45%2C7L47%2C3ZM33%2C0L31%2C0L30%2C1L30%2C4L28%2C7L28%2C9L27%2C10L27%2C12L26%2C13L25%2C18L28%2C12L28%2C10L31%2C5L31%2C3Z%22%20fill%3D%22black%22%20fill-rule%3D%22evenodd%22%20stroke%3D%22black%22%20stroke-width%3D%221.5%22%20stroke-linejoin%3D%22round%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E");
     --eb-pen-done:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%22-2%20-2%20109%2043%22%20%3E%3Cpath%20d%3D%22M27%2C31L23%2C33L21%2C33L18%2C35L16%2C35L15%2C36L14%2C34L17%2C28L17%2C26L12%2C36L12%2C38L18%2C35L20%2C35L23%2C33L25%2C33L27%2C32ZM60%2C24L57%2C24L56%2C25L51%2C25L50%2C26L49%2C24L52%2C19L52%2C18L51%2C18L47%2C26L45%2C27L43%2C27L42%2C26L43%2C25L44%2C20L42%2C23L42%2C25L41%2C27L38%2C29L35%2C29L34%2C30L41%2C29L45%2C27L54%2C26L55%2C25L60%2C25ZM14%2C5L16%2C7L16%2C9L13%2C12L11%2C13L9%2C13L8%2C12L9%2C9L12%2C6ZM15%2C3L11%2C5L8%2C8L7%2C10L7%2C13L11%2C15L9%2C21L7%2C23L0%2C26L0%2C27L4%2C25L6%2C25L9%2C23L11%2C23L14%2C21L16%2C21L19%2C19L21%2C19L21%2C18L20%2C18L19%2C19L14%2C20L11%2C22L10%2C21L12%2C17L12%2C15L11%2C14L13%2C12L14%2C12L17%2C8L17%2C6L14%2C4ZM51%2C2L48%2C2L42%2C5L44%2C5L48%2C3L50%2C4L50%2C5L45%2C10L41%2C12L43%2C13L41%2C15L41%2C18L45%2C18L48%2C16L53%2C15L53%2C14L51%2C14L50%2C15L48%2C15L44%2C17L42%2C16L43%2C14L46%2C11L48%2C10L50%2C10L51%2C9L49%2C9L48%2C8L52%2C4ZM30%2C2L28%2C3L28%2C5L27%2C6L27%2C8L26%2C9L26%2C11L25%2C12L25%2C14L23%2C18L22%2C25L23%2C24L23%2C22L24%2C21L24%2C18L25%2C16L27%2C14L29%2C13L31%2C13L32%2C12L34%2C12L35%2C11L30%2C12L27%2C14L26%2C13ZM104%2C0L103%2C0L93%2C10L93%2C11L87%2C17L87%2C18L82%2C23L81%2C25L80%2C25L78%2C23L75%2C16L73%2C15L78%2C26L80%2C28L87%2C20L87%2C19L92%2C14L92%2C13Z%22%20fill%3D%22black%22%20fill-rule%3D%22evenodd%22%20stroke%3D%22black%22%20stroke-width%3D%221.5%22%20stroke-linejoin%3D%22round%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E");
@@ -692,13 +692,11 @@
     border-radius:12px !important;
     outline:none !important;
     box-shadow:none !important;
-    padding-inline:12px !important;
     box-sizing:border-box !important;
     font-family:var(--eb-font) !important;
     font-size:var(--eb-ui-size) !important;
     letter-spacing:-.02em !important;
     line-height:1.55 !important;
-    overflow-wrap:anywhere !important;
   }
   :is(#prompt-textarea,[data-testid="prompt-textarea"],[contenteditable="true"][role="textbox"]):focus,
   :is(#prompt-textarea,[data-testid="prompt-textarea"],[contenteditable="true"][role="textbox"]):focus-visible {
@@ -1240,14 +1238,6 @@
   }
   /* Visual JS marks the actual outer composer frame, not the editor itself.
      This prevents an apparently missing border when native markup varies. */
-  html body [data-ebook-composer-frame="true"] {
-    border:var(--eb-composer-keyline)!important;
-    border-radius:18px!important;
-    box-shadow:none!important;
-    -webkit-box-shadow:none!important;
-    filter:none!important;
-    outline:none!important;
-  }
 
 
   /* 22. ONE COMPOSER FRAME + SENT USER TYPOGRAPHY (v0.2.13)
@@ -1260,35 +1250,7 @@
     --eb-user-sent-weight: 600;
     --eb-composer-single-stroke: 2.5px solid #1F1E1A;
   }
-  html body [data-ebook-composer-muted="true"] {
-    border:0 !important;
-    outline:0 !important;
-    box-shadow:none !important;
-    -webkit-box-shadow:none !important;
-    filter:none !important;
-  }
-  html body [data-ebook-composer-frame="true"] {
-    border:var(--eb-composer-single-stroke)!important;
-    border-radius:var(--eb-composer-native-radius,24px)!important;
-    outline:0!important;
-    box-shadow:none!important;
-    -webkit-box-shadow:none!important;
-    filter:none!important;
-  }
-  html body [data-ebook-composer-frame="true"]:focus-within {
-    border:var(--eb-composer-single-stroke)!important;
-    outline:0!important;
-    box-shadow:none!important;
-    -webkit-box-shadow:none!important;
-  }
   /* Avoid drawing a second border on the form around the selected inner frame. */
-  html body form:has([data-ebook-composer-frame="true"]):not([data-ebook-composer-frame="true"]),
-  html body [data-testid="composer"]:has([data-ebook-composer-frame="true"]):not([data-ebook-composer-frame="true"]) {
-    border:0!important;
-    outline:0!important;
-    box-shadow:none!important;
-    -webkit-box-shadow:none!important;
-  }
   /* Sent user message only: preserve transparency, border and curved corners. */
   html body [data-message-author-role="user"]
     :is([data-user-message-bubble="true"],.bg-user-message) {
@@ -1334,11 +1296,6 @@
   html body :is(#prompt-textarea,[data-testid="prompt-textarea"],
         [contenteditable="true"][role="textbox"])
         :is(p,li,span,div,[data-d-component="text"],[data-d-text-flow]) {
-    font-family:var(--eb-font)!important;
-    font-size:var(--eb-prompt-optical-size)!important;
-    line-height:1.56!important;
-  }
-  html body [data-ebook-prompt-text="editor"] {
     font-family:var(--eb-font)!important;
     font-size:var(--eb-prompt-optical-size)!important;
     line-height:1.56!important;
@@ -1543,7 +1500,7 @@
     --eb-composer-single-stroke:2.5px solid #303438!important;
     --eb-quick-nav-size:var(--eb-project-optical-size,16px)!important;
     --eb-marker-yellow:#F2D778!important;
-    --ebook-theme-version:"0.2.65";
+    --ebook-theme-version:"0.3.0";
   }
   /* Preserve the existing procedural paper-grain SVG and only refine grid pitch. */
   html body :is(#thread,[data-testid="conversation-panel"],
@@ -1856,16 +1813,11 @@
   }
   html body #composer-background:has(:is(#prompt-textarea,[data-testid="prompt-textarea"],[contenteditable="true"][role="textbox"])) {
     border:var(--eb-composer-single-stroke)!important;
-    border-radius:var(--eb-composer-native-radius,24px)!important;
+    border-radius:24px!important;
     box-shadow:none!important;
   }
-  html body form:has(#composer-background):not([data-ebook-composer-frame="true"]),
-  html body [data-testid="composer"]:has(#composer-background):not(#composer-background):not([data-ebook-composer-frame="true"]) {
-    border:0!important;
-    box-shadow:none!important;
-    outline:none!important;
-  }
-  html body [data-ebook-composer-muted="true"] {
+  html body form:has(#composer-background),
+  html body [data-testid="composer"]:has(#composer-background):not(#composer-background) {
     border:0!important;
     box-shadow:none!important;
     outline:none!important;
@@ -2144,15 +2096,15 @@
 
 
   /* v0.2.60 — draw a true circular gradient inside the fixed 10px slot.
-     Default diameter is 7 CSS px; the optional helper snaps the painted
+     Default diameter is 8 CSS px; the optional helper snaps the painted
      diameter and center to device pixels without changing title layout.
      CSS-only fallback works with older helper versions. */
-  :root { --eb-role-pixel-snap-ready:1; }
-  [data-ebook-role="master"]  { --eb-role-dot:#E66B91!important; --eb-role-diameter:7px; }
-  [data-ebook-role="plan"]    { --eb-role-dot:#A48BD7!important; --eb-role-diameter:7px; }
-  [data-ebook-role="manage"]  { --eb-role-dot:#55CDB2!important; --eb-role-diameter:7px; }
-  [data-ebook-role="produce"] { --eb-role-dot:#9099A2!important; --eb-role-diameter:7px; }
-  [data-ebook-role="action"]  { --eb-role-dot:#F5B900!important; --eb-role-diameter:7px; }
+  :root { --eb-role-pixel-snap-ready:1; --eb-role-diameter:8px; }
+  [data-ebook-role="master"]  { --eb-role-dot:#E66B91!important; }
+  [data-ebook-role="plan"]    { --eb-role-dot:#A48BD7!important; }
+  [data-ebook-role="manage"]  { --eb-role-dot:#55CDB2!important; }
+  [data-ebook-role="produce"] { --eb-role-dot:#9099A2!important; }
+  [data-ebook-role="action"]  { --eb-role-dot:#F5B900!important; }
   html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-ebook-count-rail="true"],[data-app-action-sidebar-section-heading],aside,[role="complementary"]) :is(a[href*="/c/"][data-ebook-role]:not([data-ebook-recent-chat]),a[href*="/c/"]:not([data-ebook-recent-chat]) [data-ebook-role])::before {
     --eb-role-pixel-snap:1;
     box-sizing:border-box!important;
@@ -2170,8 +2122,8 @@
     align-self:center!important;
     border-radius:0!important;
     background:radial-gradient(circle at var(--eb-role-snap-x,5px) var(--eb-role-snap-y,5px),
-      var(--eb-role-dot) 0,var(--eb-role-dot) var(--eb-role-snap-inner,3px),
-      transparent var(--eb-role-snap-outer,4px))!important;
+      var(--eb-role-dot) 0,var(--eb-role-dot) var(--eb-role-snap-inner,3.5px),
+      transparent var(--eb-role-snap-outer,4.5px))!important;
     box-shadow:none!important;
     transform:none!important;
     transition:none!important;
@@ -2218,6 +2170,32 @@
     font-optical-sizing:none!important;
     font-variant-numeric:tabular-nums!important;
     letter-spacing:normal!important;
+  }
+
+  /* E-book 0.3: only a fully initialized, dedicated E-book clock can paint.
+     This migration guard prevents the legacy neon Clock flashing. */
+  html body #jaroo-clock-overlay-v25:not([data-ebook-clock-ready="true"]) {
+    visibility:hidden!important;opacity:0!important;pointer-events:none!important;
+  }
+  /* One CSS-owned composer frame. No live editor DOM or inline style mutations.
+     The verified native composer-background owns the frame; fallbacks are
+     mutually exclusive, and native paragraph/wrap/selection behavior stays native. */
+  html body #composer-background:has(:is(#prompt-textarea,[data-testid="prompt-textarea"],.ProseMirror[contenteditable="true"])),
+  html body [data-testid="composer"]:not(:has(#composer-background)):has(:is(#prompt-textarea,[data-testid="prompt-textarea"],.ProseMirror[contenteditable="true"])),
+  html body form:has(:is(#prompt-textarea,[data-testid="prompt-textarea"],.ProseMirror[contenteditable="true"])):not(:has(#composer-background,[data-testid="composer"])) {
+    border:var(--eb-composer-single-stroke,2.5px solid #303438)!important;
+    border-radius:24px!important;box-shadow:none!important;outline:none!important;
+    background:var(--eb-composer-paper,var(--eb-paper))!important;
+  }
+  html body form:has(#composer-background,[data-testid="composer"]):not(#composer-background):not([data-testid="composer"]),
+  html body [data-testid="composer"]:has(#composer-background):not(#composer-background) {
+    border:0!important;box-shadow:none!important;outline:none!important;
+  }
+  html body :is(#prompt-textarea,[data-testid="prompt-textarea"],.ProseMirror[contenteditable="true"]),
+  html body :is(#prompt-textarea,[data-testid="prompt-textarea"],.ProseMirror[contenteditable="true"]) :is(p,li,span,div,[data-d-component="text"],[data-d-text-flow]) {
+    font-family:var(--eb-font)!important;
+    font-size:var(--eb-prompt-optical-size,16px)!important;
+    line-height:1.56!important;
   }
 
 }
