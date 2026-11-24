@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.52
+@version      0.2.53
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -2120,34 +2120,39 @@
     font-weight:400!important;
   }
 
-  /* v0.2.51 — approved C: role bars + a quieter subject/detail hierarchy.
-     Keep the old 8px marker slot (4px bar + 2px each side), title size,
-     row spacing, selected row fill and original role palette. */
-  [data-ebook-role="master"] { --eb-role-bar-height:20px; --eb-role-head-weight:650; }
-  [data-ebook-role="plan"] { --eb-role-bar-height:17px; --eb-role-head-weight:600; }
-  [data-ebook-role="manage"] { --eb-role-bar-height:14px; --eb-role-head-weight:500; }
-  [data-ebook-role="produce"] { --eb-role-bar-height:14px; --eb-role-head-weight:500; }
-  [data-ebook-role="action"] { --eb-role-bar-height:11px; --eb-role-head-weight:450; }
+
+  /* v0.2.53 — small circular role markers with subtle diameter steps.
+     Role-only palette: don't recolor shared theme tokens, project marks,
+     native status indicators or counters. Reserve the same 10px slot for
+     every dot, keeping the center and title start aligned. */
+  [data-ebook-role="master"]  { --eb-role-dot:#E66B91!important; --eb-role-diameter:9px; }
+  [data-ebook-role="plan"]    { --eb-role-dot:#E36B68!important; --eb-role-diameter:8.5px; }
+  [data-ebook-role="manage"]  { --eb-role-dot:#E9A078!important; --eb-role-diameter:8px; }
+  [data-ebook-role="produce"] { --eb-role-dot:#55CDB2!important; --eb-role-diameter:7.5px; }
+  [data-ebook-role="action"]  { --eb-role-dot:#A48BD7!important; --eb-role-diameter:7px; }
   html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-ebook-count-rail="true"],[data-app-action-sidebar-section-heading],aside,[role="complementary"]) :is(a[href*="/c/"][data-ebook-role]:not([data-ebook-recent-chat]),a[href*="/c/"]:not([data-ebook-recent-chat]) [data-ebook-role])::before {
-    width:4px!important;
-    height:var(--eb-role-bar-height,14px)!important;
-    flex:0 0 4px!important;
-    margin-inline:2px!important;
+    width:var(--eb-role-diameter,8px)!important;
+    height:var(--eb-role-diameter,8px)!important;
+    flex:0 0 var(--eb-role-diameter,8px)!important;
+    margin-inline:calc((10px - var(--eb-role-diameter,8px)) / 2)!important;
     align-self:center!important;
-    border-radius:999px!important;
+    border-radius:50%!important;
     transform:none!important;
   }
-  /* Wrapping a text run must not add a flex gap between subject and detail.
-     The native marquee/ellipsis and existing line height stay in control. */
+  /* Native text and previous subject/detail wrapping remain reversible.
+     Only the actual 직책 title (팀장/실장/본부장) receives bold. */
   html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-ebook-count-rail="true"],[data-app-action-sidebar-section-heading],aside,[role="complementary"]) a[href*="/c/"] [data-ebook-role-copy="true"] {
     display:inline!important;
     min-inline-size:0!important;
     white-space:inherit!important;
   }
   html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-ebook-count-rail="true"],[data-app-action-sidebar-section-heading],aside,[role="complementary"]) a[href*="/c/"]:not([data-ebook-recent-chat]):not([data-ebook-chat-lifecycle]):not(:has([data-ebook-chat-lifecycle])):not([data-ebook-life-cycle]):not(:has([data-ebook-life-cycle])) [data-ebook-role-copy="true"] [data-ebook-title-part="head"] {
-    font-weight:var(--eb-role-head-weight,450)!important;
+    font-weight:450!important;
     color:var(--eb-ink,#292D30)!important;
     -webkit-text-fill-color:var(--eb-ink,#292D30)!important;
+  }
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-ebook-count-rail="true"],[data-app-action-sidebar-section-heading],aside,[role="complementary"]) a[href*="/c/"]:not([data-ebook-recent-chat]):not([data-ebook-chat-lifecycle]):not(:has([data-ebook-chat-lifecycle])):not([data-ebook-life-cycle]):not(:has([data-ebook-life-cycle])) [data-ebook-role-copy="true"] [data-ebook-title-part="head"][data-ebook-title-leader="true"] {
+    font-weight:650!important;
   }
   html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-ebook-count-rail="true"],[data-app-action-sidebar-section-heading],aside,[role="complementary"]) a[href*="/c/"]:not([data-ebook-recent-chat]):not([data-ebook-chat-lifecycle]):not(:has([data-ebook-chat-lifecycle])):not([data-ebook-life-cycle]):not(:has([data-ebook-life-cycle])) [data-ebook-role-copy="true"] [data-ebook-title-part="detail"] {
     font-weight:450!important;
