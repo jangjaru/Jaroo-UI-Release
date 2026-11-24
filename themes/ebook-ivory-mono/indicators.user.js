@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.2.31
+// @version      0.2.32
 // @description  E-book visual dot indicators for role prefixes plus a light Clock skin; keeps original chat titles, React data and RUN/DONE logic intact.
 // @match        https://chatgpt.com/*
 // @run-at       document-start
@@ -108,7 +108,7 @@
   const ALL=127;
   let dirty=0,lastRoute=location.pathname,lastRecovery=0;
   const timings={nav:0,composer:0,sent:0,header:0,clock:0,editor:0,divider:0,runs:0};
-  const OWN_NODE='[data-ebook-project-count-layer="true"],[data-ebook-project-count],[data-ebook-upload-divider="true"],[data-ebook-glyph="true"]';
+  const OWN_NODE='[data-ebook-top-hatch-layer="true"],[data-ebook-project-count-layer="true"],[data-ebook-project-count],[data-ebook-upload-divider="true"],[data-ebook-glyph="true"]';
   const USER_NODE='[data-message-author-role="user"],[data-user-message-bubble="true"],[data-user-message]';
   const EDITOR_NODE='#prompt-textarea,[data-testid="prompt-textarea"],[data-composer-input] .ProseMirror[contenteditable="true"]';
   const HEADER_NODE='#page-header,[data-testid="conversation-header"],[role="banner"]';
@@ -424,124 +424,137 @@
     syncPresentationMarks('data-ebook-sidebar-seam',new Map(outer.map(el=>[el,'true'])));
   }
 
-  /* Fixed top-band decoration. The native scroll viewport is the boundary;
-     never create a new sticky element, change overflow, or move the DOM.
-     Fail open when the quick actions and boundary cannot be identified. */
-  const topBandProps=['--eb-sidebar-top-height','--eb-sidebar-top-width','--eb-top-x','--eb-top-y'];
-  const topBandOriginal=new Map();
+  /* v0.2.32: locate the actual sidebar containing the two already-marked
+     quick actions and the project list. Paint an independent, hit-test-free
+     strip rather than relying on an ancestor background showing through. */
+  const topBands=new Map();
   const topBandContent='[data-app-action-sidebar-project-row],[data-sidebar-cycle-item],'+
-    '[data-sidebar-archive-chatgpt-id],a[href*="/c/"],#'+CLOCK_HOST;
-  const topBandSurface='div,header,nav,section';
-  function topBandHeight(rootBox,dotBox,scrollTop) {
-    if(!Number.isFinite(scrollTop)||scrollTop<dotBox.bottom-2||
-       scrollTop>dotBox.bottom+70)return null;
-    const h=scrollTop-rootBox.top;
-    return h>=55&&h<=340&&h<rootBox.height-40?Math.round(h*10)/10:null;
+    '[data-sidebar-archive-chatgpt-id],a[href*="/c/"],[data-app-action-sidebar-section-heading]';
+  function topBandHeight(rr,nr,dr,end) {
+    if(!rr||!nr||!dr||rr.width<130||rr.width>720||rr.height<125||
+       nr.top<rr.top-3||dr.top<nr.top-2||dr.bottom>rr.top+310||
+       !Number.isFinite(end)||end<dr.bottom-2||end>dr.bottom+64)return null;
+    const h=end-rr.top;
+    return h>=55&&h<=340&&h<rr.height-40?Math.round(h*10)/10:null;
+  }
+  function topBandRail(n,dot) {
+    // Reuse the same rail finder as the working project count overlay.
+    // New native layouts need not expose the legacy sidebar ID.
+    for(let p=dot.parentElement,depth=0;p&&depth<22&&p!==document.body;p=p.parentElement,depth++) {
+      if(!p.contains(n)||!validCountRail(p))continue;
+      const row=p.querySelector(PROJECT_ROW);
+      if(!row)continue;
+      const rail=projectRail(row,{dot});
+      if(validCountRail(rail)&&rail.contains(n)&&rail.contains(dot)&&rail.contains(row))return rail;
+      return p;
+    }
+    return [...sidebarRoots()].find(p=>validCountRail(p)&&p.contains(n)&&p.contains(dot))||null;
   }
   function findTopBand(root,newChat,dot) {
     const rr=visibleBox(root),nr=visibleBox(newChat),dr=visibleBox(dot);
-    if(!rr||!nr||!dr||rr.width<130||rr.width>720||
-       nr.top<rr.top-3||dr.top<nr.top-2||dr.bottom>rr.top+310)return null;
-    // Walk only ancestors of known project/list rows, not every page node.
-    // Match the scrollable container below Dot even when its list is scrolled.
-    const first=root.querySelector(topBandContent.replace(',#'+CLOCK_HOST,''));
-    const ends=[];
+    if(!rr||!nr||!dr)return null;
+    if(Math.abs(nr.left-dr.left)>100)return null;
+    const first=root.querySelector('[data-app-action-sidebar-section-heading="Projects"]')||
+      root.querySelector(PROJECT_ROW)||root.querySelector(topBandContent);
+    const scrollEdges=[],wrapperEdges=[];
     if(first)for(let p=first.parentElement;p&&p!==root;p=p.parentElement) {
       const r=visibleBox(p);
-      if(!r||r.width<rr.width*.70||r.height<60)continue;
-      const s=getComputedStyle(p);
-      if(!/^(auto|scroll|overlay)$/u.test(s.overflowY))continue;
-      if(p.contains(newChat)||p.contains(dot))continue;
-      const h=topBandHeight(rr,dr,r.top);
-      if(h!==null)ends.push(h);
+      if(!r||r.width<rr.width*.60||r.height<48||p.contains(newChat)||p.contains(dot))continue;
+      if(!/^(auto|scroll|overlay)$/u.test(getComputedStyle(p).overflowY))continue;
+      if(topBandHeight(rr,nr,dr,r.top)!==null)scrollEdges.push(r.top);
     }
-    // Some builds have an explicit separate fixed navigation wrapper.
-    // Use it only when it contains both actions but no list rows.
-    if(!ends.length) {
-      for(let p=dot.parentElement;p&&p!==root;p=p.parentElement) {
-        if(!p.contains(newChat)||p.querySelector(topBandContent))continue;
-        const r=visibleBox(p);
-        if(!r||r.width<rr.width*.82||r.top>nr.top+2)continue;
-        if(p.closest('[role="dialog"],[role="menu"]'))continue;
-        const h=topBandHeight(rr,dr,r.bottom);
-        if(h!==null)ends.push(h);
-      }
+    let rowBottom=dr.bottom;
+    // Dot's actual control/row is often a separate sibling from New Chat.
+    // Its lower edge gives a reliable bounded fallback if the scrollport
+    // has a changing class or is the same native flex wrapper.
+    for(let p=dot.parentElement,depth=0;p&&p!==root&&depth<10;p=p.parentElement,depth++) {
+      if(p.querySelector(topBandContent)||p.querySelector('#'+CLOCK_HOST))break;
+      const r=visibleBox(p);if(!r)continue;
+      if(r.width>=rr.width*.50&&r.top>=dr.top-30&&r.bottom<=dr.bottom+30&&
+         r.height<=64&&!p.contains(newChat))rowBottom=Math.max(rowBottom,r.bottom);
+      if(p.contains(newChat)&&r.width>=rr.width*.70&&r.top<=nr.top+2&&
+         topBandHeight(rr,nr,dr,r.bottom)!==null)wrapperEdges.push(r.bottom);
     }
-    if(!ends.length)return null;
-    const height=Math.min(...ends);
-    // Do not decorate a root with the Clock or a scroll viewport starting
-    // within this band. This is not a redesign of those features.
+    let edge;
+    if(scrollEdges.length)edge=Math.min(...scrollEdges);
+    else if(wrapperEdges.length)edge=Math.max(...wrapperEdges);
+    else edge=Math.min(rowBottom+6,dr.bottom+35);
+    const height=topBandHeight(rr,nr,dr,edge);
+    if(height===null)return null;
     const clock=root.querySelector('#'+CLOCK_HOST);
     if(clock&&visibleBox(clock)&&clock.getBoundingClientRect().top<rr.top+height)return null;
     return {rr,height};
   }
-  function restoreTopBand(el,record) {
-    restoreStyle(el,record.style);
-    if(el.isConnected) {
-      if(record.marker===null)el.removeAttribute('data-ebook-sidebar-top');
-      else el.setAttribute('data-ebook-sidebar-top',record.marker);
+  function topBandCoordinates(rr,height,lr,lw,lh) {
+    if(!rr||!lr||lr.width<=0||lr.height<=0||lw<=0||lh<=0||!Number.isFinite(height))return null;
+    const sx=lw/lr.width,sy=lh/lr.height;
+    return {left:(rr.left-lr.left)*sx,top:(rr.top-lr.top)*sy,width:rr.width*sx,height:height*sy};
+  }
+  function createTopBand(root,n,dot,height) {
+    const layer=document.createElement('div'),strip=document.createElement('div');
+    layer.setAttribute('data-ebook-top-hatch-layer','true');
+    layer.setAttribute('aria-hidden','true');
+    strip.setAttribute('data-ebook-top-hatch-strip','true');
+    // Explicitly preserve the correction even if Stylus still has the
+    // previous CSS cached. The two new nodes are not native controls.
+    layer.style.cssText='position:fixed!important;inset:0!important;display:block!important;width:auto!important;height:auto!important;padding:0!important;margin:0!important;border:0!important;background:transparent!important;pointer-events:none!important;z-index:10!important;';
+    strip.style.cssText='position:absolute!important;display:block!important;visibility:hidden!important;pointer-events:none!important;box-sizing:border-box!important;border:0!important;border-bottom:1px solid rgba(90,98,105,.12)!important;border-radius:0!important;background-color:rgba(242,244,245,.13)!important;background-image:repeating-linear-gradient(135deg,transparent 0px,transparent 9px,rgba(108,116,124,.09) 9px,rgba(108,116,124,.09) 10px)!important;box-shadow:none!important;';
+    layer.appendChild(strip);
+    root.appendChild(layer);
+    return {root,n,dot,height,layer,strip,prior:root.getAttribute('data-ebook-sidebar-top'),
+      previous:snapshotStyle(root,['--eb-sidebar-top-height'])};
+  }
+  function removeTopBand(root,record) {
+    record.layer.remove();
+    restoreStyle(root,record.previous);
+    if(root.isConnected) {
+      if(record.prior===null)root.removeAttribute('data-ebook-sidebar-top');
+      else root.setAttribute('data-ebook-sidebar-top',record.prior);
     }
-    topBandOriginal.delete(el);
+    topBands.delete(root);
+  }
+  function positionFixedSidebarTop() {
+    for(const [root,record] of topBands) {
+      const {n,dot,height,layer,strip}=record;
+      if(!root.isConnected||!n.isConnected||!dot.isConnected) {
+        makeImportant(strip,'visibility','hidden');continue;
+      }
+      const rr=visibleBox(root),nr=visibleBox(n),dr=visibleBox(dot);
+      const valid=rr&&nr&&dr&&topBandHeight(rr,nr,dr,rr.top+height)!==null;
+      const p=valid&&topBandCoordinates(rr,height,layer.getBoundingClientRect(),layer.offsetWidth,layer.offsetHeight);
+      if(!p){makeImportant(strip,'visibility','hidden');continue;}
+      for(const [k,v] of Object.entries(p))makeImportant(strip,k,Math.round(v*10)/10+'px');
+      makeImportant(strip,'visibility','visible');
+    }
   }
   function markFixedSidebarTop() {
-    const wanted=new Map();
     const news=[...document.querySelectorAll('[data-ebook-quick-label="new-chat"]')];
     const dots=[...document.querySelectorAll('[data-ebook-quick-label="dot"]')];
-    const roots=new Set([...sidebarRoots(),...document.querySelectorAll('[data-ebook-sidebar-seam="true"]')]);
+    const wanted=new Map();
     for(const dot of dots) {
-      const nearest=dot.closest(SIDE_ROOTS+',aside,[role="complementary"]');
-      if(nearest)roots.add(nearest);
-    }
-    for(const root of roots) {
-      // If duplicate nested sidebar roots exist, paint only the outer one.
-      if([...roots].some(p=>p!==root&&p.contains(root)&&
-          news.some(n=>p.contains(n))&&dots.some(n=>p.contains(n))))continue;
-      const n=news.find(el=>root.contains(el)&&visibleBox(el));
-      const dot=dots.find(el=>root.contains(el)&&visibleBox(el));
-      if(!n||!dot)continue;
-      const band=findTopBand(root,n,dot);
-      if(!band)continue;
-      const {rr,height}=band;
-      wanted.set(root,{marker:'band',style:{
-        '--eb-sidebar-top-height':height+'px',
-        '--eb-sidebar-top-width':Math.round(rr.width*10)/10+'px'
-      }});
-      const bottom=rr.top+height;
-      // Discover only large header wrappers in the verified band. Keep
-      // the pattern continuous across siblings with native opaque surfaces.
-      function visit(parent,depth) {
-        if(depth>7)return;
-        for(const el of parent.children) {
-          if(!el.matches(topBandSurface)||el.matches('[role="button"],[role="menu"],[role="dialog"]'))continue;
-          const r=visibleBox(el);
-          if(!r||r.top>=bottom-1||r.bottom<=rr.top||r.width<rr.width*.75)continue;
-          if(r.bottom<=bottom+1&&r.top>=rr.top-2&&!el.querySelector(topBandContent)) {
-            const s=getComputedStyle(el);
-            if(!/^(auto|scroll|overlay)$/u.test(s.overflowY)&&
-                (s.backgroundImage!=='none'||!['transparent','rgba(0, 0, 0, 0)'].includes(s.backgroundColor))) {
-              wanted.set(el,{marker:'surface',style:{
-                '--eb-top-x':Math.round((rr.left-r.left)*10)/10+'px',
-                '--eb-top-y':Math.round((rr.top-r.top)*10)/10+'px'
-              }});
-            }
-          }
-          // A wider ancestor can contain both fixed header and list; descend
-          // without styling that shared ancestor.
-          visit(el,depth+1);
-        }
+      const dr=visibleBox(dot);if(!dr)continue;
+      for(const n of news) {
+        const nr=visibleBox(n);
+        if(!nr||Math.abs(nr.left-dr.left)>100||dr.top<nr.top-2||dr.top-nr.top>240)continue;
+        const root=topBandRail(n,dot);
+        if(!root||wanted.has(root))continue;
+        const band=findTopBand(root,n,dot);
+        if(band){wanted.set(root,{n,dot,height:band.height});break;}
       }
-      visit(root,0);
     }
-    for(const [el,record] of topBandOriginal)if(!wanted.has(el)||!el.isConnected)restoreTopBand(el,record);
-    for(const [el,value] of wanted) {
-      if(!topBandOriginal.has(el))topBandOriginal.set(el,{marker:el.getAttribute('data-ebook-sidebar-top'),
-        style:snapshotStyle(el,topBandProps)});
-      if(el.getAttribute('data-ebook-sidebar-top')!==value.marker)el.setAttribute('data-ebook-sidebar-top',value.marker);
-      for(const [p,v] of Object.entries(value.style))makeImportant(el,p,v);
+    for(const [root,record] of topBands)if(!wanted.has(root)||!root.isConnected)removeTopBand(root,record);
+    for(const [root,value] of wanted) {
+      let record=topBands.get(root);
+      if(!record){record=createTopBand(root,value.n,value.dot,value.height);topBands.set(root,record);}
+      Object.assign(record,value);
+      if(record.layer.parentElement!==root)root.appendChild(record.layer);
+      if(root.getAttribute('data-ebook-sidebar-top')!=='overlay')root.setAttribute('data-ebook-sidebar-top','overlay');
+      makeImportant(root,'--eb-sidebar-top-height',value.height+'px');
     }
+    positionFixedSidebarTop();
   }
   function restoreFixedSidebarTop() {
-    for(const [el,record] of topBandOriginal)restoreTopBand(el,record);
+    for(const [root,record] of topBands)removeTopBand(root,record);
   }
 
   const modeControlSelector='button,a[href],[role="button"],[role="tab"],[role="radio"]';
@@ -783,7 +796,7 @@
     const box=getComputedStyle(ref.circle),num=getComputedStyle(ref.number),r=ref.circle.getBoundingClientRect();
     if(r.width<12||r.width>36||r.height<12||r.height>36)return fallback;
     return {'--eb-count-diameter':Math.round(r.height*10)/10+'px',
-      '--eb-count-bg':box.backgroundColor,'--eb-count-border':box.borderTopWidth+' '+box.borderTopStyle+' '+box.borderTopColor,
+      '--eb-count-bg':box.backgroundColor,'--eb-count-border':'0 solid transparent',
       '--eb-count-ink':num.color,'--eb-count-font':num.fontFamily,
       '--eb-count-font-size':num.fontSize,'--eb-count-weight':num.fontWeight};
   }
@@ -863,13 +876,25 @@
     }
   }
   function queueProjectCountPosition(event) {
-    if(disposed||!countHosts.size)return;
+    if(disposed||(!countHosts.size&&!topBands.size))return;
     const target=event?.target;
     if(event&&event.type==='scroll'&&target!==document&&target!==document.documentElement&&
-       ![...countLayers.keys()].some(r=>r.contains(target)))return;
+       ![...countLayers.keys(),...topBands.keys()].some(r=>r.contains(target)))return;
     if(event&&event.type!=='scroll'&&event.type!=='resize'&&
        !target?.closest?.(PROJECT_ROW)&&!event.relatedTarget?.closest?.(PROJECT_ROW))return;
-    if(!countPositionFrame)countPositionFrame=requestAnimationFrame(()=>{countPositionFrame=0;positionProjectCounts();});
+    if(!countPositionFrame)countPositionFrame=requestAnimationFrame(()=>{countPositionFrame=0;positionProjectCounts();positionFixedSidebarTop();});
+  }
+  // Apply directly to our own noninteractive badges, independent of
+  // the installed Stylus version. No changes to native Dot or focus rings.
+  function forceBorderlessCount(badge) {
+    if(badge.style.getPropertyValue('border-style')!=='none'||
+       badge.style.getPropertyPriority('border-style')!=='important')
+      badge.style.setProperty('border','0 none transparent','important');
+    if(badge.style.getPropertyValue('outline-style')!=='none'||
+       badge.style.getPropertyPriority('outline-style')!=='important')
+      badge.style.setProperty('outline','0 none transparent','important');
+    makeImportant(badge,'box-shadow','none');
+    makeImportant(badge,'background-image','none');
   }
   function markProjectCounts() {
     const ref=findDotCountReference(),live=new Set();
@@ -888,6 +913,7 @@
       }
       item.title=title;item.layer=layer;
       const {badge}=item;
+      forceBorderlessCount(badge);
       if(badge.parentElement!==layer)layer.appendChild(badge);
       if(badge.textContent!==state.label)badge.textContent=state.label;
       for(const [k,v] of Object.entries({'data-ebook-count-state':state.kind,
@@ -1819,7 +1845,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.2.31',dispose,refresh:schedule,
-    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state'),overflow:n.getAttribute('data-ebook-count-overflow')==='true',confirmed:n.getAttribute('data-ebook-count-confirmed')===''?null:Number(n.getAttribute('data-ebook-count-confirmed'))})),lastPassMs:{...timings},fixedSidebarTop:[...document.querySelectorAll('[data-ebook-sidebar-top="band"]')].map(n=>({height:n.style.getPropertyValue('--eb-sidebar-top-height'),surfaces:n.querySelectorAll('[data-ebook-sidebar-top="surface"]').length})),projectCountLayers:countLayers.size,visibleProjectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].filter(n=>getComputedStyle(n).visibility!=='hidden').length,projectCountAxis:findDotCountReference()?.circle.getBoundingClientRect().left??null,fontAudit:fontAudit()})
+    version:'0.2.32',dispose,refresh:schedule,
+    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state'),overflow:n.getAttribute('data-ebook-count-overflow')==='true',confirmed:n.getAttribute('data-ebook-count-confirmed')===''?null:Number(n.getAttribute('data-ebook-count-confirmed'))})),lastPassMs:{...timings},fixedSidebarTop:[...topBands.values()].map(n=>({height:n.height,visible:getComputedStyle(n.strip).visibility==='visible',pattern:getComputedStyle(n.strip).backgroundImage})),projectCountBorders:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({border:getComputedStyle(n).borderTopWidth,style:getComputedStyle(n).borderTopStyle,outline:getComputedStyle(n).outlineStyle})),projectCountLayers:countLayers.size,visibleProjectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].filter(n=>getComputedStyle(n).visibility!=='hidden').length,projectCountAxis:findDotCountReference()?.circle.getBoundingClientRect().left??null,fontAudit:fontAudit()})
   };
 })();
