@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.34
+@version      0.2.35
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -1521,7 +1521,7 @@
     --eb-composer-single-stroke:2.5px solid #303438!important;
     --eb-quick-nav-size:var(--eb-project-optical-size,16px)!important;
     --eb-marker-yellow:#F2D778!important;
-    --ebook-theme-version:"0.2.34";
+    --ebook-theme-version:"0.2.35";
   }
   /* Preserve the existing procedural paper-grain SVG and only refine grid pitch. */
   html body :is(#thread,[data-testid="conversation-panel"],
@@ -1799,6 +1799,100 @@
     line-height:1.42!important;
     color:var(--eb-ink)!important;
     -webkit-text-fill-color:var(--eb-ink)!important;
+  }
+
+
+  /* 32. FIRST-PAINT TYPE + PROJECT COUNTS — v0.2.35
+     Use native selectors before any helper JS runs. The approved layout,
+     graphite palette, marker colors and typography remain unchanged. */
+  html body [data-sidebar-cycle-item] [data-thread-title="true"],
+  html body [data-sidebar-cycle-item] [data-thread-title="true"]
+    :is(span,div,[data-d-component="text"]):not(:is([data-ebook-glyph="true"],[aria-hidden="true"],.sr-only)),
+  html body [data-thread-title="true"] [data-marquee-content="true"] span[dir="auto"] > span:not([data-ebook-glyph="true"]) {
+    font-size:var(--eb-chat-corrected-size,15.333px)!important;
+  }
+  html body [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row]
+    [data-marquee-content="true"],
+  html body [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row]
+    [data-marquee-content="true"] :is(span,div,[data-d-component="text"]):not(:is([aria-hidden="true"],.sr-only)) {
+    font-size:var(--eb-project-optical-size,16px)!important;
+    font-weight:650!important;
+  }
+  html body [data-user-message-bubble="true"] .text-size-chat.whitespace-pre-wrap,
+  html body [data-message-author-role="user"] .text-size-chat.whitespace-pre-wrap {
+    font-family:var(--eb-font)!important;
+    font-size:var(--eb-user-sent-optical-size,15.667px)!important;
+    font-weight:var(--eb-prompt-sent-weight,520)!important;
+    color:var(--eb-prompt-sent-ink,#292D30)!important;
+    -webkit-text-fill-color:var(--eb-prompt-sent-ink,#292D30)!important;
+    line-height:1.55!important;
+  }
+  html body :is(#prompt-textarea,[data-testid="prompt-textarea"],
+    [data-composer-input] .ProseMirror[contenteditable="true"]) {
+    font-size:var(--eb-prompt-optical-size,16px)!important;
+    line-height:1.56!important;
+  }
+  html body #composer-background:has(:is(#prompt-textarea,[data-testid="prompt-textarea"],[contenteditable="true"][role="textbox"])) {
+    border:var(--eb-composer-single-stroke)!important;
+    border-radius:var(--eb-composer-native-radius,24px)!important;
+    box-shadow:none!important;
+  }
+  html body form:has(#composer-background):not([data-ebook-composer-frame="true"]),
+  html body [data-testid="composer"]:has(#composer-background):not(#composer-background):not([data-ebook-composer-frame="true"]) {
+    border:0!important;
+    box-shadow:none!important;
+    outline:none!important;
+  }
+  html body [data-ebook-composer-muted="true"] {
+    border:0!important;
+    box-shadow:none!important;
+    outline:none!important;
+  }
+
+  /* Count badges are presentation-only children of native project rows.
+     The script copies the visible Dot counter styling and measures its
+     center line. Only the badge itself receives these styles. */
+  html body [data-app-action-sidebar-project-row][data-ebook-count-host="relative"] {
+    position:relative!important;
+  }
+  html body [data-app-action-sidebar-project-row] > [data-ebook-project-count] {
+    position:absolute!important;
+    left:var(--eb-count-x)!important;
+    top:50%!important;
+    transform:translate(-50%,-50%)!important;
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:var(--eb-count-diameter,19px)!important;
+    min-width:var(--eb-count-diameter,19px)!important;
+    max-width:none!important;
+    height:var(--eb-count-diameter,19px)!important;
+    min-height:0!important;
+    border-radius:50%!important;
+    box-sizing:border-box!important;
+    padding:0!important;
+    margin:0!important;
+    background:var(--eb-count-bg,#C9CDCF)!important;
+    border:var(--eb-count-border,0 solid transparent)!important;
+    color:var(--eb-count-ink,#292D30)!important;
+    -webkit-text-fill-color:var(--eb-count-ink,#292D30)!important;
+    font-family:var(--eb-count-font,var(--eb-mono))!important;
+    font-size:var(--eb-count-font-size,11px)!important;
+    font-weight:var(--eb-count-weight,500)!important;
+    line-height:1!important;
+    letter-spacing:normal!important;
+    white-space:nowrap!important;
+    box-shadow:none!important;
+    pointer-events:none!important;
+    z-index:1!important;
+  }
+  html body [data-app-action-sidebar-project-row] > [data-ebook-project-count][data-ebook-count-long="true"] {
+    font-size:calc(var(--eb-count-font-size,11px) * .80)!important;
+  }
+  /* Reveal native overflow actions without covering their click area. */
+  html body [data-app-action-sidebar-project-row]:is(:hover,:focus-within)
+    :is([data-ebook-project-count]) {
+    opacity:0!important;
   }
 
 }
