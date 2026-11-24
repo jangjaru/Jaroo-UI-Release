@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.43
+@version      0.2.44
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -1521,7 +1521,7 @@
     --eb-composer-single-stroke:2.5px solid #303438!important;
     --eb-quick-nav-size:var(--eb-project-optical-size,16px)!important;
     --eb-marker-yellow:#F2D778!important;
-    --ebook-theme-version:"0.2.43";
+    --ebook-theme-version:"0.2.44";
   }
   /* Preserve the existing procedural paper-grain SVG and only refine grid pitch. */
   html body :is(#thread,[data-testid="conversation-panel"],
@@ -1965,45 +1965,60 @@
   }
 
 
-  /* 34. FIXED SIDEBAR HEADER · QUIET DIAGONAL PAPER — v0.2.39
-     Only the existing top band above the native scrolling list.
-     A 1px / 10px low-contrast hatch, no layout or stacking changes. */
+  /* 34. FIXED SIDEBAR HEADER — v0.2.44.
+     Draw a faint translucent hatch over the verified native fixed band.
+     Independent of native opaque backgrounds; no sticky, size, scroll,
+     overflow, or stacking changes to the actual sidebar/header. */
   :root {
-    --eb-top-paper:#EDF0F1;
-    --eb-top-pattern:repeating-linear-gradient(135deg,
-      transparent 0px,transparent 9px,rgba(108,116,124,.06) 9px,
-      rgba(108,116,124,.06) 10px);
-    --eb-top-edge:linear-gradient(to bottom,
-      transparent calc(100% - 1px),rgba(90,98,105,.12) 0);
+    --eb-top-hatch:repeating-linear-gradient(135deg,
+      transparent 0px,transparent 9px,rgba(108,116,124,.09) 9px,
+      rgba(108,116,124,.09) 10px);
   }
-  html body [data-ebook-sidebar-top="band"] {
-    background-image:
-      var(--eb-top-edge),
-      var(--eb-top-pattern),
-      linear-gradient(var(--eb-top-paper),var(--eb-top-paper)),
-      linear-gradient(rgba(231,234,235,.88),rgba(231,234,235,.88)),
-      var(--eb-classic-paper-grain)!important;
-    background-size:
-      100% var(--eb-sidebar-top-height),
-      100% var(--eb-sidebar-top-height),
-      100% var(--eb-sidebar-top-height),
-      100% 100%,240px 240px!important;
-    background-position:top left!important;
-    background-repeat:no-repeat,no-repeat,no-repeat,no-repeat,repeat!important;
+  html body [data-ebook-top-hatch-layer="true"] {
+    position:fixed!important;
+    inset:0!important;
+    display:block!important;
+    width:auto!important;
+    height:auto!important;
+    padding:0!important;
+    margin:0!important;
+    border:0!important;
+    background:transparent!important;
+    pointer-events:none!important;
+    z-index:10!important;
   }
-  /* Some native builds use opaque full-width wrappers above the scroll
-     viewport. Paint those safe surfaces in the same band coordinate space.
-     Do not paint action buttons, project rows, scroll lists or the Clock. */
-  html body [data-ebook-sidebar-top="band"] [data-ebook-sidebar-top="surface"] {
-    background-color:var(--eb-top-paper)!important;
-    background-image:var(--eb-top-edge),var(--eb-top-pattern)!important;
-    background-size:
-      var(--eb-sidebar-top-width) var(--eb-sidebar-top-height),
-      var(--eb-sidebar-top-width) var(--eb-sidebar-top-height)!important;
-    background-position:var(--eb-top-x,0px) var(--eb-top-y,0px)!important;
-    background-repeat:no-repeat!important;
+  html body [data-ebook-top-hatch-layer="true"] > [data-ebook-top-hatch-strip="true"] {
+    position:absolute!important;
+    pointer-events:none!important;
+    display:block!important;
+    box-sizing:border-box!important;
+    border:0!important;
+    border-bottom:1px solid rgba(90,98,105,.12)!important;
+    border-radius:0!important;
+    background-color:rgba(242,244,245,.13)!important;
+    background-image:var(--eb-top-hatch)!important;
+    box-shadow:none!important;
   }
-
+  /* All project count states are borderless, including partially loaded
+     groups. Native Dot and focusable navigation controls are unchanged. */
+  html body [data-ebook-project-count-layer="true"] > [data-ebook-project-count],
+  html body [data-ebook-project-count-layer="true"] > [data-ebook-project-count][data-ebook-count-state],
+  html body [data-ebook-project-count-layer="true"] > [data-ebook-project-count][data-ebook-count-state="partial"]:not([data-ebook-count-overflow="true"]),
+  html body [data-app-action-sidebar-project-row] > [data-ebook-project-count][data-ebook-count-state="partial"] {
+    border:0!important;
+    border-style:none!important;
+    outline:0!important;
+    box-shadow:none!important;
+    background-image:none!important;
+  }
+  html body [data-ebook-project-count]::before,
+  html body [data-ebook-project-count]::after {
+    content:none!important;
+    display:none!important;
+    border:0!important;
+    outline:0!important;
+    box-shadow:none!important;
+  }
 
   /* 35. QUIET SIDEBAR SCROLLBARS — v0.2.42
      Hide scrollbar chrome only within the actual sidebar or its project-list
