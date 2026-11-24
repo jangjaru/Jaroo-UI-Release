@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.57
+@version      0.2.58
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -109,7 +109,7 @@
     --link: var(--eb-ink) !important;
     --link-hover: var(--eb-secondary) !important;
     --jaroo-status-css-version: "6.8.2";
-    --ebook-theme-version: "0.2.57";
+    --ebook-theme-version: "0.2.58";
   }
 
   /* 02. LIGHT-PAPER BASE — do not modify Chrome frame or extension UIs. */
@@ -1521,7 +1521,7 @@
     --eb-composer-single-stroke:2.5px solid #303438!important;
     --eb-quick-nav-size:var(--eb-project-optical-size,16px)!important;
     --eb-marker-yellow:#F2D778!important;
-    --ebook-theme-version:"0.2.57";
+    --ebook-theme-version:"0.2.58";
   }
   /* Preserve the existing procedural paper-grain SVG and only refine grid pitch. */
   html body :is(#thread,[data-testid="conversation-panel"],
@@ -2121,29 +2121,29 @@
   }
 
 
-  /* v0.2.57 — fixed 9px circular role markers with distinct role colors.
+  /* v0.2.58 — fixed 8px circular role markers with distinct role colors.
      Use an identical square border box and integer CSS-pixel margins.
      Preserve the 10px layout footprint; no flex shrink, animation or transform.
      Browser zoom may still produce subpixel antialiasing. */
-  [data-ebook-role="master"]  { --eb-role-dot:#E66B91!important; --eb-role-diameter:9px; }
-  [data-ebook-role="plan"]    { --eb-role-dot:#F5B900!important; --eb-role-diameter:9px; }
-  [data-ebook-role="manage"]  { --eb-role-dot:#71BE63!important; --eb-role-diameter:9px; }
-  [data-ebook-role="produce"] { --eb-role-dot:#55CDB2!important; --eb-role-diameter:9px; }
-  [data-ebook-role="action"]  { --eb-role-dot:#A48BD7!important; --eb-role-diameter:9px; }
+  [data-ebook-role="master"]  { --eb-role-dot:#E66B91!important; --eb-role-diameter:8px; }
+  [data-ebook-role="plan"]    { --eb-role-dot:#F5B900!important; --eb-role-diameter:8px; }
+  [data-ebook-role="manage"]  { --eb-role-dot:#71BE63!important; --eb-role-diameter:8px; }
+  [data-ebook-role="produce"] { --eb-role-dot:#55CDB2!important; --eb-role-diameter:8px; }
+  [data-ebook-role="action"]  { --eb-role-dot:#A48BD7!important; --eb-role-diameter:8px; }
   html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-ebook-count-rail="true"],[data-app-action-sidebar-section-heading],aside,[role="complementary"]) :is(a[href*="/c/"][data-ebook-role]:not([data-ebook-recent-chat]),a[href*="/c/"]:not([data-ebook-recent-chat]) [data-ebook-role])::before {
     box-sizing:border-box!important;
-    width:9px!important;
-    height:9px!important;
-    min-width:9px!important;
-    max-width:9px!important;
-    min-height:9px!important;
-    max-height:9px!important;
+    width:8px!important;
+    height:8px!important;
+    min-width:8px!important;
+    max-width:8px!important;
+    min-height:8px!important;
+    max-height:8px!important;
     aspect-ratio:1 / 1!important;
-    flex:0 0 9px!important;
+    flex:0 0 8px!important;
     padding:0!important;
     border:0!important;
     margin-block:0!important;
-    margin-inline:0 1px!important;
+    margin-inline:1px!important;
     align-self:center!important;
     border-radius:50%!important;
     background:var(--eb-role-dot)!important;
