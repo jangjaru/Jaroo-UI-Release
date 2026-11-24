@@ -1,8 +1,17 @@
 # Jaroo E-book · Cool E-Ink Graph Paper
 
-**2026-11-24 · Stylus CSS v0.2.45 / Tampermonkey JS v0.2.33**
+**2026-11-24 · Stylus CSS v0.2.45 / Tampermonkey JS v0.2.34**
 
 This update modifies the existing Classic Paper theme; it is **not** a separate mockup or a second overlay.
+
+## v0.2.45 / v0.2.34 · 2026-11-24 — 사이드바 폭 변경 시 카운터 실시간 추적
+
+- 브라우저 분할 화면 또는 사이드바 크기 변경 중 카운터가 뒤늦게 이동하는 문제 개선. 기존 ID에 한정하지 않고 실제 카운터 레이어의 사이드바, Dot 행과 해당 조상, 고정 영역을 ResizeObserver로 감시.
+- 크기 변경 시 기존 숫자/색/정렬을 보존하면서 위치만 갱신. 드래그가 멈춘 후 160ms에 메뉴 구조 및 입력창 등 보완 검사를 한 번 예약. 기존 스크롤/포커스 동작, 숨긴 탭 보류, 좌표 일괄 계산 유지.
+- 브라우저 및 visualViewport resize 이벤트도 위치 전용 갱신 경로로 연결. 감시 대상 교체/스크립트 종료 시 감시와 타이머 해제.
+- CSS v0.2.45 및 모든 색상, 글꼴, 카운터 집계·표시 규칙, 사선 패턴과 첨부 구분선 유지. Clock/Status/Mapper 미변경.
+- 로컬 Chromium 모의 DOM: 기존 사이드바 ID가 없는 실제 레일 너비 250~350px 왕복 21회, 모든 보이는 카운터의 Dot 중심축 오차 0px, 드래그 중 구조 재검사 0회, 종료 후 1회 예약 확인. 테스트 범위는 위치 추적이며 실제 Chrome 분할 화면 검수는 대기.
+- 성능 진단의 `performance.passes.position` 및 `positionResizeTargets`로 위치 갱신과 감시 대상 확인 가능.
 
 ## v0.2.45 / v0.2.33 · 2026-11-24 — E-book 단독 실행 성능 개선 1차
 
@@ -138,7 +147,7 @@ This update modifies the existing Classic Paper theme; it is **not** a separate 
 
 ## Install / update in place
 - [Stylus CSS v0.2.45](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/theme.user.css)
-- [Tampermonkey JS v0.2.33](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/indicators.user.js)
+- [Tampermonkey JS v0.2.34](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/indicators.user.js)
 
 Update the **existing** two extension entries rather than installing duplicates. In Stylus and Tampermonkey, run the built-in **Check for updates**, then reload ChatGPT with `Ctrl + Shift + R`.
 
@@ -149,7 +158,7 @@ Use the ChatGPT page console:
 ```js
 window.__jarooEbookIvoryMonoV1?.diagnostics?.()
 ```
-Expected: JS `version: '0.2.33'`, `sentPromptTarget: '16.067px'`; a selected chat should produce `headerMarkers: 1` when its title is visible. CSS version is `0.2.45`. `performance` gives scoped pass execution counts/average/peak times and scheduling stats. `fixedSidebarTop` reports the actual overlay height, visibility and computed pattern. `projectCountBorders` reports computed border/outline styles. `projectCounts` reports the one-character display, exact/partial/unknown state, overflow and confirmed count, `lastPassMs` reports the most recent scoped update durations (ms), not end-to-end page load time. `quickNavMarkers` reports the actual size, weight and color of New Chat/Dot labels. Diagnostics include `projectMarkers`, `sidebarSeams` and `workSwitcher`; live DOM matching still requires visual confirmation.
+Expected: JS `version: '0.2.34'`, `sentPromptTarget: '16.067px'`; a selected chat should produce `headerMarkers: 1` when its title is visible. CSS version is `0.2.45`. `performance` gives scoped pass execution counts/average/peak times and scheduling stats. `fixedSidebarTop` reports the actual overlay height, visibility and computed pattern. `projectCountBorders` reports computed border/outline styles. `projectCounts` reports the one-character display, exact/partial/unknown state, overflow and confirmed count, `lastPassMs` reports the most recent scoped update durations (ms), not end-to-end page load time. `quickNavMarkers` reports the actual size, weight and color of New Chat/Dot labels. Diagnostics include `projectMarkers`, `sidebarSeams` and `workSwitcher`; live DOM matching still requires visual confirmation.
 
 To roll back, use the extensions' version history or the previous Git commit of the two E-book files. This release is code-published and statically checked, but **the user's signed-in Chrome rendering and updates have not been verified in this chat**.
 
