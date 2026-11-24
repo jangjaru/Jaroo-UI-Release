@@ -1,8 +1,15 @@
 # Jaroo E-book · Cool E-Ink Graph Paper
 
-**2026-11-24 · CSS / JS v0.3.0-beta.1 · 개발 전용**
+**2026-11-24 · CSS / JS v0.3.0-beta.2 · 개발 전용**
 
 This branch is the standalone E-book beta, not a second overlay. Install only one CSS and one JS.
+
+## v0.3.0-beta.2 · 2026-11-24 — 프롬프트 입력창 외곽선 복구
+
+- beta.1의 입력창 프레임 탐색에서 네이티브 식별자가 있지만 실제 표시 영역이 없는 래퍼를 선택할 수 있는 회귀를 확인. 실측 크기·둥근 모서리·배경·컨트롤을 기준으로 실제 입력창 프레임을 선택하고 재사용.
+- CSS에서 선택 프레임과 상위 래퍼의 경계를 구분. 입력창 외곽선은 전송 메시지와 동일한 2.5px / #303438, 단일 테두리. 기존 모서리 반경은 22~36px 범위에서 유지. 네이티브 규칙 충돌이 확인될 때만 선택 프레임 인라인 예외 처리. 처음 크기가 0인 입력창은 ResizeObserver에서 프레임 재선택 예약.
+- Chromium 모의 DOM 9개 구조에서 실제 표시 프레임 및 전송 말풍선과 동일한 두께/색상, 중복 외곽선 없음, 포커스·입력 유지, 인라인 예외 복원 확인. CSS 회귀 18개 체크, 제목 재생성 20회, 반응형 너비 3개 및 네이티브 스크롤 검증 통과. 전체 JS 구문 검사. 로그인된 실제 Chrome은 사용자 검수 필요.
+- 입력창 관련 CSS/JS만 변경, 기타 디자인·카운터·역할 원·폰트 유지. main 정식 CSS v0.2.46 / JS v0.2.35 유지.
 
 ## v0.3.0-beta.1 · 2026-11-24 — E-book 독립 리팩터링 테스트본
 
@@ -171,8 +178,8 @@ This branch is the standalone E-book beta, not a second overlay. Install only on
 - E-book Clock skin follows the cooler neutrals while preserving segmented digits, Life Clock and existing animations.
 
 ## Install / update in place
-- [Stylus CSS v0.3.0-beta.1](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/ebook-v0.3.0/themes/ebook-ivory-mono/theme.user.css)
-- [Tampermonkey JS v0.3.0-beta.1](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/ebook-v0.3.0/themes/ebook-ivory-mono/indicators.user.js)
+- [Stylus CSS v0.3.0-beta.2](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/ebook-v0.3.0/themes/ebook-ivory-mono/theme.user.css)
+- [Tampermonkey JS v0.3.0-beta.2](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/ebook-v0.3.0/themes/ebook-ivory-mono/indicators.user.js)
 
 Update the **existing** two extension entries rather than installing duplicates. In Stylus and Tampermonkey, run the built-in **Check for updates**, then reload ChatGPT with `Ctrl + Shift + R`.
 
@@ -183,7 +190,7 @@ Use the ChatGPT page console:
 ```js
 window.__jarooEbookIvoryMonoV1?.diagnostics?.()
 ```
-Expected: JS `version: '0.3.0-beta.1'`, `sentPromptTarget: '16.067px'`; a selected chat should produce `headerMarkers: 1` when its title is visible. CSS version is `0.3.0-beta.1`. `cssOwnerReady` reports the matching beta CSS marker. `firstPaintNav` reports the CSS first-paint rule; `opticalLeaves` and `projectWeightLeaves` count inline exceptions. `performance` gives scoped pass execution counts/average/peak times and scheduling stats. `fixedSidebarTop` reports the actual overlay height, visibility and computed pattern. `projectCountBorders` reports computed border/outline styles. `projectCounts` reports the one-character display, exact/partial/unknown state, overflow and confirmed count, `lastPassMs` reports the most recent scoped update durations (ms), not end-to-end page load time. `quickNavMarkers` reports the actual size, weight and color of New Chat/Dot labels. Diagnostics include `projectMarkers`, `sidebarSeams` and `workSwitcher`; live DOM matching still requires visual confirmation.
+Expected: JS `version: '0.3.0-beta.2'`, `sentPromptTarget: '16.067px'`; a selected chat should produce `headerMarkers: 1` when its title is visible. CSS version is `0.3.0-beta.2`. `cssOwnerReady` reports the matching beta CSS marker. `firstPaintNav` reports the CSS first-paint rule; `opticalLeaves` and `projectWeightLeaves` count inline exceptions. `performance` gives scoped pass execution counts/average/peak times and scheduling stats. `fixedSidebarTop` reports the actual overlay height, visibility and computed pattern. `projectCountBorders` reports computed border/outline styles. `projectCounts` reports the one-character display, exact/partial/unknown state, overflow and confirmed count, `lastPassMs` reports the most recent scoped update durations (ms), not end-to-end page load time. `quickNavMarkers` reports the actual size, weight and color of New Chat/Dot labels. Diagnostics include `projectMarkers`, `sidebarSeams` and `workSwitcher`; live DOM matching still requires visual confirmation.
 
 To roll back, use the extensions' version history or the previous Git commit of the two E-book files. This release is code-published and statically checked, but **the user's signed-in Chrome rendering and updates have not been verified in this chat**.
 
