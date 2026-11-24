@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.0
+// @version      3.11.1
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -54,17 +54,39 @@
     second: '2-digit', hourCycle: 'h23'
   });
 
-  const LIFE = {
-    birth: parseLocalDate(PROFILE?.birthDate),
-    retirement: parseLocalDate(PROFILE?.retirementDate),
-    age80: parseLocalDate(PROFILE?.lifePlanEndDate),
-    workdayStartHour: 9,
-    workdayEndHour: 18,
-    workHoursPerDay: 8
-  };
-  const LIFE_PROFILE_VALID = [LIFE.birth, LIFE.retirement, LIFE.age80]
-    .every(d => Number.isFinite(d.getTime())) &&
-    LIFE.birth < LIFE.retirement && LIFE.retirement < LIFE.age80;
+  // Life settings may load after document-idle. Re-read the legacy provider
+  // on the existing tick; do not hide the widget or invent missing dates.
+  const LIFE_LOCAL_PREF='jaroo:ebook:life-birth:v1';
+  function validLifeDate(value) {
+    if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(value))return null;
+    const date=parseLocalDate(value);
+    if(!Number.isFinite(date.getTime()))return null;
+    const local=new Date(date.getTime()+9*3600000).toISOString().slice(0,10);
+    return local===value?date:null;
+  }
+  function parseLifeProfile(raw) {
+    const birth=validLifeDate(raw?.birthDate),retirement=validLifeDate(raw?.retirementDate),age80=validLifeDate(raw?.lifePlanEndDate);
+    if(!birth||!retirement||!age80||birth.getTime()>Date.now()||!(birth<retirement&&retirement<age80))return null;
+    return {birth,retirement,age80,key:[raw.birthDate,raw.retirementDate,raw.lifePlanEndDate].join('|')};
+  }
+  function birthdayPlusYears(value,years) {
+    if(!validLifeDate(value))return '';
+    const [y,m,d]=value.split('-').map(Number),year=y+years;
+    if(year>9999)return '';
+    const max=new Date(Date.UTC(year,m,0)).getUTCDate();
+    return [String(year).padStart(4,'0'),String(m).padStart(2,'0'),String(Math.min(d,max)).padStart(2,'0')].join('-');
+  }
+  function localBirthProfile(value) {
+    return parseLifeProfile({birthDate:value,retirementDate:birthdayPlusYears(value,65),lifePlanEndDate:birthdayPlusYears(value,80)});
+  }
+  let localLife=null,legacyLife=null,legacyKey=null,LIFE=null,lifeKey=null,lifeSource='missing';
+  try{localLife=localBirthProfile(localStorage.getItem(LIFE_LOCAL_PREF));}catch(_){}
+  function resolveLifeProfile() {
+    const raw=window.__jarooPrivateProfileV1;
+    const key=JSON.stringify([raw?.birthDate,raw?.retirementDate,raw?.lifePlanEndDate].map(v=>typeof v==='string'?v:null));
+    if(key!==legacyKey){legacyKey=key;legacyLife=parseLifeProfile(raw);}
+    return legacyLife?{profile:legacyLife,source:'legacy'}:localLife?{profile:localLife,source:'local'}:{profile:null,source:'missing'};
+  }
 
   // Remove clocks and spacing left by older versions.
   for (const id of [
@@ -131,6 +153,14 @@
       .life-title .ico,.life-title-short,.life-progress-percent{display:none}
       .life-sub,.life-meta,.life-progress-scale{font:400 11px/1.3 var(--font);color:var(--quiet)}
       .life-sub{text-align:right}
+      .life-setup[hidden],.life-setup form[hidden]{display:none}
+      .life-setup{margin:5px 0;padding:6px 0;border-bottom:1px solid #D4DADC;font:400 11px/1.4 var(--font);color:var(--muted)}
+      .life-setup-line{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px}
+      .life-setup button{padding:3px 6px;border:1px solid var(--line);border-radius:3px;background:transparent;color:var(--ink);font:500 11px/1.3 var(--font);cursor:pointer}
+      .life-setup form{display:grid;gap:5px;margin-top:6px}
+      .life-setup input{min-width:0;max-width:100%;padding:4px;border:1px solid var(--line);border-radius:3px;background:#F5F6F6;color:var(--ink);font:400 12px/1.3 var(--font)}
+      .life-setup .life-setup-message{font-size:10px;color:var(--muted)}
+      .life-setup .life-setup-error{color:#A33F46;min-height:0}
       .life-grid{display:flex;flex-direction:column}
       .life-card{margin:0;padding:8px 0;border-bottom:1px solid #D4DADC;min-width:0}
       .life-card.after{border:0}
@@ -193,6 +223,16 @@
       <div class="life-head">
         <div class="life-title"><span class="ico" aria-hidden="true">◔</span><span class="life-title-full">Jaroo Life Clock</span><span class="life-title-short" aria-hidden="true">Life Clock</span></div>
         <div class="life-sub">남은 인생 시간</div>
+      </div>
+      <div class="life-setup" hidden>
+        <div class="life-setup-line"><span>인생시간 계산 설정 필요</span><button class="life-setup-toggle" type="button" aria-expanded="false">설정</button></div>
+        <form class="life-setup-form" hidden>
+          <label for="ebook-life-birth">생년월일 · 은퇴 65세 / 계획 80세</label>
+          <input id="ebook-life-birth" type="date" required autocomplete="off"/>
+          <div class="life-setup-message">입력한 날짜는 이 브라우저의 chatgpt.com 로컬 저장소에만 저장됩니다.</div>
+          <button type="submit">저장 및 계산</button>
+          <div class="life-setup-error" role="status"></div>
+        </form>
       </div>
       <div class="life-grid">
         <article class="life-card retire">
@@ -272,9 +312,45 @@
   };
 
   const lifeCard = shadow.querySelector('.life-clock');
-  if (!LIFE_PROFILE_VALID) {
-    lifeCard.style.display = 'none';
-    console.warn('[Jaroo Life Clock] Local profile missing or invalid; life times hidden.');
+  const lifeSetup=shadow.querySelector('.life-setup'),lifeSetupToggle=shadow.querySelector('.life-setup-toggle'),lifeSetupForm=shadow.querySelector('.life-setup-form'),lifeBirthInput=shadow.querySelector('#ebook-life-birth'),lifeSetupError=shadow.querySelector('.life-setup-error');
+  lifeSetupToggle.addEventListener('click',()=>{
+    lifeSetupForm.hidden=!lifeSetupForm.hidden;
+    lifeSetupToggle.setAttribute('aria-expanded',String(!lifeSetupForm.hidden));
+    if(!lifeSetupForm.hidden)lifeBirthInput.focus();
+    schedulePlacement();
+  });
+  lifeSetupForm.addEventListener('submit',event=>{
+    event.preventDefault();
+    const value=lifeBirthInput.value,next=localBirthProfile(value);
+    if(!next){lifeSetupError.textContent='유효한 생년월일을 입력해 주세요.';return;}
+    try{localStorage.setItem(LIFE_LOCAL_PREF,value);}catch(_){
+      lifeSetupError.textContent='브라우저 저장소를 사용할 수 없습니다. 기존 개인 설정 스크립트를 확인해 주세요.';return;
+    }
+    localLife=next;lifeSetupError.textContent='';lifeBirthInput.value='';
+    updateLifeClock(new Date());schedulePlacement();
+  });
+  function syncLifeProfile() {
+    const {profile,source}=resolveLifeProfile(),key=profile?.key||'';
+    if(key===lifeKey&&source===lifeSource)return;
+    LIFE=profile;lifeKey=key;lifeSource=source;lastLifeMinuteKey='';
+    // Never hide the whole calculator on missing settings.
+    lifeSetup.hidden=!!LIFE;
+    if(LIFE){
+      lifeSetupForm.hidden=true;lifeSetupToggle.setAttribute('aria-expanded','false');
+      lifeBirthInput.value='';lifeSetupError.textContent='';
+    }else{
+      for(const k of ['retireValue','workValue','afterValue','usedHours','remainingHours'])lifeEls[k].textContent='—';
+      lifeEls.usedMeta.textContent='지나온 시간 · —';
+      lifeEls.remainingMeta.textContent='남은 시간 · —';
+      lifeEls.progressPercent.textContent='—';
+      lifeEls.progressBar.style.width='0%';
+    }
+    if(started)schedulePlacement();
+  }
+  function onLifeSettingsStorage(event) {
+    if(event.key!==LIFE_LOCAL_PREF&&event.key!==null)return;
+    try{localLife=localBirthProfile(localStorage.getItem(LIFE_LOCAL_PREF));}catch(_){localLife=null;}
+    if(!disposed)updateLifeClock(new Date());
   }
   let lifeMountState = 'overlay-reserved-space';
 
@@ -321,7 +397,6 @@
   const HOUR_MS = 3600000;
   const DAY_MS = 86400000;
   const TIME_FORMAT = new Intl.NumberFormat('ko-KR');
-  const afterRetirementHours = (LIFE.age80.getTime() - LIFE.retirement.getTime()) / HOUR_MS;
 
   function kstDayStartUtcMs(instantMs) {
     const shifted = new Date(instantMs + KST_HOUR_OFFSET_MS);
@@ -352,7 +427,8 @@
   const lifeHour = ms => `${TIME_FORMAT.format(Math.max(0,ms))} 시간`;
   let lastLifeMinuteKey = '';
   function updateLifeClock(now) {
-    if (!LIFE_PROFILE_VALID) return;
+    syncLifeProfile();
+    if(!LIFE)return;
     const ms=now.getTime();
     const minuteKey=Math.floor(ms/60000);
     if(minuteKey===lastLifeMinuteKey) return;
@@ -362,7 +438,7 @@
     const retireHours=hoursUntil(ms,retirementMs);
     const age80Hours=hoursUntil(ms,age80Ms);
     const workHours=calculateWorkHours(ms,retirementMs);
-    const plannedAfterHours=ms<retirementMs ? afterRetirementHours : hoursUntil(ms,age80Ms);
+    const plannedAfterHours=ms<retirementMs ? (age80Ms-retirementMs)/HOUR_MS : hoursUntil(ms,age80Ms);
     const lifeMs=age80Ms-LIFE.birth.getTime();
     const used=Math.min(1,Math.max(0,(ms-LIFE.birth.getTime())/lifeMs))*100;
     const values=[
@@ -919,6 +995,7 @@
     }, 7000);
     window.addEventListener('resize', schedulePlacement, { passive: true });
     window.addEventListener('focus', onFocus);
+    window.addEventListener('storage',onLifeSettingsStorage);
     window.visualViewport?.addEventListener('resize', schedulePlacement, { passive: true });
     document.addEventListener('visibilitychange', onVisibility);
   }
@@ -932,6 +1009,7 @@
     cancelAnimationFrame(frameHandle);
     window.removeEventListener('resize', schedulePlacement);
     window.removeEventListener('focus', onFocus);
+    window.removeEventListener('storage',onLifeSettingsStorage);
     window.visualViewport?.removeEventListener('resize', schedulePlacement);
     document.removeEventListener('visibilitychange', onVisibility);
     document.removeEventListener('DOMContentLoaded', start);
@@ -944,9 +1022,9 @@
     if (window[RUNTIME_KEY]?.dispose === dispose) delete window[RUNTIME_KEY];
   }
   window[RUNTIME_KEY] = {
-    version: '3.11.0', dispose,
+    version: '3.11.1', dispose,
     diagnostics: () => ({
-      version: '3.11.0', ...placementReport,
+      version: '3.11.1', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
@@ -956,7 +1034,9 @@
       counterPresent: Boolean(shadow.querySelector('.jaroo-center')),
       weatherStatus: weatherStatus,
       weatherLocation: WEATHER_PROFILE_VALID ? 'configured' : 'unconfigured',
-      lifeClockPresent: Boolean(shadow.querySelector('.life-clock')),
+      lifeClockPresent: Boolean(lifeCard),
+      lifeProfileState:lifeSource,lifeProfileValid:!!LIFE,lifeClockFolded:clockFolded,
+      lifeClockVisible:!!lifeCard.getClientRects().length&&getComputedStyle(lifeCard).display!=='none',
       lifeMountState,
       lifePanelInFlow: host.parentElement !== document.body && host.isConnected,
       lifeCardFontWeight: getComputedStyle(lifeEls.retireValue).fontWeight,
