@@ -25,7 +25,7 @@ Colors, font sizes, layout, icons, animations, message body (including variable 
 
 The reversible flat saturated Monokai/pixel-edge layer is available as [CSS](chatgpt/flat-neon-pixel.user.css) and [JS](chatgpt/flat-neon-pixel.user.js). Install each once, leaving Dracula 8.3.4 and Clock/Status/Mapper enabled; these existing files are unchanged. See [Korean installation and rollback instructions](docs/INSTALL_FLAT_NEON_PIXEL_v0.1.0_KO.md). Signed-in Chrome visual acceptance remains pending.
 
-## E-book Cool E-Ink Graph Paper CSS v0.2.39 / JS v0.2.28 (independent theme)
+## E-book Cool E-Ink Graph Paper CSS v0.2.40 / JS v0.2.29 (independent theme)
 
 An updated, opt-in **E-book Editorial Notebook** with cool graphite paper, 22px square grid, fine grain, lime active-chat marker, and lighter sent user prompts has been published in [`themes/ebook-ivory-mono/`](themes/ebook-ivory-mono/README.md). It does not replace Dracula/Flat Neon; disable the old visual styles when using E-book. Keep Clock, Status and Mapper active.
 
@@ -33,4 +33,4 @@ An updated, opt-in **E-book Editorial Notebook** with cool graphite paper, 22px 
 - [Tampermonkey JS installer](themes/ebook-ivory-mono/indicators.user.js)
 - [Korean setup, font and rollback guidance](themes/ebook-ivory-mono/README.md)
 
-**2026-11-24 최신 변경:** 첨부파일 카드와 입력 구분선의 겹침 수정. [한글 변경 내역 및 설치 안내](themes/ebook-ivory-mono/README.md). CSS v0.2.39 / JS v0.2.28 소스 검증 완료, 실제 Chrome 검수 대기.
+**2026-11-24 최신 변경:** 전송 프롬프트 글자 크기 +0.5pt, 굵기 +10%. [한글 변경 내역 및 설치 안내](themes/ebook-ivory-mono/README.md). CSS v0.2.40 / JS v0.2.29 소스 검증 완료, 실제 Chrome 검수 대기.
