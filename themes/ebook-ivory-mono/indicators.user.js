@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.2.27
+// @version      0.2.28
 // @description  E-book visual dot indicators for role prefixes plus a light Clock skin; keeps original chat titles, React data and RUN/DONE logic intact.
 // @match        https://chatgpt.com/*
 // @run-at       document-start
@@ -1046,45 +1046,173 @@
     if(event.target?.tagName==='IMG'&&composerObserved?.contains(event.target))
       schedule(PASS.DIVIDER);
   }
-  function clearUploadDivider() {
+  /* v0.2.28 — measure the entire attachment's painted footprint, including
+     the filename/footer, rather than a decoded image or spinner alone.
+     Position a single line in the real clear gap before the first text line.
+     Never clamp a line into a file card or rely on z-index to hide a collision. */
+  const uploadResizeTargets=new Set();
+  const uploadResizeObserver=typeof ResizeObserver==='function'?
+    new ResizeObserver(()=>schedule(PASS.DIVIDER)):null;
+  function syncUploadResizeTargets(next) {
+    if(!uploadResizeObserver)return;
+    for(const el of uploadResizeTargets)if(!next.has(el)||!el.isConnected) {
+      uploadResizeObserver.unobserve(el);uploadResizeTargets.delete(el);
+    }
+    for(const el of next)if(el.isConnected&&!uploadResizeTargets.has(el)) {
+      uploadResizeObserver.observe(el);uploadResizeTargets.add(el);
+    }
+  }
+  function clearUploadDivider(resetWatch=true) {
     for(const line of document.querySelectorAll('[data-ebook-upload-divider="true"]'))line.remove();
-    for(const host of document.querySelectorAll('[data-ebook-composer-root="true"]'))host.removeAttribute('data-ebook-composer-root');
+    for(const host of document.querySelectorAll('[data-ebook-composer-root="true"]'))
+      host.removeAttribute('data-ebook-composer-root');
+    if(resetWatch)syncUploadResizeTargets(new Set());
+  }
+  const px=v=>Number.parseFloat(v)||0;
+  function visibleUploadRect(el) {
+    if(!el?.isConnected||el.closest('[hidden],[role="menu"],[role="dialog"],[data-message-author-role]'))return null;
+    const r=el.getBoundingClientRect(),s=getComputedStyle(el);
+    return r.width>0&&r.height>0&&s.display!=='none'&&s.visibility!=='hidden'?r:null;
+  }
+  function editorFirstLineTop(editor,er) {
+    const s=getComputedStyle(editor);
+    const contentTop=er.top+px(s.borderTopWidth)+px(s.paddingTop);
+    // A contenteditable may include its internal padding/blank paragraph
+    // within the editor box; use the actual first visible text run when possible.
+    const walk=document.createTreeWalker(editor,NodeFilter.SHOW_TEXT);
+    let node,checked=0;
+    while((node=walk.nextNode())&&checked++<32) {
+      if(!node.nodeValue?.trim())continue;
+      const range=document.createRange();range.selectNodeContents(node);
+      for(const r of range.getClientRects())if(r.width>0&&r.height>0&&r.bottom>contentTop&&r.top<er.bottom) {
+        return Math.max(contentTop,Math.min(r.top,contentTop+Math.max(px(s.lineHeight),24)));
+      }
+    }
+    const p=editor.querySelector('p,li,[data-d-text-flow]');
+    const pr=p&&visibleUploadRect(p),ps=p&&getComputedStyle(p);
+    const leading=Math.max(0,(px(ps?.lineHeight||s.lineHeight)-px(ps?.fontSize||s.fontSize))/2);
+    return Math.max(contentTop,Math.min(er.bottom-1,Math.max(contentTop,pr?.top||contentTop)+Math.min(leading,8)));
+  }
+  function inUploadZone(r,sr,textTop) {
+    return !!r&&r.width>=3&&r.height>=3&&r.top>=sr.top-5&&
+      r.top<textTop-1&&r.right>sr.left+2&&r.left<sr.right-2&&
+      r.bottom<=sr.bottom+3;
+  }
+  function hasVisibleBackground(s) {
+    return s.backgroundImage!=='none'||!['transparent','rgba(0, 0, 0, 0)'].includes(s.backgroundColor);
+  }
+  function attachmentBranches(root,editor,sr,textTop) {
+    const branches=new Set(),seeds=new Set();
+    for(const el of root.querySelectorAll(attachmentCandidates)) {
+      if(editor.contains(el)||el.contains(editor)||el.closest('[data-ebook-upload-divider="true"]'))continue;
+      const r=visibleUploadRect(el);
+      if(!inUploadZone(r,sr,textTop))continue;
+      if(el.tagName==='IMG'&&r.width<22&&r.height<22)continue;
+      seeds.add(el);
+      let branch=el;
+      // Stop at the attachment-side branch of the common editor/card parent.
+      // This includes file names, footers and adjacent cards in the same row.
+      for(let p=el.parentElement;p&&p!==root&&!p.contains(editor);p=p.parentElement) {
+        const pr=visibleUploadRect(p);
+        if(!inUploadZone(pr,sr,textTop))break;
+        branch=p;
+      }
+      branches.add(branch);
+    }
+    return {seeds,branches:new Set([...branches].filter(el=>![...branches].some(p=>p!==el&&p.contains(el))))};
+  }
+  function measureAttachmentPaint(branches,seeds,sr,textTop) {
+    let bottom=-Infinity;
+    const watch=new Set([...seeds,...branches]);
+    for(const branch of branches) {
+      // Scope the scan to the upload row only. A transparent full-width
+      // wrapper's padding is not painted card content; its children are.
+      for(const el of [branch,...branch.querySelectorAll('div,span,p,small,button,a,img,[role="button"],[role="progressbar"],[data-attachment-id],[data-file-id],[data-testid]')]) {
+        if(el.closest('[data-ebook-upload-divider="true"]'))continue;
+        const r=visibleUploadRect(el);
+        if(!inUploadZone(r,sr,textTop))continue;
+        const s=getComputedStyle(el);
+        const directText=[...el.childNodes].some(n=>n.nodeType===Node.TEXT_NODE&&n.nodeValue?.trim());
+        const narrow=r.width<sr.width*.90;
+        const control=el.matches('button,a,img,[role="button"],[role="progressbar"]');
+        const painted=hasVisibleBackground(s)||px(s.borderTopWidth)>0||px(s.borderBottomWidth)>0||
+          (s.boxShadow&&s.boxShadow!=='none');
+        // Full-width attachment-list wrappers can include the reserved gap.
+        // Explicit card surfaces, preview seeds, filename labels and buttons
+        // count as occupied. Wide transparent layout wrappers do not.
+        const fullRowSeed=seeds.has(el)&&!narrow&&!control&&el.children.length>0;
+        if(control||directText||(narrow&&(painted||seeds.has(el)))||
+           (seeds.has(el)&&!fullRowSeed)) {
+          bottom=Math.max(bottom,r.bottom);
+          if(watch.size<80)watch.add(el);
+        }
+      }
+    }
+    return {bottom:Number.isFinite(bottom)?bottom:null,watch};
+  }
+  function pendingUploadBranches(root,editor,sr,textTop) {
+    const branches=new Set();
+    // During the short file-selection intent window, also recognize
+    // native placeholder rows that have not yet received their upload ID.
+    for(let part=editor;part&&part!==root;part=part.parentElement) {
+      for(let n=part.previousElementSibling;n;n=n.previousElementSibling) {
+        if(n.matches('script,style,input,[data-ebook-upload-divider="true"]'))continue;
+        const r=visibleUploadRect(n);
+        if(inUploadZone(r,sr,textTop)&&r.height>=8)branches.add(n);
+      }
+    }
+    return branches;
+  }
+  function clearGapLineY(cardBottom,textTop) {
+    // Leave a real gap at both edges, even while the file footer grows.
+    // If the native layout briefly has no room, wait for its next resize.
+    if(!Number.isFinite(cardBottom)||!Number.isFinite(textTop)||textTop-cardBottom<7)return null;
+    return cardBottom+(textTop-cardBottom)/2;
+  }
+  function lineOffset(y,sr,borderTop,scrollTop) {
+    return Math.round((y-sr.top-borderTop+scrollTop)*10)/10;
   }
   function markUploadDivider() {
     const c=activeComposer();
     if(!c?.shell||!c.editor){clearUploadDivider();return;}
+    const er=c.editor.getBoundingClientRect();
+    if(!er.width||!er.height){clearUploadDivider();return;}
+    const textTop=editorFirstLineTop(c.editor,er);
     const selected=[...composerFrameOriginal.keys()].find(el=>el.isConnected&&el.contains(c.editor));
-    // Prefer the real painted frame, with a form fallback when the native
-    // preview strip is a sibling outside that frame.
-    let shell=selected||c.shell;
-    if(!shell.querySelector(attachmentCandidates)&&c.form?.contains(c.editor)&&
-        c.form.querySelector(attachmentCandidates))shell=c.form;
-    const er=c.editor.getBoundingClientRect(),sr=shell.getBoundingClientRect();
-    if(!sr.width||!er.width)return;
-    let bottom=0;
-    for(const el of shell.querySelectorAll(attachmentCandidates)) {
-      if(c.editor.contains(el)||el.contains(c.editor)||
-        el.closest('[role="menu"],[role="dialog"],[data-message-author-role]'))continue;
-      const r=el.getBoundingClientRect();
-      // A loading card/spinner is enough; no image decode or minimum
-      // thumbnail height of 35px is required. Controls below the editor
-      // and zero-size hidden inputs are excluded by geometry.
-      if(r.width<5||r.height<5||r.top<sr.top-3||r.top>=er.top-1||
-        r.bottom>er.top+4||r.right<sr.left||r.left>sr.right)continue;
-      if(el.tagName==='IMG'&&r.width<22&&r.height<22)continue;
-      bottom=Math.max(bottom,Math.min(r.bottom,er.top));
+    const roots=[...new Set([selected,c.shell,c.form].filter(el=>el?.isConnected&&el.contains(c.editor)))];
+    let chosen=null,pending=null;
+    const intent=performance.now()<uploadIntentUntil;
+    for(const shell of roots) {
+      const sr=visibleUploadRect(shell);
+      if(!sr||sr.width<40||textTop-sr.top<12)continue;
+      const {seeds,branches}=attachmentBranches(shell,c.editor,sr,textTop);
+      if(seeds.size) {
+        const measured=measureAttachmentPaint(branches,seeds,sr,textTop);
+        chosen={shell,sr,...measured};
+        // Prefer the smallest real painted composer frame containing the
+        // attachment strip; the form is a fallback for external previews.
+        break;
+      }
+      if(intent&&!pending&&textTop-sr.top>=30) {
+        const branches=pendingUploadBranches(shell,c.editor,sr,textTop);
+        const measured=measureAttachmentPaint(branches,new Set(),sr,textTop);
+        if(measured.bottom!==null)pending={shell,sr,...measured};
+      }
     }
-    if(bottom)uploadIntentUntil=0;
-    // Pending upload with native reserved space, before a preview is
-    // painted. Never draw over the text or on a closed empty composer.
-    if(!bottom&&performance.now()<uploadIntentUntil&&er.top-sr.top>=30)
-      bottom=er.top-3;
-    if(!bottom||er.top-sr.top<12){clearUploadDivider();return;}
+    if(chosen)uploadIntentUntil=0;
+    const found=chosen||pending;
+    if(!found){clearUploadDivider();return;}
+    const {shell,sr,bottom,watch}=found;
+    syncUploadResizeTargets(watch);
+    const y=clearGapLineY(bottom,textTop);
+    if(y===null||y<sr.top+8||y>=sr.bottom-2) {
+      clearUploadDivider(false);return;
+    }
     const prior=document.querySelector('[data-ebook-upload-divider="true"]');
     const priorHost=document.querySelector('[data-ebook-composer-root="true"]');
-    if(prior&&!shell.contains(prior))prior.remove();
+    if(prior&&prior.parentElement!==shell)prior.remove();
     if(priorHost&&priorHost!==shell)priorHost.removeAttribute('data-ebook-composer-root');
-    let line=shell.querySelector('[data-ebook-upload-divider="true"]');
+    let line=[...shell.children].find(el=>el.matches('[data-ebook-upload-divider="true"]'));
     if(!line) {
       line=document.createElement('div');
       line.setAttribute('data-ebook-upload-divider','true');
@@ -1092,9 +1220,9 @@
       shell.appendChild(line);
     }
     if(!shell.hasAttribute('data-ebook-composer-root'))shell.setAttribute('data-ebook-composer-root','true');
-    const gap=Math.max(0,er.top-bottom);
-    const offset=Math.max(8,Math.min(er.top-sr.top-2,bottom-sr.top+gap*.48));
-    const top=Math.round(offset*10)/10+'px';
+    // CSS absolute top is measured from the padding edge, not the outer
+    // border box. Correct for the existing 2.5px outline and scroll offset.
+    const top=lineOffset(y,sr,px(getComputedStyle(shell).borderTopWidth),shell.scrollTop||0)+'px';
     if(line.style.top!==top)line.style.top=top;
   }
 
@@ -1537,6 +1665,8 @@
     pageObserver?.disconnect();
     navResizeObserver?.disconnect();
     composerResizeObserver?.disconnect();
+    uploadResizeObserver?.disconnect();
+    uploadResizeTargets.clear();
     clearTimeout(uploadIntentTimer);
     clearInterval(recoverTimer);
     if (frame) cancelAnimationFrame(frame);
@@ -1616,7 +1746,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.2.27',dispose,refresh:schedule,
+    version:'0.2.28',dispose,refresh:schedule,
     diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state'),overflow:n.getAttribute('data-ebook-count-overflow')==='true',confirmed:n.getAttribute('data-ebook-count-confirmed')===''?null:Number(n.getAttribute('data-ebook-count-confirmed'))})),lastPassMs:{...timings},fixedSidebarTop:[...document.querySelectorAll('[data-ebook-sidebar-top="band"]')].map(n=>({height:n.style.getPropertyValue('--eb-sidebar-top-height'),surfaces:n.querySelectorAll('[data-ebook-sidebar-top="surface"]').length})),fontAudit:fontAudit()})
   };
 })();
