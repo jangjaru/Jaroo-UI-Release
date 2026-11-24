@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.36
+@version      0.2.37
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -1521,7 +1521,7 @@
     --eb-composer-single-stroke:2.5px solid #303438!important;
     --eb-quick-nav-size:var(--eb-project-optical-size,16px)!important;
     --eb-marker-yellow:#F2D778!important;
-    --ebook-theme-version:"0.2.36";
+    --ebook-theme-version:"0.2.37";
   }
   /* Preserve the existing procedural paper-grain SVG and only refine grid pitch. */
   html body :is(#thread,[data-testid="conversation-panel"],
@@ -1903,6 +1903,42 @@
   html body [data-app-action-sidebar-project-row]:is(:hover,:focus-within)
     :is([data-ebook-project-count]) {
     opacity:0!important;
+  }
+
+
+  /* 33. EDITORIAL ACTION MENUS — v0.2.37
+     One paper surface per native action menu, no stacked frames. Preserve
+     native popup placement, item spacing, keyboard behavior and danger colors.
+     Dialogs, listboxes, tooltips and the separate Jaroo status UI are excluded. */
+  html body :is([data-native-menu-root],[popover]):not([role="menu"]):not([role="dialog"]):not([role="listbox"]):has([role="menu"]),
+  html body [role="menu"] :is([data-native-menu-root],[popover]):not([role="menu"]):not([role="dialog"]):not([role="listbox"]):has(:is([role="menuitem"],[role="menuitemcheckbox"],[role="menuitemradio"])) {
+    background:transparent!important;
+    border:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+    -webkit-box-shadow:none!important;
+    padding:0!important;
+  }
+  html body [role="menu"],
+  html body :is([data-native-menu-root],[popover]):not(:is([role="menu"],[role="dialog"],[role="listbox"])):not([role="menu"] *):not(:has([role="menu"],[role="dialog"],[role="listbox"])):has(:is([role="menuitem"],[role="menuitemcheckbox"],[role="menuitemradio"])) {
+    background:var(--eb-panel,#F5F6F6)!important;
+    color:var(--eb-ink,#292D30)!important;
+    border:1px solid var(--eb-line,#C5CDD0)!important;
+    border-radius:10px!important;
+    box-shadow:0 2px 5px rgba(39,47,54,.06),0 6px 16px rgba(39,47,54,.10)!important;
+    backdrop-filter:none!important;
+  }
+  html body :is([role="menu"],[data-native-menu-root],[popover]) :is([role="menuitem"],[role="menuitemcheckbox"],[role="menuitemradio"]) {
+    font-family:var(--eb-font)!important;
+    border-radius:6px!important;
+    box-shadow:none!important;
+  }
+  html body :is([role="menu"],[data-native-menu-root],[popover]) :is([role="menuitem"],[role="menuitemcheckbox"],[role="menuitemradio"]):not([aria-disabled="true"]):not([data-disabled]):is(:hover,:focus-visible,[data-highlighted],[data-state="open"]) {
+    background-color:var(--eb-soft,#E4E8EA)!important;
+  }
+  html body [role="menu"] [role="separator"]:not([aria-orientation="vertical"]) {
+    border-color:var(--eb-line,#C5CDD0)!important;
+    background-color:var(--eb-line,#C5CDD0)!important;
   }
 
 }
