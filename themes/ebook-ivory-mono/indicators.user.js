@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.2.21
+// @version      0.2.22
 // @description  E-book visual dot indicators for role prefixes plus a light Clock skin; keeps original chat titles, React data and RUN/DONE logic intact.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -33,12 +33,12 @@
   // Existing visual pulses, LEDs, progress calculations and RUN/DONE controls remain owned by Clock/Status.
   const clockCSS = String.raw`
     :host {
-      --ebook-paper:#FAF9F3;
-      --ebook-panel:#FCFBF6;
-      --ebook-soft:#F0EFE8;
-      --ebook-ink:#1D1D1B;
-      --ebook-muted:#575751;
-      --ebook-line:#AAA9A0;
+      --ebook-paper:#EFF1F2;
+      --ebook-panel:#F5F6F6;
+      --ebook-soft:#E7EAEB;
+      --ebook-ink:#292D30;
+      --ebook-muted:#535B60;
+      --ebook-line:#BFC8CC;
       --ebook-font:"IBM Plex Mono","Pretendard Variable","Pretendard",sans-serif;
        --ebook-mono:"IBM Plex Mono","Pretendard Variable","Pretendard",monospace;
     }
@@ -61,7 +61,7 @@
       box-shadow:none!important;
       color:var(--ebook-ink)!important;
     }
-    .life-head { border-bottom:1px solid #D2D0C8!important; }
+    .life-head { border-bottom:1px solid #C5CDD0!important; }
     .life-title,.life-title-full,.life-title-short,
     .life-progress-title,.life-progress-percent {
       color:var(--ebook-ink)!important;
@@ -74,7 +74,7 @@
     .life-card,.life-card.retire,.life-card.work,.life-card.after {
       background:var(--ebook-panel)!important;
       border:0!important;
-      border-bottom:1px solid #D2D0C8!important;
+      border-bottom:1px solid #C5CDD0!important;
       border-radius:0!important;
       box-shadow:none!important;
     }
@@ -88,7 +88,7 @@
     .life-title .ico { color:var(--ebook-ink)!important; /* Preserve original glow filter. */ }
     .life-bar {
       border:1px solid var(--ebook-line)!important;
-      background:#E3E2DB!important;
+      background:#E7EAEB!important;
       border-radius:999px!important;
       /* Preserve the original animated progress fill and glow. */
     }
@@ -688,9 +688,9 @@
     // Fixed sent-message values prevent a stale Stylus CSS token (14px / 700)
     // from silently overriding this newer userscript's 15px / 650 target.
     // Keep composer, assistant and sidebar typography unchanged.
-    const sentReading='15px';
-    const ink='#000000';
-    const sentWeight='650';
+    const sentReading=getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim()||'15.667px';
+    const ink=getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-sent-ink').trim()||'#292D30';
+    const sentWeight=getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-sent-weight').trim()||'520';
     const hasDirectText=el=>[...el.childNodes].some(node=>
       node.nodeType===Node.TEXT_NODE && (node.nodeValue||'').trim().length>0);
     const add=(el,kind)=>{
@@ -875,7 +875,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.2.21',dispose,refresh:schedule,
+    version:'0.2.22',dispose,refresh:schedule,
     diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),fontAudit:fontAudit()})
   };
 })();
