@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.2.38
+// @version      0.2.39
 // @description  E-book visual dot indicators for role prefixes plus a light Clock skin; keeps original chat titles, React data and RUN/DONE logic intact.
 // @match        https://chatgpt.com/*
 // @run-at       document-start
@@ -2053,9 +2053,184 @@
     const p=perfPasses[key]||(perfPasses[key]={runs:0,totalMs:0,peakMs:0});
     p.runs++;p.totalMs+=ms;p.peakMs=Math.max(p.peakMs,ms);
   }
+
+  /* Conversation Outline — isolated, local-only, opt-in navigation.
+     Read only currently mounted message DOM while the panel is open.
+     No new API, storage, external request, title mutation or history fetch. */
+  const OUTLINE_MSG='[data-message-author-role="user"],[data-message-author-role="assistant"]';
+  const OUTLINE_HEAD='h1,h2,h3,h4,h5,h6,[role="heading"],[data-d-component="title"]';
+  const OUTLINE_SKIP='button,[role="button"],nav,aside,[role="toolbar"],[role="menu"],[role="dialog"],[hidden],[aria-hidden="true"],.sr-only,svg,script,style,pre,code';
+  let conversationOutline=null;
+  function outlineRoute(pathname) {
+    return /^\/(?:g\/[^/]+\/)?c\/([^/]+)\/?$/u.exec(pathname)?.[1]||null;
+  }
+  function outlineShort(value,limit=92) {
+    const clean=String(value||'').replace(/\s+/gu,' ').trim();
+    const points=Array.from(clean);
+    return points.length>limit?points.slice(0,limit-1).join('')+'…':clean;
+  }
+  function outlineText(el,limit=92) {
+    if(!el)return '';
+    const walker=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);
+    let text='',part,checked=0;
+    while((part=walker.nextNode())&&checked++<160&&text.length<limit*3) {
+      if(!part.parentElement?.closest(OUTLINE_SKIP))text+=String(part.nodeValue||'')+' ';
+    }
+    return outlineShort(text,limit);
+  }
+  function outlineMain() {
+    const roots=[...document.querySelectorAll('main,[role="main"]')].filter(el=>!el.closest('[hidden],[aria-hidden="true"],[role="dialog"]'));
+    return roots.find(el=>el.querySelector(OUTLINE_MSG))||roots[0]||null;
+  }
+  function outlineEntries(root) {
+    const entries=[];if(!root)return entries;
+    const seen=new Set();let group=0;
+    for(const msg of root.querySelectorAll(OUTLINE_MSG)) {
+      if(msg.closest(OUTLINE_SKIP)||msg.parentElement?.closest(OUTLINE_MSG))continue;
+      const id=msg.getAttribute('data-message-id');
+      if(id&&seen.has(id))continue;if(id)seen.add(id);
+      const user=msg.getAttribute('data-message-author-role')==='user';
+      if(user) {
+        group++;
+        const body=msg.querySelector('[data-user-message-bubble="true"] .whitespace-pre-wrap,.whitespace-pre-wrap,[data-user-message-bubble="true"],[data-user-message]')||msg;
+        entries.push({type:'question',group,label:outlineText(body)||'첨부 또는 텍스트 없는 질문',target:msg});
+      } else {
+        // An older user turn may not be mounted in a virtualized thread.
+        const content=msg.querySelector('.markdown,.prose,[data-d-text-flow]')||msg;
+        entries.push({type:'answer',group,label:outlineText(content,72)||'답변',target:msg});
+        for(const h of msg.querySelectorAll(OUTLINE_HEAD)) {
+          if(h.closest(OUTLINE_SKIP)||h.parentElement?.closest(OUTLINE_HEAD))continue;
+          const label=outlineText(h);
+          if(label)entries.push({type:'heading',group,label,target:h});
+        }
+      }
+    }
+    return entries;
+  }
+  function outlineMatches(entries,query) {
+    const q=String(query||'').trim().toLocaleLowerCase('ko-KR');
+    if(!q)return entries;
+    const questionGroups=new Set(entries.filter(e=>e.type==='question'&&e.label.toLocaleLowerCase('ko-KR').includes(q)).map(e=>e.group));
+    const hits=new Set(entries.filter(e=>e.label.toLocaleLowerCase('ko-KR').includes(q)).map(e=>e.group));
+    return entries.filter(e=>questionGroups.has(e.group)||e.label.toLocaleLowerCase('ko-KR').includes(q)||(e.type==='question'&&hits.has(e.group)));
+  }
+  function createConversationOutline(route) {
+    const host=document.createElement('div');
+    host.setAttribute('data-ebook-outline-host','true');
+    const shadow=host.attachShadow({mode:'open'});
+    const style=document.createElement('style');
+    style.textContent=
+      ':host{all:initial;position:fixed!important;right:16px!important;top:94px!important;z-index:40!important;display:block!important;font-family:var(--eb-font,"IBM Plex Mono","Pretendard Variable","Pretendard",sans-serif);color:var(--eb-ink,#292D30);font-size:13px;line-height:1.5;}' +
+      '*{box-sizing:border-box}button,input{font:inherit;color:inherit}button{cursor:pointer}' +
+      '.toggle{display:flex;align-items:center;gap:7px;margin-left:auto;background:var(--eb-panel,#F5F6F6);border:1px solid var(--eb-line,#C5CDD0);padding:6px 10px;border-radius:6px;color:var(--eb-secondary,#535B60);font-weight:500;box-shadow:none;white-space:nowrap}' +
+      '.toggle:hover,.toggle[aria-expanded="true"]{background:#D8EA8B;color:#292D30;border-color:#AAB875}' +
+      '.panel{width:min(340px,calc(100vw - 32px));max-height:min(72vh,calc(100vh - 145px));margin-top:8px;background:var(--eb-panel,#F5F6F6);border:1px solid var(--eb-line,#C5CDD0);border-radius:10px;display:flex;flex-direction:column;box-shadow:0 8px 24px rgba(39,47,54,.12);overflow:hidden}' +
+      '[hidden]{display:none!important}.head{padding:14px 14px 11px;border-bottom:1px solid var(--eb-line,#C5CDD0)}' +
+      '.title{display:block;font-size:16px;font-weight:650;letter-spacing:-.025em}.meta{display:block;color:var(--eb-secondary,#535B60);font-size:11px;margin-top:4px}' +
+      '.search{width:100%;margin-top:10px;border:1px solid var(--eb-line,#C5CDD0);background:var(--eb-paper,#EFF1F2);border-radius:6px;padding:8px 10px;outline:none}' +
+      '.search:focus,button:focus-visible{outline:2px solid var(--eb-quiet-focus,#7B898F);outline-offset:1px}' +
+      '.list{overflow:auto;overscroll-behavior:contain;min-height:0;padding:7px 8px;scrollbar-width:thin}' +
+      '.entry{width:100%;display:flex;align-items:baseline;gap:8px;text-align:left;border:0;background:transparent;border-radius:4px;padding:6px 7px;line-height:1.45;overflow-wrap:anywhere}' +
+      '.entry:hover,.entry:focus-visible{background:var(--eb-soft,#E4E8EA)}.entry[aria-current="location"]{background:#D8EA8B}' +
+      '.question{font-weight:600;margin-top:5px;border-top:1px solid var(--eb-line,#C5CDD0);border-radius:0 0 4px 4px;padding-top:9px}.question:first-child{border-top:0;margin-top:0}' +
+      '.answer{color:var(--eb-secondary,#535B60);padding-left:17px}.heading{padding-left:26px;color:var(--eb-secondary,#535B60);font-size:12px}' +
+      '.index{color:var(--eb-muted,#737D83);flex:none;font-size:10px;font-family:var(--eb-mono,"IBM Plex Mono",monospace);font-weight:500}.label{min-width:0}.empty{padding:14px 8px;color:var(--eb-muted,#737D83)}' +
+      '.foot{border-top:1px solid var(--eb-line,#C5CDD0);padding:9px 14px;font-size:10px;color:var(--eb-secondary,#535B60)}' +
+      '@media(max-width:600px){:host{right:8px!important;top:90px!important}.panel{width:min(320px,calc(100vw - 16px));max-height:65vh}}';
+    function node(tag,cls,value) {
+      const n=document.createElement(tag);
+      if(cls)n.className=cls;if(value!=null)n.textContent=value;
+      return n;
+    }
+    const toggle=node('button','toggle','☷  목차');
+    toggle.type='button';toggle.setAttribute('aria-expanded','false');
+    toggle.setAttribute('aria-controls','jaroo-outline-panel');toggle.setAttribute('aria-label','대화 목차 열기');
+    const panel=node('section','panel');panel.id='jaroo-outline-panel';panel.hidden=true;
+    panel.setAttribute('aria-label','대화 목차');
+    const head=node('div','head'),title=node('strong','title','대화 목차');
+    const meta=node('span','meta',''),search=node('input','search');
+    search.type='search';search.placeholder='질문·제목 검색';search.setAttribute('aria-label','목차 검색');search.autocomplete='off';
+    const list=node('div','list');list.setAttribute('role','group');list.setAttribute('aria-label','대화 항목');
+    const foot=node('div','foot','현재 불러온 대화만 표시 · 원문으로 이동');
+    head.append(title,meta,search);panel.append(head,list,foot);shadow.append(style,toggle,panel);
+    document.body.appendChild(host);
+    let open=false,root=null,entries=[],timer=0,active=null,rendered=[];
+    const observer=new MutationObserver(()=>queue());
+    function queue() {
+      if(!open||timer)return;
+      // Throttle during streaming; one scoped refresh per 700ms maximum.
+      timer=setTimeout(()=>{timer=0;if(open)refresh();},700);
+    }
+    function bindRoot() {
+      const next=outlineMain();if(root===next)return;
+      observer.disconnect();root=next;
+      if(open&&root)observer.observe(root,{subtree:true,childList:true,characterData:true});
+    }
+    function jump(entry,button) {
+      if(outlineRoute(location.pathname)!==route||!entry.target.isConnected){refresh();return;}
+      const reduce=window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+      entry.target.scrollIntoView({behavior:reduce?'instant':'smooth',block:'center',inline:'nearest'});
+      active=entry.target;
+      for(const b of list.querySelectorAll('[aria-current]'))b.removeAttribute('aria-current');
+      button.setAttribute('aria-current','location');
+    }
+    function render(force=false) {
+      const filtered=outlineMatches(entries,search.value);
+      const same=filtered.length===rendered.length&&filtered.every((e,i)=>e.target===rendered[i].target&&e.type===rendered[i].type&&e.label===rendered[i].label&&e.group===rendered[i].group);
+      const count=entries.filter(e=>e.type==='question').length;
+      meta.textContent='질문 '+count+'개 · '+filtered.length+'개 항목';
+      if(same&&!force)return;
+      const y=list.scrollTop,oldFocus=shadow.activeElement;
+      const focusTarget=oldFocus?.__jarooOutlineTarget;
+      const fragment=document.createDocumentFragment();
+      if(!filtered.length)fragment.append(node('div','empty',search.value.trim()?'검색 결과가 없습니다.':'불러온 대화가 없습니다.'));
+      for(const entry of filtered) {
+        const b=node('button','entry '+entry.type);b.type='button';
+        const tag=entry.type==='question'?'Q'+String(entry.group).padStart(2,'0'):entry.type==='answer'?'A':'·';
+        b.append(node('span','index',tag),node('span','label',entry.label));
+        b.__jarooOutlineTarget=entry.target;
+        if(active===entry.target)b.setAttribute('aria-current','location');
+        b.addEventListener('click',()=>jump(entry,b));
+        fragment.append(b);
+      }
+      list.replaceChildren(fragment);list.scrollTop=y;rendered=filtered;
+      if(focusTarget){const next=[...list.querySelectorAll('button')].find(b=>b.__jarooOutlineTarget===focusTarget);next?.focus({preventScroll:true});}
+    }
+    function refresh() {
+      if(!open||outlineRoute(location.pathname)!==route)return;
+      bindRoot();entries=outlineEntries(root);render();
+    }
+    function setOpen(value,focus=true) {
+      open=value;panel.hidden=!open;toggle.setAttribute('aria-expanded',String(open));
+      toggle.setAttribute('aria-label',open?'대화 목차 닫기':'대화 목차 열기');
+      if(open){bindRoot();entries=outlineEntries(root);render(true);if(focus)search.focus({preventScroll:true});}
+      else{observer.disconnect();clearTimeout(timer);timer=0;root=null;entries=[];rendered=[];active=null;search.value='';list.replaceChildren();if(focus)toggle.focus({preventScroll:true});}
+    }
+    toggle.addEventListener('click',()=>setOpen(!open));
+    search.addEventListener('input',()=>render(true));
+    shadow.addEventListener('keydown',event=>{
+      if(event.key==='Escape'&&open){event.stopPropagation();event.preventDefault();setOpen(false);}
+      else if(event.target===search)event.stopPropagation();
+    });
+    return {route,host,sync(){if(open&&(!root||!root.isConnected))queue();},dispose(){setOpen(false,false);host.remove();}};
+  }
+  function syncConversationOutline() {
+    const route=outlineRoute(location.pathname);
+    if(conversationOutline&&(conversationOutline.route!==route||!conversationOutline.host.isConnected)){
+      conversationOutline.dispose();conversationOutline=null;
+    }
+    if(!route)return;
+    if(!conversationOutline)conversationOutline=createConversationOutline(route);
+    else conversationOutline.sync();
+  }
+  function disposeConversationOutline() {
+    conversationOutline?.dispose();conversationOutline=null;
+  }
+
   function update(mask) {
     if(disposed||!document.body||!document.documentElement)return;
     timings.runs++;
+    syncConversationOutline();
     if(mask&PASS.NAV)timed('nav',()=>{
       attachObservers();
       synchronizeSidebar();
@@ -2173,6 +2348,7 @@
 
   function dispose() {
     disposed = true;
+    disposeConversationOutline();
     observer.disconnect();
     composerObserver.disconnect();
     pageObserver?.disconnect();
@@ -2264,7 +2440,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.2.38',dispose,refresh:schedule,
+    version:'0.2.39',dispose,refresh:schedule,
     diagnostics:() => ({...errors,sorting:{...sidebarSortDiagnostics,styledRows:sidebarSortSaved.size},roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),firstPaintNav:getComputedStyle(document.documentElement).getPropertyValue('--eb-first-paint-nav').trim()==='1',opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-project-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state'),overflow:n.getAttribute('data-ebook-count-overflow')==='true',confirmed:n.getAttribute('data-ebook-count-confirmed')===''?null:Number(n.getAttribute('data-ebook-count-confirmed'))})),lastPassMs:{...timings},performance:{events:{...perfEvents},passes:Object.fromEntries(Object.entries(perfPasses).map(([k,v])=>[k,{runs:v.runs,averageMs:Math.round(v.totalMs/v.runs*100)/100,peakMs:Math.round(v.peakMs*100)/100}]))},fixedSidebarTop:[...topBands.values()].map(n=>({height:n.height,visible:getComputedStyle(n.strip).visibility==='visible',pattern:getComputedStyle(n.strip).backgroundImage})),projectCountBorders:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({border:getComputedStyle(n).borderTopWidth,style:getComputedStyle(n).borderTopStyle,outline:getComputedStyle(n).outlineStyle})),projectCountLayers:countLayers.size,positionResizeTargets:navResizeTargets.size,visibleProjectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].filter(n=>getComputedStyle(n).visibility!=='hidden').length,projectCountAxis:findDotCountReference()?.circle.getBoundingClientRect().left??null,fontAudit:fontAudit()})
   };
 })();
