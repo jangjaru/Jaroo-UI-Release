@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.2.25
+// @version      0.2.26
 // @description  E-book visual dot indicators for role prefixes plus a light Clock skin; keeps original chat titles, React data and RUN/DONE logic intact.
 // @match        https://chatgpt.com/*
 // @run-at       document-start
@@ -565,17 +565,25 @@
     const match=href.match(/\/c\/([^/?#]+)/u);
     return match?.[1]||el.getAttribute('data-sidebar-archive-chatgpt-id')||null;
   }
+  // v0.2.26: cap the displayed glyph at 9, not the underlying count.
+  // Overflow requires positive evidence of at least ten conversations;
+  // an unresolved nine-item lower bound alone must not change the fill.
+  function formatProjectCount(count,kind) {
+    const known=Number.isSafeInteger(count)&&count>=0;
+    return {label:known?String(Math.min(9,count)):'?',
+      kind:known?kind:'unknown',count:known?count:null,overflow:known&&count>9};
+  }
   function countProjectState(loaded,total,expanded,more,busy,empty,scopeKnown) {
-    if(total!==null)return {label:String(total),kind:'exact'};
-    if(!scopeKnown)return {label:'?',kind:'unknown'};
+    if(total!==null)return formatProjectCount(total,'exact');
+    if(!scopeKnown)return formatProjectCount(null,'unknown');
     if(busy||expanded===false||more||(!loaded&&!empty&&expanded!==true))
-      return loaded?{label:loaded+'+',kind:'partial'}:{label:'?',kind:'unknown'};
-    if(loaded||empty||expanded===true)return {label:String(loaded),kind:'exact'};
-    return {label:'?',kind:'unknown'};
+      return loaded?formatProjectCount(loaded,'partial'):formatProjectCount(null,'unknown');
+    if(loaded||empty||expanded===true)return formatProjectCount(loaded,'exact');
+    return formatProjectCount(null,'unknown');
   }
   function readProjectCount(row) {
     const group=nativeProjectScope(row);
-    if(!group)return {label:'?',kind:'unknown'};
+    if(!group)return formatProjectCount(null,'unknown');
     const ids=new Set();
     for(const el of group.querySelectorAll(countLinkSelector)) {
       if(row.contains(el)||el.closest('[data-ebook-project-count]'))continue;
@@ -693,8 +701,10 @@
         row.setAttribute('data-ebook-count-host',getComputedStyle(row).position==='static'?'relative':'native');
       if(badge.textContent!==state.label)badge.textContent=state.label;
       if(badge.getAttribute('data-ebook-count-state')!==state.kind)badge.setAttribute('data-ebook-count-state',state.kind);
-      const long=state.label.length>2?'true':'false';
-      if(badge.getAttribute('data-ebook-count-long')!==long)badge.setAttribute('data-ebook-count-long',long);
+      const overflow=state.overflow?'true':'false';
+      if(badge.getAttribute('data-ebook-count-overflow')!==overflow)badge.setAttribute('data-ebook-count-overflow',overflow);
+      const confirmed=state.count===null?'':String(state.count);
+      if(badge.getAttribute('data-ebook-count-confirmed')!==confirmed)badge.setAttribute('data-ebook-count-confirmed',confirmed);
       makeImportant(badge,'--eb-count-x',Math.round(x*10)/10+'px');
       for(const [k,v] of Object.entries(appearance))makeImportant(badge,k,v);
     }
@@ -1483,7 +1493,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.2.25',dispose,refresh:schedule,
-    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state')})),lastPassMs:{...timings},fontAudit:fontAudit()})
+    version:'0.2.26',dispose,refresh:schedule,
+    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state'),overflow:n.getAttribute('data-ebook-count-overflow')==='true',confirmed:n.getAttribute('data-ebook-count-confirmed')===''?null:Number(n.getAttribute('data-ebook-count-confirmed'))})),lastPassMs:{...timings},fontAudit:fontAudit()})
   };
 })();
