@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.2.35
+// @version      0.2.36
 // @description  E-book visual dot indicators for role prefixes plus a light Clock skin; keeps original chat titles, React data and RUN/DONE logic intact.
 // @match        https://chatgpt.com/*
 // @run-at       document-start
@@ -166,6 +166,26 @@
       .filter(el => !el.closest('button,[role="button"],svg'));
     for (const el of options) if (el.matches('[data-ebook-role]') || firstValidText(el)) return el;
     return firstValidText(anchor) ? anchor : null;
+  }
+
+  // Lifecycle is independent of the optional organizational role glyph.
+  const CHAT_LIFECYCLE_ATTR='data-ebook-chat-lifecycle';
+  function chatLifecycle(text) {
+    const tag=/^\s*\[(완료|중단)\]/u.exec(text||'')?.[1];
+    return tag==='완료'?'done':tag==='중단'?'stopped':null;
+  }
+  function syncChatLifecycle(anchor) {
+    const excluded='button,[role="button"],svg,[aria-hidden="true"],.sr-only,.jaroo-native-badge,[data-jaroo-status-slot]';
+    const options=[...anchor.querySelectorAll(TITLE_SELECTORS)].filter(el=>!el.closest(excluded));
+    const title=options.find(el=>chatLifecycle(el.textContent))||
+      (chatLifecycle(anchor.textContent)?anchor:null);
+    for(const el of [anchor,...anchor.querySelectorAll('['+CHAT_LIFECYCLE_ATTR+']')]) {
+      if(el!==title&&el.hasAttribute(CHAT_LIFECYCLE_ATTR))el.removeAttribute(CHAT_LIFECYCLE_ATTR);
+    }
+    if(title) {
+      const state=chatLifecycle(title.textContent);
+      if(title.getAttribute(CHAT_LIFECYCLE_ATTR)!==state)title.setAttribute(CHAT_LIFECYCLE_ATTR,state);
+    }
   }
 
   function decorate(anchor) {
@@ -960,7 +980,7 @@
     for (const root of observedRoots) {
       if (!root.isConnected) continue;
       const anchors = root.querySelectorAll('a[href*="/c/"]');
-      for (const anchor of anchors) decorate(anchor);
+      for (const anchor of anchors) { decorate(anchor); syncChatLifecycle(anchor); }
     }
   }
 
@@ -1860,6 +1880,7 @@
       el.removeAttribute('data-ebook-life-cycle');
     }
     touched.clear();
+    document.querySelectorAll('['+CHAT_LIFECYCLE_ATTR+']').forEach(el=>el.removeAttribute(CHAT_LIFECYCLE_ATTR));
     for (const badge of document.querySelectorAll('[data-ebook-dot-counter="true"]'))
       badge.removeAttribute('data-ebook-dot-counter');
   }
@@ -1957,7 +1978,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.2.35',dispose,refresh:schedule,
+    version:'0.2.36',dispose,refresh:schedule,
     diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),firstPaintNav:getComputedStyle(document.documentElement).getPropertyValue('--eb-first-paint-nav').trim()==='1',opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-project-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state'),overflow:n.getAttribute('data-ebook-count-overflow')==='true',confirmed:n.getAttribute('data-ebook-count-confirmed')===''?null:Number(n.getAttribute('data-ebook-count-confirmed'))})),lastPassMs:{...timings},performance:{events:{...perfEvents},passes:Object.fromEntries(Object.entries(perfPasses).map(([k,v])=>[k,{runs:v.runs,averageMs:Math.round(v.totalMs/v.runs*100)/100,peakMs:Math.round(v.peakMs*100)/100}]))},fixedSidebarTop:[...topBands.values()].map(n=>({height:n.height,visible:getComputedStyle(n.strip).visibility==='visible',pattern:getComputedStyle(n.strip).backgroundImage})),projectCountBorders:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({border:getComputedStyle(n).borderTopWidth,style:getComputedStyle(n).borderTopStyle,outline:getComputedStyle(n).outlineStyle})),projectCountLayers:countLayers.size,positionResizeTargets:navResizeTargets.size,visibleProjectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].filter(n=>getComputedStyle(n).visibility!=='hidden').length,projectCountAxis:findDotCountReference()?.circle.getBoundingClientRect().left??null,fontAudit:fontAudit()})
   };
 })();

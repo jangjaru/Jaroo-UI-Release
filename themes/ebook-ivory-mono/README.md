@@ -1,8 +1,14 @@
 # Jaroo E-book · Cool E-Ink Graph Paper
 
-**2026-11-24 · Stylus CSS v0.2.46 / Tampermonkey JS v0.2.35**
+**2026-11-24 · Stylus CSS v0.2.47 / Tampermonkey JS v0.2.36**
 
 This update modifies the existing Classic Paper theme; it is **not** a separate mockup or a second overlay.
+
+## v0.2.47 / v0.2.36 · 2026-11-24 — 완료·중단 채팅 제목 표시
+
+- 사이드바 제목 맨 앞 `[완료]`: 연회색 `#92999E` + 1px 취소선. `[중단]`: 적색 `#C83B42` + 1px 취소선. 태그와 전체 제목에 적용.
+- 역할 기호 유무와 무관하게 감지. 태그 수정·제거 시 기존 사이드바 갱신 경로에서 표시를 전환·해제. 채팅 원본 제목, 역할 색상 점, 카운터, 기타 UI와 기존 설치 경로 유지. `[보류]`의 기존 처리 유지.
+- 검증: 이전 원본/배포 일치 및 SHA-256 대조, JS 전체 구문, 태그 분류 8건·마커 전환/해제 5건·fallback 2건 단위 검증. 실제 로그인 Chrome 시각 검수는 대기.
 
 ## v0.2.46 / v0.2.35 · 2026-11-24 — 채팅 제목 최초 렌더링 및 고정/해제 시 글꼴 안정화
 
@@ -156,8 +162,8 @@ This update modifies the existing Classic Paper theme; it is **not** a separate 
 - E-book Clock skin follows the cooler neutrals while preserving segmented digits, Life Clock and existing animations.
 
 ## Install / update in place
-- [Stylus CSS v0.2.46](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/theme.user.css)
-- [Tampermonkey JS v0.2.35](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/indicators.user.js)
+- [Stylus CSS v0.2.47](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/theme.user.css)
+- [Tampermonkey JS v0.2.36](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/indicators.user.js)
 
 Update the **existing** two extension entries rather than installing duplicates. In Stylus and Tampermonkey, run the built-in **Check for updates**, then reload ChatGPT with `Ctrl + Shift + R`.
 
@@ -168,7 +174,7 @@ Use the ChatGPT page console:
 ```js
 window.__jarooEbookIvoryMonoV1?.diagnostics?.()
 ```
-Expected: JS `version: '0.2.35'`, `sentPromptTarget: '16.067px'`; a selected chat should produce `headerMarkers: 1` when its title is visible. CSS version is `0.2.46`. `firstPaintNav` reports the CSS first-paint rule; `opticalLeaves` and `projectWeightLeaves` count inline exceptions. `performance` gives scoped pass execution counts/average/peak times and scheduling stats. `fixedSidebarTop` reports the actual overlay height, visibility and computed pattern. `projectCountBorders` reports computed border/outline styles. `projectCounts` reports the one-character display, exact/partial/unknown state, overflow and confirmed count, `lastPassMs` reports the most recent scoped update durations (ms), not end-to-end page load time. `quickNavMarkers` reports the actual size, weight and color of New Chat/Dot labels. Diagnostics include `projectMarkers`, `sidebarSeams` and `workSwitcher`; live DOM matching still requires visual confirmation.
+Expected: JS `version: '0.2.36'`, `sentPromptTarget: '16.067px'`; a selected chat should produce `headerMarkers: 1` when its title is visible. CSS version is `0.2.47`. `firstPaintNav` reports the CSS first-paint rule; `opticalLeaves` and `projectWeightLeaves` count inline exceptions. `performance` gives scoped pass execution counts/average/peak times and scheduling stats. `fixedSidebarTop` reports the actual overlay height, visibility and computed pattern. `projectCountBorders` reports computed border/outline styles. `projectCounts` reports the one-character display, exact/partial/unknown state, overflow and confirmed count, `lastPassMs` reports the most recent scoped update durations (ms), not end-to-end page load time. `quickNavMarkers` reports the actual size, weight and color of New Chat/Dot labels. Diagnostics include `projectMarkers`, `sidebarSeams` and `workSwitcher`; live DOM matching still requires visual confirmation.
 
 To roll back, use the extensions' version history or the previous Git commit of the two E-book files. This release is code-published and statically checked, but **the user's signed-in Chrome rendering and updates have not been verified in this chat**.
 
