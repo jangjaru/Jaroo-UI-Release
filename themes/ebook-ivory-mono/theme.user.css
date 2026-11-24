@@ -1,18 +1,15 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.46
-@description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
+@version      0.3.0-beta.1
+@description  E-book standalone beta: CSS-owned typography, consolidated design tokens and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
-@updateURL    https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/theme.user.css
+@updateURL    https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/ebook-v0.3.0/themes/ebook-ivory-mono/theme.user.css
 ==/UserStyle== */
 
 @-moz-document domain("chatgpt.com") {
 
-  /* One-local-font family with an explicitly excluded ASCII space (U+0020).
-     That space, plus Hangul, is resolved from the next font, Pretendard Variable.
-     IBM Plex Mono still renders Latin, numbers, punctuation. */
   @font-face {
     font-family:"Jaroo Plex Latin";
     src:local("IBM Plex Mono Regular"),local("IBMPlexMono-Regular"),local("IBM Plex Mono");
@@ -20,571 +17,473 @@
     font-style:normal;
     unicode-range:U+0021-007E,U+00A1-024F,U+1E00-1EFF,U+20AC;
   }
+
   @font-face {
     font-family:"Jaroo Plex Latin";
-    src:local("IBM Plex Mono Medium"),local("IBMPlexMono-Medium"),local("IBM Plex Mono");
+    src:local("IBM Plex Mono Medium"),local("IBMPlexMono-Medium");
     font-weight:500;
     font-style:normal;
     unicode-range:U+0021-007E,U+00A1-024F,U+1E00-1EFF,U+20AC;
   }
+
   @font-face {
     font-family:"Jaroo Plex Latin";
-    src:local("IBM Plex Mono SemiBold"),local("IBMPlexMono-SemiBold"),local("IBM Plex Mono");
+    src:local("IBM Plex Mono SemiBold"),local("IBMPlexMono-SemiBold");
     font-weight:600;
     font-style:normal;
     unicode-range:U+0021-007E,U+00A1-024F,U+1E00-1EFF,U+20AC;
   }
+
   @font-face {
     font-family:"Jaroo Plex Latin";
-    src:local("IBM Plex Mono Bold"),local("IBMPlexMono-Bold"),local("IBM Plex Mono");
+    src:local("IBM Plex Mono Bold"),local("IBMPlexMono-Bold");
     font-weight:700;
     font-style:normal;
     unicode-range:U+0021-007E,U+00A1-024F,U+1E00-1EFF,U+20AC;
   }
 
-  /* 01. DESIGN TOKENS — Cool Paper A palette, 2026-11-24 (v0.2.30).
-     Reduce cream/yellow cast while retaining the original paper grain, grid,
-     New Chat ink highlight and all typography/interactive behavior. */
+  /* Design tokens: one unconditional source of truth. */
   :root {
-    --eb-paper: #F2F3F0;
-    --eb-panel: #F8F9F7;
-    --eb-rail: #ECEFEE;
-    --eb-soft: #E7EBEA;
-    --eb-ink: #1F1E1A;
-    --eb-secondary: #4C4942;
-    --eb-muted: #787267;
-    --eb-line: #C9D0D1;
-    --eb-line-strong: #8C999C;
-    --eb-amber: #E3AA2A;
-    --eb-blue: #65A4E3;
-    --eb-coral: #F1AD79;
-    --eb-pink: #E97E9B;
-    --eb-purple: #A48BD7;
-    --eb-teal: #59B8BC;
-    --eb-green: #A5D685;
-    --eb-orange: #E3AA62;
-    --eb-font: "Jaroo Plex Latin", "Pretendard Variable", "Pretendard", sans-serif;
-    --eb-mono: "IBM Plex Mono", "Pretendard Variable", "Pretendard", monospace;
-    --eb-font-korean: "Pretendard Variable", "Pretendard", sans-serif;
-    --eb-ui-size: 14px;
-    --eb-prose-size: var(--eb-ui-size);
-    --eb-code-size: 12.5px;
-    --eb-weight-normal: 400;
-    --eb-weight-strong: 600;
-    --eb-radius: 14px;
-    --eb-composer-radius: 18px;
-
-    /* Native ChatGPT surfaces, including popovers rendered in portals. */
-    --font-sans: var(--eb-font) !important;
-    --main-surface-primary: var(--eb-paper) !important;
-    --main-surface-primary-inverse: var(--eb-ink) !important;
-    --main-surface-secondary: var(--eb-panel) !important;
-    --main-surface-tertiary: var(--eb-soft) !important;
-    --sidebar-surface-primary: var(--eb-rail) !important;
-    --sidebar-surface-secondary: var(--eb-soft) !important;
-    --sidebar-surface-tertiary: var(--eb-panel) !important;
-    --bg-primary: var(--eb-paper) !important;
-    --bg-secondary: var(--eb-panel) !important;
-    --bg-tertiary: var(--eb-soft) !important;
-    --bg-elevated-primary: var(--eb-panel) !important;
-    --bg-elevated-secondary: var(--eb-soft) !important;
-    --bg-scrim: rgb(0 0 0 / 0.25) !important;
-    --text-primary: var(--eb-ink) !important;
-    --text-secondary: var(--eb-secondary) !important;
-    --text-tertiary: var(--eb-muted) !important;
-    --text-quaternary: var(--eb-muted) !important;
-    --text-accent: var(--eb-ink) !important;
-    --border-light: var(--eb-line) !important;
-    --border-medium: var(--eb-line-strong) !important;
-    --border-heavy: var(--eb-line-strong) !important;
-    --border-default: var(--eb-line) !important;
-    --interactive-bg-primary-default: var(--eb-ink) !important;
-    --interactive-bg-primary-hover: #3D3D38 !important;
-    --interactive-label-primary-default: var(--eb-paper) !important;
-    --interactive-bg-secondary-default: var(--eb-panel) !important;
-    --interactive-bg-secondary-hover: var(--eb-soft) !important;
-    --message-surface: var(--eb-panel) !important;
-    --color-background-user-message: var(--eb-panel) !important;
-    --color-text-user-message: var(--eb-ink) !important;
-    --link: var(--eb-ink) !important;
-    --link-hover: var(--eb-secondary) !important;
-    --jaroo-status-css-version: "6.8.2";
-    --ebook-theme-version: "0.2.15";
+    --eb-paper:#EFF1F2 !important;
+    --eb-panel:#F5F6F6 !important;
+    --eb-rail:#E7EAEB !important;
+    --eb-soft:#E4E8EA !important;
+    --eb-ink:#292D30 !important;
+    --eb-secondary:#535B60 !important;
+    --eb-muted:#737D83 !important;
+    --eb-line:#C5CDD0 !important;
+    --eb-line-strong:#89979E !important;
+    --eb-amber:#E3AA2A;
+    --eb-blue:#65A4E3;
+    --eb-coral:#F1AD79;
+    --eb-pink:#E97E9B;
+    --eb-purple:#A48BD7;
+    --eb-teal:#59B8BC;
+    --eb-green:#A5D685;
+    --eb-orange:#E3AA62;
+    --eb-font:"Jaroo Plex Latin",var(--eb-font-korean) !important;
+    --eb-mono:var(--eb-font) !important;
+    --eb-font-korean:"Pretendard Variable","Pretendard",sans-serif !important;
+    --eb-ui-size:14px;
+    --eb-prose-size:var(--eb-ui-size);
+    --eb-code-size:12.5px;
+    --eb-weight-normal:400;
+    --eb-weight-strong:600;
+    --eb-radius:14px;
+    --eb-composer-radius:18px;
+    --font-sans:var(--eb-font) !important;
+    --main-surface-primary:var(--eb-paper) !important;
+    --main-surface-primary-inverse:var(--eb-ink) !important;
+    --main-surface-secondary:var(--eb-panel) !important;
+    --main-surface-tertiary:var(--eb-soft) !important;
+    --sidebar-surface-primary:var(--eb-rail) !important;
+    --sidebar-surface-secondary:var(--eb-soft) !important;
+    --sidebar-surface-tertiary:var(--eb-panel) !important;
+    --bg-primary:var(--eb-paper) !important;
+    --bg-secondary:var(--eb-panel) !important;
+    --bg-tertiary:var(--eb-soft) !important;
+    --bg-elevated-primary:var(--eb-panel) !important;
+    --bg-elevated-secondary:var(--eb-soft) !important;
+    --bg-scrim:rgb(0 0 0 / 0.25) !important;
+    --text-primary:var(--eb-ink) !important;
+    --text-secondary:var(--eb-secondary) !important;
+    --text-tertiary:var(--eb-muted) !important;
+    --text-quaternary:var(--eb-muted) !important;
+    --text-accent:var(--eb-ink) !important;
+    --border-light:var(--eb-line) !important;
+    --border-medium:var(--eb-line-strong) !important;
+    --border-heavy:var(--eb-line-strong) !important;
+    --border-default:var(--eb-line) !important;
+    --interactive-bg-primary-default:var(--eb-ink) !important;
+    --interactive-bg-primary-hover:#3D3D38 !important;
+    --interactive-label-primary-default:var(--eb-paper) !important;
+    --interactive-bg-secondary-default:var(--eb-panel) !important;
+    --interactive-bg-secondary-hover:var(--eb-soft) !important;
+    --message-surface:var(--eb-panel) !important;
+    --color-background-user-message:transparent !important;
+    --color-text-user-message:var(--eb-ink) !important;
+    --link:var(--eb-ink) !important;
+    --link-hover:var(--eb-secondary) !important;
+    --ebook-theme-version:"0.3.0-beta.1";
+    --eb-notebook-grid:rgba(85,97,105,.09) !important;
+    --eb-composer-paper:#F5F6F6 !important;
+    --eb-composer-line:#BFC8CC !important;
+    --eb-quiet-focus:#7B898F !important;
+    --eb-dot-size:8px;
+    --eb-accent-ink:#303438 !important;
+    --eb-upload-divider-color:var(--eb-ink);
+    --eb-standard-type-size:var(--eb-ui-size);
+    --eb-outline-thickness:2.5px;
+    --eb-classic-paper-grain:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22240%22%20height%3D%22240%22%20viewBox%3D%220%200%20240%20240%22%3E%3Cfilter%20id%3D%22paper%22%20x%3D%220%22%20y%3D%220%22%20width%3D%22100%25%22%20height%3D%22100%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%22.83%22%20numOctaves%3D%223%22%20seed%3D%2217%22%20stitchTiles%3D%22stitch%22%2F%3E%3CfeColorMatrix%20type%3D%22saturate%22%20values%3D%220%22%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%22240%22%20height%3D%22240%22%20opacity%3D%22.12%22%20filter%3D%22url(%23paper)%22%2F%3E%3Cg%20stroke%3D%22%23848F95%22%20stroke-opacity%3D%22.045%22%20stroke-width%3D%22.55%22%20fill%3D%22none%22%3E%3Cpath%20d%3D%22M14%2025l23%202m80%2036l17%201m67%2038l11%202M35%20183l20-1m99%2037l14%201M187%2013l26%201%22%2F%3E%3Cpath%20d%3D%22M56%2041l2%2015m103%2078l1%2019M89%20208l2%2017M226%20146l1%2013%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+    --eb-sidebar-font-bump:2pt;
+    --eb-sidebar-raised-size:calc(var(--eb-ui-size) + var(--eb-sidebar-font-bump));
+    --eb-sidebar-meta-raised-size:calc(11px + var(--eb-sidebar-font-bump));
+    --eb-table-reading-size:calc(var(--eb-ui-size) + 1.5pt);
+    --eb-user-bubble-curve:28px;
+    --eb-chat-corrected-size:15.333px;
+    --eb-project-emphasis-weight:650;
+    --eb-composer-single-stroke:2.5px solid #303438 !important;
+    --eb-prompt-optical-size:16px;
+    --eb-prompt-sent-weight:572 !important;
+    --eb-user-sent-optical-size:16.067px !important;
+    --eb-prompt-sent-ink:#292D30 !important;
+    --eb-marker-yellow:#F2D778 !important;
+    --eb-project-optical-size:16px;
+    --eb-project-mark-exec:#F3B9CB;
+    --eb-project-mark-strategy:#CFC1EF;
+    --eb-project-mark-sales:#FFE08A;
+    --eb-project-mark-bd:#FFD36A;
+    --eb-project-mark-proposal:#FFEDB3;
+    --eb-project-mark-design:#8FE3CD;
+    --eb-project-mark-tech:#AEEBDD;
+    --eb-project-mark-people:#CFF5EA;
+    --eb-project-mark-management:#AFCFF7;
+    --eb-project-mark-assistant:#D7E9FF;
+    --eb-project-mark-philosophy:#DDE0E2;
+    --eb-top-hatch:repeating-linear-gradient(135deg,
+      transparent 0px,transparent 9px,rgba(108,116,124,.09) 9px,
+      rgba(108,116,124,.09) 10px);
+    --eb-first-paint-nav:1;
+    --eb-css-owner:1;
+    --eb-composer-fallback-radius:22px !important;
+    --eb-composer-native-radius:24px !important;
   }
 
-  /* 02. LIGHT-PAPER BASE — do not modify Chrome frame or extension UIs. */
-  html, html body, html.light, html.dark,
+  /* Base surfaces and type */
+  html,
+  html body,
+  html.light,
+  html.dark,
   html :is([data-theme="light"],[data-theme="dark"]) {
-    color-scheme: light !important;
+    color-scheme:light !important;
   }
-  html, body { background: var(--eb-paper) !important; color: var(--eb-ink) !important; font-family:var(--eb-font)!important; }
-  body :is(p, a, span, div, label, li, ul, ol, button, input, textarea,
-       select, option, h1, h2, h3, h4, h5, h6, th, td, blockquote,
-       small, strong, b, em, i, summary, section, article, main, aside, nav, header, footer,
-       pre, code, kbd, samp, [role="textbox"], [data-d-component="text"], [data-d-text-flow],
-       [contenteditable="true"]) {
-    font-family: var(--eb-font) !important;
-    font-style: normal !important;
-    text-shadow: none !important;
+  html,
+  body {
+    background:var(--eb-paper) !important;
+    color:var(--eb-ink) !important;
+    font-family:var(--eb-font) !important;
   }
-  body :is(button, input, textarea, select, label, nav, aside) {
-    font-size: var(--eb-ui-size);
+  body :is(p,a,span,div,label,li,ul,ol,button,input,textarea,select,option,h1,h2,h3,h4,h5,h6,th,td,blockquote,small,strong,b,em,i,summary,section,article,main,aside,nav,header,footer,pre,code,kbd,samp,[role="textbox"],[data-d-component="text"],[data-d-text-flow],[contenteditable="true"]) {
+    font-family:var(--eb-font) !important;
+    font-style:normal !important;
+    text-shadow:none !important;
   }
-  body :is(.font-bold, [data-d-weight="bold"], [data-d-text-weight="bold"], strong, b) {
-    font-weight: var(--eb-weight-strong) !important;
+  body :is(button,input,textarea,select,label,nav,aside) {
+    font-size:var(--eb-ui-size);
   }
-  body :is(.font-semibold, [data-d-weight="semibold"], [data-d-text-weight="semibold"]) {
-    font-weight: 550 !important;
+  body :is(.font-bold,[data-d-weight="bold"],[data-d-text-weight="bold"],strong,b) {
+    font-weight:var(--eb-weight-strong) !important;
   }
-  body :is(.font-normal, [data-d-weight="normal"], [data-d-text-weight="normal"]) {
-    font-weight: var(--eb-weight-normal) !important;
+  body :is(.font-semibold,[data-d-weight="semibold"],[data-d-text-weight="semibold"]) {
+    font-weight:550 !important;
   }
-  body :is(em, i) { font-style: normal !important; }
-  ::selection { background: #D9E9E5 !important; color: var(--eb-ink) !important; }
-
-  /* 03. RAIL, SIDEBAR, HEADER — thin ink lines, no glass or glow. */
+  body :is(.font-normal,[data-d-weight="normal"],[data-d-text-weight="normal"]) {
+    font-weight:var(--eb-weight-normal) !important;
+  }
+  body :is(em,i) {
+    font-style:normal !important;
+  }
+  ::selection {
+    background:#D9E9E5 !important;
+    color:var(--eb-ink) !important;
+  }
   :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]) {
-    background: var(--eb-rail) !important;
-    color: var(--eb-ink) !important;
-    border-inline-end: 1px solid var(--eb-line) !important;
-    box-shadow: none !important;
-    text-shadow: none !important;
-    backdrop-filter: none !important;
+    background:var(--eb-rail) !important;
+    color:var(--eb-ink) !important;
+    border-inline-end:1px solid var(--eb-line) !important;
+    box-shadow:none !important;
+    text-shadow:none !important;
+    backdrop-filter:none !important;
   }
   :is(#page-header,[data-testid="conversation-header"]) {
-    background: var(--eb-paper) !important;
-    border-bottom: 1px solid var(--eb-line) !important;
-    color: var(--eb-ink) !important;
-    box-shadow: none !important;
-    backdrop-filter: none !important;
+    background:var(--eb-paper) !important;
+    border-bottom:1px solid var(--eb-line) !important;
+    color:var(--eb-ink) !important;
+    box-shadow:none !important;
+    backdrop-filter:none !important;
   }
   :is(#thread,[data-testid="conversation-panel"],[data-testid="conversation-thread"],main,[role="main"]) {
-    background: var(--eb-paper) !important;
-    color: var(--eb-ink) !important;
+    background:var(--eb-paper) !important;
+    color:var(--eb-ink) !important;
   }
-  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"])
-    :is(a[href="/"],a[href="/new"],[data-testid="create-new-chat-button"]) {
-    color: var(--eb-ink) !important;
-    font-weight: 550 !important;
-    border-radius: 9px !important;
+  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]) :is(a[href="/"],a[href="/new"],[data-testid="create-new-chat-button"]) {
+    color:var(--eb-ink) !important;
+    font-weight:550 !important;
+    border-radius:9px !important;
   }
-  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"])
-    :is(a[href="/"],a[href="/new"],[data-testid="create-new-chat-button"]):hover {
-    background: var(--eb-soft) !important;
+  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]) :is(a[href="/"],a[href="/new"],[data-testid="create-new-chat-button"]):hover {
+    background:var(--eb-soft) !important;
   }
 
-  /* 04. PROJECT LIST — same native row, colored 8px indicators. */
+  /* Sidebar navigation and role markers */
   [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] {
-    --eb-project-dot: #B6B4AC;
-    color: var(--eb-ink) !important;
+    --eb-project-dot:#B6B4AC;
+    color:var(--eb-ink) !important;
   }
-  [data-app-action-sidebar-project-row][data-jaroo-org="ceo"] { --eb-project-dot: var(--eb-coral) !important; }
-  [data-app-action-sidebar-project-row][data-jaroo-org="strategy"] { --eb-project-dot: var(--eb-pink) !important; }
-  [data-app-action-sidebar-project-row][data-jaroo-org="sales"] { --eb-project-dot: #E78DAC !important; }
-  [data-app-action-sidebar-project-row][data-jaroo-org="bd"] { --eb-project-dot: #DDA875 !important; }
-  [data-app-action-sidebar-project-row][data-jaroo-org="proposal"] { --eb-project-dot: #C3A5E2 !important; }
-  [data-app-action-sidebar-project-row][data-jaroo-org="design"] { --eb-project-dot: var(--eb-blue) !important; }
-  [data-app-action-sidebar-project-row][data-jaroo-org="technical"] { --eb-project-dot: var(--eb-purple) !important; }
-  [data-app-action-sidebar-project-row][data-jaroo-org="people"] { --eb-project-dot: var(--eb-teal) !important; }
-  [data-app-action-sidebar-project-row][data-jaroo-org="management"] { --eb-project-dot: var(--eb-orange) !important; }
-  [data-app-action-sidebar-project-row][data-jaroo-org="assistant"] { --eb-project-dot: var(--eb-green) !important; }
-  [data-app-action-sidebar-project-row][data-jaroo-org="philosophy"] { --eb-project-dot: #B1CFAA !important; }
-  [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row]
-    [data-marquee-content="true"] {
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-    min-inline-size: 0 !important;
-    max-inline-size: 100% !important;
-    color: var(--eb-ink) !important;
-    -webkit-text-fill-color: var(--eb-ink) !important;
-    background: transparent !important;
-    border: 0 !important;
-    box-shadow: none !important;
-    filter: none !important;
-    border-radius: 8px !important;
-    padding: 3px 4px !important;
-    font-family: var(--eb-font) !important;
-    font-size: var(--eb-ui-size) !important;
-    font-weight: 530 !important;
-    white-space: nowrap !important;
-    text-overflow: ellipsis !important;
+  [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] [data-marquee-content="true"] {
+    display:inline-flex !important;
+    align-items:center !important;
+    min-inline-size:0 !important;
+    max-inline-size:100% !important;
+    border:0 !important;
+    box-shadow:none !important;
+    filter:none !important;
+    border-radius:8px !important;
+    padding:3px 4px !important;
+    white-space:nowrap !important;
+    text-overflow:ellipsis !important;
   }
-  [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row]
-    [data-marquee-content="true"]::before {
-    content: "" !important;
-    display: inline-block !important;
-    flex: none !important;
-    width: 8px !important;
-    height: 8px !important;
-    border-radius: 50% !important;
-    background: var(--eb-project-dot) !important;
-    box-shadow: none !important;
+  [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] [data-marquee-content="true"]::before {
+    flex:none !important;
+    border-radius:50% !important;
+    box-shadow:none !important;
   }
-  [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row]:hover
-    [data-marquee-content="true"] { background: var(--eb-soft) !important; }
-  [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row][aria-current="page"]
-    [data-marquee-content="true"] { border: 1px solid var(--eb-line-strong) !important; }
-
-  /* 05. CHAT LIST — JS marks only visual prefix, never rewrites chat names. */
-  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)
-    a[href*="/c/"] {
-    color: var(--eb-ink) !important;
-    -webkit-text-fill-color: var(--eb-ink) !important;
-    font-size: var(--eb-ui-size) !important;
-    font-weight: 450 !important;
-    text-shadow: none !important;
-    border-radius: 8px !important;
+  [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row]:hover [data-marquee-content="true"] {
+    background:var(--eb-soft) !important;
   }
-  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)
-    :is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"] {
-    background: var(--eb-panel) !important;
-    border: 1px solid var(--eb-line-strong) !important;
-    border-radius: 10px !important;
-    box-shadow: none !important;
+  [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row][aria-current="page"] [data-marquee-content="true"] {
+    border:1px solid var(--eb-line-strong) !important;
   }
-  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)
-    :is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"]::before,
-  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)
-    :is([data-sidebar-archive-chatgpt-id],[data-jaroo-chat-row="true"])[data-jaroo-selected="true"]::after {
-    display: none !important;
-    content: none !important;
-    animation: none !important;
+  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside) a[href*="/c/"] {
+    text-shadow:none !important;
+    border-radius:8px !important;
   }
-  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)
-    [data-ebook-role] {
-    --eb-role-dot: var(--eb-muted);
-    display: inline-flex !important;
-    align-items: baseline !important;
-    gap: 7px !important;
-    min-inline-size: 0 !important;
-    max-inline-size: 100% !important;
-    color: var(--eb-ink) !important;
-    -webkit-text-fill-color: var(--eb-ink) !important;
+  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside) [data-ebook-role] {
+    --eb-role-dot:var(--eb-muted);
+    display:inline-flex !important;
+    align-items:baseline !important;
+    gap:7px !important;
+    min-inline-size:0 !important;
+    max-inline-size:100% !important;
+    color:var(--eb-ink) !important;
+    -webkit-text-fill-color:var(--eb-ink) !important;
   }
-  [data-ebook-role="master"] { --eb-role-dot: var(--eb-coral) !important; }
-  [data-ebook-role="plan"] { --eb-role-dot: var(--eb-purple) !important; }
-  [data-ebook-role="manage"] { --eb-role-dot: var(--eb-teal) !important; }
-  [data-ebook-role="produce"] { --eb-role-dot: var(--eb-blue) !important; }
-  [data-ebook-role="action"] { --eb-role-dot: var(--eb-pink) !important; }
-  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)
-    [data-ebook-role]::before {
-    content: "" !important;
-    width: 8px !important;
-    height: 8px !important;
-    flex: 0 0 8px !important;
-    border-radius: 50% !important;
-    background: var(--eb-role-dot) !important;
-    box-shadow: none !important;
-    transform: translateY(-1px);
+  [data-ebook-role="master"] {
+    --eb-role-dot:var(--eb-coral) !important;
+  }
+  [data-ebook-role="plan"] {
+    --eb-role-dot:var(--eb-purple) !important;
+  }
+  [data-ebook-role="manage"] {
+    --eb-role-dot:var(--eb-teal) !important;
+  }
+  [data-ebook-role="produce"] {
+    --eb-role-dot:var(--eb-blue) !important;
+  }
+  [data-ebook-role="action"] {
+    --eb-role-dot:var(--eb-pink) !important;
+  }
+  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside) [data-ebook-role]::before {
+    content:"" !important;
+    border-radius:50% !important;
+    box-shadow:none !important;
+    transform:translateY(-1px);
   }
   [data-ebook-glyph="true"] {
-    position: absolute !important;
-    width: 1px !important;
-    height: 1px !important;
-    overflow: hidden !important;
-    clip-path: inset(50%) !important;
-    white-space: nowrap !important;
+    position:absolute !important;
+    width:1px !important;
+    height:1px !important;
+    overflow:hidden !important;
+    clip-path:inset(50%) !important;
+    white-space:nowrap !important;
   }
   [data-ebook-role]:is([data-ebook-life-cycle="done"],[data-ebook-life-cycle="stopped"]) {
-    color: var(--eb-muted) !important;
-    -webkit-text-fill-color: var(--eb-muted) !important;
+    color:var(--eb-muted) !important;
+    -webkit-text-fill-color:var(--eb-muted) !important;
   }
 
-  /* 06. STATUS — compatible with status.js; no state decisions here. */
-  [data-jaroo-native-row="true"] .jaroo-native-badge {
-    display: none !important;
-    position: static !important;
-    padding: 1px 4px !important;
-    margin-inline-end: 3px !important;
-    box-sizing: border-box !important;
-    border: 1px solid var(--eb-line-strong) !important;
-    border-radius: 5px !important;
-    background: var(--eb-paper) !important;
-    font-size: 10px !important;
-    line-height: 1.1 !important;
-    font-weight: 600 !important;
-    white-space: nowrap !important;
-    /* Status animation/glow is intentionally retained in the theme rules below. */
+  /* Conversation and tables */
+  body [data-message-author-role="assistant"],
+  body [data-message-author-role="user"] {
+    color:var(--eb-ink) !important;
+    font-family:var(--eb-font) !important;
   }
-  [data-jaroo-native-row="true"][data-jaroo-effective-status="working"] .jaroo-native-badge {
-    display: inline-flex !important;
-    align-items: center;
-    color: #986B24 !important;
-    border-color: var(--eb-amber) !important;
-    animation: ebook-run-indicator .28s steps(1,end) infinite !important;
-    text-shadow: 0 0 3px rgba(255,184,108,.84) !important;
-    box-shadow: 0 0 6px rgba(255,184,108,.35) !important;
+  body [data-message-author-role="assistant"] :is(.markdown p,.markdown li,.prose p,.prose li,p[data-d-text-flow],[data-d-component="text"],[data-d-text-flow],blockquote,dd,dt) {
+    font-size:var(--eb-prose-size) !important;
+    font-weight:var(--eb-weight-normal) !important;
+    line-height:1.65 !important;
+    color:var(--eb-ink) !important;
+    -webkit-text-fill-color:var(--eb-ink) !important;
+    letter-spacing:-0.012em;
   }
-  [data-jaroo-native-row="true"][data-jaroo-effective-status="done"] .jaroo-native-badge {
-    display: inline-flex !important;
-    align-items: center;
-    color: #3E8369 !important;
-    border-color: var(--eb-teal) !important;
-    animation: ebook-done-indicator 1.8s ease-in-out infinite !important;
-    text-shadow: 0 0 3px rgba(80,250,123,.55) !important;
-    box-shadow: 0 0 5px rgba(80,250,123,.28) !important;
-  }
-  @keyframes ebook-run-indicator { 0%,49.999% {opacity:1} 50%,100% {opacity:.3} }
-  @keyframes ebook-done-indicator { 0%,100% {filter:brightness(.85)} 50% {filter:brightness(1.12)} }
-  html[data-jaroo-status-hidden="true"] [data-jaroo-native-row="true"] .jaroo-native-badge { display: none !important; }
-  [data-jaroo-native-row="true"][data-jaroo-badge-layout="inline"]
-    [data-jaroo-badge-host="true"] { display: inline-flex; align-items: center; gap: 4px; min-width: 0; }
-  @media (prefers-reduced-motion: reduce) {
-    .jaroo-native-badge {animation:none!important;}
-  }
-  [data-jaroo-native-leading="true"]:not(:is(a,button,input,textarea,[role="button"],.jaroo-native-badge)) { display: none !important; }
-  [data-jaroo-native-hidden="true"]:not(:is(a,button,input,textarea,[role="button"],.jaroo-native-badge)) {
-    clip-path: inset(50%) !important;
-  }
-
-  /* 07. CONVERSATION BODY: normal roman fonts, readable measure. */
-  body [data-message-author-role="assistant"], body [data-message-author-role="user"] {
-    color: var(--eb-ink) !important;
-    font-family: var(--eb-font) !important;
-  }
-  body [data-message-author-role="assistant"] :is(
-    .markdown p, .markdown li, .prose p, .prose li,
-    p[data-d-text-flow], [data-d-component="text"], [data-d-text-flow],
-    blockquote, dd, dt
-  ) {
-    font-size: var(--eb-prose-size) !important;
-    font-weight: var(--eb-weight-normal) !important;
-    line-height: 1.65 !important;
-    color: var(--eb-ink) !important;
-    -webkit-text-fill-color: var(--eb-ink) !important;
-    letter-spacing: -0.012em;
-  }
-  body [data-message-author-role="assistant"] :is(.markdown, .prose, [data-d-component="text"])
-    :is(strong,b,[data-d-weight="bold"],[data-d-text-weight="bold"]) {
-    font-weight: var(--eb-weight-strong) !important;
-    color: var(--eb-ink) !important;
-    -webkit-text-fill-color: var(--eb-ink) !important;
+  body [data-message-author-role="assistant"] :is(.markdown,.prose,[data-d-component="text"]) :is(strong,b,[data-d-weight="bold"],[data-d-text-weight="bold"]) {
+    font-weight:var(--eb-weight-strong) !important;
+    color:var(--eb-ink) !important;
+    -webkit-text-fill-color:var(--eb-ink) !important;
   }
   body [data-message-author-role="assistant"] :is(h1,h2,h3,h4,h5,h6) {
-    color: var(--eb-ink) !important;
-    -webkit-text-fill-color: var(--eb-ink) !important;
-    border: 0 !important;
-    border-bottom: 1px solid var(--eb-line) !important;
-    padding: 0 0 5px !important;
-    margin-block: 1em .6em;
-    font-size: 1.1rem !important;
-    font-weight: 650 !important;
-    line-height: 1.4 !important;
-    text-shadow: none !important;
+    color:var(--eb-ink) !important;
+    -webkit-text-fill-color:var(--eb-ink) !important;
+    border:0 !important;
+    border-bottom:1px solid var(--eb-line) !important;
+    padding:0 0 5px !important;
+    margin-block:1em .6em;
+    font-size:1.1rem !important;
+    line-height:1.4 !important;
+    text-shadow:none !important;
   }
-  body [data-message-author-role="assistant"] :is(h1,h2) { font-size: 1.22rem !important; }
-  body [data-message-author-role="assistant"] :is(h5,h6) { font-size: 1rem !important; }
+  body [data-message-author-role="assistant"] :is(h1,h2) {
+    font-size:1.22rem !important;
+  }
+  body [data-message-author-role="assistant"] :is(h5,h6) {
+    font-size:1rem !important;
+  }
   body [data-message-author-role="assistant"] :is(a,[data-d-component="link"]) {
-    color: #345C68 !important;
-    -webkit-text-fill-color: #345C68 !important;
-    text-decoration-color: var(--eb-teal) !important;
-    text-underline-offset: 2px;
+    color:#345C68 !important;
+    -webkit-text-fill-color:#345C68 !important;
+    text-decoration-color:var(--eb-teal) !important;
+    text-underline-offset:2px;
   }
-  body [data-message-author-role="assistant"] :is(em,i) { font-style: normal !important; }
+  body [data-message-author-role="assistant"] :is(em,i) {
+    font-style:normal !important;
+  }
   body [data-message-author-role="assistant"] blockquote {
-    background: var(--eb-soft) !important;
-    border-inline-start: 2px solid var(--eb-line-strong) !important;
-    border-radius: 0 8px 8px 0 !important;
-    padding: 8px 13px !important;
+    background:var(--eb-soft) !important;
+    border-inline-start:2px solid var(--eb-line-strong) !important;
+    border-radius:0 8px 8px 0 !important;
+    padding:8px 13px !important;
   }
   body [data-message-author-role="assistant"] :not(pre) > code {
-    font-family: var(--eb-font) !important;
-    font-size: var(--eb-code-size) !important;
-    background: var(--eb-soft) !important;
-    border: 1px solid var(--eb-line) !important;
-    border-radius: 5px !important;
-    color: var(--eb-ink) !important;
-    -webkit-text-fill-color: var(--eb-ink) !important;
-    padding: 1px 4px;
+    font-family:var(--eb-font) !important;
+    font-size:var(--eb-code-size) !important;
+    background:var(--eb-soft) !important;
+    border:1px solid var(--eb-line) !important;
+    border-radius:5px !important;
+    color:var(--eb-ink) !important;
+    -webkit-text-fill-color:var(--eb-ink) !important;
+    padding:1px 4px;
   }
-  body :is(pre, pre code, code, kbd, samp) {
-    font-family: var(--eb-font) !important;
-    font-style: normal !important;
+  body :is(pre,pre code,code,kbd,samp) {
+    font-family:var(--eb-font) !important;
+    font-style:normal !important;
   }
-  body [data-message-author-role="user"] :is(
-    [data-user-message-bubble="true"], .bg-user-message
-  ) {
-    color: var(--eb-ink) !important;
-    -webkit-text-fill-color: var(--eb-ink) !important;
-    background: var(--eb-panel) !important;
-    border: 1px solid var(--eb-amber) !important;
-    border-radius: 12px !important;
-    box-shadow: none !important;
-    text-shadow: none !important;
+  body [data-message-author-role="user"] :is([data-user-message-bubble="true"],.bg-user-message) {
+    color:var(--eb-ink) !important;
+    -webkit-text-fill-color:var(--eb-ink) !important;
+    background:var(--eb-panel) !important;
+    border:1px solid var(--eb-amber) !important;
+    border-radius:12px !important;
+    box-shadow:none !important;
+    text-shadow:none !important;
   }
   body [data-message-author-role="user"] :is(p,span,[data-d-component="text"]) {
-    color: var(--eb-ink) !important;
-    -webkit-text-fill-color: var(--eb-ink) !important;
-    font-weight: 450 !important;
-    font-size: var(--eb-prose-size) !important;
+    color:var(--eb-ink) !important;
+    -webkit-text-fill-color:var(--eb-ink) !important;
+    font-weight:450 !important;
+    font-size:var(--eb-prose-size) !important;
   }
-
-
-  /* 12. E-BOOK v0.1.1: identical regular reading size for chat titles
-     and messages, including nested rich-text nodes. Headings remain hierarchical. */
-  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)
-    a[href*="/c/"] :is([data-thread-title="true"],[data-marquee-text],span.truncate,div.truncate,span[dir="auto"],[data-ebook-role]) {
-      font-family:var(--eb-font)!important;
-      font-size:var(--eb-ui-size)!important;
+  body :is([data-message-author-role="assistant"],[data-message-author-role="user"]) :is(p,li,dd,dt,blockquote,[data-d-text-flow],[data-d-component="text"]):not(:is(h1 *,h2 *,h3 *,h4 *,h5 *,h6 *,pre *,code *,table *,[role="table"] *,[data-d-component="table"] *,button *,[role="button"] *)),
+  body :is([data-message-author-role="assistant"],[data-message-author-role="user"]) :is(p,li,[data-d-text-flow],[data-d-component="text"]) :is(span,strong,b,em,i,a,[data-d-component="text"]):not(:is(h1 *,h2 *,h3 *,h4 *,h5 *,h6 *,pre *,code *,table *,[role="table"] *,[data-d-component="table"] *,button *,[role="button"] *)) {
+    font-family:var(--eb-font) !important;
+    font-size:var(--eb-prose-size) !important;
   }
-  body :is([data-message-author-role="assistant"],[data-message-author-role="user"])
-    :is(p,li,dd,dt,blockquote,[data-d-text-flow],[data-d-component="text"]):not(
-      :is(h1 *,h2 *,h3 *,h4 *,h5 *,h6 *,pre *,code *,table *,[role="table"] *,[data-d-component="table"] *,button *,[role="button"] *)
-    ) {
-      font-family:var(--eb-font)!important;
-      font-size:var(--eb-prose-size)!important;
-  }
-  body :is([data-message-author-role="assistant"],[data-message-author-role="user"])
-    :is(p,li,[data-d-text-flow],[data-d-component="text"])
-    :is(span,strong,b,em,i,a,[data-d-component="text"]):not(
-      :is(h1 *,h2 *,h3 *,h4 *,h5 *,h6 *,pre *,code *,table *,[role="table"] *,[data-d-component="table"] *,button *,[role="button"] *)
-    ) {
-      font-family:var(--eb-font)!important;
-      font-size:var(--eb-prose-size)!important;
-  }
-
-  /* 08. EDITABLE TABLES — 1px horizontal structure and no fake metrics. */
   body [data-message-author-role="assistant"] :is(table,[role="table"],[data-d-component="table"]) {
-    width: 100%;
-    border: 1px solid var(--eb-line-strong) !important;
-    border-radius: 10px !important;
-    border-spacing: 0 !important;
-    border-collapse: separate !important;
-    background: var(--eb-panel) !important;
-    box-shadow: none !important;
-    overflow: hidden;
+    width:100%;
+    border:1px solid var(--eb-line-strong) !important;
+    border-radius:10px !important;
+    border-spacing:0 !important;
+    border-collapse:separate !important;
+    background:var(--eb-panel) !important;
+    box-shadow:none !important;
+    overflow:hidden;
   }
-  body [data-message-author-role="assistant"] :is(table,[role="table"],[data-d-component="table"])
-    :is(th,td,[role="cell"],[role="columnheader"],[role="rowheader"],[data-d-component="table-cell"]) {
-    color: var(--eb-ink) !important;
-    -webkit-text-fill-color: var(--eb-ink) !important;
-    font-size: var(--eb-ui-size) !important;
-    line-height: 1.5 !important;
-    padding: 8px 11px !important;
-    border: 0 !important;
-    border-bottom: 1px solid #C8C6BD !important;
-    font-weight: 400 !important;
-    background: transparent !important;
+  body [data-message-author-role="assistant"] :is(table,[role="table"],[data-d-component="table"]) :is(th,td,[role="cell"],[role="columnheader"],[role="rowheader"],[data-d-component="table-cell"]) {
+    color:var(--eb-ink) !important;
+    -webkit-text-fill-color:var(--eb-ink) !important;
+    font-size:var(--eb-ui-size) !important;
+    line-height:1.5 !important;
+    padding:8px 11px !important;
+    border:0 !important;
+    border-bottom:1px solid #C8C6BD !important;
+    font-weight:400 !important;
+    background:transparent !important;
   }
-  body [data-message-author-role="assistant"] :is(table,[role="table"],[data-d-component="table"])
-    :is(th,[role="columnheader"],[role="rowheader"],[data-d-component="table-cell"][data-header="true"]) {
-    font-weight: 600 !important;
-    background: var(--eb-soft) !important;
+  body [data-message-author-role="assistant"] :is(table,[role="table"],[data-d-component="table"]) :is(th,[role="columnheader"],[role="rowheader"],[data-d-component="table-cell"][data-header="true"]) {
+    font-weight:600 !important;
+    background:var(--eb-soft) !important;
   }
-  body [data-message-author-role="assistant"] :is(table,[role="table"],[data-d-component="table"])
-    :is(tr,[role="row"],[data-d-component="table-row"]):last-child > :is(td,th,[role="cell"],[data-d-component="table-cell"]) {
-    border-bottom: 0 !important;
+  body [data-message-author-role="assistant"] :is(table,[role="table"],[data-d-component="table"]) :is(tr,[role="row"],[data-d-component="table-row"]):last-child > :is(td,th,[role="cell"],[data-d-component="table-cell"]) {
+    border-bottom:0 !important;
   }
   body [data-message-author-role="assistant"] :is(pre,[data-d-component="code"]) {
-    background: #EFF2F0 !important;
-    color: var(--eb-ink) !important;
-    border: 1px solid var(--eb-line) !important;
-    border-radius: 10px !important;
-    box-shadow: none !important;
+    background:#EFF2F0 !important;
+    color:var(--eb-ink) !important;
+    border:1px solid var(--eb-line) !important;
+    border-radius:10px !important;
+    box-shadow:none !important;
   }
   body [data-message-author-role="assistant"] :is(pre,[data-d-component="code"]) :is(code,span) {
-    font-family: var(--eb-font) !important;
+    font-family:var(--eb-font) !important;
   }
 
-  /* 09. COMPOSER + PANEL CONTROLS — retain click, focus, and sizing logic. */
+  /* Native controls and responsive behavior */
   :is([data-testid="composer"],[data-testid="composer-input"],#prompt-textarea,[data-testid="prompt-textarea"]) {
-    color: var(--eb-ink) !important;
-    background: var(--eb-panel) !important;
-    font-family: var(--eb-font) !important;
-    border-color: var(--eb-line-strong) !important;
-    box-shadow: none !important;
-    text-shadow: none !important;
+    color:var(--eb-ink) !important;
+    background:var(--eb-panel) !important;
+    font-family:var(--eb-font) !important;
+    box-shadow:none !important;
+    text-shadow:none !important;
   }
-  :is([data-testid="composer"], form:has(#prompt-textarea)) {
-    border: 1px solid var(--eb-line-strong) !important;
-    border-radius: var(--eb-composer-radius) !important;
-    background: var(--eb-panel) !important;
-    box-shadow: none !important;
+  :is([data-testid="composer"],form:has(#prompt-textarea)) {
+    background:var(--eb-panel) !important;
   }
   :is([data-testid="composer"],form:has(#prompt-textarea)) :is(textarea,[contenteditable="true"]) {
-    border: 0 !important;
-    box-shadow: none !important;
-    outline-offset: 2px;
+    border:0 !important;
+    box-shadow:none !important;
+    outline-offset:2px;
   }
   body :is([role="dialog"],[role="menu"],[role="listbox"],[data-native-menu-root],[popover]) {
-    color: var(--eb-ink) !important;
-    background: var(--eb-panel) !important;
-    border: 1px solid var(--eb-line-strong) !important;
-    border-radius: 12px !important;
-    box-shadow: none !important;
-    backdrop-filter: none !important;
+    color:var(--eb-ink) !important;
+    background:var(--eb-panel) !important;
+    border:1px solid var(--eb-line-strong) !important;
+    border-radius:12px !important;
+    box-shadow:none !important;
+    backdrop-filter:none !important;
   }
   body :is([role="menuitem"],[role="option"],[role="tab"]):hover {
-    background: var(--eb-soft) !important;
+    background:var(--eb-soft) !important;
   }
   body :is(input,textarea,select,[contenteditable="true"],button,a[href]):focus-visible {
-    outline: 2px solid #517E89 !important;
-    outline-offset: 2px !important;
+    outline:2px solid #517E89 !important;
+    outline-offset:2px !important;
   }
-  body :is(svg,svg *,canvas,img,video) { text-shadow: none !important; }
-
-  /* 10. STATUS POPUP — the status JS still owns all content and actions. */
-  #jaroo-v4-quick-panel,#jaroo-v4-title-tip {
-    background: var(--eb-panel) !important;
-    color: var(--eb-ink) !important;
-    border: 1px solid var(--eb-line-strong) !important;
-    border-radius: 12px !important;
-    box-shadow: none !important;
-    font-family: var(--eb-font) !important;
+  body :is(svg,svg *,canvas,img,video) {
+    text-shadow:none !important;
   }
-  #jaroo-v4-quick-panel :is(.head,a,.empty,.dismiss,.tag),#jaroo-v4-title-tip * {
-    color: var(--eb-ink) !important;
-    font-family: var(--eb-font) !important;
-    text-shadow: none !important;
-  }
-  #jaroo-v4-quick-panel .tag { border: 1px solid var(--eb-line-strong) !important; border-radius: 5px !important; }
-  #jaroo-v4-quick-panel .tag[data-jstatus="working"] { color: #986B24 !important; }
-  #jaroo-v4-quick-panel .tag[data-jstatus="done"] { color: #3E8369 !important; }
-
-  /* 11. RESPONSIVE — no invented second conversation panel. */
   @media (max-width: 1050px) {
-    :root { --eb-ui-size: 13px; --eb-prose-size: var(--eb-ui-size); }
-    body [data-message-author-role="assistant"] :is(table,[role="table"],[data-d-component="table"]) { overflow-x: auto !important; }
+  :root {
+    --eb-ui-size:13px;
+  }
+  body [data-message-author-role="assistant"] :is(table,[role="table"],[data-d-component="table"]) {
+    overflow-x:auto !important;
+  }
   }
   @media (max-width: 650px) {
-    :root { --eb-ui-size: 12.8px; --eb-prose-size: var(--eb-ui-size); }
-    body [data-message-author-role="assistant"] :is(h1,h2,h3,h4,h5,h6) { margin-top: .8em; }
+  :root {
+    --eb-ui-size:12.8px;
+  }
+  body [data-message-author-role="assistant"] :is(h1,h2,h3,h4,h5,h6) {
+    margin-top:.8em;
+  }
   }
   @media (prefers-reduced-motion: reduce) {
-    /* Only the E-book theme itself has no animations. Existing RUN/DONE motion is owned by original JS. */
-    [data-ebook-role]::before { transition: none !important; }
+  [data-ebook-role]::before {
+    transition:none !important;
+  }
   }
 
-  /* 13. EDITORIAL NOTEBOOK v0.2.0 · scoped finishing layer
-     No DOM reconstruction. Native sidebar and prompt controls retain their
-     click/keyboard behavior. Color roles are informational, not decorations. */
-  :root {
-    --eb-notebook-grid: rgba(101,116,121,.022);
-    --eb-composer-paper: #F3F5F3;
-    --eb-composer-line: #CED6D6;
-    --eb-quiet-focus: #8B989A;
-    --eb-dot-size: 8px;
-    --eb-sidebar-chat-size: var(--eb-ui-size);
-  }
-  /* Grid belongs to page surface, not UI cards and not sidebar. */
+  /* Notebook layout and text */
   :is(#thread,[data-testid="conversation-panel"],[data-testid="conversation-thread"],main,[role="main"]) {
-    background-color: var(--eb-paper) !important;
-    background-image:
-      linear-gradient(to right,var(--eb-notebook-grid) 1px,transparent 1px),
+    background-color:var(--eb-paper) !important;
+    background-image:linear-gradient(to right,var(--eb-notebook-grid) 1px,transparent 1px),
       linear-gradient(to bottom,var(--eb-notebook-grid) 1px,transparent 1px) !important;
     background-size:28px 28px !important;
     background-repeat:repeat !important;
   }
-  /* Project folder remains the navigation marker; colored project circle is removed. */
   [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] [data-marquee-content="true"] {
-    font-family: var(--eb-font) !important;
-    font-size: var(--eb-ui-size) !important;
-    font-weight: 600 !important;
-    letter-spacing: -.03em !important;
-    line-height: 1.42 !important;
-    gap: 0 !important;
-    color: var(--eb-ink) !important;
+    letter-spacing:-.03em !important;
+    gap:0 !important;
+    color:var(--eb-ink) !important;
     -webkit-text-fill-color:var(--eb-ink) !important;
     background:transparent !important;
   }
@@ -595,49 +494,32 @@
     height:0 !important;
     background:none !important;
   }
-  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)
-    a[href*="/c/"],
-  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)
-    a[href*="/c/"] :is([data-thread-title="true"],[data-marquee-text],span.truncate,div.truncate,span[dir="auto"],[data-ebook-role]),
-  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)
-    a[href*="/c/"] :is([data-thread-title="true"],[data-ebook-role]) *:not(svg):not(path) {
-    font-family:var(--eb-font) !important;
-    font-size:var(--eb-sidebar-chat-size) !important;
+  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside) a[href*="/c/"],
+  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside) a[href*="/c/"] :is([data-thread-title="true"],[data-marquee-text],span.truncate,div.truncate,span[dir="auto"],[data-ebook-role]),
+  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside) a[href*="/c/"] :is([data-thread-title="true"],[data-ebook-role]) *:not(svg):not(path) {
     font-weight:450 !important;
     letter-spacing:-.035em !important;
-    line-height:1.42 !important;
     color:var(--eb-ink) !important;
     -webkit-text-fill-color:var(--eb-ink) !important;
   }
-  /* Keep lifecycle/selection distinguishable without changing actual text. */
-  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)
-    [data-ebook-role]::before {
+  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside) [data-ebook-role]::before {
     width:var(--eb-dot-size) !important;
     height:var(--eb-dot-size) !important;
     flex:0 0 var(--eb-dot-size) !important;
     background:var(--eb-role-dot) !important;
   }
-  /* Article reading text shares the same token as the sidebar chat list. */
-  body :is([data-message-author-role="assistant"],[data-message-author-role="user"])
-    :is(p,li,dd,dt,[data-d-component="text"],[data-d-text-flow],blockquote):not(
-      :is(pre *,code *,table *,[role="table"] *,[data-d-component="table"] *,button *,[role="button"] *,h1 *,h2 *,h3 *,h4 *,h5 *,h6 *)
-    ) {
+  body :is([data-message-author-role="assistant"],[data-message-author-role="user"]) :is(p,li,dd,dt,[data-d-component="text"],[data-d-text-flow],blockquote):not(:is(pre *,code *,table *,[role="table"] *,[data-d-component="table"] *,button *,[role="button"] *,h1 *,h2 *,h3 *,h4 *,h5 *,h6 *)) {
     font-family:var(--eb-font) !important;
     font-size:var(--eb-prose-size) !important;
     letter-spacing:-.02em !important;
     line-height:1.56 !important;
     font-style:normal !important;
   }
-  body :is([data-message-author-role="assistant"],[data-message-author-role="user"])
-    :is(p,li,[data-d-text-flow],[data-d-component="text"])
-    :is(span,strong,b,em,i,a):not(
-      :is(pre *,code *,table *,[role="table"] *,[data-d-component="table"] *,button *,[role="button"] *)
-    ) {
+  body :is([data-message-author-role="assistant"],[data-message-author-role="user"]) :is(p,li,[data-d-text-flow],[data-d-component="text"]) :is(span,strong,b,em,i,a):not(:is(pre *,code *,table *,[role="table"] *,[data-d-component="table"] *,button *,[role="button"] *)) {
     font-family:var(--eb-font) !important;
     font-size:var(--eb-prose-size) !important;
     letter-spacing:-.02em !important;
   }
-  /* Editorial typographic hierarchy; Mono only for metadata and code. */
   body [data-message-author-role="assistant"] :is(h1,h2,h3,h4,h5,h6) {
     font-family:var(--eb-font) !important;
     font-weight:600 !important;
@@ -649,20 +531,9 @@
     font-family:var(--eb-mono) !important;
     font-style:normal !important;
   }
-  /* Form is a soft memo card. Keyboard focus remains visible but quiet. */
   :is([data-testid="composer"],form:has(#prompt-textarea),form:has([data-testid="prompt-textarea"])) {
     background:var(--eb-composer-paper) !important;
-    border:1px solid var(--eb-composer-line) !important;
-    border-radius:var(--eb-composer-radius) !important;
-    box-shadow:none !important;
-    outline:none !important;
     overflow:visible !important;
-  }
-  :is([data-testid="composer"],form:has(#prompt-textarea),form:has([data-testid="prompt-textarea"])):focus-within {
-    border-color:var(--eb-quiet-focus) !important;
-    outline:1px solid rgba(120,112,96,.25) !important;
-    outline-offset:0 !important;
-    box-shadow:none !important;
   }
   :is(#prompt-textarea,[data-testid="prompt-textarea"],[contenteditable="true"][role="textbox"]) {
     background:transparent !important;
@@ -672,10 +543,7 @@
     box-shadow:none !important;
     padding-inline:12px !important;
     box-sizing:border-box !important;
-    font-family:var(--eb-font) !important;
-    font-size:var(--eb-ui-size) !important;
     letter-spacing:-.02em !important;
-    line-height:1.55 !important;
     overflow-wrap:anywhere !important;
   }
   :is(#prompt-textarea,[data-testid="prompt-textarea"],[contenteditable="true"][role="textbox"]):focus,
@@ -683,25 +551,22 @@
     outline:none !important;
     box-shadow:none !important;
   }
-  :is([data-testid="composer"],form:has(#prompt-textarea),form:has([data-testid="prompt-textarea"]),#prompt-textarea,[data-testid="prompt-textarea"],[contenteditable="true"][role="textbox"])
-    :is(ol,ul) {
+  :is([data-testid="composer"],form:has(#prompt-textarea),form:has([data-testid="prompt-textarea"]),#prompt-textarea,[data-testid="prompt-textarea"],[contenteditable="true"][role="textbox"]) :is(ol,ul) {
     list-style-position:outside !important;
     margin-inline:0 !important;
     padding-inline-start:1.75em !important;
     max-width:100% !important;
     box-sizing:border-box !important;
   }
-  :is(#prompt-textarea,[data-testid="prompt-textarea"],[contenteditable="true"][role="textbox"])
-    li {
+  :is(#prompt-textarea,[data-testid="prompt-textarea"],[contenteditable="true"][role="textbox"]) li {
     padding-inline:0 .5em !important;
     margin-inline:0 !important;
     overflow-wrap:anywhere !important;
   }
-  :is(#prompt-textarea,[data-testid="prompt-textarea"],[contenteditable="true"][role="textbox"])
-    li::marker { color:var(--eb-secondary) !important; }
-  /* Numeric unread badge: marked by E-book JS only in the Dot row. */
-  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)
-    [data-ebook-dot-counter="true"] {
+  :is(#prompt-textarea,[data-testid="prompt-textarea"],[contenteditable="true"][role="textbox"]) li::marker {
+    color:var(--eb-secondary) !important;
+  }
+  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside) [data-ebook-dot-counter="true"] {
     width:18px !important;
     min-width:18px !important;
     height:18px !important;
@@ -721,1364 +586,737 @@
     padding:0 !important;
     line-height:1 !important;
   }
-
-
-
-  /* 14. E-BOOK EDITORIAL REFINEMENT v0.2.2
-     CSS maps explicit real-text carriers, avoiding the previous rule's
-     dependence on nested TextBase markup. No native app state is changed. */
-  :root {
-    --eb-prose-size:var(--eb-ui-size);
-    --eb-user-prose-size:var(--eb-ui-size);
-    --eb-accent-ink:#1F1E1A;
-    --eb-upload-divider-color:var(--eb-ink);
-  }
-  /* Regular conversation text: fixed density regardless of nested DIL spans.
-     Preserve intentionally larger headings, code, table layouts and controls. */
-  html body :is([data-message-author-role="assistant"],[data-message-author-role="user"])
-    :is(p,li,dd,dt,blockquote,[data-d-text-flow],[data-d-component="text"]):not(
-      :is(h1,h2,h3,h4,h5,h6,pre,code,table,button,[role="button"],[contenteditable="true"])
-    ) {
-    font-size:var(--eb-prose-size)!important;
-    line-height:1.57!important;
-  }
-  html body :is([data-message-author-role="assistant"],[data-message-author-role="user"])
-    :is(p,li,dd,dt,blockquote,[data-d-text-flow],[data-d-component="text"],.markdown,.prose)
-    :is(span,div,strong,b,em,i,a,small,[data-d-component="text"]):not(
-      :is(h1 *,h2 *,h3 *,h4 *,h5 *,h6 *,pre *,code *,kbd *,samp *,
-        table *,[role="table"] *,[data-d-component="table"] *,
-        button *,[role="button"] *,[contenteditable="true"] *,
-        [role="textbox"] *,[data-d-component="math"] *)
-    ) {
-    font-size:var(--eb-prose-size)!important;
-    line-height:1.57!important;
-  }
-  /* User chat bubble: dark outline 2.5px; transparent paper and tighter text. */
-  :root {--color-background-user-message:transparent!important;}
-  html body :is([data-message-author-role="user"] [data-user-message-bubble="true"],
-               [data-message-author-role="user"] .bg-user-message,
-               [data-user-message-bubble="true"].bg-user-message) {
-    --color-background-user-message:transparent!important;
-    background:transparent!important;
-    background-color:transparent!important;
-    background-image:none!important;
-    border:2.5px solid var(--eb-accent-ink)!important;
-    border-radius:14px!important;
-    box-shadow:none!important;
-    -webkit-box-shadow:none!important;
-    filter:none!important;
-    backdrop-filter:none!important;
-    color:var(--eb-ink)!important;
-    -webkit-text-fill-color:var(--eb-ink)!important;
-  }
-  html body :is([data-message-author-role="user"] [data-user-message-bubble="true"],
-               [data-message-author-role="user"] .bg-user-message,
-               [data-user-message-bubble="true"].bg-user-message)
-    :is(p,span,div,strong,b,em,i,a,[data-d-component="text"]):not(
-      :is(button *,[role="button"] *,pre *,code *,table *,svg *)
-    ) {
-    font-family:var(--eb-font)!important;
-    font-size:var(--eb-user-prose-size)!important;
-    line-height:1.5!important;
-  }
-  /* Composer visible shell is often #composer-background, not the form.
-     Remove elevations from both, but show only one border where possible. */
-  html body :is(#composer-background,[data-testid="composer"],
-      form:has(#prompt-textarea),form:has([data-testid="prompt-textarea"])) {
-    box-shadow:none!important;
-    -webkit-box-shadow:none!important;
-    text-shadow:none!important;
-    filter:none!important;
-    backdrop-filter:none!important;
-  }
-  html body #composer-background,
-  html body [data-testid="composer"]:not(:has(#composer-background)) {
-    background:var(--eb-composer-paper)!important;
-    border:2.5px solid var(--eb-accent-ink)!important;
-    border-radius:18px!important;
-    outline:none!important;
-  }
-  html body form:has(#composer-background):not(#composer-background) {
-    border-color:transparent!important;
-    outline:none!important;
-    box-shadow:none!important;
-  }
-  html body form:has(#prompt-textarea):not(:has(#composer-background)),
-  html body form:has([data-testid="prompt-textarea"]):not(:has(#composer-background)) {
-    border:2.5px solid var(--eb-accent-ink)!important;
-    background:var(--eb-composer-paper)!important;
-    border-radius:18px!important;
-  }
-  html body :is(#composer-background,[data-testid="composer"],
-      form:has(#prompt-textarea),form:has([data-testid="prompt-textarea"])):focus-within {
-    box-shadow:none!important;
-    outline:none!important;
-  }
-  /* Upload divider is a visual-only overlay placed by the E-book helper
-     after measuring the actual thumbnail and editor bounds. */
-  html body [data-ebook-composer-root="true"] {position:relative!important;}
-  html body [data-ebook-upload-divider="true"] {
-    pointer-events:none!important;
-    position:absolute!important;
-    display:block!important;
-    z-index:5!important;
-    border-top:1px solid var(--eb-upload-divider-color)!important;
-    height:0!important;
-    inset-inline:17px!important;
-    width:auto!important;
-    background:transparent!important;
-    box-shadow:none!important;
-    opacity:1!important;
-    margin:0!important;
-    padding:0!important;
-  }
-  /* Current conversation title, not every navigation row. */
-  html body :is(#page-header,[data-testid="conversation-header"])
-    :is([data-testid="conversation-title"],h1,[data-ebook-active-title="true"]),
-  html body [data-ebook-active-title="true"] {
-    font-family:var(--eb-font)!important;
-    font-size:16px!important;
-    font-weight:720!important;
-    letter-spacing:-.03em!important;
-    line-height:1.4!important;
-    color:var(--eb-ink)!important;
-    -webkit-text-fill-color:var(--eb-ink)!important;
-    opacity:1!important;
-    text-shadow:none!important;
-  }
-  /* Actual Dot badge receives a marker on the numeric leaf only. */
-  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,
-    [data-testid="sidebar"],aside) [data-ebook-dot-counter="true"] {
-    background:transparent!important;
-    background-color:transparent!important;
-    background-image:none!important;
-    border:1.8px solid var(--eb-accent-ink)!important;
-    color:var(--eb-accent-ink)!important;
-    -webkit-text-fill-color:var(--eb-accent-ink)!important;
-    width:19px!important;
-    height:19px!important;
-    min-width:19px!important;
-    border-radius:50%!important;
-    box-shadow:none!important;
-    font-family:var(--eb-mono)!important;
-    font-weight:600!important;
-    font-size:11px!important;
-    line-height:1!important;
-    display:inline-flex!important;
-    align-items:center!important;
-    justify-content:center!important;
-    padding:0!important;
-  }
-  /* Model/effort display and its chevron, marked through the new DOM watcher. */
-  html body [data-ebook-effort-picker="true"],
-  html body [data-ebook-effort-picker="true"] :is(span,div,small,svg,svg *,i) {
-    color:var(--eb-accent-ink)!important;
-    -webkit-text-fill-color:var(--eb-accent-ink)!important;
-    font-family:var(--eb-font)!important;
-    font-weight:750!important;
-    letter-spacing:-.01em!important;
-    opacity:1!important;
-    text-shadow:none!important;
-  }
-  html body [data-ebook-effort-picker="true"] :is(svg,svg *) {
-    stroke:var(--eb-accent-ink)!important;
-  }
-  /* Narrow screens keep readable body, separate from the sidebar title size. */
-  @media(max-width:650px) {
-    :root {--eb-prose-size:11px;--eb-user-prose-size:var(--eb-ui-size);}
+  html body :is([data-message-author-role="assistant"],[data-message-author-role="user"]) :is(p,li,dd,dt,blockquote,[data-d-text-flow],[data-d-component="text"]):not(:is(h1,h2,h3,h4,h5,h6,pre,code,table,button,[role="button"],[contenteditable="true"])),
+  html body :is([data-message-author-role="assistant"],[data-message-author-role="user"]) :is(p,li,dd,dt,blockquote,[data-d-text-flow],[data-d-component="text"],.markdown,.prose) :is(span,div,strong,b,em,i,a,small,[data-d-component="text"]):not(:is(h1 *,h2 *,h3 *,h4 *,h5 *,h6 *,pre *,code *,kbd *,samp *,table *,[role="table"] *,[data-d-component="table"] *,button *,[role="button"] *,[contenteditable="true"] *,[role="textbox"] *,[data-d-component="math"] *)) {
+    font-size:var(--eb-prose-size) !important;
+    line-height:1.57 !important;
   }
 
-
-  /* 15. UNIFIED TYPOGRAPHY + INK OUTLINES v0.2.3
-     Strictly one size token for sidebar project/chat, standard messages and
-     typed prompt. Heading hierarchies and UI tooltips retain semantic sizing.
-     Fonts: IBM Plex Mono for Latin; Pretendard Variable for Hangul fallback.
-     The user's native chat data and React state remain unchanged. */
-  :root {
-    --eb-standard-type-size:var(--eb-ui-size);
-    --eb-prose-size:var(--eb-ui-size);
-    --eb-user-prose-size:var(--eb-ui-size);
-    --eb-font:"Jaroo Plex Latin","Pretendard Variable","Pretendard",sans-serif;
-    --eb-mono:"IBM Plex Mono","Pretendard Variable","Pretendard",monospace;
-    --eb-outline-thickness:2.5px;
-    --eb-upload-divider-color:var(--eb-ink);
+  /* Conversation surfaces and controls */
+  html body :is([data-message-author-role="user"] [data-user-message-bubble="true"],[data-message-author-role="user"] .bg-user-message,[data-user-message-bubble="true"].bg-user-message) {
+    --color-background-user-message:transparent !important;
+    background:transparent !important;
+    background-color:transparent !important;
+    background-image:none !important;
+    border:2.5px solid var(--eb-accent-ink) !important;
+    box-shadow:none !important;
+    -webkit-box-shadow:none !important;
+    filter:none !important;
+    backdrop-filter:none !important;
+    color:var(--eb-ink) !important;
+    -webkit-text-fill-color:var(--eb-ink) !important;
   }
-  /* Target the actual text leaves: the earlier v0.2.2 reduction applied an
-     independent font-size to message spans, making messages visually tiny. */
-  html body [data-message-author-role="assistant"] :is(
-      p[data-d-text-flow],p[data-d-component="text"],
-      .markdown p,.markdown li,.prose p,.prose li,
-      p,li,dd,dt,blockquote,[data-d-text-flow],[data-d-component="text"]
-    ):not(:is(
-      h1,h2,h3,h4,h5,h6,pre,code,table,button,[role="button"],
-      [contenteditable="true"],[role="textbox"],
-      pre *,code *,table *,[role="table"] *,[data-d-component="table"] *
-    )),
-  html body [data-message-author-role="user"] :is(
-      p,li,[data-d-text-flow],[data-d-component="text"]
-    ):not(:is(button,pre,code,table,[contenteditable="true"],button *,pre *,code *,table *)) {
-    font-family:var(--eb-font)!important;
-    font-size:var(--eb-standard-type-size)!important;
-    line-height:1.57!important;
-  }
-  html body :is([data-message-author-role="assistant"],[data-message-author-role="user"])
-    :is(p,li,dd,dt,blockquote,[data-d-text-flow],[data-d-component="text"])
-    :is(span,div,a,strong,b,em,i,small,[data-d-component="text"]):not(
-      :is(h1 *,h2 *,h3 *,h4 *,h5 *,h6 *,pre *,code *,table *,
-        [role="table"] *,[data-d-component="table"] *,button *,
-        [role="button"] *,[contenteditable="true"] *,
-        [data-d-component="math"] *)
-    ) {
-    font-family:var(--eb-font)!important;
-    font-size:var(--eb-standard-type-size)!important;
-  }
-  /* User bubble inner text is independently sized by ChatGPT. */
-  html body :is([data-message-author-role="user"] [data-user-message-bubble="true"],
-                [data-message-author-role="user"] .bg-user-message,
-                [data-user-message-bubble="true"].bg-user-message)
-    :is(p,span,div,strong,b,em,i,a,[data-d-component="text"]):not(
-      :is(button *,[role="button"] *,pre *,code *,table *,svg *)
-    ) {
-    font-family:var(--eb-font)!important;
-    font-size:var(--eb-standard-type-size)!important;
-  }
-  /* Equal measured CSS pixel size, not merely an inherited parent font. */
-  html body [data-sidebar-project-kind="local"]
-    [data-app-action-sidebar-project-row] [data-marquee-content="true"],
-  html body [data-sidebar-project-kind="local"]
-    [data-app-action-sidebar-project-row] [data-marquee-content="true"]
-    :is(span,div,[data-d-component="text"]) {
-    font-family:var(--eb-font)!important;
-    font-size:var(--eb-standard-type-size)!important;
-    font-weight:600!important;
-  }
-  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)
-    a[href*="/c/"],
-  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)
-    a[href*="/c/"] :is(
-      [data-thread-title="true"],[data-marquee-text],
-      [data-ebook-role],span.truncate,div.truncate,
-      span[dir="auto"],[data-d-component="text"]
-    ) {
-    font-family:var(--eb-font)!important;
-    font-size:var(--eb-standard-type-size)!important;
-  }
-  /* The editable field must match the same size as the SENT user message. */
-  html body :is(#prompt-textarea,[data-testid="prompt-textarea"],
-                [contenteditable="true"][role="textbox"]),
-  html body :is(#prompt-textarea,[data-testid="prompt-textarea"],
-                [contenteditable="true"][role="textbox"])
-    :is(p,li,span,div,[data-d-component="text"]) {
-    font-family:var(--eb-font)!important;
-    font-size:var(--eb-standard-type-size)!important;
-    line-height:1.55!important;
-  }
-  /* All Latin font runs use IBM Plex Mono and Korean runs fall back to
-     locally installed Pretendard Variable even inside portal/panel content. */
-  html body :is(svg text) {font-family:var(--eb-font)!important;}
-  /* Attachment divider and composer outline share the same charcoal accent. */
-  html body [data-ebook-upload-divider="true"] {
-    border-top-color:var(--eb-ink)!important;
+  html body :is(#composer-background,[data-testid="composer"],form:has(#prompt-textarea),form:has([data-testid="prompt-textarea"])) {
+    text-shadow:none !important;
+    filter:none !important;
+    backdrop-filter:none !important;
   }
   html body #composer-background,
   html body [data-testid="composer"]:not(:has(#composer-background)),
   html body form:has(#prompt-textarea):not(:has(#composer-background)),
   html body form:has([data-testid="prompt-textarea"]):not(:has(#composer-background)) {
-    border-color:var(--eb-ink)!important;
-    border-style:solid!important;
-    border-width:var(--eb-outline-thickness)!important;
-    box-shadow:none!important;
-    -webkit-box-shadow:none!important;
-    filter:none!important;
-    outline:none!important;
+    background:var(--eb-composer-paper) !important;
   }
-  html body :is(#composer-background,[data-testid="composer"],
-                 form:has(#prompt-textarea),form:has([data-testid="prompt-textarea"])):focus-within {
-    border-color:var(--eb-ink)!important;
-    box-shadow:none!important;
-    -webkit-box-shadow:none!important;
-    outline:none!important;
+  html body [data-ebook-composer-root="true"] {
+    position:relative !important;
   }
-  /* Keep a single outer border if #composer-background exists. */
-  html body form:has(#composer-background) {
-    border-color:transparent!important;
-    box-shadow:none!important;
+  html body [data-ebook-upload-divider="true"] {
+    pointer-events:none !important;
+    position:absolute !important;
+    display:block !important;
+    z-index:5 !important;
+    border-top:1px solid var(--eb-upload-divider-color) !important;
+    height:0 !important;
+    inset-inline:17px !important;
+    width:auto !important;
+    background:transparent !important;
+    box-shadow:none !important;
+    opacity:1 !important;
+    margin:0 !important;
+    padding:0 !important;
+  }
+  html body :is(#page-header,[data-testid="conversation-header"]) :is([data-testid="conversation-title"],h1,[data-ebook-active-title="true"]) {
+    font-family:var(--eb-font) !important;
+    font-size:16px !important;
+    font-weight:720 !important;
+    letter-spacing:-.03em !important;
+    line-height:1.4 !important;
+    color:var(--eb-ink) !important;
+    -webkit-text-fill-color:var(--eb-ink) !important;
+    opacity:1 !important;
+    text-shadow:none !important;
+  }
+  html body [data-ebook-active-title="true"] {
+    opacity:1 !important;
+  }
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside) [data-ebook-dot-counter="true"] {
+    background:transparent !important;
+    background-color:transparent !important;
+    background-image:none !important;
+    border:1.8px solid var(--eb-accent-ink) !important;
+    color:var(--eb-accent-ink) !important;
+    -webkit-text-fill-color:var(--eb-accent-ink) !important;
+    width:19px !important;
+    height:19px !important;
+    min-width:19px !important;
+    border-radius:50% !important;
+    box-shadow:none !important;
+    font-family:var(--eb-mono) !important;
+    font-weight:600 !important;
+    font-size:11px !important;
+    line-height:1 !important;
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    padding:0 !important;
+  }
+  html body [data-ebook-effort-picker="true"],
+  html body [data-ebook-effort-picker="true"] :is(span,div,small,svg,svg *,i) {
+    color:var(--eb-accent-ink) !important;
+    -webkit-text-fill-color:var(--eb-accent-ink) !important;
+    font-family:var(--eb-font) !important;
+    font-weight:750 !important;
+    letter-spacing:-.01em !important;
+    opacity:1 !important;
+    text-shadow:none !important;
+  }
+  html body [data-ebook-effort-picker="true"] :is(svg,svg *) {
+    stroke:var(--eb-accent-ink) !important;
+  }
+  html body [data-message-author-role="assistant"] :is(p[data-d-text-flow],p[data-d-component="text"],.markdown p,.markdown li,.prose p,.prose li,p,li,dd,dt,blockquote,[data-d-text-flow],[data-d-component="text"]):not(:is(h1,h2,h3,h4,h5,h6,pre,code,table,button,[role="button"],[contenteditable="true"],[role="textbox"],pre *,code *,table *,[role="table"] *,[data-d-component="table"] *)),
+  html body [data-message-author-role="user"] :is(p,li,[data-d-text-flow],[data-d-component="text"]):not(:is(button,pre,code,table,[contenteditable="true"],button *,pre *,code *,table *)) {
+    font-family:var(--eb-font) !important;
+    font-size:var(--eb-standard-type-size) !important;
+    line-height:1.57 !important;
+  }
+  html body :is([data-message-author-role="assistant"],[data-message-author-role="user"]) :is(p,li,dd,dt,blockquote,[data-d-text-flow],[data-d-component="text"]) :is(span,div,a,strong,b,em,i,small,[data-d-component="text"]):not(:is(h1 *,h2 *,h3 *,h4 *,h5 *,h6 *,pre *,code *,table *,[role="table"] *,[data-d-component="table"] *,button *,[role="button"] *,[contenteditable="true"] *,[data-d-component="math"] *)) {
+    font-family:var(--eb-font) !important;
+    font-size:var(--eb-standard-type-size) !important;
+  }
+  html body :is(svg text) {
+    font-family:var(--eb-font) !important;
+  }
+  html body [data-ebook-upload-divider="true"] {
+    border-top-color:var(--eb-ink) !important;
+  }
+  html body #composer-background,
+  html body [data-testid="composer"]:not(:has(#composer-background)),
+  html body form:has(#prompt-textarea):not(:has(#composer-background)),
+  html body form:has([data-testid="prompt-textarea"]):not(:has(#composer-background)) {
+    filter:none !important;
   }
 
-
-  /* 16. CLASSIC PAPER · 2026-11-24, no external assets.
-     Fine fibrous grain + barely visible notebook grid. Keep cards and text
-     crisp; the texture belongs to the paper surface only. */
-  :root { --eb-classic-paper-grain: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22240%22%20height%3D%22240%22%20viewBox%3D%220%200%20240%20240%22%3E%3Cfilter%20id%3D%22paper%22%20x%3D%220%22%20y%3D%220%22%20width%3D%22100%25%22%20height%3D%22100%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%22.83%22%20numOctaves%3D%223%22%20seed%3D%2217%22%20stitchTiles%3D%22stitch%22%2F%3E%3CfeColorMatrix%20type%3D%22saturate%22%20values%3D%220%22%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%22240%22%20height%3D%22240%22%20opacity%3D%22.12%22%20filter%3D%22url(%23paper)%22%2F%3E%3Cg%20stroke%3D%22%23848F95%22%20stroke-opacity%3D%22.045%22%20stroke-width%3D%22.55%22%20fill%3D%22none%22%3E%3Cpath%20d%3D%22M14%2025l23%202m80%2036l17%201m67%2038l11%202M35%20183l20-1m99%2037l14%201M187%2013l26%201%22%2F%3E%3Cpath%20d%3D%22M56%2041l2%2015m103%2078l1%2019M89%20208l2%2017M226%20146l1%2013%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
-  html body :is(#thread,[data-testid="conversation-panel"],
-    [data-testid="conversation-thread"],main,[role="main"]) {
-    background-color:var(--eb-paper)!important;
-    background-image:
-      linear-gradient(to right,var(--eb-notebook-grid) 1px,transparent 1px),
+  /* Paper, title, table details */
+  html body :is(#thread,[data-testid="conversation-panel"],[data-testid="conversation-thread"],main,[role="main"]) {
+    background-color:var(--eb-paper) !important;
+    background-image:linear-gradient(to right,var(--eb-notebook-grid) 1px,transparent 1px),
       linear-gradient(to bottom,var(--eb-notebook-grid) 1px,transparent 1px),
-      var(--eb-classic-paper-grain)!important;
-    background-size:28px 28px,28px 28px,240px 240px!important;
-    background-repeat:repeat!important;
+      var(--eb-classic-paper-grain) !important;
+    background-repeat:repeat !important;
   }
-  html body :is(#stage-sidebar,#stage-slideover-sidebar,
-    #slate-sidebar,[data-testid="sidebar"]) {
-    background-color:var(--eb-rail)!important;
-    background-image:var(--eb-classic-paper-grain)!important;
-    background-size:240px 240px!important;
-    background-repeat:repeat!important;
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]) :is(a,button,span,label,p,small,[role="link"],[role="button"],[data-d-component="text"],[data-thread-title="true"],[data-marquee-content="true"],[data-marquee-text],.truncate):not(:is([data-ebook-dot-counter="true"],[data-ebook-glyph="true"],.jaroo-native-badge,.jaroo-native-badge *,[data-jaroo-status-slot],[data-jaroo-status-slot] *,.sr-only,[aria-hidden="true"],[aria-hidden="true"] *,[role="img"],[role="img"] *)) {
+    font-family:var(--eb-font) !important;
+    font-size:var(--eb-sidebar-raised-size) !important;
   }
-  /* Native fallback and active chat are intentionally unchanged in this
-     visual experiment. Only the glyph source for ordinary spaces changes. */
-
-
-  /* 17. LEFT SIDEBAR TYPOGRAPHY TUNING v0.2.7
-     Left nav remains +2pt; project title remains +1pt and chat title is now +4pt
-     relative to the 14px baseline (chat title +1pt from v0.2.6).
-     Right conversation, sent bubbles, prompt editor, current-chat header,
-     texture and colors are not modified. One additional final layer
-     overrides the older shared 14px rule only under the sidebar roots.
-     Existing Clock/Status/Mapper Shadow DOM is not overridden. */
-  :root {
-    --eb-sidebar-font-bump: 2pt;
-    --eb-sidebar-raised-size: calc(var(--eb-ui-size) + var(--eb-sidebar-font-bump));
-    --eb-project-title-size: calc(var(--eb-ui-size) + 1pt);
-    --eb-chat-title-size: calc(var(--eb-ui-size) + 4pt);
-    --eb-sidebar-meta-raised-size: calc(11px + var(--eb-sidebar-font-bump));
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]) [data-ebook-dot-counter="true"] {
+    font-size:var(--eb-sidebar-meta-raised-size) !important;
   }
-  /* Apply the bump to actual text-bearing descendants even when ChatGPT uses
-     nested TextBase or marquee wrappers with their own font-size. */
-  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"])
-    :is(a,button,span,label,p,small,
-      [role="link"],[role="button"],[data-d-component="text"],
-      [data-thread-title="true"],[data-marquee-content="true"],
-      [data-marquee-text],.truncate):not(
-        :is([data-ebook-dot-counter="true"],[data-ebook-glyph="true"],
-          .jaroo-native-badge,.jaroo-native-badge *,
-          [data-jaroo-status-slot],[data-jaroo-status-slot] *,
-          .sr-only,[aria-hidden="true"],[aria-hidden="true"] *,
-          [role="img"],[role="img"] *)
-      ) {
-    font-family:var(--eb-font)!important;
-    font-size:var(--eb-sidebar-raised-size)!important;
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]) [data-ebook-glyph="true"] {
+    font-size:1px !important;
   }
-  /* Project and chat titles get explicit matching values regardless of the
-     earlier v0.2.3 selector specificity. We keep the existing weights. */
-  html body [data-sidebar-project-kind="local"]
-    [data-app-action-sidebar-project-row] [data-marquee-content="true"],
-  html body [data-sidebar-project-kind="local"]
-    [data-app-action-sidebar-project-row] [data-marquee-content="true"]
-    :is(span,div,[data-d-component="text"]) {
-    font-size:var(--eb-project-title-size)!important;
-    line-height:1.42!important;
+  html body [data-message-author-role="assistant"] :is(table,[role="table"],[data-d-component="table"]) :is(th,td,[role="cell"],[role="columnheader"],[role="rowheader"],[data-d-component="table-cell"]) {
+    font-size:var(--eb-table-reading-size) !important;
+    line-height:1.5 !important;
   }
-  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"])
-    a[href*="/c/"],
-  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"])
-    a[href*="/c/"] :is([data-ebook-role],[data-thread-title="true"],
-       [data-marquee-text],span.truncate,div.truncate,
-       span[dir="auto"],[data-d-component="text"]) {
-    font-size:var(--eb-chat-title-size)!important;
-    line-height:1.42!important;
+  html body [data-message-author-role="assistant"] :is(table,[role="table"],[data-d-component="table"]) :is(th,td,[role="cell"],[role="columnheader"],[role="rowheader"],[data-d-component="table-cell"]) :is(p,span,div,strong,b,em,i,a,small,[data-d-component="text"],[data-d-text-flow]):not(:is(button *,[role="button"] *,pre *,code *,svg *,[role="img"] *)) {
+    font-family:var(--eb-font) !important;
+    font-size:var(--eb-table-reading-size) !important;
+    line-height:1.5 !important;
   }
-  /* Small utility subtitles and status counts increase from their own
-     smaller baseline, preserving the hierarchy and avoiding huge counters. */
-  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"])
-    :is([data-ebook-dot-counter="true"],.jaroo-native-badge,
-        .jaroo-native-badge *,[data-jaroo-status-slot],
-        [data-jaroo-status-slot] *) {
-    font-size:var(--eb-sidebar-meta-raised-size)!important;
+  html body :is([data-message-author-role="user"] [data-user-message-bubble="true"],[data-message-author-role="user"] .bg-user-message,[data-user-message-bubble="true"].bg-user-message) {
+    border-radius:var(--eb-user-bubble-curve) !important;
   }
-  /* Original hidden role symbols are accessibility-only, not enlarged. */
-  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"])
-    [data-ebook-glyph="true"] {
-    font-size:1px!important;
+  html body [data-ebook-composer-muted="true"],
+  html body [data-ebook-composer-frame="true"] {
+    filter:none !important;
+  }
+  html body [data-message-author-role="user"] :is([data-user-message-bubble="true"],.bg-user-message),
+  html body [data-message-author-role="user"] :is([data-user-message-bubble="true"],.bg-user-message) :is(p,li,span,div,a,strong,b,em,i,small,[data-d-component="text"],[data-d-text-flow]):not(:is(button *,[role="button"] *,svg *,pre *,code *,[role="img"] *,[data-d-component="table"] *,[data-d-component="math"] *)) {
+    color:var(--eb-ink) !important;
+    -webkit-text-fill-color:var(--eb-ink) !important;
+  }
+  html body [data-message-author-role="user"] :is([data-user-message-bubble="true"],.bg-user-message) :is(p,li,span,div,small,[data-d-component="text"],[data-d-text-flow]):not(:is(button *,[role="button"] *,pre *,code *,svg *,table *,[role="img"] *,[data-d-component="math"] *)) {
+    color:var(--eb-prompt-sent-ink) !important;
+    -webkit-text-fill-color:var(--eb-prompt-sent-ink) !important;
   }
 
-
-  /* 18. ACTUAL NESTED CHAT TITLE GLYPHS v0.2.8
-     Chrome DevTools 2026-11-24 showed the innermost displayed text <span>
-     still at 14px despite the 19.33px title container. The native sidebar
-     structure is [data-sidebar-cycle-item] > ... > a > [data-thread-title]
-     > .clipViewport > .track > .content-marquee > span[dir=auto] > span.
-     Target those REAL visible text leaves, not only their ancestors.
-     Project labels, right prose, prompts and status counters are untouched. */
-  html body [data-sidebar-cycle-item] a[href*="/c/"] [data-thread-title],
-  html body [data-sidebar-cycle-item] a[href*="/c/"] [data-thread-title]
-     :is(span,div):not([data-ebook-glyph="true"]):not([aria-hidden="true"]):not(.sr-only),
-  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"])
-     a[href*="/c/"] [data-thread-title]
-     :is(span,div):not([data-ebook-glyph="true"]):not([aria-hidden="true"]):not(.sr-only) {
-    font-size:var(--eb-chat-title-size)!important;
+  /* Message and navigation surfaces */
+  html body :is([data-message-author-role="user"],[data-user-message],[data-user-message-bubble="true"],.bg-user-message) :is(p,li,span,div,a,strong,b,em,i,small,[data-d-text-flow],[data-d-component="text"],.whitespace-pre-wrap):not(:is(button,button *,[role="button"],[role="button"] *,[role="toolbar"],[role="toolbar"] *,textarea,[contenteditable="true"],[role="textbox"],pre,pre *,code,code *,kbd,kbd *,samp,samp *,svg,svg *,table,table *,[role="table"],[role="table"] *,[data-d-component="math"],[data-d-component="math"] *,[data-testid*="attachment" i] *,[data-testid*="file" i] *,[data-testid*="upload" i] *)),
+  html body :is([data-user-message],[data-user-message-bubble="true"],.bg-user-message,[data-ebook-prompt-text="sent"]) {
+    font-synthesis-weight:none !important;
+    letter-spacing:-0.01em !important;
+    color:var(--eb-prompt-sent-ink) !important;
+    -webkit-text-fill-color:var(--eb-prompt-sent-ink) !important;
+    text-shadow:none !important;
   }
-  /* Specific innermost single span and moving-marquee content. */
-  html body [data-sidebar-cycle-item] a[href*="/c/"]
-    [data-thread-title] [data-marquee-content] :is(span,div):not([data-ebook-glyph="true"]),
-  html body [data-sidebar-cycle-item] a[href*="/c/"]
-    [data-thread-title] span[dir="auto"] > span:not([data-ebook-glyph="true"]) {
-    font-size:var(--eb-chat-title-size)!important;
+  html body [data-ebook-quick-label="new-chat"],
+  html body [data-ebook-quick-label="dot"] {
+    letter-spacing:normal !important;
+    text-shadow:none !important;
+    text-decoration:none !important;
+    -webkit-mask-image:none !important;
+    mask-image:none !important;
+  }
+  html body [data-ebook-quick-label="new-chat"] {
+    display:inline-block !important;
+    position:relative !important;
+    isolation:isolate !important;
+    width:max-content !important;
+    max-width:max-content !important;
+    min-width:0 !important;
+    flex:0 0 auto !important;
+    align-self:flex-start !important;
+    white-space:nowrap !important;
+    overflow:visible !important;
+    padding:2px 5px !important;
+    margin-inline:0 !important;
+    border:0 !important;
+    border-radius:0 !important;
+    background:none !important;
+  }
+  html body [data-ebook-quick-label="new-chat"]::before,
+  html body [data-ebook-quick-label="new-chat"]::after {
+    content:"" !important;
+    position:absolute !important;
+    pointer-events:none !important;
+    z-index:-1 !important;
+  }
+  html body [data-ebook-quick-label="new-chat"]::before {
+    left:1px !important;
+    right:1px !important;
+    top:1px !important;
+    bottom:1px !important;
+    clip-path:polygon(0% 17%,18% 11%,42% 9%,73% 14%,98% 7%,100% 84%,84% 91%,61% 96%,28% 92%,0% 100%) !important;
+    transform:rotate(-1deg) !important;
+  }
+  html body [data-ebook-quick-label="new-chat"]::after {
+    left:2px !important;
+    right:0 !important;
+    top:4px !important;
+    bottom:0 !important;
+    background:rgba(230,187,70,.18) !important;
+    clip-path:polygon(1% 28%,41% 18%,79% 22%,100% 4%,99% 95%,64% 87%,29% 100%,0 86%) !important;
+    transform:rotate(.7deg) !important;
+  }
+  html body :is(#thread,[data-testid="conversation-panel"],[data-testid="conversation-thread"],main,[role="main"]) {
+    background-size:22px 22px,22px 22px,240px 240px !important;
+  }
+  html body [data-ebook-quick-label="new-chat"]::before {
+    background:rgba(242,215,120,.87) !important;
+  }
+  html body [data-ebook-active-title="true"] {
+    display:inline-block !important;
+    position:relative !important;
+    isolation:isolate !important;
+    width:max-content !important;
+    max-width:min(82vw,920px) !important;
+    font-family:var(--eb-font) !important;
+    font-size:24px !important;
+    font-weight:650 !important;
+    line-height:1.24 !important;
+    letter-spacing:-.025em !important;
+    color:var(--eb-ink) !important;
+    -webkit-text-fill-color:var(--eb-ink) !important;
+    text-shadow:none !important;
+  }
+  html body [data-ebook-active-title="true"]::before {
+    content:"" !important;
+    position:absolute !important;
+    z-index:-1 !important;
+    pointer-events:none !important;
+    left:-7px !important;
+    right:-7px !important;
+    top:21% !important;
+    bottom:12% !important;
+    border:0 !important;
+    border-radius:0 !important;
+    background:#D8EA8B !important;
+    clip-path:polygon(0 20%,16% 8%,48% 10%,79% 3%,100% 17%,98% 88%,73% 98%,38% 93%,1% 100%) !important;
+    transform:rotate(-.35deg) !important;
+  }
+  html body :is(#page-header,[data-testid="conversation-header"]) :is([data-testid="conversation-title"],h1) {
+    font-size:24px !important;
+    color:var(--eb-ink) !important;
+  }
+  html body [data-ebook-prompt-text="sent"] {
+    color:var(--eb-prompt-sent-ink) !important;
+    -webkit-text-fill-color:var(--eb-prompt-sent-ink) !important;
   }
 
-
-  /* 19. REAL SIDEBAR GLYPHS · OPTICAL MATCH v0.2.10
-     F12 screenshot: both the exact sidebar leaf and body p compute to 14px,
-     but the narrow sidebar looks smaller. Use a 14.667px optical
-     correction for BOTH project and chat titles. Not a 19.33px text overgrowth.
-     No right-pane selectors. The E-book JS applies the same number to actual
-     nested text leaves if ChatGPT's injected styles override this rule. */
-  :root {
-    --eb-nav-optical-size:14.667px;
-    --eb-project-title-size:var(--eb-nav-optical-size);
-    --eb-chat-title-size:var(--eb-nav-optical-size);
+  /* Writing blocks and notebook details */
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]) {
+    background-color:var(--eb-rail) !important;
+    background-image:linear-gradient(rgba(231,234,235,.88),rgba(231,234,235,.88)),
+      var(--eb-classic-paper-grain) !important;
+    background-size:100% 100%,240px 240px !important;
+    background-repeat:no-repeat,repeat !important;
+    box-shadow:none !important;
   }
-  /* No dependence on outer anchor href or sidebar root IDs. */
+  html body [data-message-author-role="assistant"] :is(.instruction-block,.writing-block,[data-testid="instruction-block"],[data-testid="writing-block"],[data-d-component="instruction-block"],[data-d-component="writing-block"]) {
+    background:transparent !important;
+    background-color:transparent !important;
+    background-image:none !important;
+    border-top:1px solid rgba(65,75,85,.25) !important;
+    border-bottom:1px solid rgba(65,75,85,.25) !important;
+    border-left:0 !important;
+    border-right:0 !important;
+    border-radius:0 !important;
+    box-shadow:none !important;
+    -webkit-box-shadow:none !important;
+    backdrop-filter:none !important;
+    padding:14px 10px !important;
+    margin-block:16px !important;
+  }
+  html body [data-message-author-role="assistant"] :is(.instruction-block,.writing-block,[data-testid="instruction-block"],[data-testid="writing-block"],[data-d-component="instruction-block"],[data-d-component="writing-block"]) > :is(div,section,article),
+  html body [data-message-author-role="assistant"] :is(.instruction-block,.writing-block,[data-testid="instruction-block"],[data-testid="writing-block"],[data-d-component="instruction-block"],[data-d-component="writing-block"]) :is([data-testid="writing-block-content"],[data-testid="writing-block-body"],[data-testid="instruction-content"],[data-d-component="writing-block-content"],.instruction-content,.instruction-block__content) {
+    background-color:transparent !important;
+    background-image:none !important;
+    box-shadow:none !important;
+    -webkit-box-shadow:none !important;
+  }
+  html body [data-message-author-role="assistant"] :is(.instruction-block,.writing-block,[data-testid="instruction-block"],[data-testid="writing-block"],[data-d-component="instruction-block"],[data-d-component="writing-block"]) :is(.copy-btn,[data-testid="copy-button"],button[aria-label*="복사"],button[aria-label*="copy" i]) {
+    background:transparent !important;
+    background-image:none !important;
+    border:0 !important;
+    box-shadow:none !important;
+    -webkit-box-shadow:none !important;
+  }
+
+  /* Mode switch and organization markers */
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)[data-ebook-sidebar-seam="true"] {
+    box-shadow:3px 0 7px -4px rgba(39,47,54,.20),
+      inset -1px 0 0 rgba(255,255,255,.64),
+      inset -4px 0 7px -7px rgba(39,47,54,.15) !important;
+  }
+  html body [data-ebook-work-switcher="true"] {
+    border-radius:999px !important;
+    background-color:#E1E5E7 !important;
+    box-shadow:inset 0 1px 2px rgba(45,54,62,.055),
+      0 1px 4px rgba(45,54,62,.09) !important;
+  }
+  html body [data-ebook-work-switcher="true"] [data-ebook-switch-tab="idle"] {
+    background-color:transparent !important;
+    box-shadow:none !important;
+    color:#777F85 !important;
+    -webkit-text-fill-color:#777F85 !important;
+    font-weight:400 !important;
+  }
+  html body [data-ebook-work-switcher="true"] [data-ebook-switch-tab="active"] {
+    background-color:var(--eb-panel) !important;
+    color:var(--eb-accent-ink) !important;
+    -webkit-text-fill-color:var(--eb-accent-ink) !important;
+    font-weight:700 !important;
+    border-radius:999px !important;
+    box-shadow:0 1px 3px rgba(45,54,62,.11),
+      inset 0 1px 0 rgba(255,255,255,.65) !important;
+  }
+  html body [data-ebook-work-switcher="true"] [data-ebook-switch-tab="active"] :is(span,div,strong,b,[data-d-component="text"]):not(:is([aria-hidden="true"],[aria-hidden="true"] *,svg *,.sr-only,.sr-only *)) {
+    color:var(--eb-accent-ink) !important;
+    -webkit-text-fill-color:var(--eb-accent-ink) !important;
+    font-weight:700 !important;
+  }
+  html body [data-ebook-work-switcher="true"] [data-ebook-switch-tab="idle"] :is(span,div,strong,b,[data-d-component="text"]):not(:is([aria-hidden="true"],[aria-hidden="true"] *,svg *,.sr-only,.sr-only *)) {
+    color:#777F85 !important;
+    -webkit-text-fill-color:#777F85 !important;
+    font-weight:400 !important;
+  }
+  [data-ebook-project-marker="exec"] {
+    --eb-org-marker:var(--eb-project-mark-exec);
+  }
+  [data-ebook-project-marker="strategy"] {
+    --eb-org-marker:var(--eb-project-mark-strategy);
+  }
+  [data-ebook-project-marker="sales"] {
+    --eb-org-marker:var(--eb-project-mark-sales);
+  }
+  [data-ebook-project-marker="bd"] {
+    --eb-org-marker:var(--eb-project-mark-bd);
+  }
+  [data-ebook-project-marker="proposal"] {
+    --eb-org-marker:var(--eb-project-mark-proposal);
+  }
+  [data-ebook-project-marker="design"] {
+    --eb-org-marker:var(--eb-project-mark-design);
+  }
+  [data-ebook-project-marker="tech"] {
+    --eb-org-marker:var(--eb-project-mark-tech);
+  }
+  [data-ebook-project-marker="people"] {
+    --eb-org-marker:var(--eb-project-mark-people);
+  }
+  [data-ebook-project-marker="management"] {
+    --eb-org-marker:var(--eb-project-mark-management);
+  }
+  [data-ebook-project-marker="assistant"] {
+    --eb-org-marker:var(--eb-project-mark-assistant);
+  }
+  [data-ebook-project-marker="philosophy"] {
+    --eb-org-marker:var(--eb-project-mark-philosophy);
+  }
+  html body [data-app-action-sidebar-project-row] [data-ebook-project-marker] {
+    position:relative !important;
+    isolation:isolate !important;
+    display:inline-block !important;
+    inline-size:max-content !important;
+    max-inline-size:100% !important;
+    min-inline-size:0 !important;
+    flex:0 1 auto !important;
+  }
+  html body [data-app-action-sidebar-project-row] [data-ebook-project-marker]:not([data-marquee-content="true"]) {
+    padding-inline:3px !important;
+    margin-inline:-2px !important;
+  }
+  html body [data-app-action-sidebar-project-row] [data-ebook-project-marker]::after {
+    content:"" !important;
+    position:absolute !important;
+    pointer-events:none !important;
+    z-index:-1 !important;
+    inset-inline:0 !important;
+    inset-block:12% 8% !important;
+    background-color:var(--eb-org-marker) !important;
+    opacity:.81 !important;
+    clip-path:polygon(0% 19%,8% 9%,26% 12%,43% 5%,65% 10%,84% 4%,98% 13%,100% 31%,98% 44%,100% 63%,97% 84%,79% 93%,57% 90%,35% 97%,15% 91%,1% 100%,2% 72%,0% 51%,2% 34%) !important;
+    transform:rotate(-.45deg) !important;
+  }
+  html body [data-ebook-quick-label="new-chat"],
+  html body [data-ebook-quick-label="dot"] {
+    color:var(--eb-ink) !important;
+    -webkit-text-fill-color:var(--eb-ink) !important;
+  }
+  html body [data-user-message-bubble="true"] .text-size-chat.whitespace-pre-wrap,
+  html body [data-message-author-role="user"] .text-size-chat.whitespace-pre-wrap {
+    color:var(--eb-prompt-sent-ink,#292D30) !important;
+    -webkit-text-fill-color:var(--eb-prompt-sent-ink,#292D30) !important;
+  }
+
+  /* Project count and action menu */
+  html body [data-app-action-sidebar-project-row][data-ebook-count-host="relative"] {
+    position:relative !important;
+  }
+  html body :is([data-app-action-sidebar-project-row],[data-ebook-project-count-layer="true"]) > [data-ebook-project-count] {
+    position:absolute !important;
+    left:var(--eb-count-x) !important;
+    top:50% !important;
+    transform:translate(-50%,-50%) !important;
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    width:var(--eb-count-diameter,19px) !important;
+    min-width:var(--eb-count-diameter,19px) !important;
+    max-width:none !important;
+    height:var(--eb-count-diameter,19px) !important;
+    min-height:0 !important;
+    border-radius:50% !important;
+    box-sizing:border-box !important;
+    padding:0 !important;
+    margin:0 !important;
+    background:var(--eb-count-bg,#C9CDCF) !important;
+    background-image:none !important;
+    border:0 !important;
+    outline:0 !important;
+    color:var(--eb-count-ink,#292D30) !important;
+    -webkit-text-fill-color:var(--eb-count-ink,#292D30) !important;
+    font-family:var(--eb-count-font,var(--eb-mono)) !important;
+    font-size:var(--eb-count-font-size,11px) !important;
+    font-weight:var(--eb-count-weight,500) !important;
+    line-height:1 !important;
+    letter-spacing:normal !important;
+    white-space:nowrap !important;
+    box-shadow:none !important;
+    pointer-events:none !important;
+    z-index:1 !important;
+  }
+  html body :is([data-app-action-sidebar-project-row],[data-ebook-project-count-layer="true"]) > [data-ebook-project-count][data-ebook-count-overflow="true"] {
+    background:var(--eb-accent-ink,#303438) !important;
+    border:0 solid transparent !important;
+    color:#FFFFFF !important;
+    -webkit-text-fill-color:#FFFFFF !important;
+  }
+  html body [data-app-action-sidebar-project-row]:is(:hover,:focus-within) :is([data-ebook-project-count]) {
+    opacity:0 !important;
+  }
+  html body [data-ebook-project-count-layer="true"] {
+    position:fixed !important;
+    inset:0 !important;
+    display:block !important;
+    width:auto !important;
+    height:auto !important;
+    margin:0 !important;
+    padding:0 !important;
+    border:0 !important;
+    background:transparent !important;
+    overflow:visible !important;
+    pointer-events:none !important;
+    z-index:12 !important;
+  }
+  html body [data-ebook-project-count-layer="true"] > [data-ebook-project-count] {
+    top:var(--eb-count-y,0px) !important;
+    left:var(--eb-count-x,0px) !important;
+    pointer-events:none !important;
+  }
+  html body [data-ebook-project-count-layer="true"] > [data-ebook-project-count][data-ebook-count-hidden="true"] {
+    visibility:hidden !important;
+  }
+  html body :is([data-native-menu-root],[popover]):not([role="menu"]):not([role="dialog"]):not([role="listbox"]):has([role="menu"]),
+  html body [role="menu"] :is([data-native-menu-root],[popover]):not([role="menu"]):not([role="dialog"]):not([role="listbox"]):has(:is([role="menuitem"],[role="menuitemcheckbox"],[role="menuitemradio"])) {
+    background:transparent !important;
+    border:0 !important;
+    border-radius:0 !important;
+    box-shadow:none !important;
+    -webkit-box-shadow:none !important;
+    padding:0 !important;
+  }
+  html body [role="menu"],
+  html body :is([data-native-menu-root],[popover]):not(:is([role="menu"],[role="dialog"],[role="listbox"])):not([role="menu"] *):not(:has([role="menu"],[role="dialog"],[role="listbox"])):has(:is([role="menuitem"],[role="menuitemcheckbox"],[role="menuitemradio"])) {
+    background:var(--eb-panel,#F5F6F6) !important;
+    color:var(--eb-ink,#292D30) !important;
+    border:1px solid var(--eb-line,#C5CDD0) !important;
+    border-radius:10px !important;
+    box-shadow:0 2px 5px rgba(39,47,54,.06),0 6px 16px rgba(39,47,54,.10) !important;
+    backdrop-filter:none !important;
+  }
+  html body :is([role="menu"],[data-native-menu-root],[popover]) :is([role="menuitem"],[role="menuitemcheckbox"],[role="menuitemradio"]) {
+    font-family:var(--eb-font) !important;
+    border-radius:6px !important;
+    box-shadow:none !important;
+  }
+  html body :is([role="menu"],[data-native-menu-root],[popover]) :is([role="menuitem"],[role="menuitemcheckbox"],[role="menuitemradio"]):not([aria-disabled="true"]):not([data-disabled]):is(:hover,:focus-visible,[data-highlighted],[data-state="open"]) {
+    background-color:var(--eb-soft,#E4E8EA) !important;
+  }
+  html body [role="menu"] [role="separator"]:not([aria-orientation="vertical"]) {
+    border-color:var(--eb-line,#C5CDD0) !important;
+    background-color:var(--eb-line,#C5CDD0) !important;
+  }
+
+  /* Fixed band and scrolling */
+  html body [data-ebook-top-hatch-layer="true"] {
+    position:fixed !important;
+    inset:0 !important;
+    display:block !important;
+    width:auto !important;
+    height:auto !important;
+    padding:0 !important;
+    margin:0 !important;
+    border:0 !important;
+    background:transparent !important;
+    pointer-events:none !important;
+    z-index:10 !important;
+  }
+  html body [data-ebook-top-hatch-layer="true"] > [data-ebook-top-hatch-strip="true"] {
+    position:absolute !important;
+    pointer-events:none !important;
+    display:block !important;
+    visibility:hidden !important;
+    box-sizing:border-box !important;
+    border:0 !important;
+    border-bottom:1px solid rgba(90,98,105,.12) !important;
+    border-radius:0 !important;
+    background-color:rgba(242,244,245,.13) !important;
+    background-image:var(--eb-top-hatch) !important;
+    box-shadow:none !important;
+  }
+  html body [data-ebook-project-count]::before,
+  html body [data-ebook-project-count]::after {
+    content:none !important;
+    display:none !important;
+    border:0 !important;
+    outline:0 !important;
+    box-shadow:none !important;
+  }
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-ebook-sidebar-seam="true"],[data-ebook-sidebar-top="overlay"],[data-ebook-count-rail="true"]),
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-ebook-sidebar-seam="true"],[data-ebook-sidebar-top="overlay"],[data-ebook-count-rail="true"]) * {
+    scrollbar-width:none !important;
+  }
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-ebook-sidebar-seam="true"],[data-ebook-sidebar-top="overlay"],[data-ebook-count-rail="true"])::-webkit-scrollbar,
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-ebook-sidebar-seam="true"],[data-ebook-sidebar-top="overlay"],[data-ebook-count-rail="true"]) *::-webkit-scrollbar {
+    display:none !important;
+    width:0 !important;
+    height:0 !important;
+  }
+
+  /* Typography: final native selectors, no historical size overlays. */
+  [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] [data-marquee-content="true"],
+  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside) a[href*="/c/"] :is([data-thread-title="true"],[data-marquee-text],span.truncate,div.truncate,span[dir="auto"],[data-ebook-role]),
+  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside) a[href*="/c/"],
+  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside) a[href*="/c/"] :is([data-thread-title="true"],[data-ebook-role]) *:not(svg):not(path),
+  :is(#prompt-textarea,[data-testid="prompt-textarea"],[contenteditable="true"][role="textbox"]),
+  html body :is([data-message-author-role="user"] [data-user-message-bubble="true"],[data-message-author-role="user"] .bg-user-message,[data-user-message-bubble="true"].bg-user-message) :is(p,span,div,strong,b,em,i,a,[data-d-component="text"]):not(:is(button *,[role="button"] *,pre *,code *,table *,svg *)),
+  html body [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] [data-marquee-content="true"],
+  html body [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] [data-marquee-content="true"] :is(span,div,[data-d-component="text"]),
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside) a[href*="/c/"],
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside) a[href*="/c/"] :is([data-thread-title="true"],[data-marquee-text],[data-ebook-role],span.truncate,div.truncate,span[dir="auto"],[data-d-component="text"]),
+  html body :is(#prompt-textarea,[data-testid="prompt-textarea"],[contenteditable="true"][role="textbox"]),
+  html body :is(#prompt-textarea,[data-testid="prompt-textarea"],[contenteditable="true"][role="textbox"]) :is(p,li,span,div,[data-d-component="text"]),
   html body [data-thread-title="true"],
-  html body [data-thread-title="true"] :is(span,div):not(
-      [data-ebook-glyph="true"]):not([aria-hidden="true"]):not(.sr-only),
-  html body [data-sidebar-project-kind="local"]
-      [data-app-action-sidebar-project-row] [data-marquee-content="true"],
-  html body [data-sidebar-project-kind="local"]
-      [data-app-action-sidebar-project-row] [data-marquee-content="true"]
-      :is(span,div):not([aria-hidden="true"]):not(.sr-only) {
-    font-family:var(--eb-font)!important;
-    font-size:var(--eb-nav-optical-size)!important;
-    line-height:1.42!important;
+  html body [data-thread-title="true"] :is(span,div):not([data-ebook-glyph="true"]):not([aria-hidden="true"]):not(.sr-only),
+  html body [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] [data-marquee-content="true"] :is(span,div):not([aria-hidden="true"]):not(.sr-only),
+  html body [data-message-author-role="user"] :is([data-user-message-bubble="true"],.bg-user-message),
+  html body [data-message-author-role="user"] :is([data-user-message-bubble="true"],.bg-user-message) :is(p,li,span,div,a,strong,b,em,i,small,[data-d-component="text"],[data-d-text-flow]):not(:is(button *,[role="button"] *,svg *,pre *,code *,[role="img"] *,[data-d-component="table"] *,[data-d-component="math"] *)),
+  html body :is(#prompt-textarea,[data-testid="prompt-textarea"],[contenteditable="true"][role="textbox"]) :is(p,li,span,div,[data-d-component="text"],[data-d-text-flow]),
+  html body [data-ebook-prompt-text="editor"],
+  html body [data-message-author-role="user"] :is([data-user-message-bubble="true"],.bg-user-message) :is(p,li,span,div,small,[data-d-component="text"],[data-d-text-flow]):not(:is(button *,[role="button"] *,pre *,code *,svg *,table *,[role="img"] *,[data-d-component="math"] *)),
+  html body [data-ebook-prompt-text="sent"],
+  html body :is([data-message-author-role="user"],[data-user-message],[data-user-message-bubble="true"],.bg-user-message) :is(p,li,span,div,a,strong,b,em,i,small,[data-d-text-flow],[data-d-component="text"],.whitespace-pre-wrap):not(:is(button,button *,[role="button"],[role="button"] *,[role="toolbar"],[role="toolbar"] *,textarea,[contenteditable="true"],[role="textbox"],pre,pre *,code,code *,kbd,kbd *,samp,samp *,svg,svg *,table,table *,[role="table"],[role="table"] *,[data-d-component="math"],[data-d-component="math"] *,[data-testid*="attachment" i] *,[data-testid*="file" i] *,[data-testid*="upload" i] *)),
+  html body :is([data-user-message],[data-user-message-bubble="true"],.bg-user-message,[data-ebook-prompt-text="sent"]),
+  html body [data-ebook-quick-label="new-chat"],
+  html body [data-ebook-quick-label="dot"],
+  html body [data-user-message-bubble="true"] .text-size-chat.whitespace-pre-wrap,
+  html body [data-message-author-role="user"] .text-size-chat.whitespace-pre-wrap {
+    font-family:var(--eb-font) !important;
   }
-  /* Exact last text span confirmed in the Chrome Elements screenshot. */
+
+  [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] [data-marquee-content="true"],
+  html body [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] [data-marquee-content="true"],
+  html body [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] [data-marquee-content="true"] :is(span,div,[data-d-component="text"]),
+  html body [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] [data-marquee-content="true"] :is(span,div):not([aria-hidden="true"]):not(.sr-only),
+  html body [data-ebook-quick-label="new-chat"],
+  html body [data-ebook-quick-label="dot"],
+  html body [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] [data-marquee-content="true"] :is(span,div,[data-d-component="text"]):not(:is([aria-hidden="true"],[data-ebook-glyph="true"],.sr-only)),
+  html body [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] [data-marquee-content="true"] :is(span,div,[data-d-component="text"]):not(:is([aria-hidden="true"],.sr-only)),
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-sidebar-project-kind="local"],[data-app-action-sidebar-section-heading],[data-ebook-count-rail="true"],aside,[role="complementary"]) [data-app-action-sidebar-project-row] :is([data-marquee-content="true"],[data-marquee-text="true"]),
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-sidebar-project-kind="local"],[data-app-action-sidebar-section-heading],[data-ebook-count-rail="true"],aside,[role="complementary"]) [data-app-action-sidebar-project-row] :is([data-marquee-content="true"],[data-marquee-text="true"]) :is(span,div,[data-d-component="text"]):not(:is(svg *,[aria-hidden="true"],[aria-hidden="true"] *,.sr-only,.sr-only *,[data-ebook-glyph="true"],[data-ebook-project-count])) {
+    font-size:var(--eb-project-optical-size) !important;
+  }
+
+  [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] [data-marquee-content="true"],
+  html body [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] [data-marquee-content="true"],
+  html body [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] [data-marquee-content="true"] :is(span,div,[data-d-component="text"]),
+  html body [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] [data-marquee-content="true"] :is(span,div):not(:is([aria-hidden="true"],.sr-only)),
+  html body [data-ebook-quick-label="new-chat"],
+  html body [data-ebook-quick-label="dot"],
+  html body [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] [data-marquee-content="true"] :is(span,div,[data-d-component="text"]):not(:is([aria-hidden="true"],.sr-only)),
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-sidebar-project-kind="local"],[data-app-action-sidebar-section-heading],[data-ebook-count-rail="true"],aside,[role="complementary"]) [data-app-action-sidebar-project-row] :is([data-marquee-content="true"],[data-marquee-text="true"]),
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-sidebar-project-kind="local"],[data-app-action-sidebar-section-heading],[data-ebook-count-rail="true"],aside,[role="complementary"]) [data-app-action-sidebar-project-row] :is([data-marquee-content="true"],[data-marquee-text="true"]) :is(span,div,[data-d-component="text"]):not(:is(svg *,[aria-hidden="true"],[aria-hidden="true"] *,.sr-only,.sr-only *,[data-ebook-glyph="true"],[data-ebook-project-count])) {
+    font-weight:var(--eb-project-emphasis-weight) !important;
+  }
+
+  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside) a[href*="/c/"],
+  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside) a[href*="/c/"] :is([data-thread-title="true"],[data-marquee-text],span.truncate,div.truncate,span[dir="auto"],[data-ebook-role]),
+  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside) a[href*="/c/"] :is([data-thread-title="true"],[data-ebook-role]) *:not(svg):not(path),
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside) a[href*="/c/"],
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside) a[href*="/c/"] :is([data-thread-title="true"],[data-marquee-text],[data-ebook-role],span.truncate,div.truncate,span[dir="auto"],[data-d-component="text"]),
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]) a[href*="/c/"],
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]) a[href*="/c/"] :is([data-ebook-role],[data-thread-title="true"],[data-marquee-text],span.truncate,div.truncate,span[dir="auto"],[data-d-component="text"]),
+  html body [data-sidebar-cycle-item] a[href*="/c/"] [data-thread-title],
+  html body [data-sidebar-cycle-item] a[href*="/c/"] [data-thread-title] :is(span,div):not([data-ebook-glyph="true"]):not([aria-hidden="true"]):not(.sr-only),
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]) a[href*="/c/"] [data-thread-title] :is(span,div):not([data-ebook-glyph="true"]):not([aria-hidden="true"]):not(.sr-only),
+  html body [data-sidebar-cycle-item] a[href*="/c/"] [data-thread-title] [data-marquee-content] :is(span,div):not([data-ebook-glyph="true"]),
+  html body [data-sidebar-cycle-item] a[href*="/c/"] [data-thread-title] span[dir="auto"] > span:not([data-ebook-glyph="true"]),
+  html body [data-thread-title="true"],
+  html body [data-thread-title="true"] :is(span,div):not([data-ebook-glyph="true"]):not([aria-hidden="true"]):not(.sr-only),
   html body span[data-thread-title="true"] [data-marquee-content="true"] span[dir="auto"] > span,
   html body span[data-thread-title="true"] span[dir="auto"] > span,
-  html body [data-sidebar-cycle-item] span[data-thread-title="true"] span:not(
-    [data-ebook-glyph="true"]):not([aria-hidden="true"]) {
-    font-size:var(--eb-nav-optical-size)!important;
+  html body [data-sidebar-cycle-item] span[data-thread-title="true"] span:not([data-ebook-glyph="true"]):not([aria-hidden="true"]),
+  html body [data-thread-title="true"] :is(span,div):not(:is([data-ebook-glyph="true"],[aria-hidden="true"],.sr-only)),
+  html body [data-sidebar-cycle-item] [data-thread-title="true"],
+  html body [data-sidebar-cycle-item] [data-thread-title="true"] :is(span,div,[data-d-component="text"]):not(:is([data-ebook-glyph="true"],[aria-hidden="true"],.sr-only)),
+  html body [data-thread-title="true"] [data-marquee-content="true"] span[dir="auto"] > span:not([data-ebook-glyph="true"]),
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-ebook-count-rail="true"],[data-app-action-sidebar-section-heading],[data-sidebar-cycle-item],[data-sidebar-archive-chatgpt-id],aside,[role="complementary"]) :is(a[href*="/c/"],[data-thread-title="true"],[data-sidebar-archive-chatgpt-id] [data-thread-title-trigger="true"]),
+  html body a:is([data-sidebar-cycle-item],[data-sidebar-archive-chatgpt-id])[href*="/c/"],
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-ebook-count-rail="true"],[data-app-action-sidebar-section-heading],[data-sidebar-cycle-item],[data-sidebar-archive-chatgpt-id],aside,[role="complementary"]) :is(a[href*="/c/"],[data-thread-title="true"],[data-sidebar-archive-chatgpt-id] [data-thread-title-trigger="true"]) :is(span,div,p,[data-d-component="text"]):not(:is(svg *,button *,[role="toolbar"] *,[aria-hidden="true"],[aria-hidden="true"] *,.sr-only,.sr-only *,[data-ebook-glyph="true"],[data-ebook-project-count],.jaroo-native-badge,.jaroo-native-badge *,[data-jaroo-status-slot],[data-jaroo-status-slot] *)),
+  html body a:is([data-sidebar-cycle-item],[data-sidebar-archive-chatgpt-id])[href*="/c/"] :is(span,div,p,[data-d-component="text"]):not(:is(svg *,button *,[aria-hidden="true"],[aria-hidden="true"] *,.sr-only,.sr-only *,[data-ebook-glyph="true"],.jaroo-native-badge,.jaroo-native-badge *)) {
+    font-size:var(--eb-chat-corrected-size) !important;
   }
 
-
-  /* 20. TABLE TYPOGRAPHY + USER BUBBLE CURVATURE v0.2.11
-     Scoped to rendered assistant tables and the user's sent-message bubble.
-     Sidebar optical text is fixed at its user-approved sizes. */
-  :root {
-    --eb-table-reading-size:calc(var(--eb-ui-size) + 1.5pt);
-    --eb-user-bubble-curve:28px;
-  }
-  /* The actual cells and their nested TextBase elements need the same
-     effective size; setting font-size only on the table container is
-     insufficient with ChatGPT's rich DOM rendering. */
-  html body [data-message-author-role="assistant"]
-    :is(table,[role="table"],[data-d-component="table"])
-    :is(th,td,[role="cell"],[role="columnheader"],[role="rowheader"],
-        [data-d-component="table-cell"]) {
-    font-size:var(--eb-table-reading-size)!important;
-    line-height:1.5!important;
-  }
-  html body [data-message-author-role="assistant"]
-    :is(table,[role="table"],[data-d-component="table"])
-    :is(th,td,[role="cell"],[role="columnheader"],[role="rowheader"],
-        [data-d-component="table-cell"])
-    :is(p,span,div,strong,b,em,i,a,small,
-        [data-d-component="text"],[data-d-text-flow]):not(
-        :is(button *,[role="button"] *,pre *,code *,svg *,[role="img"] *)
-    ) {
-    font-family:var(--eb-font)!important;
-    font-size:var(--eb-table-reading-size)!important;
-    line-height:1.5!important;
-  }
-  /* Black JS update bar has a capsule-like rounded end. On the shorter
-     sent-message bubbles 28px creates the same soft curvature, without
-     turning long multi-line bubbles into awkward giant pills. */
-  html body :is(
-      [data-message-author-role="user"] [data-user-message-bubble="true"],
-      [data-message-author-role="user"] .bg-user-message,
-      [data-user-message-bubble="true"].bg-user-message
-    ) {
-    border-radius:var(--eb-user-bubble-curve)!important;
-  }
-
-
-  /* 21. CHAT +0.5PT, PROJECT EMPHASIS, COMPOSER KEYLINE v0.2.12
-     User-approved text density is preserved except CHAT title +0.5pt.
-     Project names get a restrained 650 weight; the composer shell receives
-     a charcoal accent border with a crisp flat surface. No other changes. */
-  :root {
-    --eb-chat-corrected-size:15.333px;
-    --eb-project-emphasis-weight:650;
-    --eb-composer-keyline:2.5px solid #1F1E1A;
-  }
+  [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] [data-marquee-content="true"],
+  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside) a[href*="/c/"],
+  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside) a[href*="/c/"] :is([data-thread-title="true"],[data-marquee-text],span.truncate,div.truncate,span[dir="auto"],[data-ebook-role]),
+  :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside) a[href*="/c/"] :is([data-thread-title="true"],[data-ebook-role]) *:not(svg):not(path),
+  html body [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] [data-marquee-content="true"],
+  html body [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] [data-marquee-content="true"] :is(span,div,[data-d-component="text"]),
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]) a[href*="/c/"],
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]) a[href*="/c/"] :is([data-ebook-role],[data-thread-title="true"],[data-marquee-text],span.truncate,div.truncate,span[dir="auto"],[data-d-component="text"]),
   html body [data-thread-title="true"],
-  html body [data-thread-title="true"] :is(span,div):not(
-    :is([data-ebook-glyph="true"],[aria-hidden="true"],.sr-only)
-  ) {
-    font-size:var(--eb-chat-corrected-size)!important;
-  }
-  html body [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row]
-    [data-marquee-content="true"],
-  html body [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row]
-    [data-marquee-content="true"] :is(span,div):not(
-      :is([aria-hidden="true"],.sr-only)
-    ) {
-    font-weight:var(--eb-project-emphasis-weight)!important;
-  }
-  /* Visual JS marks the actual outer composer frame, not the editor itself.
-     This prevents an apparently missing border when native markup varies. */
-  html body [data-ebook-composer-frame="true"] {
-    border:var(--eb-composer-keyline)!important;
-    border-radius:18px!important;
-    box-shadow:none!important;
-    -webkit-box-shadow:none!important;
-    filter:none!important;
-    outline:none!important;
+  html body [data-thread-title="true"] :is(span,div):not([data-ebook-glyph="true"]):not([aria-hidden="true"]):not(.sr-only),
+  html body [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row] [data-marquee-content="true"] :is(span,div):not([aria-hidden="true"]):not(.sr-only),
+  html body [data-ebook-quick-label="new-chat"],
+  html body [data-ebook-quick-label="dot"] {
+    line-height:1.42 !important;
   }
 
-
-  /* 22. ONE COMPOSER FRAME + SENT USER TYPOGRAPHY (v0.2.13)
-     Use the inner rounded composer shell as the only border. The helper JS
-     marks that shell and mutes ancestor outlines; no double gray/black rings.
-     Sent-user message text follows the same reading-size token as prose,
-     with a deliberate 600 weight and charcoal accent. */
-  :root {
-    --eb-user-sent-reading: var(--eb-prose-size);
-    --eb-user-sent-weight: 600;
-    --eb-composer-single-stroke: 2.5px solid #1F1E1A;
+  :is(#prompt-textarea,[data-testid="prompt-textarea"],[contenteditable="true"][role="textbox"]),
+  html body :is(#prompt-textarea,[data-testid="prompt-textarea"],[contenteditable="true"][role="textbox"]),
+  html body :is(#prompt-textarea,[data-testid="prompt-textarea"],[contenteditable="true"][role="textbox"]) :is(p,li,span,div,[data-d-component="text"]),
+  html body :is(#prompt-textarea,[data-testid="prompt-textarea"],[contenteditable="true"][role="textbox"]) :is(p,li,span,div,[data-d-component="text"],[data-d-text-flow]),
+  html body [data-ebook-prompt-text="editor"],
+  html body :is(#prompt-textarea,[data-testid="prompt-textarea"],[data-composer-input] .ProseMirror[contenteditable="true"]) {
+    font-size:var(--eb-prompt-optical-size) !important;
   }
-  html body [data-ebook-composer-muted="true"] {
+
+  :is(#prompt-textarea,[data-testid="prompt-textarea"],[contenteditable="true"][role="textbox"]),
+  html body :is(#prompt-textarea,[data-testid="prompt-textarea"],[contenteditable="true"][role="textbox"]),
+  html body :is(#prompt-textarea,[data-testid="prompt-textarea"],[contenteditable="true"][role="textbox"]) :is(p,li,span,div,[data-d-component="text"]),
+  html body :is(#prompt-textarea,[data-testid="prompt-textarea"],[contenteditable="true"][role="textbox"]) :is(p,li,span,div,[data-d-component="text"],[data-d-text-flow]),
+  html body [data-ebook-prompt-text="editor"],
+  html body :is(#prompt-textarea,[data-testid="prompt-textarea"],[data-composer-input] .ProseMirror[contenteditable="true"]) {
+    line-height:1.56 !important;
+  }
+
+  html body :is([data-message-author-role="user"] [data-user-message-bubble="true"],[data-message-author-role="user"] .bg-user-message,[data-user-message-bubble="true"].bg-user-message) :is(p,span,div,strong,b,em,i,a,[data-d-component="text"]):not(:is(button *,[role="button"] *,pre *,code *,table *,svg *)),
+  html body [data-message-author-role="user"] :is([data-user-message-bubble="true"],.bg-user-message),
+  html body [data-message-author-role="user"] :is([data-user-message-bubble="true"],.bg-user-message) :is(p,li,span,div,a,strong,b,em,i,small,[data-d-component="text"],[data-d-text-flow]):not(:is(button *,[role="button"] *,svg *,pre *,code *,[role="img"] *,[data-d-component="table"] *,[data-d-component="math"] *)),
+  html body [data-message-author-role="user"] :is([data-user-message-bubble="true"],.bg-user-message) :is(p,li,span,div,small,[data-d-component="text"],[data-d-text-flow]):not(:is(button *,[role="button"] *,pre *,code *,svg *,table *,[role="img"] *,[data-d-component="math"] *)),
+  html body [data-ebook-prompt-text="sent"],
+  html body :is([data-message-author-role="user"],[data-user-message],[data-user-message-bubble="true"],.bg-user-message) :is(p,li,span,div,a,strong,b,em,i,small,[data-d-text-flow],[data-d-component="text"],.whitespace-pre-wrap):not(:is(button,button *,[role="button"],[role="button"] *,[role="toolbar"],[role="toolbar"] *,textarea,[contenteditable="true"],[role="textbox"],pre,pre *,code,code *,kbd,kbd *,samp,samp *,svg,svg *,table,table *,[role="table"],[role="table"] *,[data-d-component="math"],[data-d-component="math"] *,[data-testid*="attachment" i] *,[data-testid*="file" i] *,[data-testid*="upload" i] *)),
+  html body :is([data-user-message],[data-user-message-bubble="true"],.bg-user-message,[data-ebook-prompt-text="sent"]),
+  html body [data-user-message-bubble="true"] .text-size-chat.whitespace-pre-wrap,
+  html body [data-message-author-role="user"] .text-size-chat.whitespace-pre-wrap {
+    font-size:var(--eb-user-sent-optical-size) !important;
+  }
+
+  html body :is([data-message-author-role="user"] [data-user-message-bubble="true"],[data-message-author-role="user"] .bg-user-message,[data-user-message-bubble="true"].bg-user-message) :is(p,span,div,strong,b,em,i,a,[data-d-component="text"]):not(:is(button *,[role="button"] *,pre *,code *,table *,svg *)),
+  html body [data-message-author-role="user"] :is([data-user-message-bubble="true"],.bg-user-message),
+  html body [data-message-author-role="user"] :is([data-user-message-bubble="true"],.bg-user-message) :is(p,li,span,div,a,strong,b,em,i,small,[data-d-component="text"],[data-d-text-flow]):not(:is(button *,[role="button"] *,svg *,pre *,code *,[role="img"] *,[data-d-component="table"] *,[data-d-component="math"] *)),
+  html body [data-message-author-role="user"] :is([data-user-message-bubble="true"],.bg-user-message) :is(p,li,span,div,small,[data-d-component="text"],[data-d-text-flow]):not(:is(button *,[role="button"] *,pre *,code *,svg *,table *,[role="img"] *,[data-d-component="math"] *)),
+  html body [data-ebook-prompt-text="sent"],
+  html body :is([data-message-author-role="user"],[data-user-message],[data-user-message-bubble="true"],.bg-user-message) :is(p,li,span,div,a,strong,b,em,i,small,[data-d-text-flow],[data-d-component="text"],.whitespace-pre-wrap):not(:is(button,button *,[role="button"],[role="button"] *,[role="toolbar"],[role="toolbar"] *,textarea,[contenteditable="true"],[role="textbox"],pre,pre *,code,code *,kbd,kbd *,samp,samp *,svg,svg *,table,table *,[role="table"],[role="table"] *,[data-d-component="math"],[data-d-component="math"] *,[data-testid*="attachment" i] *,[data-testid*="file" i] *,[data-testid*="upload" i] *)),
+  html body :is([data-user-message],[data-user-message-bubble="true"],.bg-user-message,[data-ebook-prompt-text="sent"]),
+  html body [data-user-message-bubble="true"] .text-size-chat.whitespace-pre-wrap,
+  html body [data-message-author-role="user"] .text-size-chat.whitespace-pre-wrap {
+    line-height:1.55 !important;
+  }
+
+  html body [data-message-author-role="user"] :is([data-user-message-bubble="true"],.bg-user-message),
+  html body [data-message-author-role="user"] :is([data-user-message-bubble="true"],.bg-user-message) :is(p,li,span,div,a,strong,b,em,i,small,[data-d-component="text"],[data-d-text-flow]):not(:is(button *,[role="button"] *,svg *,pre *,code *,[role="img"] *,[data-d-component="table"] *,[data-d-component="math"] *)),
+  html body [data-message-author-role="user"] :is([data-user-message-bubble="true"],.bg-user-message) :is(p,li,span,div,small,[data-d-component="text"],[data-d-text-flow]):not(:is(button *,[role="button"] *,pre *,code *,svg *,table *,[role="img"] *,[data-d-component="math"] *)),
+  html body [data-ebook-prompt-text="sent"],
+  html body :is([data-message-author-role="user"],[data-user-message],[data-user-message-bubble="true"],.bg-user-message) :is(p,li,span,div,a,strong,b,em,i,small,[data-d-text-flow],[data-d-component="text"],.whitespace-pre-wrap):not(:is(button,button *,[role="button"],[role="button"] *,[role="toolbar"],[role="toolbar"] *,textarea,[contenteditable="true"],[role="textbox"],pre,pre *,code,code *,kbd,kbd *,samp,samp *,svg,svg *,table,table *,[role="table"],[role="table"] *,[data-d-component="math"],[data-d-component="math"] *,[data-testid*="attachment" i] *,[data-testid*="file" i] *,[data-testid*="upload" i] *)),
+  html body :is([data-user-message],[data-user-message-bubble="true"],.bg-user-message,[data-ebook-prompt-text="sent"]),
+  html body [data-user-message-bubble="true"] .text-size-chat.whitespace-pre-wrap,
+  html body [data-message-author-role="user"] .text-size-chat.whitespace-pre-wrap {
+    font-weight:var(--eb-prompt-sent-weight) !important;
+  }
+
+  /* Composer: one native surface, one stroke, no second ring. */
+  html body :is(#composer-background,[data-testid="composer"],form:has(:is(#prompt-textarea,[data-testid="prompt-textarea"],[data-composer-input] .ProseMirror[contenteditable="true"],[contenteditable="true"][role="textbox"])),[data-ebook-composer-muted="true"]) {
     border:0 !important;
     outline:0 !important;
     box-shadow:none !important;
     -webkit-box-shadow:none !important;
-    filter:none !important;
   }
-  html body [data-ebook-composer-frame="true"] {
-    border:var(--eb-composer-single-stroke)!important;
-    border-radius:var(--eb-composer-native-radius,24px)!important;
-    outline:0!important;
-    box-shadow:none!important;
-    -webkit-box-shadow:none!important;
-    filter:none!important;
+  html body :is([data-testid="composer"],form:has(:is(#prompt-textarea,[data-testid="prompt-textarea"],[data-composer-input] .ProseMirror[contenteditable="true"],[contenteditable="true"][role="textbox"]))):not(:has(#composer-background)) {
+    --eb-composer-native-radius:var(--eb-composer-fallback-radius);
   }
-  html body [data-ebook-composer-frame="true"]:focus-within {
-    border:var(--eb-composer-single-stroke)!important;
-    outline:0!important;
-    box-shadow:none!important;
-    -webkit-box-shadow:none!important;
+  html body #composer-background {
+    --eb-composer-native-radius:24px;
   }
-  /* Avoid drawing a second border on the form around the selected inner frame. */
-  html body form:has([data-ebook-composer-frame="true"]):not([data-ebook-composer-frame="true"]),
-  html body [data-testid="composer"]:has([data-ebook-composer-frame="true"]):not([data-ebook-composer-frame="true"]) {
-    border:0!important;
-    outline:0!important;
-    box-shadow:none!important;
-    -webkit-box-shadow:none!important;
+  html body #composer-background:not([data-ebook-composer-muted="true"]),
+  html body [data-testid="composer"]:not(:has(#composer-background,[data-ebook-composer-frame="true"])):not([data-ebook-composer-muted="true"]),
+  html body form:has(:is(#prompt-textarea,[data-testid="prompt-textarea"],[data-composer-input] .ProseMirror[contenteditable="true"],[contenteditable="true"][role="textbox"])):not(:has(#composer-background,[data-testid="composer"],[data-ebook-composer-frame="true"])):not([data-ebook-composer-muted="true"]),
+  html body :is(#composer-background,[data-testid="composer"],form,[data-ebook-composer-frame="true"])[data-ebook-composer-frame="true"] {
+    border:var(--eb-composer-single-stroke) !important;
+    border-radius:var(--eb-composer-native-radius,24px) !important;
+    outline:0 !important;
+    box-shadow:none !important;
   }
-  /* Sent user message only: preserve transparency, border and curved corners. */
-  html body [data-message-author-role="user"]
-    :is([data-user-message-bubble="true"],.bg-user-message) {
-    color:var(--eb-ink)!important;
-    -webkit-text-fill-color:var(--eb-ink)!important;
-    font-family:var(--eb-font)!important;
-    font-size:var(--eb-user-sent-reading)!important;
-    font-weight:var(--eb-user-sent-weight)!important;
-    line-height:1.56!important;
-  }
-  html body [data-message-author-role="user"]
-    :is([data-user-message-bubble="true"],.bg-user-message)
-    :is(p,li,span,div,a,strong,b,em,i,small,
-       [data-d-component="text"],[data-d-text-flow]):not(
-       :is(button *,[role="button"] *,svg *,pre *,code *,
-         [role="img"] *,[data-d-component="table"] *,
-         [data-d-component="math"] *)
-    ) {
-    font-family:var(--eb-font)!important;
-    font-size:var(--eb-user-sent-reading)!important;
-    font-weight:var(--eb-user-sent-weight)!important;
-    color:var(--eb-ink)!important;
-    -webkit-text-fill-color:var(--eb-ink)!important;
-    line-height:1.56!important;
-  }
-
-
-  /* 23. REAL PROMPT TEXT · OPTICAL READING CORRECTION v0.2.14
-     On the user's 90% Chrome screenshot both sent and editable prompts
-     appear visibly smaller than the right-hand article, even though earlier
-     container declarations specify 14px. Apply an initial 16px optical
-     correction directly on the actual rendered text leaves, not buttons or
-     chat toolbars. The E-book JS adds the precise leaf markers and a reversible
-     inline !important fallback to defeat nested TextBase size overrides. */
-  :root {
-    --eb-prompt-optical-size:16px;
-    --eb-prompt-accent:#1F1E1A;
-    --eb-prompt-sent-weight:600;
-  }
-  /* Editable message textbox; native model selector and toolbar excluded. */
-  html body :is(#prompt-textarea,[data-testid="prompt-textarea"],
-        [contenteditable="true"][role="textbox"]),
-  html body :is(#prompt-textarea,[data-testid="prompt-textarea"],
-        [contenteditable="true"][role="textbox"])
-        :is(p,li,span,div,[data-d-component="text"],[data-d-text-flow]) {
-    font-family:var(--eb-font)!important;
-    font-size:var(--eb-prompt-optical-size)!important;
-    line-height:1.56!important;
-  }
-  html body [data-ebook-prompt-text="editor"] {
-    font-family:var(--eb-font)!important;
-    font-size:var(--eb-prompt-optical-size)!important;
-    line-height:1.56!important;
-  }
-  /* Sent user messages: match the body optically, accent ink and a definite
-     medium-bold 600. No accent background, no color changes to controls. */
-  html body [data-message-author-role="user"]
-    :is([data-user-message-bubble="true"],.bg-user-message)
-    :is(p,li,span,div,small,[data-d-component="text"],[data-d-text-flow]):not(
-      :is(button *,[role="button"] *,pre *,code *,svg *,table *,
-         [role="img"] *,[data-d-component="math"] *)
-    ),
-  html body [data-ebook-prompt-text="sent"] {
-    font-family:var(--eb-font)!important;
-    font-size:var(--eb-prompt-optical-size)!important;
-    font-weight:var(--eb-prompt-sent-weight)!important;
-    color:var(--eb-prompt-accent)!important;
-    -webkit-text-fill-color:var(--eb-prompt-accent)!important;
-    line-height:1.56!important;
-  }
-
-
-  /* 24. SENT USER PROMPT ONLY — 2026-11-24, v0.2.22.
-     Make messages already sent noticeably larger and bold while keeping
-     the live composer (16px), assistant text, sidebar, icons and status intact.
-     JS v0.2.11 also applies this to actual text-bearing leaves. */
-  :root {
-    --eb-user-sent-optical-size:15px;
-    --eb-prompt-sent-weight:650;
-  }
-  html body [data-message-author-role="user"]
-    :is([data-user-message-bubble="true"],.bg-user-message),
-  html body [data-ebook-prompt-text="sent"],
-  html body [data-message-author-role="user"]
-    :is([data-user-message-bubble="true"],.bg-user-message)
-    :is(p,li,span,div,small,[data-d-component="text"],[data-d-text-flow]):not(
-      :is(button *,[role="button"] *,pre *,code *,svg *,table *,
-        [role="img"] *,[data-d-component="math"] *)
-    ) {
-    font-family:var(--eb-font)!important;
-    font-size:var(--eb-user-sent-optical-size)!important;
-    font-weight:var(--eb-prompt-sent-weight)!important;
-    line-height:1.55!important;
-  }
-
-
-  /* 25. SENT MESSAGE REAL TEXT FIX — v0.2.22
-     DevTools screenshot showed 14px/400 on the user's rendered message:
-     older rules reached only the legacy bubble class and missed nested text.
-     Match both ChatGPT's author-role and data-user-message structures.
-     Leave the live composer, assistant body, toolbar and file controls alone. */
-  :root {
-    --eb-user-sent-optical-size:15px; /* calibrated midpoint between prior 14px and 15.333px styles */
-    --eb-prompt-sent-weight:650;
-    --eb-prompt-sent-ink:#000000;
-  }
-  html body :is(
-    [data-message-author-role="user"],
-    [data-user-message],
-    [data-user-message-bubble="true"],
-    .bg-user-message
-  ) :is(
-    p,li,span,div,a,strong,b,em,i,small,
-    [data-d-text-flow],[data-d-component="text"],.whitespace-pre-wrap
-  ):not(:is(
-    button,button *,[role="button"],[role="button"] *,
-    [role="toolbar"],[role="toolbar"] *,
-    textarea,[contenteditable="true"],[role="textbox"],
-    pre,pre *,code,code *,kbd,kbd *,samp,samp *,
-    svg,svg *,table,table *,[role="table"],[role="table"] *,
-    [data-d-component="math"],[data-d-component="math"] *,
-    [data-testid*="attachment" i] *,[data-testid*="file" i] *,
-    [data-testid*="upload" i] *
-  )),
-  html body :is(
-    [data-user-message],[data-user-message-bubble="true"],
-    .bg-user-message,[data-ebook-prompt-text="sent"]
-  ) {
-    font-family:var(--eb-font)!important;
-    font-size:var(--eb-user-sent-optical-size)!important;
-    font-weight:var(--eb-prompt-sent-weight)!important;
-    font-synthesis-weight:none!important;
-    letter-spacing:-0.01em!important;
-    color:var(--eb-prompt-sent-ink)!important;
-    -webkit-text-fill-color:var(--eb-prompt-sent-ink)!important;
-    line-height:1.55!important;
-    text-shadow:none!important;
-  }
-
-
-  /* 26. QUICK ACTION NAV LABELS — v0.2.29
-     Render a compact, even highlighter directly behind the visible New Chat
-     text leaf, not across its full-width native row. Preserve icons and links.
-     Dot uses the same optical size without highlighting. */
-  :root {
-    --eb-quick-nav-size:var(--eb-chat-corrected-size,15.333px);
-    --eb-marker-yellow:#F2D16F;
-  }
-  html body [data-ebook-quick-label="new-chat"],
-  html body [data-ebook-quick-label="dot"] {
-    font-family:var(--eb-font)!important;
-    font-size:var(--eb-quick-nav-size)!important;
-    font-weight:400!important;
-    line-height:1.42!important;
-    letter-spacing:normal!important;
-    color:var(--eb-ink)!important;
-    -webkit-text-fill-color:var(--eb-ink)!important;
-    text-shadow:none!important;
-    text-decoration:none!important;
-    -webkit-mask-image:none!important;
-    mask-image:none!important;
-  }
-  /* A distinctly hand-drawn marker, verified in a local Chromium visual test.
-     Two slightly offset rough-edged swipes sit BEHIND the glyphs only.
-     Pseudo-elements prevent full-row bleeding without touching JS or buttons. */
-  html body [data-ebook-quick-label="new-chat"] {
-    display:inline-block!important;
-    position:relative!important;
-    isolation:isolate!important;
-    width:max-content!important;
-    max-width:max-content!important;
-    min-width:0!important;
-    flex:0 0 auto!important;
-    align-self:flex-start!important;
-    white-space:nowrap!important;
-    overflow:visible!important;
-    padding:2px 5px!important;
-    margin-inline:0!important;
-    border:0!important;
-    border-radius:0!important;
-    background:none!important;
-  }
-  html body [data-ebook-quick-label="new-chat"]::before,
-  html body [data-ebook-quick-label="new-chat"]::after {
-    content:""!important;
-    position:absolute!important;
-    pointer-events:none!important;
-    z-index:-1!important;
-  }
-  html body [data-ebook-quick-label="new-chat"]::before {
-    left:1px!important;
-    right:1px!important;
-    top:1px!important;
-    bottom:1px!important;
-    background:rgba(242,205,94,.88)!important;
-    clip-path:polygon(0% 17%,18% 11%,42% 9%,73% 14%,98% 7%,100% 84%,84% 91%,61% 96%,28% 92%,0% 100%)!important;
-    transform:rotate(-1deg)!important;
-  }
-  html body [data-ebook-quick-label="new-chat"]::after {
-    left:2px!important;
-    right:0!important;
-    top:4px!important;
-    bottom:0!important;
-    background:rgba(230,187,70,.18)!important;
-    clip-path:polygon(1% 28%,41% 18%,79% 22%,100% 4%,99% 95%,64% 87%,29% 100%,0 86%)!important;
-    transform:rotate(.7deg)!important;
-  }
-
-
-  /* 27. PROJECT FOLDER TITLES +1pt ONLY — v0.2.26
-     Base project title is 14.667px; increase to 16px (12pt).
-     Actual nested title leaves are matched; chat titles, quick actions,
-     folder glyphs, unread badges and other text remain unchanged.
-     Companion JS uses the same token when native inline styles win. */
-  :root {
-    --eb-project-optical-size:16px;
-  }
-  html body [data-sidebar-project-kind="local"]
-    [data-app-action-sidebar-project-row] [data-marquee-content="true"],
-  html body [data-sidebar-project-kind="local"]
-    [data-app-action-sidebar-project-row] [data-marquee-content="true"]
-    :is(span,div,[data-d-component="text"]):not(
-      :is([aria-hidden="true"],[data-ebook-glyph="true"],.sr-only)
-    ) {
-    font-size:var(--eb-project-optical-size)!important;
-  }
-
-
-  /* 28. COOL E-INK GRAPH PAPER · v0.2.31 (2026-11-24)
-     Only visual overrides. Clock/Status/Mapper, RUN/DONE, Live Clock and
-     underlying ChatGPT controls keep their original JavaScript owners. */
-  :root {
-    --eb-paper:#EFF1F2!important;
-    --eb-panel:#F5F6F6!important;
-    --eb-rail:#E7EAEB!important;
-    --eb-soft:#E4E8EA!important;
-    --eb-ink:#292D30!important;
-    --eb-secondary:#535B60!important;
-    --eb-muted:#737D83!important;
-    --eb-line:#C5CDD0!important;
-    --eb-line-strong:#89979E!important;
-    --eb-accent-ink:#303438!important;
-    --eb-notebook-grid:rgba(85,97,105,.09)!important;
-    --eb-composer-paper:#F5F6F6!important;
-    --eb-composer-line:#BFC8CC!important;
-    --eb-quiet-focus:#7B898F!important;
-    --eb-user-sent-optical-size:16.067px!important; /* 12.05pt; previous - 0.2pt */
-    --eb-prompt-sent-weight:572!important;          /* 520 x 1.10 */
-    --eb-prompt-sent-ink:#292D30!important;
-    --eb-prompt-accent:#292D30!important;
-    --eb-composer-keyline:2.5px solid #303438!important;
-    --eb-composer-single-stroke:2.5px solid #303438!important;
-    --eb-quick-nav-size:var(--eb-project-optical-size,16px)!important;
-    --eb-marker-yellow:#F2D778!important;
-    --ebook-theme-version:"0.2.46";
-  }
-  /* Preserve the existing procedural paper-grain SVG and only refine grid pitch. */
-  html body :is(#thread,[data-testid="conversation-panel"],
-      [data-testid="conversation-thread"],main,[role="main"]) {
-    background-size:22px 22px,22px 22px,240px 240px!important;
-  }
-
-  /* '새 채팅' and 'Dot': exactly match the project label size and emphasis. */
-  html body [data-ebook-quick-label="new-chat"],
-  html body [data-ebook-quick-label="dot"] {
-    font-size:var(--eb-project-optical-size,16px)!important;
-    font-weight:650!important;
-    line-height:1.42!important;
-  }
-  html body [data-ebook-quick-label="new-chat"]::before {
-    background:rgba(242,215,120,.87)!important;
-  }
-
-  /* Only the JS-identified active conversation breadcrumb receives highlighting.
-     Previous visual size 16px, new size exactly 24px (1.5x). */
-  html body [data-ebook-active-title="true"] {
-    display:inline-block!important;
-    position:relative!important;
-    isolation:isolate!important;
-    width:max-content!important;
-    max-width:min(82vw,920px)!important;
-    font-family:var(--eb-font)!important;
-    font-size:24px!important;
-    font-weight:650!important;
-    line-height:1.24!important;
-    letter-spacing:-.025em!important;
-    color:var(--eb-ink)!important;
-    -webkit-text-fill-color:var(--eb-ink)!important;
-    text-shadow:none!important;
-  }
-  html body [data-ebook-active-title="true"]::before {
-    content:""!important;
-    position:absolute!important;
-    z-index:-1!important;
-    pointer-events:none!important;
-    left:-7px!important;
-    right:-7px!important;
-    top:21%!important;
-    bottom:12%!important;
-    border:0!important;
-    border-radius:0!important;
-    background:#D8EA8B!important;
-    clip-path:polygon(0 20%,16% 8%,48% 10%,79% 3%,100% 17%,98% 88%,73% 98%,38% 93%,1% 100%)!important;
-    transform:rotate(-.35deg)!important;
-  }
-  /* Fallback for the same breadcrumb before JS marks its precise text leaf. */
-  html body :is(#page-header,[data-testid="conversation-header"])
-      :is([data-testid="conversation-title"],h1) {
-    font-size:24px!important;
-    color:var(--eb-ink)!important;
-  }
-
-  /* User-authored messages, not assistant replies or editable input. */
-  html body [data-ebook-prompt-text="sent"] {
-    font-size:var(--eb-user-sent-optical-size)!important;
-    font-weight:var(--eb-prompt-sent-weight)!important;
-    color:var(--eb-prompt-sent-ink)!important;
-    -webkit-text-fill-color:var(--eb-prompt-sent-ink)!important;
-  }
-
-
-  /* 29. QUIET SIDEBAR PAPER + EDITORIAL WRITING BLOCK · v0.2.32
-     User-selected option 3: no sidebar cards, bands, decorative shadows
-     or structural changes. The existing embedded paper grain is retained
-     behind an 88% rail-color veil, producing a whisper-light e-ink texture.
-     This release is CSS-only; all UI actions and other userscripts remain
-     governed by their original owners. */
-
-  /* Sidebar remains one continuous e-paper sheet, never a card stack. */
-  html body :is(#stage-sidebar,#stage-slideover-sidebar,
-    #slate-sidebar,[data-testid="sidebar"]) {
-    background-color:var(--eb-rail)!important;
-    background-image:
-      linear-gradient(rgba(231,234,235,.88),rgba(231,234,235,.88)),
-      var(--eb-classic-paper-grain)!important;
-    background-size:100% 100%,240px 240px!important;
-    background-repeat:no-repeat,repeat!important;
-    box-shadow:none!important;
-  }
-
-  /* Only dedicated writing/instruction blocks inside assistant messages.
-     Avoid styling generic cards, code blocks, dialogs or editable composer.
-     Known dedicated classes/data markers are kept as narrowly scoped
-     alternatives because the signed-in live DOM is not accessible here. */
-  html body [data-message-author-role="assistant"] :is(
-    .instruction-block,.writing-block,
-    [data-testid="instruction-block"],
-    [data-testid="writing-block"],
-    [data-d-component="instruction-block"],
-    [data-d-component="writing-block"]
-  ) {
-    background:transparent!important;
-    background-color:transparent!important;
-    background-image:none!important;
-    border-top:1px solid rgba(65,75,85,.25)!important;
-    border-bottom:1px solid rgba(65,75,85,.25)!important;
-    border-left:0!important;
-    border-right:0!important;
-    border-radius:0!important;
-    box-shadow:none!important;
-    -webkit-box-shadow:none!important;
-    backdrop-filter:none!important;
-    padding:14px 10px!important;
-    margin-block:16px!important;
-  }
-
-  /* Clear only the immediate paper-card wrappers inside those blocks.
-     Inner typography and the native copy/edit handlers are unchanged. */
-  html body [data-message-author-role="assistant"] :is(
-    .instruction-block,.writing-block,
-    [data-testid="instruction-block"],
-    [data-testid="writing-block"],
-    [data-d-component="instruction-block"],
-    [data-d-component="writing-block"]
-  ) > :is(div,section,article),
-  html body [data-message-author-role="assistant"] :is(
-    .instruction-block,.writing-block,
-    [data-testid="instruction-block"],
-    [data-testid="writing-block"],
-    [data-d-component="instruction-block"],
-    [data-d-component="writing-block"]
-  ) :is(
-    [data-testid="writing-block-content"],
-    [data-testid="writing-block-body"],
-    [data-testid="instruction-content"],
-    [data-d-component="writing-block-content"],
-    .instruction-content,.instruction-block__content
-  ) {
-    background-color:transparent!important;
-    background-image:none!important;
-    box-shadow:none!important;
-    -webkit-box-shadow:none!important;
-  }
-
-  /* Keep the copy control interactive, without the old pill background. */
-  html body [data-message-author-role="assistant"] :is(
-    .instruction-block,.writing-block,
-    [data-testid="instruction-block"],
-    [data-testid="writing-block"],
-    [data-d-component="instruction-block"],
-    [data-d-component="writing-block"]
-  ) :is(
-    .copy-btn,
-    [data-testid="copy-button"],
-    button[aria-label*="복사"],
-    button[aria-label*="copy" i]
-  ) {
-    background:transparent!important;
-    background-image:none!important;
-    border:0!important;
-    box-shadow:none!important;
-    -webkit-box-shadow:none!important;
-  }
-
-
-  /* 30. PAPER SEAM + CHAT/WORK + ORGANIZATION MARKERS — v0.2.33
-     Approved first-seam mockup, neutral cool paper palette retained.
-     Only one outer visible sidebar receives depth; never lift or resize it.
-     Project marks target actual label glyph boxes, not full rows or children.
-     Native mode controls keep their original dimensions, events and state. */
-  :root {
-    --eb-project-mark-exec:#F3B9CB;
-    --eb-project-mark-strategy:#CFC1EF;
-    --eb-project-mark-sales:#FFE08A;
-    --eb-project-mark-bd:#FFD36A;
-    --eb-project-mark-proposal:#FFEDB3;
-    --eb-project-mark-design:#8FE3CD;
-    --eb-project-mark-tech:#AEEBDD;
-    --eb-project-mark-people:#CFF5EA;
-    --eb-project-mark-management:#AFCFF7;
-    --eb-project-mark-assistant:#D7E9FF;
-    --eb-project-mark-philosophy:#DDE0E2;
-  }
-  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,
-    [data-testid="sidebar"],aside)[data-ebook-sidebar-seam="true"] {
-    box-shadow:3px 0 7px -4px rgba(39,47,54,.20),
-      inset -1px 0 0 rgba(255,255,255,.64),
-      inset -4px 0 7px -7px rgba(39,47,54,.15)!important;
-  }
-
-  /* Shade the existing segmented control in its native header location.
-     Only a paired Chat + Work control gets marked; unknown state is left
-     to the native UI rather than guessed or changed. */
-  html body [data-ebook-work-switcher="true"] {
-    border-radius:999px!important;
-    background-color:#E1E5E7!important;
-    box-shadow:inset 0 1px 2px rgba(45,54,62,.055),
-      0 1px 4px rgba(45,54,62,.09)!important;
-  }
-  html body [data-ebook-work-switcher="true"] [data-ebook-switch-tab="idle"] {
-    background-color:transparent!important;
-    box-shadow:none!important;
-    color:#777F85!important;
-    -webkit-text-fill-color:#777F85!important;
-    font-weight:400!important;
-  }
-  html body [data-ebook-work-switcher="true"] [data-ebook-switch-tab="active"] {
-    background-color:var(--eb-panel)!important;
-    color:var(--eb-accent-ink)!important;
-    -webkit-text-fill-color:var(--eb-accent-ink)!important;
-    font-weight:700!important;
-    border-radius:999px!important;
-    box-shadow:0 1px 3px rgba(45,54,62,.11),
-      inset 0 1px 0 rgba(255,255,255,.65)!important;
-  }
-  html body [data-ebook-work-switcher="true"] [data-ebook-switch-tab="active"]
-    :is(span,div,strong,b,[data-d-component="text"]):not(:is([aria-hidden="true"],[aria-hidden="true"] *,svg *, .sr-only,.sr-only *)) {
-    color:var(--eb-accent-ink)!important;
-    -webkit-text-fill-color:var(--eb-accent-ink)!important;
-    font-weight:700!important;
-  }
-  html body [data-ebook-work-switcher="true"] [data-ebook-switch-tab="idle"]
-    :is(span,div,strong,b,[data-d-component="text"]):not(:is([aria-hidden="true"],[aria-hidden="true"] *,svg *, .sr-only,.sr-only *)) {
-    color:#777F85!important;
-    -webkit-text-fill-color:#777F85!important;
-    font-weight:400!important;
-  }
-
-  /* Approved v0.2.34 palette: fresh lemon for revenue, mint for execution,
-     sky blue for support, pale gray for philosophy; CEO pink and lavender unchanged. */
-  [data-ebook-project-marker="exec"] {--eb-org-marker:var(--eb-project-mark-exec);}
-  [data-ebook-project-marker="strategy"] {--eb-org-marker:var(--eb-project-mark-strategy);}
-  [data-ebook-project-marker="sales"] {--eb-org-marker:var(--eb-project-mark-sales);}
-  [data-ebook-project-marker="bd"] {--eb-org-marker:var(--eb-project-mark-bd);}
-  [data-ebook-project-marker="proposal"] {--eb-org-marker:var(--eb-project-mark-proposal);}
-  [data-ebook-project-marker="design"] {--eb-org-marker:var(--eb-project-mark-design);}
-  [data-ebook-project-marker="tech"] {--eb-org-marker:var(--eb-project-mark-tech);}
-  [data-ebook-project-marker="people"] {--eb-org-marker:var(--eb-project-mark-people);}
-  [data-ebook-project-marker="management"] {--eb-org-marker:var(--eb-project-mark-management);}
-  [data-ebook-project-marker="assistant"] {--eb-org-marker:var(--eb-project-mark-assistant);}
-  [data-ebook-project-marker="philosophy"] {--eb-org-marker:var(--eb-project-mark-philosophy);}
-
-  html body [data-app-action-sidebar-project-row] [data-ebook-project-marker] {
-    position:relative!important;
-    isolation:isolate!important;
-    display:inline-block!important;
-    inline-size:max-content!important;
-    max-inline-size:100%!important;
-    min-inline-size:0!important;
-    flex:0 1 auto!important;
-  }
-  /* Keep the native marquee wrapper intact except when it directly owns
-     the project text. Only the marked leaf has a small horizontal margin. */
-  html body [data-app-action-sidebar-project-row] [data-ebook-project-marker]:not([data-marquee-content="true"]) {
-    padding-inline:3px!important;
-    margin-inline:-2px!important;
-  }
-  html body [data-app-action-sidebar-project-row] [data-ebook-project-marker]::after {
-    content:""!important;
-    position:absolute!important;
-    pointer-events:none!important;
-    z-index:-1!important;
-    inset-inline:0!important;
-    inset-block:12% 8%!important;
-    background-color:var(--eb-org-marker)!important;
-    opacity:.81!important;
-    clip-path:polygon(0% 19%,8% 9%,26% 12%,43% 5%,65% 10%,84% 4%,98% 13%,100% 31%,98% 44%,100% 63%,97% 84%,79% 93%,57% 90%,35% 97%,15% 91%,1% 100%,2% 72%,0% 51%,2% 34%)!important;
-    transform:rotate(-.45deg)!important;
-  }
-
-
-  /* 31. FRESH PASTEL MARKERS + DOT TEXT PARITY — v0.2.34.
-     Shared final typography for both quick actions; do not recolor the native
-     Dot icon, count, or add a yellow marker to the Dot row. */
-  html body [data-ebook-quick-label="new-chat"],
-  html body [data-ebook-quick-label="dot"] {
-    font-family:var(--eb-font)!important;
-    font-size:var(--eb-project-optical-size,16px)!important;
-    font-weight:650!important;
-    line-height:1.42!important;
-    color:var(--eb-ink)!important;
-    -webkit-text-fill-color:var(--eb-ink)!important;
-  }
-
-
-  /* 32. FIRST-PAINT TYPE + PROJECT COUNTS — v0.2.35
-     Use native selectors before any helper JS runs. The approved layout,
-     graphite palette, marker colors and typography remain unchanged. */
-  html body [data-sidebar-cycle-item] [data-thread-title="true"],
-  html body [data-sidebar-cycle-item] [data-thread-title="true"]
-    :is(span,div,[data-d-component="text"]):not(:is([data-ebook-glyph="true"],[aria-hidden="true"],.sr-only)),
-  html body [data-thread-title="true"] [data-marquee-content="true"] span[dir="auto"] > span:not([data-ebook-glyph="true"]) {
-    font-size:var(--eb-chat-corrected-size,15.333px)!important;
-  }
-  html body [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row]
-    [data-marquee-content="true"],
-  html body [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row]
-    [data-marquee-content="true"] :is(span,div,[data-d-component="text"]):not(:is([aria-hidden="true"],.sr-only)) {
-    font-size:var(--eb-project-optical-size,16px)!important;
-    font-weight:650!important;
-  }
-  html body [data-user-message-bubble="true"] .text-size-chat.whitespace-pre-wrap,
-  html body [data-message-author-role="user"] .text-size-chat.whitespace-pre-wrap {
-    font-family:var(--eb-font)!important;
-    font-size:var(--eb-user-sent-optical-size,16.067px)!important;
-    font-weight:var(--eb-prompt-sent-weight,572)!important;
-    color:var(--eb-prompt-sent-ink,#292D30)!important;
-    -webkit-text-fill-color:var(--eb-prompt-sent-ink,#292D30)!important;
-    line-height:1.55!important;
-  }
-  html body :is(#prompt-textarea,[data-testid="prompt-textarea"],
-    [data-composer-input] .ProseMirror[contenteditable="true"]) {
-    font-size:var(--eb-prompt-optical-size,16px)!important;
-    line-height:1.56!important;
-  }
-  html body #composer-background:has(:is(#prompt-textarea,[data-testid="prompt-textarea"],[contenteditable="true"][role="textbox"])) {
-    border:var(--eb-composer-single-stroke)!important;
-    border-radius:var(--eb-composer-native-radius,24px)!important;
-    box-shadow:none!important;
-  }
-  html body form:has(#composer-background):not([data-ebook-composer-frame="true"]),
-  html body [data-testid="composer"]:has(#composer-background):not(#composer-background):not([data-ebook-composer-frame="true"]) {
-    border:0!important;
-    box-shadow:none!important;
-    outline:none!important;
-  }
-  html body [data-ebook-composer-muted="true"] {
-    border:0!important;
-    box-shadow:none!important;
-    outline:none!important;
-  }
-
-  /* Count badges are presentation-only children of native project rows.
-     The script copies the visible Dot counter styling and measures its
-     center line. Only the badge itself receives these styles. */
-  html body [data-app-action-sidebar-project-row][data-ebook-count-host="relative"] {
-    position:relative!important;
-  }
-  html body :is([data-app-action-sidebar-project-row],[data-ebook-project-count-layer="true"]) > [data-ebook-project-count] {
-    position:absolute!important;
-    left:var(--eb-count-x)!important;
-    top:50%!important;
-    transform:translate(-50%,-50%)!important;
-    display:inline-flex!important;
-    align-items:center!important;
-    justify-content:center!important;
-    width:var(--eb-count-diameter,19px)!important;
-    min-width:var(--eb-count-diameter,19px)!important;
-    max-width:none!important;
-    height:var(--eb-count-diameter,19px)!important;
-    min-height:0!important;
-    border-radius:50%!important;
-    box-sizing:border-box!important;
-    padding:0!important;
-    margin:0!important;
-    background:var(--eb-count-bg,#C9CDCF)!important;
-    border:0!important;
-    outline:0!important;
-    color:var(--eb-count-ink,#292D30)!important;
-    -webkit-text-fill-color:var(--eb-count-ink,#292D30)!important;
-    font-family:var(--eb-count-font,var(--eb-mono))!important;
-    font-size:var(--eb-count-font-size,11px)!important;
-    font-weight:var(--eb-count-weight,500)!important;
-    line-height:1!important;
-    letter-spacing:normal!important;
-    white-space:nowrap!important;
-    box-shadow:none!important;
-    pointer-events:none!important;
-    z-index:1!important;
-  }
-  /* v0.2.36: one glyph per badge. The original gray badge shows 0–9;
-     a confirmed count above 9 uses the same circle, accent fill and white 9.
-     All project counter states are borderless; partial counts retain their diagnostic state.
-     The native Dot badge is not affected. */
-  html body :is([data-app-action-sidebar-project-row],[data-ebook-project-count-layer="true"]) > [data-ebook-project-count][data-ebook-count-overflow="true"] {
-    background:var(--eb-accent-ink,#303438)!important;
-    border:0 solid transparent!important;
-    color:#FFFFFF!important;
-    -webkit-text-fill-color:#FFFFFF!important;
-  }
-  /* Reveal native overflow actions without covering their click area. */
-  html body [data-app-action-sidebar-project-row]:is(:hover,:focus-within)
-    :is([data-ebook-project-count]) {
-    opacity:0!important;
-  }
-
-
-  /* Project-count layer: detached from the width/clipping of native buttons.
-     Fixed viewport coordinates are converted to the layer's own box by JS. */
-  html body [data-ebook-project-count-layer="true"] {
-    position:fixed!important;
-    inset:0!important;
-    display:block!important;
-    width:auto!important;
-    height:auto!important;
-    margin:0!important;
-    padding:0!important;
-    border:0!important;
-    background:transparent!important;
-    overflow:visible!important;
-    pointer-events:none!important;
-    z-index:12!important;
-  }
-  html body [data-ebook-project-count-layer="true"] > [data-ebook-project-count] {
-    top:var(--eb-count-y,0px)!important;
-    left:var(--eb-count-x,0px)!important;
-    pointer-events:none!important;
-  }
-  html body [data-ebook-project-count-layer="true"] > [data-ebook-project-count][data-ebook-count-hidden="true"] {
-    visibility:hidden!important;
-  }
-
-  /* 33. EDITORIAL ACTION MENUS — v0.2.37
-     One paper surface per native action menu, no stacked frames. Preserve
-     native popup placement, item spacing, keyboard behavior and danger colors.
-     Dialogs, listboxes, tooltips and the separate Jaroo status UI are excluded. */
-  html body :is([data-native-menu-root],[popover]):not([role="menu"]):not([role="dialog"]):not([role="listbox"]):has([role="menu"]),
-  html body [role="menu"] :is([data-native-menu-root],[popover]):not([role="menu"]):not([role="dialog"]):not([role="listbox"]):has(:is([role="menuitem"],[role="menuitemcheckbox"],[role="menuitemradio"])) {
-    background:transparent!important;
-    border:0!important;
-    border-radius:0!important;
-    box-shadow:none!important;
-    -webkit-box-shadow:none!important;
-    padding:0!important;
-  }
-  html body [role="menu"],
-  html body :is([data-native-menu-root],[popover]):not(:is([role="menu"],[role="dialog"],[role="listbox"])):not([role="menu"] *):not(:has([role="menu"],[role="dialog"],[role="listbox"])):has(:is([role="menuitem"],[role="menuitemcheckbox"],[role="menuitemradio"])) {
-    background:var(--eb-panel,#F5F6F6)!important;
-    color:var(--eb-ink,#292D30)!important;
-    border:1px solid var(--eb-line,#C5CDD0)!important;
-    border-radius:10px!important;
-    box-shadow:0 2px 5px rgba(39,47,54,.06),0 6px 16px rgba(39,47,54,.10)!important;
-    backdrop-filter:none!important;
-  }
-  html body :is([role="menu"],[data-native-menu-root],[popover]) :is([role="menuitem"],[role="menuitemcheckbox"],[role="menuitemradio"]) {
-    font-family:var(--eb-font)!important;
-    border-radius:6px!important;
-    box-shadow:none!important;
-  }
-  html body :is([role="menu"],[data-native-menu-root],[popover]) :is([role="menuitem"],[role="menuitemcheckbox"],[role="menuitemradio"]):not([aria-disabled="true"]):not([data-disabled]):is(:hover,:focus-visible,[data-highlighted],[data-state="open"]) {
-    background-color:var(--eb-soft,#E4E8EA)!important;
-  }
-  html body [role="menu"] [role="separator"]:not([aria-orientation="vertical"]) {
-    border-color:var(--eb-line,#C5CDD0)!important;
-    background-color:var(--eb-line,#C5CDD0)!important;
-  }
-
-
-  /* 34. FIXED SIDEBAR HEADER — v0.2.44.
-     Draw a faint translucent hatch over the verified native fixed band.
-     Independent of native opaque backgrounds; no sticky, size, scroll,
-     overflow, or stacking changes to the actual sidebar/header. */
-  :root {
-    --eb-top-hatch:repeating-linear-gradient(135deg,
-      transparent 0px,transparent 9px,rgba(108,116,124,.09) 9px,
-      rgba(108,116,124,.09) 10px);
-  }
-  html body [data-ebook-top-hatch-layer="true"] {
-    position:fixed!important;
-    inset:0!important;
-    display:block!important;
-    width:auto!important;
-    height:auto!important;
-    padding:0!important;
-    margin:0!important;
-    border:0!important;
-    background:transparent!important;
-    pointer-events:none!important;
-    z-index:10!important;
-  }
-  html body [data-ebook-top-hatch-layer="true"] > [data-ebook-top-hatch-strip="true"] {
-    position:absolute!important;
-    pointer-events:none!important;
-    display:block!important;
-    box-sizing:border-box!important;
-    border:0!important;
-    border-bottom:1px solid rgba(90,98,105,.12)!important;
-    border-radius:0!important;
-    background-color:rgba(242,244,245,.13)!important;
-    background-image:var(--eb-top-hatch)!important;
-    box-shadow:none!important;
-  }
-  /* All project count states are borderless, including partially loaded
-     groups. Native Dot and focusable navigation controls are unchanged. */
-  html body [data-ebook-project-count-layer="true"] > [data-ebook-project-count],
-  html body [data-ebook-project-count-layer="true"] > [data-ebook-project-count][data-ebook-count-state],
-  html body [data-ebook-project-count-layer="true"] > [data-ebook-project-count][data-ebook-count-state="partial"]:not([data-ebook-count-overflow="true"]),
-  html body [data-app-action-sidebar-project-row] > [data-ebook-project-count][data-ebook-count-state="partial"] {
-    border:0!important;
-    border-style:none!important;
-    outline:0!important;
-    box-shadow:none!important;
-    background-image:none!important;
-  }
-  html body [data-ebook-project-count]::before,
-  html body [data-ebook-project-count]::after {
-    content:none!important;
-    display:none!important;
-    border:0!important;
-    outline:0!important;
-    box-shadow:none!important;
-  }
-
-  /* 35. QUIET SIDEBAR SCROLLBARS — v0.2.45
-     Scope scrollbar suppression to known or explicitly marked rails.
-     Do not use page-wide relational selectors on every descendant. */
-  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-ebook-sidebar-seam="true"],[data-ebook-sidebar-top="overlay"],[data-ebook-count-rail="true"]),
-  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-ebook-sidebar-seam="true"],[data-ebook-sidebar-top="overlay"],[data-ebook-count-rail="true"]) * {
-    scrollbar-width:none!important;
-  }
-  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-ebook-sidebar-seam="true"],[data-ebook-sidebar-top="overlay"],[data-ebook-count-rail="true"])::-webkit-scrollbar,
-  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-ebook-sidebar-seam="true"],[data-ebook-sidebar-top="overlay"],[data-ebook-count-rail="true"]) *::-webkit-scrollbar {
-    display:none!important;
-    width:0!important;
-    height:0!important;
-  }
-
-
-  /* 36. NATIVE TYPOGRAPHY FIRST PAINT — v0.2.46.
-     Resolve legacy title aliases to the approved size, and style the actual
-     title text in every native list section before the helper runs. */
-  :root {
-    --eb-first-paint-nav:1;
-    --eb-nav-optical-size:var(--eb-chat-corrected-size,15.333px)!important;
-    --eb-sidebar-chat-size:var(--eb-chat-corrected-size,15.333px)!important;
-    --eb-chat-title-size:var(--eb-chat-corrected-size,15.333px)!important;
-    --eb-project-title-size:var(--eb-project-optical-size,16px)!important;
-    --eb-user-prose-size:var(--eb-user-sent-optical-size,16.067px)!important;
-    --eb-user-sent-reading:var(--eb-user-sent-optical-size,16.067px)!important;
-    --eb-user-sent-weight:var(--eb-prompt-sent-weight,572)!important;
-  }
-  /* Section names, native row selectors and title markers survive pin/unpin
-     and React remounts. Keep the scope out of the conversation body. */
-  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],
-      [data-ebook-count-rail="true"],[data-app-action-sidebar-section-heading],
-      [data-sidebar-cycle-item],[data-sidebar-archive-chatgpt-id],aside,[role="complementary"])
-    :is(a[href*="/c/"],[data-thread-title="true"],[data-sidebar-archive-chatgpt-id] [data-thread-title-trigger="true"]),
-  html body a:is([data-sidebar-cycle-item],[data-sidebar-archive-chatgpt-id])[href*="/c/"],
-  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],
-      [data-ebook-count-rail="true"],[data-app-action-sidebar-section-heading],
-      [data-sidebar-cycle-item],[data-sidebar-archive-chatgpt-id],aside,[role="complementary"])
-    :is(a[href*="/c/"],[data-thread-title="true"],[data-sidebar-archive-chatgpt-id] [data-thread-title-trigger="true"])
-    :is(span,div,p,[data-d-component="text"]):not(:is(
-      svg *,button *,[role="toolbar"] *,[aria-hidden="true"],[aria-hidden="true"] *,
-      .sr-only,.sr-only *,[data-ebook-glyph="true"],[data-ebook-project-count],
-      .jaroo-native-badge,.jaroo-native-badge *,[data-jaroo-status-slot],[data-jaroo-status-slot] *)),
-  html body a:is([data-sidebar-cycle-item],[data-sidebar-archive-chatgpt-id])[href*="/c/"]
-    :is(span,div,p,[data-d-component="text"]):not(:is(svg *,button *,[aria-hidden="true"],[aria-hidden="true"] *,
-      .sr-only,.sr-only *,[data-ebook-glyph="true"],.jaroo-native-badge,.jaroo-native-badge *)) {
-    font-size:var(--eb-chat-corrected-size,15.333px)!important;
-  }
-  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],
-      [data-sidebar-project-kind="local"],[data-app-action-sidebar-section-heading],[data-ebook-count-rail="true"],aside,[role="complementary"])
-    [data-app-action-sidebar-project-row] :is([data-marquee-content="true"],[data-marquee-text="true"]),
-  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],
-      [data-sidebar-project-kind="local"],[data-app-action-sidebar-section-heading],[data-ebook-count-rail="true"],aside,[role="complementary"])
-    [data-app-action-sidebar-project-row]
-    :is([data-marquee-content="true"],[data-marquee-text="true"])
-    :is(span,div,[data-d-component="text"]):not(:is(svg *,[aria-hidden="true"],[aria-hidden="true"] *,
-      .sr-only,.sr-only *,[data-ebook-glyph="true"],[data-ebook-project-count])) {
-    font-size:var(--eb-project-optical-size,16px)!important;
-    font-weight:var(--eb-project-emphasis-weight,650)!important;
-  }
-
 }
