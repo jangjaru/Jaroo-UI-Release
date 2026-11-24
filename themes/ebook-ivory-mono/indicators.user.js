@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.2.33
+// @version      0.2.34
 // @description  E-book visual dot indicators for role prefixes plus a light Clock skin; keeps original chat titles, React data and RUN/DONE logic intact.
 // @match        https://chatgpt.com/*
 // @run-at       document-start
@@ -905,7 +905,7 @@
       // does not change its badge hover/focus state.
       if(from===to)return;
     }
-    if(!countPositionFrame)countPositionFrame=requestAnimationFrame(()=>{countPositionFrame=0;positionProjectCounts();positionFixedSidebarTop();});
+    if(!countPositionFrame)countPositionFrame=requestAnimationFrame(()=>{countPositionFrame=0;refreshPositionNow();});
   }
   // Apply directly to our own noninteractive badges, independent of
   // the installed Stylus version. No changes to native Dot or focus rings.
@@ -945,7 +945,7 @@
         if(badge.getAttribute(k)!==v)badge.setAttribute(k,v);
     }
     for(const [row,record] of countHosts)if(!live.has(row)||!row.isConnected)restoreProjectCount(row,record);
-    pruneCountLayers();cachedCountReference=ref;positionProjectCounts(ref,true);
+    pruneCountLayers();cachedCountReference=ref;positionProjectCounts(ref,true);syncPositionResizeTargets(ref);
   }
   function restoreProjectCounts() {
     if(countPositionFrame)cancelAnimationFrame(countPositionFrame);countPositionFrame=0;
@@ -988,18 +988,58 @@
     observedRoots = roots;
     for (const root of roots) observer.observe(root,{subtree:true,childList:true,characterData:true,
       attributes:true,attributeFilter:['aria-expanded','aria-busy','data-has-more','data-conversation-count','data-chat-count','data-thread-count','data-total-conversations','data-total-threads','data-total-chats']});
-    if(navResizeObserver) {
-      navResizeObserver.disconnect();
-      for(const root of roots)navResizeObserver.observe(root);
-    }
+    // Actual geometry targets are reconciled after the project overlays are mounted.
   }
 
 
   /* Find effort/model display inside the composer without modifying its state. */
 
   let composerObserved=null,composerEditor=null;
+  // Keep the decoration attached to the *actual* sidebar geometry, not
+  // just the legacy sidebar IDs. ResizeObserver runs after layout and before
+  // paint. Read/write the existing overlays only; never rescan chat lists
+  // during a divider drag. Reconcile structure after the resize settles.
+  const navResizeTargets=new Set();
+  let resizeReconcileTimer=0;
+  function refreshPositionNow() {
+    if(disposed||document.hidden||(!countHosts.size&&!topBands.size))return;
+    if(countPositionFrame){cancelAnimationFrame(countPositionFrame);countPositionFrame=0;}
+    timed('position',()=>{
+      positionProjectCounts();
+      positionFixedSidebarTop();
+    });
+  }
+  function scheduleResizeReconcile() {
+    if(disposed)return;
+    clearTimeout(resizeReconcileTimer);
+    resizeReconcileTimer=setTimeout(()=>{
+      resizeReconcileTimer=0;
+      schedule(PASS.NAV|PASS.COMPOSER|PASS.HEADER|PASS.DIVIDER);
+    },160);
+  }
+  function onSidebarGeometryResize() {
+    if(disposed||document.hidden)return;
+    refreshPositionNow();
+    scheduleResizeReconcile();
+  }
   const navResizeObserver=typeof ResizeObserver==='function'?
-    new ResizeObserver(()=>schedule(PASS.NAV)):null;
+    new ResizeObserver(onSidebarGeometryResize):null;
+  function syncPositionResizeTargets(ref=cachedCountReference) {
+    if(!navResizeObserver)return;
+    const next=new Set([...observedRoots,...countLayers.keys(),...countLayers.values(),...topBands.keys()]);
+    // Watch the native Dot row/flex ancestors as well: the badge can move
+    // inside a wrapper whose outer sidebar dimensions remain unchanged.
+    for(let el=ref?.circle,depth=0;el&&depth<8&&el!==document.body&&el!==document.documentElement;el=el.parentElement,depth++) {
+      next.add(el);
+      if(countLayers.has(el)||topBands.has(el)||observedRoots.includes(el))break;
+    }
+    for(const el of navResizeTargets)if(!next.has(el)||!el.isConnected){
+      navResizeObserver.unobserve(el);navResizeTargets.delete(el);
+    }
+    for(const el of next)if(el?.isConnected&&!navResizeTargets.has(el)){
+      navResizeObserver.observe(el,{box:'border-box'});navResizeTargets.add(el);
+    }
+  }
   const composerResizeObserver=typeof ResizeObserver==='function'?
     new ResizeObserver(()=>schedule(PASS.DIVIDER)):null;
   const composerObserver=new MutationObserver(records=>{
@@ -1766,7 +1806,15 @@
     }
     if(mask)schedule(mask);
   }
-  function onRouteOrResize(event){schedule(event?.type==='resize'?PASS.NAV|PASS.COMPOSER|PASS.HEADER|PASS.DIVIDER:ALL);}
+  function onRouteOrResize(event) {
+    if(event?.type==='resize') {
+      queueProjectCountPosition(event);
+      scheduleResizeReconcile();
+    } else {
+      clearTimeout(resizeReconcileTimer);resizeReconcileTimer=0;
+      schedule(ALL);
+    }
+  }
   function recoverLightly() {
     if(document.hidden||disposed||!document.body)return;
     if(location.pathname!==lastRoute){lastRoute=location.pathname;schedule(ALL);return;}
@@ -1801,7 +1849,8 @@
     observer.disconnect();
     composerObserver.disconnect();
     pageObserver?.disconnect();
-    navResizeObserver?.disconnect();
+    navResizeObserver?.disconnect();navResizeTargets.clear();
+    clearTimeout(resizeReconcileTimer);resizeReconcileTimer=0;
     composerResizeObserver?.disconnect();
     uploadResizeObserver?.disconnect();
     uploadResizeTargets.clear();
@@ -1829,6 +1878,7 @@
     document.removeEventListener('DOMContentLoaded',onRouteOrResize);
     window.removeEventListener('popstate',onRouteOrResize);
     window.removeEventListener('resize',onRouteOrResize);
+    window.visualViewport?.removeEventListener('resize',onRouteOrResize);
     window.removeEventListener('focus', schedule);
     if (window[RUNTIME]?.dispose === dispose) delete window[RUNTIME];
   }
@@ -1849,6 +1899,7 @@
   window.addEventListener('focus',schedule);
   window.addEventListener('popstate',onRouteOrResize);
   window.addEventListener('resize',onRouteOrResize);
+  window.visualViewport?.addEventListener('resize',onRouteOrResize,{passive:true});
   recoverTimer=setInterval(recoverLightly,5000);
   schedule(ALL);
 
@@ -1886,7 +1937,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.2.33',dispose,refresh:schedule,
-    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state'),overflow:n.getAttribute('data-ebook-count-overflow')==='true',confirmed:n.getAttribute('data-ebook-count-confirmed')===''?null:Number(n.getAttribute('data-ebook-count-confirmed'))})),lastPassMs:{...timings},performance:{events:{...perfEvents},passes:Object.fromEntries(Object.entries(perfPasses).map(([k,v])=>[k,{runs:v.runs,averageMs:Math.round(v.totalMs/v.runs*100)/100,peakMs:Math.round(v.peakMs*100)/100}]))},fixedSidebarTop:[...topBands.values()].map(n=>({height:n.height,visible:getComputedStyle(n.strip).visibility==='visible',pattern:getComputedStyle(n.strip).backgroundImage})),projectCountBorders:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({border:getComputedStyle(n).borderTopWidth,style:getComputedStyle(n).borderTopStyle,outline:getComputedStyle(n).outlineStyle})),projectCountLayers:countLayers.size,visibleProjectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].filter(n=>getComputedStyle(n).visibility!=='hidden').length,projectCountAxis:findDotCountReference()?.circle.getBoundingClientRect().left??null,fontAudit:fontAudit()})
+    version:'0.2.34',dispose,refresh:schedule,
+    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state'),overflow:n.getAttribute('data-ebook-count-overflow')==='true',confirmed:n.getAttribute('data-ebook-count-confirmed')===''?null:Number(n.getAttribute('data-ebook-count-confirmed'))})),lastPassMs:{...timings},performance:{events:{...perfEvents},passes:Object.fromEntries(Object.entries(perfPasses).map(([k,v])=>[k,{runs:v.runs,averageMs:Math.round(v.totalMs/v.runs*100)/100,peakMs:Math.round(v.peakMs*100)/100}]))},fixedSidebarTop:[...topBands.values()].map(n=>({height:n.height,visible:getComputedStyle(n.strip).visibility==='visible',pattern:getComputedStyle(n.strip).backgroundImage})),projectCountBorders:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({border:getComputedStyle(n).borderTopWidth,style:getComputedStyle(n).borderTopStyle,outline:getComputedStyle(n).outlineStyle})),projectCountLayers:countLayers.size,positionResizeTargets:navResizeTargets.size,visibleProjectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].filter(n=>getComputedStyle(n).visibility!=='hidden').length,projectCountAxis:findDotCountReference()?.circle.getBoundingClientRect().left??null,fontAudit:fontAudit()})
   };
 })();
