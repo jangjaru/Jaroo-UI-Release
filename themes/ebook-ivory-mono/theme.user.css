@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.30
+@version      0.2.31
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -1492,6 +1492,99 @@
       :is([aria-hidden="true"],[data-ebook-glyph="true"],.sr-only)
     ) {
     font-size:var(--eb-project-optical-size)!important;
+  }
+
+
+  /* 28. COOL E-INK GRAPH PAPER · v0.2.31 (2026-11-24)
+     Only visual overrides. Clock/Status/Mapper, RUN/DONE, Live Clock and
+     underlying ChatGPT controls keep their original JavaScript owners. */
+  :root {
+    --eb-paper:#EFF1F2!important;
+    --eb-panel:#F5F6F6!important;
+    --eb-rail:#E7EAEB!important;
+    --eb-soft:#E4E8EA!important;
+    --eb-ink:#292D30!important;
+    --eb-secondary:#535B60!important;
+    --eb-muted:#737D83!important;
+    --eb-line:#C5CDD0!important;
+    --eb-line-strong:#89979E!important;
+    --eb-accent-ink:#303438!important;
+    --eb-notebook-grid:rgba(85,97,105,.09)!important;
+    --eb-composer-paper:#F5F6F6!important;
+    --eb-composer-line:#BFC8CC!important;
+    --eb-quiet-focus:#7B898F!important;
+    --eb-user-sent-optical-size:15.667px!important; /* 15px + 0.5pt */
+    --eb-prompt-sent-weight:520!important;          /* 650 x 0.8 */
+    --eb-prompt-sent-ink:#292D30!important;
+    --eb-prompt-accent:#292D30!important;
+    --eb-composer-keyline:2.5px solid #303438!important;
+    --eb-composer-single-stroke:2.5px solid #303438!important;
+    --eb-quick-nav-size:var(--eb-project-optical-size,16px)!important;
+    --eb-marker-yellow:#F2D778!important;
+    --ebook-theme-version:"0.2.31";
+  }
+  /* Preserve the existing procedural paper-grain SVG and only refine grid pitch. */
+  html body :is(#thread,[data-testid="conversation-panel"],
+      [data-testid="conversation-thread"],main,[role="main"]) {
+    background-size:22px 22px,22px 22px,240px 240px!important;
+  }
+
+  /* '새 채팅' and 'Dot': exactly match the project label size and emphasis. */
+  html body [data-ebook-quick-label="new-chat"],
+  html body [data-ebook-quick-label="dot"] {
+    font-size:var(--eb-project-optical-size,16px)!important;
+    font-weight:650!important;
+    line-height:1.42!important;
+  }
+  html body [data-ebook-quick-label="new-chat"]::before {
+    background:rgba(242,215,120,.87)!important;
+  }
+
+  /* Only the JS-identified active conversation breadcrumb receives highlighting.
+     Previous visual size 16px, new size exactly 24px (1.5x). */
+  html body [data-ebook-active-title="true"] {
+    display:inline-block!important;
+    position:relative!important;
+    isolation:isolate!important;
+    width:max-content!important;
+    max-width:min(82vw,920px)!important;
+    font-family:var(--eb-font)!important;
+    font-size:24px!important;
+    font-weight:650!important;
+    line-height:1.24!important;
+    letter-spacing:-.025em!important;
+    color:var(--eb-ink)!important;
+    -webkit-text-fill-color:var(--eb-ink)!important;
+    text-shadow:none!important;
+  }
+  html body [data-ebook-active-title="true"]::before {
+    content:""!important;
+    position:absolute!important;
+    z-index:-1!important;
+    pointer-events:none!important;
+    left:-7px!important;
+    right:-7px!important;
+    top:21%!important;
+    bottom:12%!important;
+    border:0!important;
+    border-radius:0!important;
+    background:#D8EA8B!important;
+    clip-path:polygon(0 20%,16% 8%,48% 10%,79% 3%,100% 17%,98% 88%,73% 98%,38% 93%,1% 100%)!important;
+    transform:rotate(-.35deg)!important;
+  }
+  /* Fallback for the same breadcrumb before JS marks its precise text leaf. */
+  html body :is(#page-header,[data-testid="conversation-header"])
+      :is([data-testid="conversation-title"],h1) {
+    font-size:24px!important;
+    color:var(--eb-ink)!important;
+  }
+
+  /* User-authored messages, not assistant replies or editable input. */
+  html body [data-ebook-prompt-text="sent"] {
+    font-size:var(--eb-user-sent-optical-size)!important;
+    font-weight:var(--eb-prompt-sent-weight)!important;
+    color:var(--eb-prompt-sent-ink)!important;
+    -webkit-text-fill-color:var(--eb-prompt-sent-ink)!important;
   }
 
 }
