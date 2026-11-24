@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.2.28
+// @version      0.2.29
 // @description  E-book visual dot indicators for role prefixes plus a light Clock skin; keeps original chat titles, React data and RUN/DONE logic intact.
 // @match        https://chatgpt.com/*
 // @run-at       document-start
@@ -1469,9 +1469,9 @@
     // Fixed sent-message values prevent a stale Stylus CSS token (14px / 700)
     // from silently overriding this newer userscript's 15px / 650 target.
     // Keep composer, assistant and sidebar typography unchanged.
-    const sentReading=getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim()||'15.667px';
+    const sentReading=getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim()||'16.333px';
     const ink=getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-sent-ink').trim()||'#292D30';
-    const sentWeight=getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-sent-weight').trim()||'520';
+    const sentWeight=getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-sent-weight').trim()||'572';
     const hasDirectText=el=>[...el.childNodes].some(node=>
       node.nodeType===Node.TEXT_NODE && (node.nodeValue||'').trim().length>0);
     const add=(el,kind)=>{
@@ -1746,7 +1746,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.2.28',dispose,refresh:schedule,
+    version:'0.2.29',dispose,refresh:schedule,
     diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state'),overflow:n.getAttribute('data-ebook-count-overflow')==='true',confirmed:n.getAttribute('data-ebook-count-confirmed')===''?null:Number(n.getAttribute('data-ebook-count-confirmed'))})),lastPassMs:{...timings},fixedSidebarTop:[...document.querySelectorAll('[data-ebook-sidebar-top="band"]')].map(n=>({height:n.style.getPropertyValue('--eb-sidebar-top-height'),surfaces:n.querySelectorAll('[data-ebook-sidebar-top="surface"]').length})),fontAudit:fontAudit()})
   };
 })();
