@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.2.26
+// @version      0.2.27
 // @description  E-book visual dot indicators for role prefixes plus a light Clock skin; keeps original chat titles, React data and RUN/DONE logic intact.
 // @match        https://chatgpt.com/*
 // @run-at       document-start
@@ -423,6 +423,127 @@
     const outer=valid.filter(el=>!valid.some(p=>p!==el&&p.contains(el)));
     syncPresentationMarks('data-ebook-sidebar-seam',new Map(outer.map(el=>[el,'true'])));
   }
+
+  /* Fixed top-band decoration. The native scroll viewport is the boundary;
+     never create a new sticky element, change overflow, or move the DOM.
+     Fail open when the quick actions and boundary cannot be identified. */
+  const topBandProps=['--eb-sidebar-top-height','--eb-sidebar-top-width','--eb-top-x','--eb-top-y'];
+  const topBandOriginal=new Map();
+  const topBandContent='[data-app-action-sidebar-project-row],[data-sidebar-cycle-item],'+
+    '[data-sidebar-archive-chatgpt-id],a[href*="/c/"],#'+CLOCK_HOST;
+  const topBandSurface='div,header,nav,section';
+  function topBandHeight(rootBox,dotBox,scrollTop) {
+    if(!Number.isFinite(scrollTop)||scrollTop<dotBox.bottom-2||
+       scrollTop>dotBox.bottom+70)return null;
+    const h=scrollTop-rootBox.top;
+    return h>=55&&h<=340&&h<rootBox.height-40?Math.round(h*10)/10:null;
+  }
+  function findTopBand(root,newChat,dot) {
+    const rr=visibleBox(root),nr=visibleBox(newChat),dr=visibleBox(dot);
+    if(!rr||!nr||!dr||rr.width<130||rr.width>720||
+       nr.top<rr.top-3||dr.top<nr.top-2||dr.bottom>rr.top+310)return null;
+    // Walk only ancestors of known project/list rows, not every page node.
+    // Match the scrollable container below Dot even when its list is scrolled.
+    const first=root.querySelector(topBandContent.replace(',#'+CLOCK_HOST,''));
+    const ends=[];
+    if(first)for(let p=first.parentElement;p&&p!==root;p=p.parentElement) {
+      const r=visibleBox(p);
+      if(!r||r.width<rr.width*.70||r.height<60)continue;
+      const s=getComputedStyle(p);
+      if(!/^(auto|scroll|overlay)$/u.test(s.overflowY))continue;
+      if(p.contains(newChat)||p.contains(dot))continue;
+      const h=topBandHeight(rr,dr,r.top);
+      if(h!==null)ends.push(h);
+    }
+    // Some builds have an explicit separate fixed navigation wrapper.
+    // Use it only when it contains both actions but no list rows.
+    if(!ends.length) {
+      for(let p=dot.parentElement;p&&p!==root;p=p.parentElement) {
+        if(!p.contains(newChat)||p.querySelector(topBandContent))continue;
+        const r=visibleBox(p);
+        if(!r||r.width<rr.width*.82||r.top>nr.top+2)continue;
+        if(p.closest('[role="dialog"],[role="menu"]'))continue;
+        const h=topBandHeight(rr,dr,r.bottom);
+        if(h!==null)ends.push(h);
+      }
+    }
+    if(!ends.length)return null;
+    const height=Math.min(...ends);
+    // Do not decorate a root with the Clock or a scroll viewport starting
+    // within this band. This is not a redesign of those features.
+    const clock=root.querySelector('#'+CLOCK_HOST);
+    if(clock&&visibleBox(clock)&&clock.getBoundingClientRect().top<rr.top+height)return null;
+    return {rr,height};
+  }
+  function restoreTopBand(el,record) {
+    restoreStyle(el,record.style);
+    if(el.isConnected) {
+      if(record.marker===null)el.removeAttribute('data-ebook-sidebar-top');
+      else el.setAttribute('data-ebook-sidebar-top',record.marker);
+    }
+    topBandOriginal.delete(el);
+  }
+  function markFixedSidebarTop() {
+    const wanted=new Map();
+    const news=[...document.querySelectorAll('[data-ebook-quick-label="new-chat"]')];
+    const dots=[...document.querySelectorAll('[data-ebook-quick-label="dot"]')];
+    const roots=new Set([...sidebarRoots(),...document.querySelectorAll('[data-ebook-sidebar-seam="true"]')]);
+    for(const dot of dots) {
+      const nearest=dot.closest(SIDE_ROOTS+',aside,[role="complementary"]');
+      if(nearest)roots.add(nearest);
+    }
+    for(const root of roots) {
+      // If duplicate nested sidebar roots exist, paint only the outer one.
+      if([...roots].some(p=>p!==root&&p.contains(root)&&
+          news.some(n=>p.contains(n))&&dots.some(n=>p.contains(n))))continue;
+      const n=news.find(el=>root.contains(el)&&visibleBox(el));
+      const dot=dots.find(el=>root.contains(el)&&visibleBox(el));
+      if(!n||!dot)continue;
+      const band=findTopBand(root,n,dot);
+      if(!band)continue;
+      const {rr,height}=band;
+      wanted.set(root,{marker:'band',style:{
+        '--eb-sidebar-top-height':height+'px',
+        '--eb-sidebar-top-width':Math.round(rr.width*10)/10+'px'
+      }});
+      const bottom=rr.top+height;
+      // Discover only large header wrappers in the verified band. Keep
+      // the pattern continuous across siblings with native opaque surfaces.
+      function visit(parent,depth) {
+        if(depth>7)return;
+        for(const el of parent.children) {
+          if(!el.matches(topBandSurface)||el.matches('[role="button"],[role="menu"],[role="dialog"]'))continue;
+          const r=visibleBox(el);
+          if(!r||r.top>=bottom-1||r.bottom<=rr.top||r.width<rr.width*.75)continue;
+          if(r.bottom<=bottom+1&&r.top>=rr.top-2&&!el.querySelector(topBandContent)) {
+            const s=getComputedStyle(el);
+            if(!/^(auto|scroll|overlay)$/u.test(s.overflowY)&&
+                (s.backgroundImage!=='none'||!['transparent','rgba(0, 0, 0, 0)'].includes(s.backgroundColor))) {
+              wanted.set(el,{marker:'surface',style:{
+                '--eb-top-x':Math.round((rr.left-r.left)*10)/10+'px',
+                '--eb-top-y':Math.round((rr.top-r.top)*10)/10+'px'
+              }});
+            }
+          }
+          // A wider ancestor can contain both fixed header and list; descend
+          // without styling that shared ancestor.
+          visit(el,depth+1);
+        }
+      }
+      visit(root,0);
+    }
+    for(const [el,record] of topBandOriginal)if(!wanted.has(el)||!el.isConnected)restoreTopBand(el,record);
+    for(const [el,value] of wanted) {
+      if(!topBandOriginal.has(el))topBandOriginal.set(el,{marker:el.getAttribute('data-ebook-sidebar-top'),
+        style:snapshotStyle(el,topBandProps)});
+      if(el.getAttribute('data-ebook-sidebar-top')!==value.marker)el.setAttribute('data-ebook-sidebar-top',value.marker);
+      for(const [p,v] of Object.entries(value.style))makeImportant(el,p,v);
+    }
+  }
+  function restoreFixedSidebarTop() {
+    for(const [el,record] of topBandOriginal)restoreTopBand(el,record);
+  }
+
   const modeControlSelector='button,a[href],[role="button"],[role="tab"],[role="radio"]';
   const modeExclude='[data-message-author-role],[role="dialog"],[role="menu"],'+
     '[data-thread-title="true"],[data-app-action-sidebar-project-row],[data-testid="composer"],'+
@@ -1321,6 +1442,7 @@
       markDotCounter();
       markQuickActionLabels();
       markSidebarSeam();
+      markFixedSidebarTop();
       markProjectTitles();
       markProjectCounts();
     });
@@ -1424,6 +1546,7 @@
     restorePromptTypography();
     restoreQuickDotTypography();
     restoreProjectCounts();
+    restoreFixedSidebarTop();
     restoreNotebookMarks();
     document.querySelectorAll('[data-ebook-quick-label]').forEach(n=>n.removeAttribute('data-ebook-quick-label'));
     document.querySelectorAll('[data-ebook-effort-picker="true"]').forEach(n=>n.removeAttribute('data-ebook-effort-picker'));
@@ -1493,7 +1616,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.2.26',dispose,refresh:schedule,
-    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state'),overflow:n.getAttribute('data-ebook-count-overflow')==='true',confirmed:n.getAttribute('data-ebook-count-confirmed')===''?null:Number(n.getAttribute('data-ebook-count-confirmed'))})),lastPassMs:{...timings},fontAudit:fontAudit()})
+    version:'0.2.27',dispose,refresh:schedule,
+    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state'),overflow:n.getAttribute('data-ebook-count-overflow')==='true',confirmed:n.getAttribute('data-ebook-count-confirmed')===''?null:Number(n.getAttribute('data-ebook-count-confirmed'))})),lastPassMs:{...timings},fixedSidebarTop:[...document.querySelectorAll('[data-ebook-sidebar-top="band"]')].map(n=>({height:n.style.getPropertyValue('--eb-sidebar-top-height'),surfaces:n.querySelectorAll('[data-ebook-sidebar-top="surface"]').length})),fontAudit:fontAudit()})
   };
 })();
