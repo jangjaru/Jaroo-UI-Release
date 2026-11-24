@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.2.24
+// @version      0.2.25
 // @description  E-book visual dot indicators for role prefixes plus a light Clock skin; keeps original chat titles, React data and RUN/DONE logic intact.
 // @match        https://chatgpt.com/*
-// @run-at       document-idle
+// @run-at       document-start
 // @grant        none
 // @updateURL    https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/indicators.user.js
 // @downloadURL  https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/indicators.user.js
@@ -104,8 +104,28 @@
   let recoverTimer = 0;
   let shadowStyle = null;
   let observedRoots = [];
-  const observer = new MutationObserver(() => schedule());
-  let bootstrapObserver = null;
+  const PASS={NAV:1,COMPOSER:2,SENT:4,HEADER:8,CLOCK:16,EDITOR:32,DIVIDER:64};
+  const ALL=127;
+  let dirty=0,lastRoute=location.pathname,lastRecovery=0;
+  const timings={nav:0,composer:0,sent:0,header:0,clock:0,editor:0,divider:0,runs:0};
+  const OWN_NODE='[data-ebook-project-count],[data-ebook-upload-divider="true"],[data-ebook-glyph="true"]';
+  const USER_NODE='[data-message-author-role="user"],[data-user-message-bubble="true"],[data-user-message]';
+  const EDITOR_NODE='#prompt-textarea,[data-testid="prompt-textarea"],[data-composer-input] .ProseMirror[contenteditable="true"]';
+  const HEADER_NODE='#page-header,[data-testid="conversation-header"],[role="banner"]';
+  const PROJECT_ROW='[data-app-action-sidebar-project-row]';
+  const isOwnNode=node=>{
+    const el=node?.nodeType===1?node:node?.parentElement;
+    return !!el?.closest?.(OWN_NODE);
+  };
+  function ownMutation(m) {
+    if(isOwnNode(m.target))return true;
+    const changed=[...m.addedNodes,...m.removedNodes];
+    return changed.length>0&&changed.every(n=>isOwnNode(n));
+  }
+  const observer=new MutationObserver(records=>{
+    if(records.some(m=>!ownMutation(m)))schedule(PASS.NAV|PASS.HEADER);
+  });
+  let pageObserver=null;
   const touched = new Set();
   const errors = { missingTitle: 0, missingPrefix: 0, wrapped: 0 };
 
@@ -457,7 +477,7 @@
     return best;
   }
   let modeObserved=null;
-  const modeObserver=new MutationObserver(()=>schedule());
+  const modeObserver=new MutationObserver(()=>schedule(PASS.HEADER));
   function markWorkSwitcher() {
     const pair=pairedModeControls();
     const hosts=new Map(),tabs=new Map();
@@ -492,7 +512,7 @@
     }
   }
   function onModeInteraction(event) {
-    if(event.target?.closest?.('[data-ebook-work-switcher="true"]'))schedule();
+    if(event.target?.closest?.('[data-ebook-work-switcher="true"]'))schedule(PASS.HEADER);
   }
   function restoreNotebookMarks() {
     modeObserver.disconnect();
@@ -500,6 +520,188 @@
     document.removeEventListener('click',onModeInteraction,true);
     for(const attr of ['data-ebook-project-marker','data-ebook-sidebar-seam','data-ebook-work-switcher','data-ebook-switch-tab'])
       syncPresentationMarks(attr,new Map());
+  }
+
+
+  /* Project counters: local native DOM only, no API calls, pagination clicks,
+     storage, conversation content reads, or data changes. Exact totals from
+     explicit native metadata, otherwise a complete loaded group, or N+/?. */
+  const countHosts=new Map();
+  const dotInsets=new WeakMap();
+  const totalAttrs=['data-conversation-count','data-thread-count','data-chat-count',
+    'data-total-conversations','data-total-threads','data-total-chats'];
+  const countLinkSelector='a[href*="/c/"],[data-sidebar-archive-chatgpt-id]';
+  function nativeProjectScope(row) {
+    const local=row.closest('[data-sidebar-project-kind="local"]');
+    if(!local)return null;
+    // The local project wrapper is the reliable grouping boundary. Some
+    // builds put the list in an adjacent child of the same exclusive group.
+    if(local.querySelector(PROJECT_ROW)!==row||
+       local.querySelectorAll(PROJECT_ROW).length>1)return null;
+    let group=local;
+    if(local.querySelector(countLinkSelector))return group;
+    let p=local.parentElement;
+    for(let i=0;p&&i<3;i++,p=p.parentElement) {
+      if(p.matches(SIDE_ROOTS+',aside,nav,[role="navigation"],[role="complementary"]')||
+         p.querySelectorAll(PROJECT_ROW).length!==1||
+         p.querySelectorAll('[data-sidebar-project-kind="local"]').length!==1)break;
+      // Only accept a parent with an explicit list-like sibling area, not
+      // the global sidebar or unrelated conversations.
+      const list=[...p.querySelectorAll('[role="list"],[role="group"],[data-sidebar-cycle-list],[data-testid*="project-conversation" i]')]
+        .find(n=>!n.contains(row)&&n.querySelector(countLinkSelector));
+      if(list){group=p;break;}
+    }
+    return group;
+  }
+  function explicitProjectTotal(row,group,loaded) {
+    for(const el of [row,group])for(const attr of totalAttrs) {
+      const v=el.getAttribute(attr);
+      if(v!==null&&/^\d{1,7}$/u.test(v)&&Number(v)>=loaded)return Number(v);
+    }
+    return null;
+  }
+  function conversationKey(el) {
+    const href=el.getAttribute('href')||'';
+    const match=href.match(/\/c\/([^/?#]+)/u);
+    return match?.[1]||el.getAttribute('data-sidebar-archive-chatgpt-id')||null;
+  }
+  function countProjectState(loaded,total,expanded,more,busy,empty,scopeKnown) {
+    if(total!==null)return {label:String(total),kind:'exact'};
+    if(!scopeKnown)return {label:'?',kind:'unknown'};
+    if(busy||expanded===false||more||(!loaded&&!empty&&expanded!==true))
+      return loaded?{label:loaded+'+',kind:'partial'}:{label:'?',kind:'unknown'};
+    if(loaded||empty||expanded===true)return {label:String(loaded),kind:'exact'};
+    return {label:'?',kind:'unknown'};
+  }
+  function readProjectCount(row) {
+    const group=nativeProjectScope(row);
+    if(!group)return {label:'?',kind:'unknown'};
+    const ids=new Set();
+    for(const el of group.querySelectorAll(countLinkSelector)) {
+      if(row.contains(el)||el.closest('[data-ebook-project-count]'))continue;
+      const nearest=el.closest('[data-sidebar-project-kind="local"]');
+      if(nearest&&nearest!==row.closest('[data-sidebar-project-kind="local"]'))continue;
+      const key=conversationKey(el);
+      if(key)ids.add(key);
+    }
+    const expandedValue=row.getAttribute('aria-expanded')||
+      row.querySelector('[aria-expanded]')?.getAttribute('aria-expanded')||
+      group.getAttribute('aria-expanded');
+    const expanded=expandedValue==='true'?true:expandedValue==='false'?false:null;
+    const controls=[...group.querySelectorAll('button,a,[role="button"]')].filter(el=>!row.contains(el));
+    const more=controls.some(el=>{
+      const label=normalizeLabel(el.textContent);
+      const aria=normalizeLabel(el.getAttribute('aria-label'));
+      return /^(?:더\s*보기|더\s*많이\s*보기|모두\s*보기|Show more|Load more|View all|See all)(?:\s*\(\d+\))?$/iu.test(label)||
+        /^(?:더\s*보기|더\s*많이\s*보기|모두\s*보기|Show more|Load more|View all|See all)(?:\s*\(\d+\))?$/iu.test(aria);
+    })||group.getAttribute('data-has-more')==='true'||!!group.querySelector('[data-has-more="true"]');
+    const busy=group.getAttribute('aria-busy')==='true'||!!group.querySelector('[aria-busy="true"],[role="progressbar"]');
+    const empty=!!group.querySelector('[data-testid="project-empty-state"],[data-testid="empty-conversations"]');
+    return countProjectState(ids.size,explicitProjectTotal(row,group,ids.size),expanded,more,busy,empty,true);
+  }
+  function findDotCountReference() {
+    for(const dot of document.querySelectorAll('[data-ebook-quick-label="dot"]')) {
+      if(!visibleBox(dot))continue;
+      let p=dot;
+      for(let depth=0;p&&depth<6;depth++,p=p.parentElement) {
+        const aggregate=normalizeLabel(p.textContent).replace(/\s+/g,'');
+        if(!/^Dot\d{1,5}$/u.test(aggregate))continue;
+        const n=[...p.querySelectorAll('span,div,small')].find(el=>
+          el.children.length===0&&/^\d{1,5}$/u.test(normalizeLabel(el.textContent))&&
+          visibleBox(el)&&el.getBoundingClientRect().left>dot.getBoundingClientRect().left);
+        if(!n)continue;
+        let circle=n;
+        for(let a=n;a&&a!==p;a=a.parentElement) {
+          const r=a.getBoundingClientRect(),s=getComputedStyle(a);
+          if(r.width>=12&&r.width<=36&&r.height>=12&&r.height<=36&&
+            Math.abs(r.width-r.height)<=9&&
+            (parseFloat(s.borderRadius)>=5||s.borderRadius.includes('%'))) {
+            circle=a;break;
+          }
+        }
+        return {circle,number:n,dot};
+      }
+    }
+    return null;
+  }
+  function projectRail(row) {
+    return row.closest('[data-ebook-sidebar-seam="true"]')||
+      row.closest(SIDE_ROOTS+',aside,[role="complementary"]');
+  }
+  function counterAppearance(ref) {
+    if(!ref)return {'--eb-count-diameter':'19px','--eb-count-bg':'#C9CDCF',
+      '--eb-count-border':'0 solid transparent','--eb-count-ink':'#292D30',
+      '--eb-count-font':'var(--eb-mono)','--eb-count-font-size':'11px','--eb-count-weight':'500'};
+    const box=getComputedStyle(ref.circle),num=getComputedStyle(ref.number),r=ref.circle.getBoundingClientRect();
+    return {'--eb-count-diameter':Math.max(15,Math.min(26,Math.round(r.height)))+'px',
+      '--eb-count-bg':box.backgroundColor,'--eb-count-border':box.borderTopWidth+' '+box.borderTopStyle+' '+box.borderTopColor,
+      '--eb-count-ink':num.color,'--eb-count-font':num.fontFamily,
+      '--eb-count-font-size':num.fontSize,'--eb-count-weight':num.fontWeight};
+  }
+  function restoreProjectCount(row,record) {
+    record.badge.remove();
+    if(row.isConnected) {
+      if(record.prior===null)row.removeAttribute('data-ebook-count-host');
+      else row.setAttribute('data-ebook-count-host',record.prior);
+    }
+    countHosts.delete(row);
+  }
+  function markProjectCounts() {
+    const ref=findDotCountReference();
+    const appearance=counterAppearance(ref);
+    const diameter=parseFloat(appearance['--eb-count-diameter']);
+    const live=new Set();
+    const refRail=ref&&projectRail(ref.dot);
+    if(ref&&refRail) {
+      const b=ref.circle.getBoundingClientRect(),r=refRail.getBoundingClientRect();
+      dotInsets.set(refRail,r.right-(b.left+b.width/2));
+    }
+    for(const row of document.querySelectorAll(PROJECT_ROW)) {
+      const rail=projectRail(row),r=visibleBox(row);
+      if(!rail||!r||r.width<90)continue;
+      const rr=rail.getBoundingClientRect();
+      if(rr.left< -3||rr.left>180||rr.width>720)continue;
+      const title=row.querySelector('[data-marquee-content="true"]');
+      if(!title)continue;
+      let center=rr.right-(dotInsets.get(rail)??25);
+      if(ref&&(!refRail||refRail===rail)) {
+        const b=ref.circle.getBoundingClientRect();
+        if(b.left>=rr.left&&b.right<=rr.right)center=b.left+b.width/2;
+      }
+      const borderLeft=parseFloat(getComputedStyle(row).borderLeftWidth)||0;
+      const x=center-r.left-borderLeft;
+      if(x<diameter/2||x>r.width-diameter/2)continue;
+      // Avoid obscuring long labels when the native sidebar is very narrow.
+      const leaf=title.querySelector('[data-ebook-project-marker]')||title;
+      const range=document.createRange();
+      range.selectNodeContents(leaf);
+      const end=range.getBoundingClientRect().right;
+      if(end>0&&end>center-diameter/2-2)continue;
+      const state=readProjectCount(row);
+      live.add(row);
+      let item=countHosts.get(row);
+      if(!item) {
+        const badge=document.createElement('span');
+        badge.setAttribute('data-ebook-project-count','');
+        badge.setAttribute('aria-hidden','true');
+        item={badge,prior:row.getAttribute('data-ebook-count-host')};
+        countHosts.set(row,item);
+      }
+      const {badge}=item;
+      if(!row.contains(badge))row.appendChild(badge);
+      if(!row.hasAttribute('data-ebook-count-host'))
+        row.setAttribute('data-ebook-count-host',getComputedStyle(row).position==='static'?'relative':'native');
+      if(badge.textContent!==state.label)badge.textContent=state.label;
+      if(badge.getAttribute('data-ebook-count-state')!==state.kind)badge.setAttribute('data-ebook-count-state',state.kind);
+      const long=state.label.length>2?'true':'false';
+      if(badge.getAttribute('data-ebook-count-long')!==long)badge.setAttribute('data-ebook-count-long',long);
+      makeImportant(badge,'--eb-count-x',Math.round(x*10)/10+'px');
+      for(const [k,v] of Object.entries(appearance))makeImportant(badge,k,v);
+    }
+    for(const [row,record] of countHosts)if(!live.has(row)||!row.isConnected)restoreProjectCount(row,record);
+  }
+  function restoreProjectCounts() {
+    for(const [row,record] of countHosts)restoreProjectCount(row,record);
   }
 
   function synchronizeSidebar() {
@@ -530,18 +732,38 @@
 
   function attachObservers() {
     const roots = sidebarRoots();
-    if (roots.length && bootstrapObserver) { bootstrapObserver.disconnect(); bootstrapObserver = null; }
     if (roots.length === observedRoots.length && roots.every((x,i) => x === observedRoots[i] && x.isConnected)) return;
     observer.disconnect();
     observedRoots = roots;
-    for (const root of roots) observer.observe(root,{subtree:true,childList:true,characterData:true});
+    for (const root of roots) observer.observe(root,{subtree:true,childList:true,characterData:true,
+      attributes:true,attributeFilter:['aria-expanded','aria-busy','data-has-more','data-conversation-count','data-chat-count','data-thread-count','data-total-conversations','data-total-threads','data-total-chats']});
+    if(navResizeObserver) {
+      navResizeObserver.disconnect();
+      for(const root of roots)navResizeObserver.observe(root);
+    }
   }
 
 
   /* Find effort/model display inside the composer without modifying its state. */
 
-  let composerObserved=null;
-  const composerObserver=new MutationObserver(()=>schedule());
+  let composerObserved=null,composerEditor=null;
+  const navResizeObserver=typeof ResizeObserver==='function'?
+    new ResizeObserver(()=>schedule(PASS.NAV)):null;
+  const composerResizeObserver=typeof ResizeObserver==='function'?
+    new ResizeObserver(()=>schedule(PASS.DIVIDER)):null;
+  const composerObserver=new MutationObserver(records=>{
+    let mask=0;
+    for(const m of records) {
+      if(ownMutation(m))continue;
+      const target=m.target.nodeType===1?m.target:m.target.parentElement;
+      if(composerEditor?.contains(target)) {
+        // Typing ordinary text needs no full-page restyle. New editor
+        // elements can require typography fallback, but never sent scans.
+        if(m.type==='childList'&&[...m.addedNodes].some(n=>n.nodeType===1))mask|=PASS.EDITOR;
+      } else mask|=PASS.COMPOSER|PASS.EDITOR|PASS.DIVIDER;
+    }
+    if(mask)schedule(mask);
+  });
   function activeComposer() {
     const editor=document.querySelector('#prompt-textarea,[data-testid="prompt-textarea"],[contenteditable="true"][role="textbox"]');
     if(!editor) return null;
@@ -556,10 +778,18 @@
   function watchComposer() {
     const item=activeComposer();
     const root=item?.form||item?.shell;
-    if(root===composerObserved && root?.isConnected)return;
+    if(root===composerObserved&&root?.isConnected&&item?.editor===composerEditor)return;
     composerObserver.disconnect();
+    composerResizeObserver?.disconnect();
     composerObserved=root||null;
-    if(root)composerObserver.observe(root,{subtree:true,childList:true,characterData:true});
+    composerEditor=item?.editor||null;
+    if(root) {
+      composerObserver.observe(root,{subtree:true,childList:true,attributes:true,
+        attributeFilter:['aria-busy','data-state','data-testid','src','hidden','aria-hidden']});
+      composerResizeObserver?.observe(root);
+      if(composerEditor)composerResizeObserver?.observe(composerEditor);
+      if(item?.shell&&item.shell!==root)composerResizeObserver?.observe(item.shell);
+    }
   }
   function markEffortPicker() {
     // The model picker may be outside the form subtree. Search visible button
@@ -578,10 +808,9 @@
       return b.bottom>=window.innerHeight-300 && b.left>=window.innerWidth*.37;
     };
     for(const btn of buttons){
-      if(!eligible(btn))continue;
       const text=[btn.textContent,btn.getAttribute('title'),btn.getAttribute('aria-label')]
-        .map(s=>(s||'').replace(/\s+/g,' ').trim()).find(s=>s&&suffix.test(s));
-      if(!text||text.length>80)continue;
+        .map(s=>(s||'').replace(/\s+/g,' ').trim()).find(s=>s&&s.length<=80&&suffix.test(s));
+      if(!text||!eligible(btn))continue;
       chosen.add(btn);
       for(const node of btn.querySelectorAll('span,small')){
         if(suffix.test((node.textContent||'').replace(/\s+/g,' ').trim()) && node.childElementCount===0)
@@ -655,51 +884,88 @@
     if(winner&&!winner.hasAttribute('data-ebook-active-title'))
       winner.setAttribute('data-ebook-active-title','true');
   }
-  function markUploadDivider() {
-    // No editor/content insertion. A 1px absolute divider is appended to the
-    // visual composer root, and only for a visible uploaded preview.
+  let uploadIntentUntil=0,uploadIntentTimer=0;
+  const attachmentCandidates='[data-testid*="attachment-preview" i],[data-testid*="file-preview" i],'+
+    '[data-testid*="upload-preview" i],[data-testid*="attachment" i],[data-testid*="uploading" i],'+
+    '[data-testid*="file-thumbnail" i],[data-testid*="file-card" i],[data-attachment-id],'+
+    '[data-file-id],[data-upload-id],[aria-label*="업로드 중"],[aria-label*="uploading" i],'+
+    '[role="progressbar"],img';
+  function onUploadIntent(event) {
     const c=activeComposer();
+    if(!c?.editor)return;
+    let hasFiles=false;
+    if(event.type==='change') {
+      const t=event.target;
+      hasFiles=t?.matches?.('input[type="file"]')&&t.files?.length>0&&
+        (!t.closest('[role="dialog"],[data-message-author-role]')||c.form?.contains(t));
+    } else {
+      const transfer=event.clipboardData||event.dataTransfer;
+      hasFiles=!!(transfer?.files?.length||[...(transfer?.items||[])].some(i=>i.kind==='file'))&&
+        (!!c.form?.contains(event.target)||!!c.shell?.contains(event.target)||!!c.editor.contains(event.target));
+    }
+    if(!hasFiles)return;
+    // Observe intent only, never read files, change upload events or initiate
+    // uploads. Show early only after native space actually exists.
+    uploadIntentUntil=performance.now()+12000;
+    clearTimeout(uploadIntentTimer);
+    uploadIntentTimer=setTimeout(()=>schedule(PASS.DIVIDER),12050);
+    schedule(PASS.COMPOSER|PASS.DIVIDER);
+  }
+  function onComposerImageLoad(event) {
+    if(event.target?.tagName==='IMG'&&composerObserved?.contains(event.target))
+      schedule(PASS.DIVIDER);
+  }
+  function clearUploadDivider() {
+    for(const line of document.querySelectorAll('[data-ebook-upload-divider="true"]'))line.remove();
+    for(const host of document.querySelectorAll('[data-ebook-composer-root="true"]'))host.removeAttribute('data-ebook-composer-root');
+  }
+  function markUploadDivider() {
+    const c=activeComposer();
+    if(!c?.shell||!c.editor){clearUploadDivider();return;}
+    const selected=[...composerFrameOriginal.keys()].find(el=>el.isConnected&&el.contains(c.editor));
+    // Prefer the real painted frame, with a form fallback when the native
+    // preview strip is a sibling outside that frame.
+    let shell=selected||c.shell;
+    if(!shell.querySelector(attachmentCandidates)&&c.form?.contains(c.editor)&&
+        c.form.querySelector(attachmentCandidates))shell=c.form;
+    const er=c.editor.getBoundingClientRect(),sr=shell.getBoundingClientRect();
+    if(!sr.width||!er.width)return;
+    let bottom=0;
+    for(const el of shell.querySelectorAll(attachmentCandidates)) {
+      if(c.editor.contains(el)||el.contains(c.editor)||
+        el.closest('[role="menu"],[role="dialog"],[data-message-author-role]'))continue;
+      const r=el.getBoundingClientRect();
+      // A loading card/spinner is enough; no image decode or minimum
+      // thumbnail height of 35px is required. Controls below the editor
+      // and zero-size hidden inputs are excluded by geometry.
+      if(r.width<5||r.height<5||r.top<sr.top-3||r.top>=er.top-1||
+        r.bottom>er.top+4||r.right<sr.left||r.left>sr.right)continue;
+      if(el.tagName==='IMG'&&r.width<22&&r.height<22)continue;
+      bottom=Math.max(bottom,Math.min(r.bottom,er.top));
+    }
+    if(bottom)uploadIntentUntil=0;
+    // Pending upload with native reserved space, before a preview is
+    // painted. Never draw over the text or on a closed empty composer.
+    if(!bottom&&performance.now()<uploadIntentUntil&&er.top-sr.top>=30)
+      bottom=er.top-3;
+    if(!bottom||er.top-sr.top<12){clearUploadDivider();return;}
     const prior=document.querySelector('[data-ebook-upload-divider="true"]');
     const priorHost=document.querySelector('[data-ebook-composer-root="true"]');
-    if(!c?.shell||!c.editor){prior?.remove();priorHost?.removeAttribute('data-ebook-composer-root');return;}
-    const shell=(c.shell.contains(c.editor)&&
-      c.shell.querySelector('img,[data-testid*="attachment" i],[data-testid*="file-preview" i]'))
-      ?c.shell:(c.form||c.shell);
-    const er=c.editor.getBoundingClientRect(),sr=shell.getBoundingClientRect();
-    if(!sr.width||!er.width){return;}
-    const candidates=[];
-    for(const img of shell.querySelectorAll('img')){
-      const ir=img.getBoundingClientRect();
-      if(ir.width>=35&&ir.height>=35 && ir.top>=sr.top-5 &&
-         ir.bottom<er.top+4 && !img.closest('[role="menu"],[role="dialog"]'))
-        candidates.push(ir.bottom);
-    }
-    for(const el of shell.querySelectorAll('[data-testid*="attachment-preview" i],[data-testid*="file-preview" i],[data-testid*="upload-preview" i]')){
-      const r=el.getBoundingClientRect();
-      if(r.height>=32 && r.top>=sr.top-5 && r.bottom<er.top+4)candidates.push(r.bottom);
-    }
-    const bottom=Math.max(0,...candidates);
-    if(!bottom||er.top-bottom<7){
-      prior?.remove();priorHost?.removeAttribute('data-ebook-composer-root');
-      return;
-    }
     if(prior&&!shell.contains(prior))prior.remove();
     if(priorHost&&priorHost!==shell)priorHost.removeAttribute('data-ebook-composer-root');
     let line=shell.querySelector('[data-ebook-upload-divider="true"]');
-    if(!line){
+    if(!line) {
       line=document.createElement('div');
       line.setAttribute('data-ebook-upload-divider','true');
       line.setAttribute('aria-hidden','true');
       shell.appendChild(line);
     }
-    if(!shell.hasAttribute('data-ebook-composer-root'))
-      shell.setAttribute('data-ebook-composer-root','true');
-    const gap=er.top-bottom;
-    const offset=Math.max(9,Math.min(er.top-sr.top-7,bottom-sr.top+gap*.48));
+    if(!shell.hasAttribute('data-ebook-composer-root'))shell.setAttribute('data-ebook-composer-root','true');
+    const gap=Math.max(0,er.top-bottom);
+    const offset=Math.max(8,Math.min(er.top-sr.top-2,bottom-sr.top+gap*.48));
     const top=Math.round(offset*10)/10+'px';
     if(line.style.top!==top)line.style.top=top;
   }
-
 
   /* Applies a reversible inline size only to genuine title text. A user's
      DevTools screenshots showed 14px at the leaf while outer selectors had
@@ -893,8 +1159,8 @@
       composerFrameOriginal.set(chosen,snapshotStyle(chosen,frameProperties));
       makeImportant(chosen,'--eb-composer-native-radius',radius+'px');
     }
-    chosen.setAttribute('data-ebook-composer-frame','true');
-    makeImportant(chosen,'border','2.5px solid #1F1E1A');
+    if(!chosen.hasAttribute('data-ebook-composer-frame'))chosen.setAttribute('data-ebook-composer-frame','true');
+    makeImportant(chosen,'border',getComputedStyle(document.documentElement).getPropertyValue('--eb-composer-single-stroke').trim()||'2.5px solid #303438');
     makeImportant(chosen,'border-radius',
       chosen.style.getPropertyValue('--eb-composer-native-radius')||'24px');
     makeImportant(chosen,'box-shadow','none');
@@ -903,7 +1169,7 @@
     for(const el of muted){
       if(!composerMutedOriginal.has(el))
         composerMutedOriginal.set(el,snapshotStyle(el,muteProperties));
-      el.setAttribute('data-ebook-composer-muted','true');
+      if(!el.hasAttribute('data-ebook-composer-muted'))el.setAttribute('data-ebook-composer-muted','true');
       makeImportant(el,'border','0');
       makeImportant(el,'outline','none');
       makeImportant(el,'box-shadow','none');
@@ -937,7 +1203,7 @@
      are restored on disable or script update. */
   const promptTypeOriginal=new Map();
   const promptTypeProps=['font-size','font-weight','font-synthesis-weight','letter-spacing','color','-webkit-text-fill-color','line-height'];
-  function markPromptTypography() {
+  function markPromptTypography(scope='all') {
     const chosen=new Map();
     const reading=getComputedStyle(document.documentElement)
       .getPropertyValue('--eb-prompt-optical-size').trim() || '16px';
@@ -955,13 +1221,13 @@
       chosen.set(el,kind);
     };
     const editor=activeComposer()?.editor;
-    if(editor?.isConnected){
+    if(scope!=='sent'&&editor?.isConnected){
       add(editor,'editor');
       for(const el of editor.querySelectorAll('p,li,span,div,[data-d-component="text"],[data-d-text-flow]')){
         if(hasDirectText(el))add(el,'editor');
       }
     }
-    for(const message of document.querySelectorAll(
+    if(scope!=='editor')for(const message of document.querySelectorAll(
       '[data-message-author-role="user"],[data-user-message],[data-user-message-bubble="true"],.bg-user-message'
     )){
       const bubble=message.matches('[data-user-message],[data-user-message-bubble="true"],.bg-user-message')
@@ -976,6 +1242,7 @@
       }
     }
     for(const [el,record] of promptTypeOriginal){
+      if(scope!=='all'&&record.kind!==scope)continue;
       if(chosen.has(el))continue;
       if(el.isConnected){
         for(const [property,saved] of Object.entries(record.previous)){
@@ -1029,28 +1296,93 @@
     promptTypeOriginal.clear();
   }
 
-  function update() {
-    if (disposed) return;
-    attachObservers();
-    synchronizeSidebar();
-    enforceOpticalSidebarText();
-    markDotCounter();
-    markQuickActionLabels();
-    markSidebarSeam();
-    markProjectTitles();
-    markWorkSwitcher();
-    watchComposer();
-    syncComposerFrame();
-    markPromptTypography();
-    markEffortPicker();
-    markCurrentChatTitle();
-    markUploadDivider();
-    syncClock();
+  function timed(key,fn) {
+    const started=performance.now();
+    fn();
+    timings[key]=Math.round((performance.now()-started)*100)/100;
   }
-
-  function schedule() {
-    if (disposed || frame) return;
-    frame = window.requestAnimationFrame(() => { frame = 0; update(); });
+  function update(mask) {
+    if(disposed||!document.body||!document.documentElement)return;
+    timings.runs++;
+    if(mask&PASS.NAV)timed('nav',()=>{
+      attachObservers();
+      synchronizeSidebar();
+      enforceOpticalSidebarText();
+      markDotCounter();
+      markQuickActionLabels();
+      markSidebarSeam();
+      markProjectTitles();
+      markProjectCounts();
+    });
+    if(mask&PASS.COMPOSER)timed('composer',()=>{
+      watchComposer();
+      syncComposerFrame();
+      markEffortPicker();
+    });
+    if(mask&PASS.EDITOR)timed('editor',()=>markPromptTypography('editor'));
+    if(mask&PASS.SENT)timed('sent',()=>markPromptTypography('sent'));
+    if(mask&PASS.DIVIDER)timed('divider',markUploadDivider);
+    if(mask&PASS.HEADER)timed('header',()=>{
+      markWorkSwitcher();
+      markCurrentChatTitle();
+    });
+    if(mask&PASS.CLOCK)timed('clock',syncClock);
+  }
+  function schedule(mask=ALL) {
+    if(disposed)return;
+    dirty|=typeof mask==='number'?mask:ALL;
+    if(frame)return;
+    frame=window.requestAnimationFrame(()=>{
+      frame=0;
+      const work=dirty;dirty=0;
+      if(document.body&&document.documentElement)update(work);
+      else dirty|=work;
+    });
+  }
+  function matchesOrContains(el,selector) {
+    return el?.nodeType===1&&(el.matches(selector)||!!el.querySelector(selector));
+  }
+  function onPageMutation(records) {
+    if(!document.body)return;
+    if(location.pathname!==lastRoute){lastRoute=location.pathname;schedule(ALL);return;}
+    let mask=0;
+    for(const m of records) {
+      if(ownMutation(m))continue;
+      const target=m.target.nodeType===1?m.target:m.target.parentElement;
+      // Streaming assistant output and ordinary editor/sidebar mutations
+      // have their own scoped observers or require no helper processing.
+      if(target?.closest?.('[data-message-author-role="assistant"]'))continue;
+      if(composerObserved?.contains(target))continue;
+      if(observedRoots.some(root=>root.contains(target)))continue;
+      if(target?.closest?.(USER_NODE)){mask|=PASS.SENT;continue;}
+      if(target?.closest?.(HEADER_NODE)){mask|=PASS.HEADER;continue;}
+      for(const n of [...m.addedNodes,...m.removedNodes]) {
+        if(n.nodeType!==1||isOwnNode(n))continue;
+        if(matchesOrContains(n,SIDE_ROOTS+','+PROJECT_ROW))mask|=PASS.NAV|PASS.HEADER;
+        if(matchesOrContains(n,EDITOR_NODE+',#composer-background,[data-testid="composer"]'))
+          mask|=PASS.COMPOSER|PASS.EDITOR|PASS.DIVIDER;
+        if(matchesOrContains(n,USER_NODE))mask|=PASS.SENT;
+        if(matchesOrContains(n,HEADER_NODE))mask|=PASS.HEADER;
+        if(matchesOrContains(n,'#'+CLOCK_HOST))mask|=PASS.CLOCK;
+      }
+    }
+    if(mask)schedule(mask);
+  }
+  function onRouteOrResize(){schedule(ALL);}
+  function recoverLightly() {
+    if(document.hidden||disposed||!document.body)return;
+    if(location.pathname!==lastRoute){lastRoute=location.pathname;schedule(ALL);return;}
+    let mask=0;
+    const roots=sidebarRoots();
+    if(roots.length!==observedRoots.length||roots.some((r,i)=>r!==observedRoots[i]))mask|=PASS.NAV|PASS.HEADER;
+    const c=activeComposer();
+    if((c?.editor||null)!==composerEditor||(c?.form||c?.shell||null)!==composerObserved)
+      mask|=PASS.COMPOSER|PASS.EDITOR|PASS.DIVIDER;
+    const now=performance.now();
+    // Low-frequency safety net for native changes not emitted as DOM
+    // child mutations; no full scan every four seconds.
+    if(now-lastRecovery>20000){lastRecovery=now;mask|=ALL;}
+    if(mask)schedule(mask);
   }
 
   function restore() {
@@ -1070,7 +1402,10 @@
     disposed = true;
     observer.disconnect();
     composerObserver.disconnect();
-    bootstrapObserver?.disconnect();
+    pageObserver?.disconnect();
+    navResizeObserver?.disconnect();
+    composerResizeObserver?.disconnect();
+    clearTimeout(uploadIntentTimer);
     clearInterval(recoverTimer);
     if (frame) cancelAnimationFrame(frame);
     restore();
@@ -1078,6 +1413,7 @@
     restoreComposerFrames();
     restorePromptTypography();
     restoreQuickDotTypography();
+    restoreProjectCounts();
     restoreNotebookMarks();
     document.querySelectorAll('[data-ebook-quick-label]').forEach(n=>n.removeAttribute('data-ebook-quick-label'));
     document.querySelectorAll('[data-ebook-effort-picker="true"]').forEach(n=>n.removeAttribute('data-ebook-effort-picker'));
@@ -1087,21 +1423,31 @@
     shadowStyle?.remove();
     document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`)?.remove();
     document.removeEventListener('visibilitychange', onVisibility);
+    for(const type of ['change','drop','paste'])document.removeEventListener(type,onUploadIntent,true);
+    document.removeEventListener('load',onComposerImageLoad,true);
+    document.removeEventListener('DOMContentLoaded',onRouteOrResize);
+    window.removeEventListener('popstate',onRouteOrResize);
+    window.removeEventListener('resize',onRouteOrResize);
     window.removeEventListener('focus', schedule);
     if (window[RUNTIME]?.dispose === dispose) delete window[RUNTIME];
   }
 
   function onVisibility() { if (!document.hidden) schedule(); }
 
-  if (document.body) {
-    bootstrapObserver = new MutationObserver(() => { if (sidebarRoots().length) { bootstrapObserver?.disconnect(); bootstrapObserver = null; schedule(); } });
-    bootstrapObserver.observe(document.body,{childList:true,subtree:true});
-  }
+  // document-start: CSS handles first paint, this observer catches native
+  // elements as they appear. The helper does not block app hydration.
+  pageObserver=new MutationObserver(onPageMutation);
+  pageObserver.observe(document,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',onRouteOrResize,{once:true});
   document.addEventListener('visibilitychange', onVisibility);
   document.addEventListener('click',onModeInteraction,true);
-  window.addEventListener('focus', schedule);
-  recoverTimer = setInterval(() => { if (!document.hidden) schedule(); }, 4000);
-  schedule();
+  for(const type of ['change','drop','paste'])document.addEventListener(type,onUploadIntent,true);
+  document.addEventListener('load',onComposerImageLoad,true);
+  window.addEventListener('focus',schedule);
+  window.addEventListener('popstate',onRouteOrResize);
+  window.addEventListener('resize',onRouteOrResize);
+  recoverTimer=setInterval(recoverLightly,2000);
+  schedule(ALL);
 
   /* On-demand read-only font audit. Gives the actual computed CSS pixel size
      and family without collecting or returning private chat text. */
@@ -1137,7 +1483,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.2.24',dispose,refresh:schedule,
-    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),fontAudit:fontAudit()})
+    version:'0.2.25',dispose,refresh:schedule,
+    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state')})),lastPassMs:{...timings},fontAudit:fontAudit()})
   };
 })();
