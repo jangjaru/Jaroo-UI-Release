@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.53
+@version      0.2.54
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -2121,20 +2121,20 @@
   }
 
 
-  /* v0.2.53 — small circular role markers with subtle diameter steps.
+  /* v0.2.54 — uniform 9px circular role markers with distinct role colors.
      Role-only palette: don't recolor shared theme tokens, project marks,
      native status indicators or counters. Reserve the same 10px slot for
      every dot, keeping the center and title start aligned. */
   [data-ebook-role="master"]  { --eb-role-dot:#E66B91!important; --eb-role-diameter:9px; }
-  [data-ebook-role="plan"]    { --eb-role-dot:#E36B68!important; --eb-role-diameter:8.5px; }
-  [data-ebook-role="manage"]  { --eb-role-dot:#E9A078!important; --eb-role-diameter:8px; }
-  [data-ebook-role="produce"] { --eb-role-dot:#55CDB2!important; --eb-role-diameter:7.5px; }
-  [data-ebook-role="action"]  { --eb-role-dot:#A48BD7!important; --eb-role-diameter:7px; }
+  [data-ebook-role="plan"]    { --eb-role-dot:#E3D74F!important; --eb-role-diameter:9px; }
+  [data-ebook-role="manage"]  { --eb-role-dot:#71BE63!important; --eb-role-diameter:9px; }
+  [data-ebook-role="produce"] { --eb-role-dot:#55CDB2!important; --eb-role-diameter:9px; }
+  [data-ebook-role="action"]  { --eb-role-dot:#A48BD7!important; --eb-role-diameter:9px; }
   html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-ebook-count-rail="true"],[data-app-action-sidebar-section-heading],aside,[role="complementary"]) :is(a[href*="/c/"][data-ebook-role]:not([data-ebook-recent-chat]),a[href*="/c/"]:not([data-ebook-recent-chat]) [data-ebook-role])::before {
-    width:var(--eb-role-diameter,8px)!important;
-    height:var(--eb-role-diameter,8px)!important;
-    flex:0 0 var(--eb-role-diameter,8px)!important;
-    margin-inline:calc((10px - var(--eb-role-diameter,8px)) / 2)!important;
+    width:var(--eb-role-diameter,9px)!important;
+    height:var(--eb-role-diameter,9px)!important;
+    flex:0 0 var(--eb-role-diameter,9px)!important;
+    margin-inline:calc((10px - var(--eb-role-diameter,9px)) / 2)!important;
     align-self:center!important;
     border-radius:50%!important;
     transform:none!important;
