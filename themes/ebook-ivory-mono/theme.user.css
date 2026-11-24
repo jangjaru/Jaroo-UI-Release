@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.3.0-beta.1
+@version      0.3.0-beta.2
 @description  E-book standalone beta: CSS-owned typography, consolidated design tokens and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -104,7 +104,7 @@
     --color-text-user-message:var(--eb-ink) !important;
     --link:var(--eb-ink) !important;
     --link-hover:var(--eb-secondary) !important;
-    --ebook-theme-version:"0.3.0-beta.1";
+    --ebook-theme-version:"0.3.0-beta.2";
     --eb-notebook-grid:rgba(85,97,105,.09) !important;
     --eb-composer-paper:#F5F6F6 !important;
     --eb-composer-line:#BFC8CC !important;
@@ -1272,26 +1272,25 @@
     font-weight:var(--eb-prompt-sent-weight) !important;
   }
 
-  /* Composer: one native surface, one stroke, no second ring. */
-  html body :is(#composer-background,[data-testid="composer"],form:has(:is(#prompt-textarea,[data-testid="prompt-textarea"],[data-composer-input] .ProseMirror[contenteditable="true"],[contenteditable="true"][role="textbox"])),[data-ebook-composer-muted="true"]) {
-    border:0 !important;
+  /* Composer: a single painted frame. Native selectors provide the initial
+     stroke; a verified frame marker replaces that fallback. */
+  html body :is(#composer-background,[data-testid="composer"],form:has(:is(#prompt-textarea,[data-testid="prompt-textarea"],[data-composer-input] .ProseMirror[contenteditable="true"])),[data-ebook-composer-frame="true"],[data-ebook-composer-muted="true"]) {
     outline:0 !important;
     box-shadow:none !important;
     -webkit-box-shadow:none !important;
   }
-  html body :is([data-testid="composer"],form:has(:is(#prompt-textarea,[data-testid="prompt-textarea"],[data-composer-input] .ProseMirror[contenteditable="true"],[contenteditable="true"][role="textbox"]))):not(:has(#composer-background)) {
-    --eb-composer-native-radius:var(--eb-composer-fallback-radius);
+  html body [data-ebook-composer-muted="true"],
+  html body [data-ebook-composer-frame="true"] :is(#composer-background,[data-testid="composer"]):not([data-ebook-composer-frame="true"]),
+  html body #composer-background:has([data-ebook-composer-frame="true"]):not([data-ebook-composer-frame="true"]),
+  html body [data-testid="composer"]:has(#composer-background,[data-ebook-composer-frame="true"]):not([data-ebook-composer-frame="true"]),
+  html body form:has(:is(#prompt-textarea,[data-testid="prompt-textarea"],[data-composer-input] .ProseMirror[contenteditable="true"])):has(#composer-background,[data-testid="composer"],[data-ebook-composer-frame="true"]):not([data-ebook-composer-frame="true"]) {
+    border:0 !important;
   }
-  html body #composer-background {
-    --eb-composer-native-radius:24px;
-  }
-  html body #composer-background:not([data-ebook-composer-muted="true"]),
-  html body [data-testid="composer"]:not(:has(#composer-background,[data-ebook-composer-frame="true"])):not([data-ebook-composer-muted="true"]),
-  html body form:has(:is(#prompt-textarea,[data-testid="prompt-textarea"],[data-composer-input] .ProseMirror[contenteditable="true"],[contenteditable="true"][role="textbox"])):not(:has(#composer-background,[data-testid="composer"],[data-ebook-composer-frame="true"])):not([data-ebook-composer-muted="true"]),
-  html body :is(#composer-background,[data-testid="composer"],form,[data-ebook-composer-frame="true"])[data-ebook-composer-frame="true"] {
+  html body #composer-background:not([data-ebook-composer-muted="true"]):not(:has([data-ebook-composer-frame="true"])):not(:where([data-ebook-composer-frame="true"] *)),
+  html body [data-testid="composer"]:not([data-ebook-composer-muted="true"]):not(:has(#composer-background,[data-ebook-composer-frame="true"])):not(:where([data-ebook-composer-frame="true"] *)),
+  html body form:has(:is(#prompt-textarea,[data-testid="prompt-textarea"],[data-composer-input] .ProseMirror[contenteditable="true"])):not([data-ebook-composer-muted="true"]):not(:has(#composer-background,[data-testid="composer"],[data-ebook-composer-frame="true"])),
+  html body :is(#composer-background,[data-testid="composer"],form,[data-ebook-composer-frame="true"])[data-ebook-composer-frame="true"]:not([data-ebook-composer-muted="true"]) {
     border:var(--eb-composer-single-stroke) !important;
     border-radius:var(--eb-composer-native-radius,24px) !important;
-    outline:0 !important;
-    box-shadow:none !important;
   }
 }
