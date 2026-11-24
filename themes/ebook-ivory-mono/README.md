@@ -1,8 +1,17 @@
 # Jaroo E-book · Cool E-Ink Graph Paper
 
-**2026-11-24 · Stylus CSS v0.2.34 / Tampermonkey JS v0.2.24**
+**2026-11-24 · Stylus CSS v0.2.35 / Tampermonkey JS v0.2.25**
 
 This update modifies the existing Classic Paper theme; it is **not** a separate mockup or a second overlay.
+
+## v0.2.35 / v0.2.25 · 2026-11-24 — 프로젝트 채팅 카운터 및 초기 표시 최적화
+
+- 프로젝트별 원형 카운터: Dot의 실제 배지 색·크기·글꼴을 읽어 오른쪽 중심선을 일치시킴. 기존 메뉴 조작을 가리지 않도록 프로젝트 행 hover/focus 시 배지 숨김.
+- 집계: 네이티브 프로젝트 영역의 고유 채팅 ID 중복 제거, 명시적 전체 수 메타데이터가 있으면 우선. 목록에 더 보기/로딩/접힘이 있으면 확인한 하한을 N+ 또는 ?로 표시. 완전하게 로드된 것으로 판단되는 그룹만 숫자 표시. 미확인 전체 수를 추정하지 않으며 API 호출, 강제 더 보기 클릭, 채팅 내용 수집, 저장은 없음. 실제 DOM 그룹 구조·완전성 검수 필요.
+- 초기 표시: JS document-start, 기본 글꼴과 입력창 외곽선은 네이티브 CSS 선택자로 선적용. 사이드바/입력창/전송 메시지/헤더/시계의 갱신 분리, 편집 중 과거 대화 전체 재검사 제거, 4초 전체 재검사 대신 경량 감시와 20초 보완 검사.
+- 업로드 구분선: 업로드 선택/붙여넣기/드롭 이벤트의 파일 존재, 로딩 카드·진행 표시·실제 확보된 미리보기 영역과 크기 변경을 감지. 완료된 이미지 높이 조건 없이 표시하고 첨부 제거 시 정리. 네이티브 업로드 이벤트·파일 내용·전송 동작 변경 없음.
+- 확정 파스텔 팔레트, 본문 격자·종이 질감·지시문·Dot·RUN/DONE·Life Clock 및 다른 테마 유지. 실제 속도 개선량과 초기/업로드 표시 타이밍은 로그인 Chrome에서 검증 필요.
+- 소스/배포 동일성 및 SHA-256 대조, JS 구문, CSS 구조, 카운트 상태 8건과 ID 추출 2건 단위 검증. 브라우저 실측은 미수행.
 
 ## v0.2.34 / v0.2.24 · 2026-11-24 — 상큼한 파스텔 그룹 색상 및 Dot 글꼴 통일
 
@@ -39,8 +48,8 @@ This update modifies the existing Classic Paper theme; it is **not** a separate 
 - E-book Clock skin follows the cooler neutrals while preserving segmented digits, Life Clock and existing animations.
 
 ## Install / update in place
-- [Stylus CSS v0.2.34](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/theme.user.css)
-- [Tampermonkey JS v0.2.24](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/indicators.user.js)
+- [Stylus CSS v0.2.35](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/theme.user.css)
+- [Tampermonkey JS v0.2.25](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/indicators.user.js)
 
 Update the **existing** two extension entries rather than installing duplicates. In Stylus and Tampermonkey, run the built-in **Check for updates**, then reload ChatGPT with `Ctrl + Shift + R`.
 
@@ -51,7 +60,7 @@ Use the ChatGPT page console:
 ```js
 window.__jarooEbookIvoryMonoV1?.diagnostics?.()
 ```
-Expected: JS `version: '0.2.24'`, `sentPromptTarget: '15.667px'`; a selected chat should produce `headerMarkers: 1` when its title is visible. CSS version is `0.2.34`. `quickNavMarkers` reports the actual size, weight and color of New Chat/Dot labels. Diagnostics include `projectMarkers`, `sidebarSeams` and `workSwitcher`; live DOM matching still requires visual confirmation.
+Expected: JS `version: '0.2.25'`, `sentPromptTarget: '15.667px'`; a selected chat should produce `headerMarkers: 1` when its title is visible. CSS version is `0.2.35`. `projectCounts` reports exact/partial/unknown counters, `lastPassMs` reports the most recent scoped update durations (ms), not end-to-end page load time. `quickNavMarkers` reports the actual size, weight and color of New Chat/Dot labels. Diagnostics include `projectMarkers`, `sidebarSeams` and `workSwitcher`; live DOM matching still requires visual confirmation.
 
 To roll back, use the extensions' version history or the previous Git commit of the two E-book files. This release is code-published and statically checked, but **the user's signed-in Chrome rendering and updates have not been verified in this chat**.
 
