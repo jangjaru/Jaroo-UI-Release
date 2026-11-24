@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.2.39
+// @version      0.2.40
 // @description  E-book visual dot indicators for role prefixes plus a light Clock skin; keeps original chat titles, React data and RUN/DONE logic intact.
 // @match        https://chatgpt.com/*
 // @run-at       document-start
@@ -2057,9 +2057,18 @@
   /* Conversation Outline — isolated, local-only, opt-in navigation.
      Read only currently mounted message DOM while the panel is open.
      No new API, storage, external request, title mutation or history fetch. */
-  const OUTLINE_MSG='[data-message-author-role="user"],[data-message-author-role="assistant"]';
+  // Prefer native role/turn markers; fall back to the same user bubble
+  // markers as the working prompt typography code. Do not require <main>.
+  const OUTLINE_USER='[data-message-author-role="user"],[data-turn="user"],[data-author-role="user"],[data-message-role="user"],[data-user-message],[data-user-message-bubble="true"],.bg-user-message,[data-testid="user-message"]';
+  const OUTLINE_ASSISTANT='[data-message-author-role="assistant"],[data-turn="assistant"],[data-author-role="assistant"],[data-message-role="assistant"],[data-assistant-message],[data-assistant-message-bubble="true"],[data-testid="assistant-message"]';
+  const OUTLINE_MSG=OUTLINE_USER+','+OUTLINE_ASSISTANT;
+  const OUTLINE_SENT='[data-ebook-prompt-text="sent"]';
+  const OUTLINE_TURN='[data-testid^="conversation-turn-"],[data-turn-id],[data-message-id]';
+  const OUTLINE_REGION='#thread,[data-testid="conversation-panel"],[data-testid="conversation-thread"],[data-testid="conversation"],main,[role="main"]';
+  const OUTLINE_CONTENT='.markdown,.prose,[data-d-component="markdown"],[data-assistant-message-content]';
   const OUTLINE_HEAD='h1,h2,h3,h4,h5,h6,[role="heading"],[data-d-component="title"]';
-  const OUTLINE_SKIP='button,[role="button"],nav,aside,[role="toolbar"],[role="menu"],[role="dialog"],[hidden],[aria-hidden="true"],.sr-only,svg,script,style,pre,code';
+  const OUTLINE_AREA_SKIP=SIDE_ROOTS+', [data-ebook-sidebar-seam="true"],[data-ebook-outline-host],[role="dialog"],[role="menu"],[role="toolbar"],[hidden],[aria-hidden="true"],.sr-only,#prompt-textarea,[data-testid="composer"],[contenteditable="true"]';
+  const OUTLINE_TEXT_SKIP='button,[role="button"],nav,aside,[role="toolbar"],[role="menu"],[role="dialog"],[hidden],[aria-hidden="true"],.sr-only,svg,script,style,pre';
   let conversationOutline=null;
   function outlineRoute(pathname) {
     return /^\/(?:g\/[^/]+\/)?c\/([^/]+)\/?$/u.exec(pathname)?.[1]||null;
@@ -2069,37 +2078,92 @@
     const points=Array.from(clean);
     return points.length>limit?points.slice(0,limit-1).join('')+'…':clean;
   }
+  // Exclude controls *inside* the message, not an unrelated outer app wrapper.
+  function outlineLocalSkip(el,boundary,selector=OUTLINE_TEXT_SKIP) {
+    for(let p=el;p&&p!==boundary;p=p.parentElement)if(p.matches(selector))return true;
+    return false;
+  }
   function outlineText(el,limit=92) {
     if(!el)return '';
     const walker=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);
     let text='',part,checked=0;
-    while((part=walker.nextNode())&&checked++<160&&text.length<limit*3) {
-      if(!part.parentElement?.closest(OUTLINE_SKIP))text+=String(part.nodeValue||'')+' ';
+    while((part=walker.nextNode())&&checked++<240&&text.length<limit*3) {
+      if(!outlineLocalSkip(part.parentElement,el))text+=String(part.nodeValue||'')+' ';
     }
     return outlineShort(text,limit);
   }
+  function outlineRole(el) {
+    return el?.matches(OUTLINE_USER)?'user':el?.matches(OUTLINE_ASSISTANT)?'assistant':null;
+  }
+  function outlineAllowed(el) {return !!el&&!el.closest(OUTLINE_AREA_SKIP);}
   function outlineMain() {
-    const roots=[...document.querySelectorAll('main,[role="main"]')].filter(el=>!el.closest('[hidden],[aria-hidden="true"],[role="dialog"]'));
-    return roots.find(el=>el.querySelector(OUTLINE_MSG))||roots[0]||null;
+    // The new app shell may mount the conversation outside semantic main.
+    // Only select a native region if it contains all recognized mounted messages.
+    const body=document.body;
+    if(!body)return null;
+    const visible=[...body.querySelectorAll(OUTLINE_MSG+','+OUTLINE_SENT)].filter(outlineAllowed);
+    const regions=[...body.querySelectorAll(OUTLINE_REGION)].filter(outlineAllowed);
+    const complete=visible.length?regions.filter(r=>visible.every(el=>r.contains(el))):[];
+    if(complete.length)return complete.find(r=>!complete.some(p=>p!==r&&r.contains(p)))||complete[0];
+    return body;
+  }
+  function outlineCandidates(root) {
+    if(!root)return [];
+    const found=new Map();
+    const put=(el,role)=>{if(outlineAllowed(el)&&!found.has(el))found.set(el,role);};
+    // An outer role-marked turn owns its nested role markers and bubbles.
+    for(const el of root.querySelectorAll(OUTLINE_MSG)) {
+      if(!outlineAllowed(el))continue;
+      const parent=el.parentElement?.closest(OUTLINE_MSG);
+      if(parent&&root.contains(parent)&&outlineAllowed(parent))continue;
+      put(el,outlineRole(el));
+    }
+    // Our existing sent-text markers can supply a question even if the
+    // native role attribute is absent. Group leaves only by verified turns.
+    for(const el of root.querySelectorAll(OUTLINE_SENT)) {
+      if(!outlineAllowed(el)||el.closest(OUTLINE_MSG))continue;
+      const turn=el.closest(OUTLINE_TURN);
+      const marked=el.parentElement?.closest(OUTLINE_SENT);
+      if(marked&&root.contains(marked))continue;
+      put(turn&&root.contains(turn)?turn:el,'user');
+    }
+    const userAnchors=[...found].filter(([,role])=>role==='user').map(([el])=>el);
+    // Markdown fallback is allowed only in an actual conversation turn or
+    // a native conversation region with mounted user messages. No page-wide
+    // guessing from arbitrary paragraph text.
+    for(const el of root.querySelectorAll(OUTLINE_CONTENT)) {
+      if(!outlineAllowed(el)||el.closest(OUTLINE_MSG)||el.closest(OUTLINE_SENT))continue;
+      const turn=el.closest(OUTLINE_TURN);
+      const region=el.closest(OUTLINE_REGION);
+      if(!turn&&!(region&&userAnchors.some(u=>region.contains(u))))continue;
+      if(turn&&userAnchors.some(u=>turn.contains(u)))continue;
+      if(userAnchors.some(u=>u.contains(el)))continue;
+      const outer=el.parentElement?.closest(OUTLINE_CONTENT);
+      if(outer&&root.contains(outer)&&outlineAllowed(outer)&&
+         ((turn&&turn.contains(outer))||(!turn&&region?.contains(outer))))continue;
+      const target=turn&&root.contains(turn)?turn:el;
+      // Do not create a second answer inside an already detected answer.
+      if([...found.keys()].some(n=>n.contains(target)||target.contains(n)))continue;
+      put(target,'assistant');
+    }
+    return [...found].filter(([,role])=>role).sort(([a],[b])=>a===b?0:(a.compareDocumentPosition(b)&4)?-1:1);
   }
   function outlineEntries(root) {
     const entries=[];if(!root)return entries;
     const seen=new Set();let group=0;
-    for(const msg of root.querySelectorAll(OUTLINE_MSG)) {
-      if(msg.closest(OUTLINE_SKIP)||msg.parentElement?.closest(OUTLINE_MSG))continue;
-      const id=msg.getAttribute('data-message-id');
-      if(id&&seen.has(id))continue;if(id)seen.add(id);
-      const user=msg.getAttribute('data-message-author-role')==='user';
-      if(user) {
+    for(const [msg,role] of outlineCandidates(root)) {
+      const id=msg.getAttribute('data-message-id')||msg.closest(OUTLINE_TURN)?.getAttribute('data-message-id');
+      const key=id?role+':'+id:null;
+      if(key&&seen.has(key))continue;if(key)seen.add(key);
+      if(role==='user') {
         group++;
-        const body=msg.querySelector('[data-user-message-bubble="true"] .whitespace-pre-wrap,.whitespace-pre-wrap,[data-user-message-bubble="true"],[data-user-message]')||msg;
+        const body=msg.querySelector('[data-user-message-bubble="true"],[data-user-message],.bg-user-message,.whitespace-pre-wrap')||msg;
         entries.push({type:'question',group,label:outlineText(body)||'첨부 또는 텍스트 없는 질문',target:msg});
       } else {
-        // An older user turn may not be mounted in a virtualized thread.
-        const content=msg.querySelector('.markdown,.prose,[data-d-text-flow]')||msg;
+        const content=msg.querySelector(OUTLINE_CONTENT)||msg;
         entries.push({type:'answer',group,label:outlineText(content,72)||'답변',target:msg});
         for(const h of msg.querySelectorAll(OUTLINE_HEAD)) {
-          if(h.closest(OUTLINE_SKIP)||h.parentElement?.closest(OUTLINE_HEAD))continue;
+          if(outlineLocalSkip(h,msg)||!outlineAllowed(h)||h.parentElement?.closest(OUTLINE_HEAD))continue;
           const label=outlineText(h);
           if(label)entries.push({type:'heading',group,label,target:h});
         }
@@ -2135,7 +2199,7 @@
       '.question{font-weight:600;margin-top:5px;border-top:1px solid var(--eb-line,#C5CDD0);border-radius:0 0 4px 4px;padding-top:9px}.question:first-child{border-top:0;margin-top:0}' +
       '.answer{color:var(--eb-secondary,#535B60);padding-left:17px}.heading{padding-left:26px;color:var(--eb-secondary,#535B60);font-size:12px}' +
       '.index{color:var(--eb-muted,#737D83);flex:none;font-size:10px;font-family:var(--eb-mono,"IBM Plex Mono",monospace);font-weight:500}.label{min-width:0}.empty{padding:14px 8px;color:var(--eb-muted,#737D83)}' +
-      '.foot{border-top:1px solid var(--eb-line,#C5CDD0);padding:9px 14px;font-size:10px;color:var(--eb-secondary,#535B60)}' +
+      " .foot{border-top:1px solid var(--eb-line,#C5CDD0);padding:9px 14px;font-size:10px;color:var(--eb-secondary,#535B60);display:flex;align-items:center;gap:6px;justify-content:space-between}.rescan{border:0;background:transparent;padding:3px 4px;white-space:nowrap;text-decoration:underline;text-underline-offset:2px}.rescan:hover{color:#292D30;background:#D8EA8B}" +
       '@media(max-width:600px){:host{right:8px!important;top:90px!important}.panel{width:min(320px,calc(100vw - 16px));max-height:65vh}}';
     function node(tag,cls,value) {
       const n=document.createElement(tag);
@@ -2151,11 +2215,25 @@
     const meta=node('span','meta',''),search=node('input','search');
     search.type='search';search.placeholder='질문·제목 검색';search.setAttribute('aria-label','목차 검색');search.autocomplete='off';
     const list=node('div','list');list.setAttribute('role','group');list.setAttribute('aria-label','대화 항목');
-    const foot=node('div','foot','현재 불러온 대화만 표시 · 원문으로 이동');
+    const foot=node('div','foot');
+    const footText=node('span',null,'현재 불러온 대화만 표시 · 원문으로 이동');
+    const rescan=node('button','rescan','다시 읽기');rescan.type='button';
+    rescan.setAttribute('aria-label','현재 대화 목차 다시 읽기');
+    foot.append(footText,rescan);
+    rescan.addEventListener('click',()=>{refresh();rescan.focus({preventScroll:true});});
     head.append(title,meta,search);panel.append(head,list,foot);shadow.append(style,toggle,panel);
     document.body.appendChild(host);
     let open=false,root=null,entries=[],timer=0,active=null,rendered=[];
-    const observer=new MutationObserver(()=>queue());
+    const observer=new MutationObserver(records=>{
+      if(root!==document.body){queue();return;}
+      const relevant=OUTLINE_MSG+','+OUTLINE_SENT+','+OUTLINE_CONTENT+','+OUTLINE_TURN+','+OUTLINE_REGION;
+      if(records.some(m=>{
+        const el=m.target.nodeType===1?m.target:m.target.parentElement;
+        if(el?.closest(OUTLINE_AREA_SKIP))return false;
+        if(el?.closest(OUTLINE_MSG+','+OUTLINE_SENT+','+OUTLINE_CONTENT+','+OUTLINE_TURN))return true;
+        return [...m.addedNodes,...m.removedNodes].some(n=>n.nodeType===1&&(n.matches(relevant)||n.querySelector(relevant)));
+      }))queue();
+    });
     function queue() {
       if(!open||timer)return;
       // Throttle during streaming; one scoped refresh per 700ms maximum.
@@ -2183,7 +2261,7 @@
       const y=list.scrollTop,oldFocus=shadow.activeElement;
       const focusTarget=oldFocus?.__jarooOutlineTarget;
       const fragment=document.createDocumentFragment();
-      if(!filtered.length)fragment.append(node('div','empty',search.value.trim()?'검색 결과가 없습니다.':'불러온 대화가 없습니다.'));
+      if(!filtered.length)fragment.append(node('div','empty',search.value.trim()?'검색 결과가 없습니다.':'대화 구조를 인식하지 못했습니다. 다시 읽기를 눌러 주세요.'));
       for(const entry of filtered) {
         const b=node('button','entry '+entry.type);b.type='button';
         const tag=entry.type==='question'?'Q'+String(entry.group).padStart(2,'0'):entry.type==='answer'?'A':'·';
@@ -2212,7 +2290,7 @@
       if(event.key==='Escape'&&open){event.stopPropagation();event.preventDefault();setOpen(false);}
       else if(event.target===search)event.stopPropagation();
     });
-    return {route,host,sync(){if(open&&(!root||!root.isConnected))queue();},dispose(){setOpen(false,false);host.remove();}};
+    return {route,host,sync(){if(open&&(!root||!root.isConnected||!entries.length))queue();},dispose(){setOpen(false,false);host.remove();}};
   }
   function syncConversationOutline() {
     const route=outlineRoute(location.pathname);
@@ -2440,7 +2518,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.2.39',dispose,refresh:schedule,
+    version:'0.2.40',dispose,refresh:schedule,
     diagnostics:() => ({...errors,sorting:{...sidebarSortDiagnostics,styledRows:sidebarSortSaved.size},roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),firstPaintNav:getComputedStyle(document.documentElement).getPropertyValue('--eb-first-paint-nav').trim()==='1',opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-project-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state'),overflow:n.getAttribute('data-ebook-count-overflow')==='true',confirmed:n.getAttribute('data-ebook-count-confirmed')===''?null:Number(n.getAttribute('data-ebook-count-confirmed'))})),lastPassMs:{...timings},performance:{events:{...perfEvents},passes:Object.fromEntries(Object.entries(perfPasses).map(([k,v])=>[k,{runs:v.runs,averageMs:Math.round(v.totalMs/v.runs*100)/100,peakMs:Math.round(v.peakMs*100)/100}]))},fixedSidebarTop:[...topBands.values()].map(n=>({height:n.height,visible:getComputedStyle(n.strip).visibility==='visible',pattern:getComputedStyle(n.strip).backgroundImage})),projectCountBorders:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({border:getComputedStyle(n).borderTopWidth,style:getComputedStyle(n).borderTopStyle,outline:getComputedStyle(n).outlineStyle})),projectCountLayers:countLayers.size,positionResizeTargets:navResizeTargets.size,visibleProjectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].filter(n=>getComputedStyle(n).visibility!=='hidden').length,projectCountAxis:findDotCountReference()?.circle.getBoundingClientRect().left??null,fontAudit:fontAudit()})
   };
 })();
