@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.42
+@version      0.2.43
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -1521,7 +1521,7 @@
     --eb-composer-single-stroke:2.5px solid #303438!important;
     --eb-quick-nav-size:var(--eb-project-optical-size,16px)!important;
     --eb-marker-yellow:#F2D778!important;
-    --ebook-theme-version:"0.2.42";
+    --ebook-theme-version:"0.2.43";
   }
   /* Preserve the existing procedural paper-grain SVG and only refine grid pitch. */
   html body :is(#thread,[data-testid="conversation-panel"],
@@ -1873,7 +1873,8 @@
     padding:0!important;
     margin:0!important;
     background:var(--eb-count-bg,#C9CDCF)!important;
-    border:var(--eb-count-border,0 solid transparent)!important;
+    border:0!important;
+    outline:0!important;
     color:var(--eb-count-ink,#292D30)!important;
     -webkit-text-fill-color:var(--eb-count-ink,#292D30)!important;
     font-family:var(--eb-count-font,var(--eb-mono))!important;
@@ -1888,11 +1889,8 @@
   }
   /* v0.2.36: one glyph per badge. The original gray badge shows 0–9;
      a confirmed count above 9 uses the same circle, accent fill and white 9.
-     Incomplete lower bounds keep a subtle dashed outline until resolved.
+     All project counter states are borderless; partial counts retain their diagnostic state.
      The native Dot badge is not affected. */
-  html body :is([data-app-action-sidebar-project-row],[data-ebook-project-count-layer="true"]) > [data-ebook-project-count][data-ebook-count-state="partial"]:not([data-ebook-count-overflow="true"]) {
-    border:1px dashed var(--eb-count-ink,#292D30)!important;
-  }
   html body :is([data-app-action-sidebar-project-row],[data-ebook-project-count-layer="true"]) > [data-ebook-project-count][data-ebook-count-overflow="true"] {
     background:var(--eb-accent-ink,#303438)!important;
     border:0 solid transparent!important;
