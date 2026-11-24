@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.39
+@version      0.2.40
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -1513,15 +1513,15 @@
     --eb-composer-paper:#F5F6F6!important;
     --eb-composer-line:#BFC8CC!important;
     --eb-quiet-focus:#7B898F!important;
-    --eb-user-sent-optical-size:15.667px!important; /* 15px + 0.5pt */
-    --eb-prompt-sent-weight:520!important;          /* 650 x 0.8 */
+    --eb-user-sent-optical-size:16.333px!important; /* 12.25pt; previous + 0.5pt */
+    --eb-prompt-sent-weight:572!important;          /* 520 x 1.10 */
     --eb-prompt-sent-ink:#292D30!important;
     --eb-prompt-accent:#292D30!important;
     --eb-composer-keyline:2.5px solid #303438!important;
     --eb-composer-single-stroke:2.5px solid #303438!important;
     --eb-quick-nav-size:var(--eb-project-optical-size,16px)!important;
     --eb-marker-yellow:#F2D778!important;
-    --ebook-theme-version:"0.2.39";
+    --ebook-theme-version:"0.2.40";
   }
   /* Preserve the existing procedural paper-grain SVG and only refine grid pitch. */
   html body :is(#thread,[data-testid="conversation-panel"],
@@ -1821,8 +1821,8 @@
   html body [data-user-message-bubble="true"] .text-size-chat.whitespace-pre-wrap,
   html body [data-message-author-role="user"] .text-size-chat.whitespace-pre-wrap {
     font-family:var(--eb-font)!important;
-    font-size:var(--eb-user-sent-optical-size,15.667px)!important;
-    font-weight:var(--eb-prompt-sent-weight,520)!important;
+    font-size:var(--eb-user-sent-optical-size,16.333px)!important;
+    font-weight:var(--eb-prompt-sent-weight,572)!important;
     color:var(--eb-prompt-sent-ink,#292D30)!important;
     -webkit-text-fill-color:var(--eb-prompt-sent-ink,#292D30)!important;
     line-height:1.55!important;
