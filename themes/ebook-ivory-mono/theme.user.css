@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.51
+@version      0.2.52
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -2153,6 +2153,28 @@
     font-weight:450!important;
     color:var(--eb-secondary,#535B60)!important;
     -webkit-text-fill-color:var(--eb-secondary,#535B60)!important;
+  }
+
+  /* v0.2.52 — one typography standard for Dot and project counters.
+     Preserve existing circle geometry, fills, overflow colors and placement.
+     Do not depend on a cached or transient native computed font. */
+  :root {
+    --eb-counter-font-family:var(--eb-mono);
+    --eb-counter-font-size:11px;
+    --eb-counter-font-weight:600;
+  }
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-ebook-sidebar-seam="true"],[data-ebook-count-rail="true"],aside,[role="complementary"]) :is([data-ebook-dot-counter="true"],[data-ebook-count-number="dot"]),
+  html body [data-ebook-count-number="dot"],
+  html body :is([data-app-action-sidebar-project-row],[data-ebook-project-count-layer="true"]) > [data-ebook-project-count] {
+    font-family:var(--eb-counter-font-family)!important;
+    font-size:var(--eb-counter-font-size)!important;
+    font-weight:var(--eb-counter-font-weight)!important;
+    font-style:normal!important;
+    font-synthesis:none!important;
+    font-variation-settings:normal!important;
+    font-optical-sizing:none!important;
+    font-variant-numeric:tabular-nums!important;
+    letter-spacing:normal!important;
   }
 
 }
