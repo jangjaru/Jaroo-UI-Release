@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.48
+@version      0.2.49
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -2080,13 +2080,25 @@
   }
 
 
-  /* v0.2.47 — title lifecycle only; preserve role dot, counters and controls. */
-  [data-ebook-chat-lifecycle="done"] { --eb-chat-lifecycle-ink:#92999E; }
+  /* v0.2.49 — quieter lifecycle titles only. 450 × 60% = 270.
+     IBM Plex Mono is static; use its local Light face for Latin if installed.
+     Keep Hangul in Pretendard and leave role dots, counters and controls intact. */
+  @font-face {
+    font-family:"Jaroo Plex Latin Lifecycle";
+    src:local("IBM Plex Mono Light"),local("IBMPlexMono-Light");
+    font-weight:300;
+    font-style:normal;
+    unicode-range:U+0021-007E,U+00A1-024F,U+1E00-1EFF,U+20AC;
+  }
+  [data-ebook-chat-lifecycle="done"] { --eb-chat-lifecycle-ink:#A2A8AC; }
   [data-ebook-chat-lifecycle="stopped"] { --eb-chat-lifecycle-ink:#C83B42; }
   html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-ebook-count-rail="true"],[data-app-action-sidebar-section-heading],aside,[role="complementary"]) :is(a[href*="/c/"][data-ebook-chat-lifecycle],a[href*="/c/"] [data-ebook-chat-lifecycle]),
   html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-ebook-count-rail="true"],[data-app-action-sidebar-section-heading],aside,[role="complementary"]) :is(a[href*="/c/"][data-ebook-chat-lifecycle],a[href*="/c/"] [data-ebook-chat-lifecycle]) :is(span,div,p,[data-d-component="text"]):not(:is(svg *,button *,[role="button"] *,[aria-hidden="true"],[aria-hidden="true"] *, .sr-only,.sr-only *,[data-ebook-glyph="true"],[data-ebook-project-count],.jaroo-native-badge,.jaroo-native-badge *,[data-jaroo-status-slot],[data-jaroo-status-slot] *)) {
     color:var(--eb-chat-lifecycle-ink)!important;
     -webkit-text-fill-color:var(--eb-chat-lifecycle-ink)!important;
+    font-family:"Jaroo Plex Latin Lifecycle",var(--eb-font)!important;
+    font-weight:270!important;
+    font-synthesis-weight:none!important;
     text-decoration-line:line-through!important;
     text-decoration-color:var(--eb-chat-lifecycle-ink)!important;
     text-decoration-thickness:1px!important;
