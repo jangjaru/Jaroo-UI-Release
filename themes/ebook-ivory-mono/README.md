@@ -1,8 +1,17 @@
 # Jaroo E-book · Cool E-Ink Graph Paper
 
-**2026-11-24 · Stylus CSS v0.2.36 / Tampermonkey JS v0.2.26**
+**2026-11-24 · Stylus CSS v0.2.37 / Tampermonkey JS v0.2.26**
 
 This update modifies the existing Classic Paper theme; it is **not** a separate mockup or a second overlay.
+
+## v0.2.37 / v0.2.26 · 2026-11-24 — E-book 채팅 메뉴 정리
+
+- 채팅 더보기/프로젝트 이동 등의 네이티브 액션 메뉴: 기존 쿨 페이퍼 배경 `#F5F6F6`, 차콜 잉크, 얇은 `#C5CDD0` 단일 테두리, 10px 모서리, 낮은 음영으로 통일.
+- 메뉴를 감싸는 명시적 native-menu-root/popover 래퍼의 중복 테두리·배경·그림자 제거. 메뉴가 실제 역할을 가진 경우에 한정하며 위치·크기 계산과 메뉴 열기/닫기 동작은 바꾸지 않음.
+- 메뉴 행의 6px 모서리, 호버/키보드 선택 시 기존 쿨그레이 강조 배경, 기존 삭제 경고색·비활성 표시·아이콘·단축키 유지.
+- 일반 대화상자·리스트박스·툴팁·Jaroo 상태 메뉴는 변경 대상에서 제외. 프로젝트 카운터, 형광펜, 폰트 크기 및 업로드 최적화는 유지.
+- CSS만 v0.2.37로 변경. JS v0.2.26은 그대로 유지.
+- 로컬 Chromium 모의 메뉴 DOM에서 외부/내부 중복 테두리 제거, 단일 메뉴 테두리와 그림자, 선택 배경, 삭제 빨간색 보존, 일반 dialog/listbox 미변경 확인. 실제 로그인 Chrome의 DOM과 출력 검수는 대기.
 
 ## v0.2.36 / v0.2.26 · 2026-11-24 — 프로젝트 원형 카운터 한 자리 표시
 
@@ -56,7 +65,7 @@ This update modifies the existing Classic Paper theme; it is **not** a separate 
 - E-book Clock skin follows the cooler neutrals while preserving segmented digits, Life Clock and existing animations.
 
 ## Install / update in place
-- [Stylus CSS v0.2.36](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/theme.user.css)
+- [Stylus CSS v0.2.37](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/theme.user.css)
 - [Tampermonkey JS v0.2.26](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/indicators.user.js)
 
 Update the **existing** two extension entries rather than installing duplicates. In Stylus and Tampermonkey, run the built-in **Check for updates**, then reload ChatGPT with `Ctrl + Shift + R`.
@@ -68,7 +77,7 @@ Use the ChatGPT page console:
 ```js
 window.__jarooEbookIvoryMonoV1?.diagnostics?.()
 ```
-Expected: JS `version: '0.2.26'`, `sentPromptTarget: '15.667px'`; a selected chat should produce `headerMarkers: 1` when its title is visible. CSS version is `0.2.36`. `projectCounts` reports the one-character display, exact/partial/unknown state, overflow and confirmed count, `lastPassMs` reports the most recent scoped update durations (ms), not end-to-end page load time. `quickNavMarkers` reports the actual size, weight and color of New Chat/Dot labels. Diagnostics include `projectMarkers`, `sidebarSeams` and `workSwitcher`; live DOM matching still requires visual confirmation.
+Expected: JS `version: '0.2.26'`, `sentPromptTarget: '15.667px'`; a selected chat should produce `headerMarkers: 1` when its title is visible. CSS version is `0.2.37`. `projectCounts` reports the one-character display, exact/partial/unknown state, overflow and confirmed count, `lastPassMs` reports the most recent scoped update durations (ms), not end-to-end page load time. `quickNavMarkers` reports the actual size, weight and color of New Chat/Dot labels. Diagnostics include `projectMarkers`, `sidebarSeams` and `workSwitcher`; live DOM matching still requires visual confirmation.
 
 To roll back, use the extensions' version history or the previous Git commit of the two E-book files. This release is code-published and statically checked, but **the user's signed-in Chrome rendering and updates have not been verified in this chat**.
 
