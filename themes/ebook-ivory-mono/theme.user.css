@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.2.62
+@version      0.2.63
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -109,7 +109,7 @@
     --link: var(--eb-ink) !important;
     --link-hover: var(--eb-secondary) !important;
     --jaroo-status-css-version: "6.8.2";
-    --ebook-theme-version: "0.2.62";
+    --ebook-theme-version: "0.2.63";
   }
 
   /* 02. LIGHT-PAPER BASE — do not modify Chrome frame or extension UIs. */
@@ -291,52 +291,72 @@
     -webkit-text-fill-color: var(--eb-muted) !important;
   }
 
-  /* 06. STATUS — compatible with status.js; no state decisions here. */
-  [data-jaroo-native-row="true"] .jaroo-native-badge {
-    display: none !important;
-    position: static !important;
-    padding: 1px 4px !important;
-    margin-inline-end: 3px !important;
-    box-sizing: border-box !important;
-    border: 1px solid var(--eb-line-strong) !important;
-    border-radius: 5px !important;
-    background: var(--eb-paper) !important;
-    font-size: 10px !important;
-    line-height: 1.1 !important;
-    font-weight: 600 !important;
-    white-space: nowrap !important;
-    /* Status animation/glow is intentionally retained in the theme rules below. */
+
+  /* 06. E-BOOK F pen status: existing Status owns detection and acknowledgement. */
+  :root {
+    --eb-dashboard-ready:1;
+    --eb-pen-run-ink:#526982;--eb-pen-done-ink:#39786C;
+    --eb-pen-run:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%22-2%20-2%20127%2046%22%20%3E%3Cpath%20d%3D%22M82%2C29L83%2C30L82%2C32L79%2C35L76%2C36L75%2C35L75%2C33L79%2C29ZM54%2C25L56%2C27L56%2C28L52%2C32L50%2C32L49%2C30ZM57%2C26L53%2C24L49%2C28L48%2C30L48%2C32L49%2C33L52%2C33L54%2C32L56%2C30L57%2C28ZM24%2C21L21%2C21L20%2C22L18%2C22L14%2C24L14%2C25L15%2C25L21%2C22L23%2C23L17%2C29L16%2C29L14%2C31L14%2C32L19%2C29L21%2C29L22%2C30L14%2C38L13%2C41L17%2C39L19%2C39L20%2C38L25%2C37L28%2C35L26%2C35L25%2C36L20%2C37L17%2C39L16%2C38L16%2C37L18%2C35L19%2C35L20%2C33L24%2C29L24%2C28L22%2C28L21%2C29L20%2C28L20%2C27L24%2C24L25%2C22ZM120%2C17L119%2C19L121%2C20L122%2C18ZM111%2C17L110%2C18L110%2C20L112%2C19ZM102%2C17L100%2C20L101%2C21L103%2C19ZM43%2C16L45%2C18L43%2C21L40%2C22L39%2C21L39%2C19L42%2C16ZM92%2C15L90%2C15L89%2C16L85%2C16L84%2C17L81%2C17L80%2C18L77%2C18L76%2C19L74%2C19L70%2C21L67%2C21L66%2C22L73%2C21L74%2C20L76%2C20L80%2C18L81%2C19L81%2C21L79%2C25L79%2C28L77%2C29L74%2C33L74%2C36L75%2C37L78%2C37L80%2C35L81%2C35L84%2C31L84%2C29L83%2C28L80%2C28L79%2C27L83%2C19L85%2C17L92%2C16ZM44%2C14L43%2C14L38%2C19L37%2C21L38%2C23L41%2C23L45%2C20L46%2C17L43%2C15ZM49%2C9L47%2C9L46%2C10L43%2C10L42%2C11L37%2C12L35%2C13L35%2C14L37%2C13L39%2C13L40%2C12L42%2C12L43%2C11L45%2C11L46%2C10L49%2C10ZM18%2C4L17%2C4L6%2C16L6%2C17L0%2C24L1%2C25L1%2C24L4%2C21L4%2C20L10%2C14L15%2C16L17%2C18L17%2C16L16%2C16L11%2C12L16%2C7L16%2C6L18%2C5ZM64%2C3L62%2C9L60%2C11L58%2C11L55%2C13L54%2C12L55%2C10L55%2C8L56%2C7L56%2C6L55%2C6L53%2C10L52%2C15L51%2C16L51%2C19L52%2C19L52%2C17L54%2C14L56%2C14L58%2C12L59%2C12L60%2C13L60%2C15L58%2C19L58%2C21L59%2C21L59%2C19L60%2C18L60%2C16L61%2C15L62%2C10L65%2C5ZM84%2C2L80%2C2L79%2C3L77%2C3L73%2C5L75%2C5L79%2C3L82%2C3L83%2C4L81%2C6L81%2C7L72%2C16L72%2C17L73%2C17L74%2C15L80%2C9L84%2C9L85%2C10L87%2C10L89%2C11L89%2C10L87%2C9L85%2C9L82%2C7L85%2C3ZM47%2C1L45%2C3L45%2C5L43%2C8L45%2C7L47%2C3ZM33%2C0L31%2C0L30%2C1L30%2C4L28%2C7L28%2C9L27%2C10L27%2C12L26%2C13L25%2C18L28%2C12L28%2C10L31%2C5L31%2C3Z%22%20fill%3D%22black%22%20fill-rule%3D%22evenodd%22%20stroke%3D%22black%22%20stroke-width%3D%221.5%22%20stroke-linejoin%3D%22round%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E");
+    --eb-pen-done:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%22-2%20-2%20109%2043%22%20%3E%3Cpath%20d%3D%22M27%2C31L23%2C33L21%2C33L18%2C35L16%2C35L15%2C36L14%2C34L17%2C28L17%2C26L12%2C36L12%2C38L18%2C35L20%2C35L23%2C33L25%2C33L27%2C32ZM60%2C24L57%2C24L56%2C25L51%2C25L50%2C26L49%2C24L52%2C19L52%2C18L51%2C18L47%2C26L45%2C27L43%2C27L42%2C26L43%2C25L44%2C20L42%2C23L42%2C25L41%2C27L38%2C29L35%2C29L34%2C30L41%2C29L45%2C27L54%2C26L55%2C25L60%2C25ZM14%2C5L16%2C7L16%2C9L13%2C12L11%2C13L9%2C13L8%2C12L9%2C9L12%2C6ZM15%2C3L11%2C5L8%2C8L7%2C10L7%2C13L11%2C15L9%2C21L7%2C23L0%2C26L0%2C27L4%2C25L6%2C25L9%2C23L11%2C23L14%2C21L16%2C21L19%2C19L21%2C19L21%2C18L20%2C18L19%2C19L14%2C20L11%2C22L10%2C21L12%2C17L12%2C15L11%2C14L13%2C12L14%2C12L17%2C8L17%2C6L14%2C4ZM51%2C2L48%2C2L42%2C5L44%2C5L48%2C3L50%2C4L50%2C5L45%2C10L41%2C12L43%2C13L41%2C15L41%2C18L45%2C18L48%2C16L53%2C15L53%2C14L51%2C14L50%2C15L48%2C15L44%2C17L42%2C16L43%2C14L46%2C11L48%2C10L50%2C10L51%2C9L49%2C9L48%2C8L52%2C4ZM30%2C2L28%2C3L28%2C5L27%2C6L27%2C8L26%2C9L26%2C11L25%2C12L25%2C14L23%2C18L22%2C25L23%2C24L23%2C22L24%2C21L24%2C18L25%2C16L27%2C14L29%2C13L31%2C13L32%2C12L34%2C12L35%2C11L30%2C12L27%2C14L26%2C13ZM104%2C0L103%2C0L93%2C10L93%2C11L87%2C17L87%2C18L82%2C23L81%2C25L80%2C25L78%2C23L75%2C16L73%2C15L78%2C26L80%2C28L87%2C20L87%2C19L92%2C14L92%2C13Z%22%20fill%3D%22black%22%20fill-rule%3D%22evenodd%22%20stroke%3D%22black%22%20stroke-width%3D%221.5%22%20stroke-linejoin%3D%22round%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E");
+    --eb-pen-underline:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20234%209%22%20preserveAspectRatio%3D%22none%22%3E%3Cpath%20d%3D%22M1%207%20C23%202.6%2055%201.3%2086%201.3%20C100%201.3%20111%201.7%20118%202.5%20Q120%203%20115%205%20L109%206%20C134%201.5%20160%201.8%20184%202.3%20C205%202.7%20218%203.7%20232%205.2%20C211%204.8%20185%204.3%20161%204.4%20C141%204.4%20123%205.5%20109%207.5%20Q103%208.5%20104%206.4%20L111%204.2%20C74%203%2036%204.5%201%208%20Z%22%20fill%3D%22black%22%20fill-rule%3D%22evenodd%22%20stroke%3D%22black%22%20stroke-width%3D%220.35%22%20stroke-linejoin%3D%22round%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E");
   }
-  [data-jaroo-native-row="true"][data-jaroo-effective-status="working"] .jaroo-native-badge {
-    display: inline-flex !important;
-    align-items: center;
-    color: #986B24 !important;
-    border-color: var(--eb-amber) !important;
-    animation: ebook-run-indicator .28s steps(1,end) infinite !important;
-    text-shadow: 0 0 3px rgba(255,184,108,.84) !important;
-    box-shadow: 0 0 6px rgba(255,184,108,.35) !important;
+  html body [data-jaroo-native-row="true"] .jaroo-native-badge {
+    display:none!important;position:static!important;order:99!important;
+    flex:0 0 53px!important;width:53px!important;min-width:53px!important;max-width:53px!important;
+    height:20px!important;min-height:20px!important;align-self:center!important;
+    margin:0 0 0 auto!important;padding:0!important;box-sizing:border-box!important;
+    border:0!important;border-radius:0!important;background:none!important;color:transparent!important;
+    font-size:0!important;line-height:0!important;text-shadow:none!important;box-shadow:none!important;
+    filter:none!important;transform:none!important;animation:none!important;transition:none!important;
+    pointer-events:none!important;opacity:1!important;
   }
-  [data-jaroo-native-row="true"][data-jaroo-effective-status="done"] .jaroo-native-badge {
-    display: inline-flex !important;
-    align-items: center;
-    color: #3E8369 !important;
-    border-color: var(--eb-teal) !important;
-    animation: ebook-done-indicator 1.8s ease-in-out infinite !important;
-    text-shadow: 0 0 3px rgba(80,250,123,.55) !important;
-    box-shadow: 0 0 5px rgba(80,250,123,.28) !important;
+  html body [data-jaroo-native-row="true"] .jaroo-native-badge::before,html body #jaroo-v4-quick-panel .tag::before {
+    content:""!important;display:block!important;flex:0 0 100%!important;width:100%!important;height:20px!important;
+    margin:0!important;padding:0!important;border:0!important;border-radius:0!important;
+    background:var(--eb-pen-run-ink)!important;
+    -webkit-mask:var(--eb-pen-run) right center / contain no-repeat!important;
+    mask:var(--eb-pen-run) right center / contain no-repeat!important;
+    box-shadow:none!important;filter:none!important;transform:none!important;
+    animation:none!important;clip-path:inset(0);text-shadow:none!important;
   }
-  @keyframes ebook-run-indicator { 0%,49.999% {opacity:1} 50%,100% {opacity:.3} }
-  @keyframes ebook-done-indicator { 0%,100% {filter:brightness(.85)} 50% {filter:brightness(1.12)} }
-  html[data-jaroo-status-hidden="true"] [data-jaroo-native-row="true"] .jaroo-native-badge { display: none !important; }
-  [data-jaroo-native-row="true"][data-jaroo-badge-layout="inline"]
-    [data-jaroo-badge-host="true"] { display: inline-flex; align-items: center; gap: 4px; min-width: 0; }
-  @media (prefers-reduced-motion: reduce) {
-    .jaroo-native-badge {animation:none!important;}
+  html body [data-jaroo-native-row="true"] .jaroo-native-badge::after {content:none!important}
+  html body [data-jaroo-native-row="true"][data-jaroo-effective-status="working"] .jaroo-native-badge,html body [data-jaroo-native-row="true"][data-jaroo-effective-status="done"] .jaroo-native-badge {display:inline-flex!important;align-items:center!important}
+  html body [data-jaroo-native-row="true"][data-jaroo-effective-status="done"] .jaroo-native-badge::before,html body #jaroo-v4-quick-panel .tag[data-jstatus="done"]::before {
+    background:var(--eb-pen-done-ink)!important;
+    -webkit-mask:var(--eb-pen-done) right center / contain no-repeat!important;
+    mask:var(--eb-pen-done) right center / contain no-repeat!important;
   }
-  [data-jaroo-native-leading="true"]:not(:is(a,button,input,textarea,[role="button"],.jaroo-native-badge)) { display: none !important; }
-  [data-jaroo-native-hidden="true"]:not(:is(a,button,input,textarea,[role="button"],.jaroo-native-badge)) {
-    clip-path: inset(50%) !important;
+  html[data-jaroo-status-hidden="true"] body [data-jaroo-native-row="true"] .jaroo-native-badge {display:none!important}
+  [data-jaroo-native-row="true"][data-jaroo-badge-layout="inline"] [data-jaroo-badge-host="true"] {display:inline-flex;align-items:center;gap:4px;min-width:0;max-width:100%}
+  [data-jaroo-native-row="true"][data-jaroo-effective-status] [data-jaroo-badge-host="true"] >
+    :is(a[href*="/c/"],[data-thread-title="true"],span.truncate,div.truncate),
+  [data-jaroo-native-row="true"][data-jaroo-effective-status][data-jaroo-badge-host="true"] >
+    :is(a[href*="/c/"],[data-thread-title="true"],span.truncate,div.truncate) {min-width:0!important;flex-shrink:1!important}
+  html body [data-jaroo-native-row="true"][data-jaroo-effective-status="working"] [data-ebook-pen-title="relative"] {position:relative!important}
+  html body [data-jaroo-native-row="true"][data-jaroo-effective-status="working"] [data-ebook-pen-title]::after {
+    content:""!important;position:absolute!important;inset-inline:0!important;bottom:0!important;
+    height:3.8px!important;width:auto!important;
+    background:var(--eb-pen-run-ink)!important;
+    -webkit-mask:var(--eb-pen-underline) center / 100% 100% no-repeat!important;
+    mask:var(--eb-pen-underline) center / 100% 100% no-repeat!important;
+    pointer-events:none!important;opacity:.9!important;border:0!important;box-shadow:none!important;clip-path:inset(0);
   }
+  html body [data-jaroo-native-row="true"][data-jaroo-effective-status="working"][data-jaroo-selected="true"] [data-ebook-pen-title]::after {animation:ebook-pen-underline 5.6s ease-in-out infinite!important}
+  html body [data-jaroo-native-row="true"][data-jaroo-effective-status="working"][data-jaroo-selected="true"] .jaroo-native-badge::before {animation:ebook-pen-writing 5.6s linear infinite!important}
+  html[data-jaroo-status-hidden="true"] body [data-ebook-pen-title]::after {visibility:hidden!important;animation-play-state:paused!important}
+  @keyframes ebook-pen-underline {0%,2%{clip-path:inset(0 100% 0 0)}13%,78%{clip-path:inset(0)}93%,100%{clip-path:inset(0 100% 0 0)}}
+  @keyframes ebook-pen-writing {0%,13%{clip-path:inset(0 100% 0 0)}22%{clip-path:inset(0 68% 0 0)}29%{clip-path:inset(0 36% 0 0)}40%,78%{clip-path:inset(0)}93%,100%{clip-path:inset(0 100% 0 0)}}
+  @media(prefers-reduced-motion:reduce) {
+    html body [data-jaroo-native-row="true"][data-jaroo-effective-status="working"][data-jaroo-selected="true"] [data-ebook-pen-title]::after,html body [data-jaroo-native-row="true"][data-jaroo-effective-status="working"][data-jaroo-selected="true"] .jaroo-native-badge::before {animation:none!important;clip-path:inset(0)!important}
+  }
+  [data-jaroo-native-leading="true"]:not(:is(a,button,input,textarea,[role="button"],.jaroo-native-badge)) {display:none!important}
+  [data-jaroo-native-hidden="true"]:not(:is(a,button,input,textarea,[role="button"],.jaroo-native-badge)) {clip-path:inset(50%)!important}
+  html body #jaroo-v4-quick-panel,html body #jaroo-v4-title-tip {background:#F5F6F6!important;color:#292D30!important;border:1px solid #C5CDD0!important;border-radius:5px!important;box-shadow:none!important;font-family:var(--eb-font)!important}
+  html body #jaroo-v4-quick-panel :is(.head,.name,.empty,.dismiss,a) {color:#535B60!important;font-family:var(--eb-font)!important}
+  html body #jaroo-v4-quick-panel .dismiss {border:1px solid #C5CDD0!important;background:#E7EAEB!important;border-radius:3px!important}
+  html body #jaroo-v4-quick-panel a:is(:hover,:focus-visible) {background:#E7EAEB!important;outline-color:#879398!important}
+  html body #jaroo-v4-quick-panel .tag {order:2!important;flex:0 0 53px!important;width:53px!important;height:20px!important;min-height:20px!important;border:0!important;background:none!important;margin-left:auto!important;padding:0!important;font-size:0!important;text-shadow:none!important;box-shadow:none!important;animation:none!important}
+  html body #jaroo-v4-quick-panel .name {flex:1 1 auto;min-width:0}
 
   /* 07. CONVERSATION BODY: normal roman fonts, readable measure. */
   body [data-message-author-role="assistant"], body [data-message-author-role="user"] {
@@ -1521,7 +1541,7 @@
     --eb-composer-single-stroke:2.5px solid #303438!important;
     --eb-quick-nav-size:var(--eb-project-optical-size,16px)!important;
     --eb-marker-yellow:#F2D778!important;
-    --ebook-theme-version:"0.2.62";
+    --ebook-theme-version:"0.2.63";
   }
   /* Preserve the existing procedural paper-grain SVG and only refine grid pitch. */
   html body :is(#thread,[data-testid="conversation-panel"],

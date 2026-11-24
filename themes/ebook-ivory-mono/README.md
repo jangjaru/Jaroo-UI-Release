@@ -1,3 +1,15 @@
+# E-Book CSS v0.2.63 / JS v0.2.46 — 대시보드 복원 및 F안 펜 메모
+
+- 브랜드 헤더, Life Clock, Life Progress, LCD 시계와 날짜·날씨, RUN/DONE 및 ALL/ONLY에 무채색 E-Book 스킨 적용.
+- 기존 Clock v3.10.2 / Status v6.8.2 원본을 재사용한다. 이전에 삭제했다면 두 스크립트를 재설치한다. Mapper는 필요하지 않다. Dracula 및 Flat Neon 시각 테마 중복 적용 금지.
+- Clock의 원래 브랜드 클릭은 네이티브 메뉴 연결을 유지한다. 별도 우측 화살표는 시간 정보만 접고 펼친다. RUN/DONE과 ONLY 목록은 계속 접근 가능하다.
+- F안 이미지에서 추출한 손글씨를 SVG 마스크로 적용한다. 선택된 RUN만 밑줄→실행중… 순차 공개→유지→지우기(5.6초). 비선택 RUN은 고정, DONE은 완료 ✓ 고정. 실제 획순이 아니라 벡터 클리핑으로 표현한다. 안전한 제목 래퍼가 확인되지 않으면 우측 메모만 표시한다. 시스템 동작 감소 설정을 존중한다.
+- 기존 원 7px, 픽셀 스냅, 역할 팔레트, 직책 굵기, 정렬, 목차, 카운터 유지. 원본 Clock/Status의 계산, 상태 감지, 확인 및 필터 로직은 변경하지 않는다.
+- Life Clock 및 날씨는 기존 로컬 전용 프로필을 사용한다. 프로필이 없거나 유효하지 않으면 원래 Clock 규칙에 따라 Life Clock이 숨겨지며 날씨도 사용할 수 없을 수 있다. 개인 생년월일·좌표·프로필·폰트 파일은 저장소에 추가하지 않는다.
+- 원본 및 JS 문법 검사 완료. 실제 로그인 Chrome에서 설치, 화면 배치, RUN/DONE 전환 및 프로필을 확인해야 한다.
+
+기존 E-Book CSS와 Indicators를 업데이트하고 필요 시 [Clock](../../chatgpt/clock.user.js)과 [Status](../../chatgpt/status.user.js)를 다시 설치한다. 새로고침 후 확인한다. 아래는 기존 이력이다.
+
 # Jaroo E-book · Cool E-Ink Graph Paper
 
 **2026-11-24 · Stylus CSS v0.2.47 / Tampermonkey JS v0.2.36**
