@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.2.32
+// @version      0.2.33
 // @description  E-book visual dot indicators for role prefixes plus a light Clock skin; keeps original chat titles, React data and RUN/DONE logic intact.
 // @match        https://chatgpt.com/*
 // @run-at       document-start
@@ -108,6 +108,7 @@
   const ALL=127;
   let dirty=0,lastRoute=location.pathname,lastRecovery=0;
   const timings={nav:0,composer:0,sent:0,header:0,clock:0,editor:0,divider:0,runs:0};
+  const perfPasses={},perfEvents={scheduled:0,coalesced:0,hiddenDeferred:0};
   const OWN_NODE='[data-ebook-top-hatch-layer="true"],[data-ebook-project-count-layer="true"],[data-ebook-project-count],[data-ebook-upload-divider="true"],[data-ebook-glyph="true"]';
   const USER_NODE='[data-message-author-role="user"],[data-user-message-bubble="true"],[data-user-message]';
   const EDITOR_NODE='#prompt-textarea,[data-testid="prompt-textarea"],[data-composer-input] .ProseMirror[contenteditable="true"]';
@@ -202,9 +203,10 @@
     // Search the Dot navigation row only. The number can be a sibling of its
     // anchor; previous versions incorrectly searched the anchor alone.
     const marked=new Set();
-    for (const root of observedRoots) {
+    for (const root of navigationQueryRoots()) {
       if (!root.isConnected) continue;
-      const matches=[...root.querySelectorAll('a,button,[role="button"],span,div')].filter(el=>
+      const known=[...root.querySelectorAll('[data-ebook-quick-label="dot"]')];
+      const matches=known.length?known:[...root.querySelectorAll('a,button,[role="button"],span,div')].filter(el=>
         el.children.length===0 && (el.textContent||'').trim()==='Dot');
       for (const label of matches) {
         let parent=label;
@@ -246,62 +248,54 @@
     '[data-sidebar-project-kind="local"],[data-app-action-sidebar-project-row],'+
     '[data-thread-title="true"],a[href*="/c/"],[aria-hidden="true"],.sr-only,[hidden],'+
     'svg,[data-ebook-dot-counter="true"],[data-testid="composer"]';
+  function navigationQueryRoots() {
+    const all=[...new Set([...sidebarRoots(),...document.querySelectorAll(
+      'aside,[role="complementary"],[data-ebook-sidebar-seam="true"],[data-ebook-count-rail="true"],[data-ebook-sidebar-top="overlay"]'
+    )])].filter(el=>{
+      const r=visibleBox(el);
+      return r&&r.left>=-4&&r.left<=180&&r.width>=100&&r.width<=720&&r.height>60;
+    });
+    return all.filter(el=>!all.some(p=>p!==el&&p.contains(el)));
+  }
   function isExactDotText(el) {
-    if(!el?.isConnected||el.closest(quickDotExclude))return false;
-    if(normalizeLabel(el.textContent)!=='Dot')return false;
-    // An outer control can contain a nested label with identical aggregate
-    // text: accept only the element that actually owns the direct text.
-    const direct=[...el.childNodes].filter(n=>n.nodeType===3)
-      .map(n=>n.nodeValue||'').join('');
-    return normalizeLabel(direct)==='Dot';
+    if(!el?.isConnected)return false;
+    const direct=[...el.childNodes].filter(n=>n.nodeType===3).map(n=>n.nodeValue||'').join('');
+    return normalizeLabel(direct)==='Dot'&&normalizeLabel(el.textContent)==='Dot'&&!el.closest(quickDotExclude);
   }
   function collectDotLabels(newChatLabels) {
     const result=new Set(),candidates=new Set();
-    const roots=new Set([...sidebarRoots(),...document.querySelectorAll('aside,[data-ebook-sidebar-seam="true"]')]);
-    for(const el of document.querySelectorAll(
-      '[data-app-action-sidebar-project-row],'+
-      '[data-ebook-quick-label="new-chat"]')) {
-      const root=el.closest(SIDE_ROOTS+',aside,[role="complementary"]');
-      if(root)roots.add(root);
+    const roots=navigationQueryRoots();
+    for(const root of roots)for(const el of root.querySelectorAll(quickTextCandidates))candidates.add(el);
+    const newBoxes=newChatLabels.map(n=>n.getBoundingClientRect());
+    function accept(nodes) {
+      for(const el of nodes) {
+        if(!isExactDotText(el))continue;
+        const r=visibleBox(el);
+        if(!r||r.left<0||r.left>410||r.top<0)continue;
+        if(getComputedStyle(el).visibility==='hidden')continue;
+        const native=el.closest(quickControl);
+        const root=el.closest(SIDE_ROOTS+',aside,[role="complementary"],[data-ebook-sidebar-seam="true"],[data-ebook-count-rail="true"]');
+        const rootRect=root&&visibleBox(root);
+        const inRail=!!(rootRect&&rootRect.left>=-3&&rootRect.left<=180&&rootRect.width>=100&&rootRect.width<=720);
+        const nearNewChat=newBoxes.some(q=>Math.abs(r.left-q.left)<100&&r.top>=q.top-8&&r.top-q.top<200);
+        if(!inRail&&!(native&&nearNewChat))continue;
+        if(!nearNewChat&&r.top>(rootRect?.top||0)+480)continue;
+        if(native&&native.getBoundingClientRect().left>400)continue;
+        if(el.children.length>0&&[...el.children].some(n=>
+          !n.matches('svg,[aria-hidden="true"],.sr-only')||normalizeLabel(n.textContent)!==''))continue;
+        result.add(el);
+      }
     }
-    for(const root of roots) {
-      const r=visibleBox(root);
-      if(!r||r.left< -3||r.left>180||r.width<100||r.width>720)continue;
-      for(const el of root.querySelectorAll(quickTextCandidates))candidates.add(el);
-    }
-    // Safe geometry + exact text fallback for newer app-shells without the
-    // legacy sidebar IDs. Search only controls and their text descendants.
-    for(const control of document.querySelectorAll(quickControl)) {
-      const label=normalizeLabel(control.textContent);
-      if(!/^Dot(?:\s*\d{1,3})?$/u.test(label))continue;
-      candidates.add(control);
-      for(const el of control.querySelectorAll(quickTextCandidates))candidates.add(el);
-    }
-    for(const el of candidates) {
-      if(!isExactDotText(el))continue;
-      const r=visibleBox(el);
-      if(!r||r.left<0||r.left>410||r.top<0)continue;
-      if(getComputedStyle(el).visibility==='hidden')continue;
-      const native=el.closest(quickControl);
-      const root=el.closest(SIDE_ROOTS+',aside,[role="complementary"],[data-ebook-sidebar-seam="true"]');
-      const rootRect=root&&visibleBox(root);
-      const inRail=!!(rootRect&&rootRect.left>=-3&&rootRect.left<=180&&
-        rootRect.width>=100&&rootRect.width<=720);
-      const nearNewChat=newChatLabels.some(n=>{
-        const q=n.getBoundingClientRect();
-        return Math.abs(r.left-q.left)<100&&r.top>=q.top-8&&r.top-q.top<200;
-      });
-      // When the app-shell differs, a nearby existing New Chat label plus
-      // native interactive parent is needed. Otherwise fail open.
-      if(!inRail&&!(native&&nearNewChat))continue;
-      if(!nearNewChat&&r.top>(rootRect?.top||0)+480)continue;
-      if(native&&native.getBoundingClientRect().left>400)continue;
-      // If a native label includes an icon or badge element, avoid applying
-      // inline typography to the entire interactive container.
-      if(el.children.length>0&&[...el.children].some(n=>
-        !n.matches('svg,[aria-hidden="true"],.sr-only')||
-        normalizeLabel(n.textContent)!==''))continue;
-      result.add(el);
+    accept(candidates);
+    if(!result.size) {
+      const fallback=new Set();
+      for(const control of document.querySelectorAll(quickControl)) {
+        if(control.closest('[data-message-author-role]'))continue;
+        if(!/^Dot(?:\s*\d{1,3})?$/u.test(normalizeLabel(control.textContent)))continue;
+        fallback.add(control);
+        for(const el of control.querySelectorAll(quickTextCandidates))fallback.add(el);
+      }
+      accept(fallback);
     }
     return result;
   }
@@ -336,31 +330,31 @@
   }
   function markQuickActionLabels() {
     const found=new Map();
-    // Preserve the original working New Chat path and its marker geometry.
-    const leaves=document.querySelectorAll(
-      'button span,a span,[role="button"] span,[role="link"] span,'+
-      'button [data-d-component="text"],a [data-d-component="text"]'
-    );
-    for(const el of leaves) {
-      if(el.closest('main,[role="main"],[role="dialog"],[role="menu"],'+
-                    '[data-sidebar-cycle-item],[data-sidebar-project-kind="local"],'+
-                    '[data-thread-title="true"],[aria-hidden="true"],.sr-only'))continue;
-      if(el.children.length>0)continue;
-      const raw=normalizeLabel(el.textContent);
-      if(raw!=='새 채팅'&&raw!=='New chat')continue;
-      const nav=el.closest('button,a,[role="button"],[role="link"]');
-      if(!nav)continue;
-      const rect=el.getBoundingClientRect(),nrect=nav.getBoundingClientRect();
-      if(rect.width<=0||rect.height<=0||rect.left<0||rect.left>410||
-         rect.top<32||rect.top>360||nrect.left>400)continue;
-      found.set(el,'new-chat');
+    const selector='button span,a span,[role="button"] span,[role="link"] span,'+
+      'button [data-d-component="text"],a [data-d-component="text"]';
+    function scan(leaves) {
+      for(const el of leaves) {
+        if(el.children.length>0)continue;
+        const raw=normalizeLabel(el.textContent);
+        if(raw!=='새 채팅'&&raw!=='New chat')continue;
+        if(el.closest('main,[role="main"],[role="dialog"],[role="menu"],'+
+                      '[data-sidebar-cycle-item],[data-sidebar-project-kind="local"],'+
+                      '[data-thread-title="true"],[aria-hidden="true"],.sr-only'))continue;
+        const nav=el.closest('button,a,[role="button"],[role="link"]');
+        if(!nav)continue;
+        const rect=el.getBoundingClientRect(),nrect=nav.getBoundingClientRect();
+        if(rect.width<=0||rect.height<=0||rect.left<0||rect.left>410||
+           rect.top<32||rect.top>360||nrect.left>400)continue;
+        found.set(el,'new-chat');
+      }
     }
+    for(const root of navigationQueryRoots())scan(root.querySelectorAll(selector));
+    if(!found.size)scan(document.querySelectorAll(selector));
     const newChatLabels=[...found.keys()];
     for(const el of collectDotLabels(newChatLabels))found.set(el,'dot');
     syncPresentationMarks('data-ebook-quick-label',found);
     syncQuickDotTypography(found);
   }
-
 
   /* v0.2.23 — presentation only, restricted to known project labels,
      one visible outer sidebar, and a paired native Chat/Work switch. */
@@ -578,7 +572,17 @@
     if(['active','selected','is-active','is-selected'].some(c=>el.classList.contains(c)))yes=true;
     return yes===no?null:yes;
   }
+  let cachedModePair=null;
   function pairedModeControls() {
+    if(cachedModePair) {
+      const {host,a,b}=cachedModePair;
+      const hr=visibleBox(host),ar=visibleBox(a),br=visibleBox(b);
+      if(hr&&ar&&br&&host.contains(a)&&host.contains(b)&&hr.width<=560&&hr.height<=92&&
+         ar.top>=-3&&ar.top<=180&&br.top>=-3&&br.top<=180&&
+         normalizeLabel(a.textContent).toLowerCase()==='chat'&&normalizeLabel(b.textContent).toLowerCase()==='work'&&
+         !a.closest(modeExclude)&&!b.closest(modeExclude))return cachedModePair;
+      cachedModePair=null;
+    }
     const chat=[],work=[];
     for(const el of document.querySelectorAll(modeControlSelector)) {
       if(el.closest(modeExclude))continue;
@@ -608,7 +612,7 @@
         break;
       }
     }
-    return best;
+    return cachedModePair=best;
   }
   let modeObserved=null;
   const modeObserver=new MutationObserver(()=>schedule(PASS.HEADER));
@@ -807,6 +811,7 @@
       layer.setAttribute('aria-hidden','true');countLayers.set(rail,layer);
     }
     if(layer.parentElement!==rail)rail.appendChild(layer);
+    if(!rail.hasAttribute('data-ebook-count-rail'))rail.setAttribute('data-ebook-count-rail','true');
     return layer;
   }
   function restoreProjectCount(row,record) {
@@ -816,21 +821,28 @@
     const used=new Set([...countHosts.values()].map(x=>x.rail));
     for(const [rail,layer] of countLayers)if(!rail.isConnected||!used.has(rail)) {
       layer.remove();countLayers.delete(rail);
+      if(rail.isConnected)rail.removeAttribute('data-ebook-count-rail');
     }
   }
-  function countViewport(row,rail,rr,ref) {
-    let top=rr.top,bottom=rr.bottom;
+  // Read the shared clipping geometry once per position pass, then write
+  // every badge together. No read-after-write layout loop on scrolling.
+  let cachedCountReference=null;
+  function currentCountReference() {
+    if(cachedCountReference?.circle?.isConnected&&cachedCountReference?.dot?.isConnected&&cachedCountReference?.number?.isConnected)return cachedCountReference;
+    return cachedCountReference=findDotCountReference();
+  }
+  function countViewport(row,rail,rr,baseTop,clips) {
+    let top=baseTop,bottom=rr.bottom;
     for(let p=row.parentElement;p&&p!==rail;p=p.parentElement) {
-      const s=getComputedStyle(p);
-      if(!/^(auto|scroll|overlay|hidden|clip)$/u.test(s.overflowY))continue;
-      const r=p.getBoundingClientRect();
-      if(/^(hidden|clip)$/u.test(s.overflowY)&&(r.height<60||r.width<rr.width*.6))continue;
+      if(!clips.has(p)) {
+        const overflow=getComputedStyle(p).overflowY;
+        clips.set(p,/^(auto|scroll|overlay|hidden|clip)$/u.test(overflow)?{overflow,r:p.getBoundingClientRect()}:null);
+      }
+      const clip=clips.get(p);
+      if(!clip)continue;
+      const {overflow,r}=clip;
+      if(/^(hidden|clip)$/u.test(overflow)&&(r.height<60||r.width<rr.width*.6))continue;
       top=Math.max(top,r.top);bottom=Math.min(bottom,r.bottom);
-    }
-    const band=parseFloat(rail.style.getPropertyValue('--eb-sidebar-top-height'));
-    if(Number.isFinite(band))top=Math.max(top,rr.top+band);
-    if(ref&&rail.contains(ref.dot)) {
-      const dr=ref.dot.getBoundingClientRect();top=Math.max(top,dr.bottom+3);
     }
     return {top,bottom};
   }
@@ -844,44 +856,55 @@
     const value=hidden?'true':'false';
     if(badge.getAttribute('data-ebook-count-hidden')!==value)badge.setAttribute('data-ebook-count-hidden',value);
   }
-  function positionProjectCounts(ref=findDotCountReference()) {
-    const boxes=new Map();
+  function positionProjectCounts(ref=currentCountReference(),refreshAppearance=false) {
+    const boxes=new Map(),clips=new Map(),plans=[];
+    const dotRect=ref?.circle?.getBoundingClientRect(),labelRect=ref?.dot?.getBoundingClientRect();
     for(const [row,item] of countHosts) {
       const {badge,rail,layer,title}=item;
-      if(!row.isConnected||!rail.isConnected||!title.isConnected){setCountHidden(badge,true);continue;}
+      if(!row.isConnected||!rail.isConnected||!title.isConnected){plans.push({badge,hidden:true});continue;}
       let g=boxes.get(rail);
       if(!g) {
         const rr=rail.getBoundingClientRect(),lr=layer.getBoundingClientRect();
-        let appearance=countLooks.get(rail)||counterAppearance(null),center=rr.right-(dotInsets.get(rail)??22);
-        if(ref) {
-          const b=ref.circle.getBoundingClientRect();
-          if(b.left>=rr.left&&b.right<=rr.right) {
-            center=b.left+b.width/2;dotInsets.set(rail,rr.right-center);
+        let appearance=countLooks.get(rail)||counterAppearance(null),center=rr.right-(dotInsets.get(rail)??22),baseTop=rr.top;
+        if(dotRect&&dotRect.left>=rr.left&&dotRect.right<=rr.right) {
+          center=dotRect.left+dotRect.width/2;dotInsets.set(rail,rr.right-center);
+          if(refreshAppearance||!countLooks.has(rail)) {
             appearance=counterAppearance(ref);countLooks.set(rail,appearance);
           }
         }
-        g={rr,lr,center,appearance,diameter:parseFloat(appearance['--eb-count-diameter'])};boxes.set(rail,g);
+        const band=parseFloat(rail.style.getPropertyValue('--eb-sidebar-top-height'));
+        if(Number.isFinite(band))baseTop=Math.max(baseTop,rr.top+band);
+        if(labelRect&&ref&&rail.contains(ref.dot))baseTop=Math.max(baseTop,labelRect.bottom+3);
+        g={rr,lr,center,baseTop,appearance,diameter:parseFloat(appearance['--eb-count-diameter']),lw:layer.offsetWidth,lh:layer.offsetHeight};boxes.set(rail,g);
       }
       const r=visibleBox(row),tr=visibleBox(title);
-      if(!tr){setCountHidden(badge,true);continue;}
+      if(!tr){plans.push({badge,hidden:true});continue;}
       const y=r&&r.height>=12&&r.height<=70?(r.top+r.bottom)/2:(tr.top+tr.bottom)/2;
-      const viewport=countViewport(row,rail,g.rr,ref);
-      const p=countCoordinates(g.center,y,g.diameter,g.rr,viewport,g.lr,layer.offsetWidth,layer.offsetHeight);
-      if(!p){setCountHidden(badge,true);continue;}
-      for(const [k,v] of Object.entries(g.appearance))makeImportant(badge,k,v);
-      makeImportant(badge,'--eb-count-x',Math.round(p.x*10)/10+'px');
-      makeImportant(badge,'--eb-count-y',Math.round(p.y*10)/10+'px');
-      // Native row action buttons must remain available on hover/focus.
-      setCountHidden(badge,row.matches(':hover,:focus-within'));
+      const viewport=countViewport(row,rail,g.rr,g.baseTop,clips);
+      const p=countCoordinates(g.center,y,g.diameter,g.rr,viewport,g.lr,g.lw,g.lh);
+      if(!p){plans.push({badge,hidden:true});continue;}
+      plans.push({badge,p,appearance:g.appearance,hidden:row.matches(':hover,:focus-within')});
+    }
+    for(const {badge,p,appearance,hidden} of plans) {
+      if(p) {
+        for(const [k,v] of Object.entries(appearance))makeImportant(badge,k,v);
+        makeImportant(badge,'--eb-count-x',Math.round(p.x*10)/10+'px');
+        makeImportant(badge,'--eb-count-y',Math.round(p.y*10)/10+'px');
+      }
+      setCountHidden(badge,hidden);
     }
   }
   function queueProjectCountPosition(event) {
-    if(disposed||(!countHosts.size&&!topBands.size))return;
+    if(disposed||document.hidden||(!countHosts.size&&!topBands.size))return;
     const target=event?.target;
     if(event&&event.type==='scroll'&&target!==document&&target!==document.documentElement&&
        ![...countLayers.keys(),...topBands.keys()].some(r=>r.contains(target)))return;
-    if(event&&event.type!=='scroll'&&event.type!=='resize'&&
-       !target?.closest?.(PROJECT_ROW)&&!event.relatedTarget?.closest?.(PROJECT_ROW))return;
+    if(event&&event.type!=='scroll'&&event.type!=='resize') {
+      const from=target?.closest?.(PROJECT_ROW)||null,to=event.relatedTarget?.closest?.(PROJECT_ROW)||null;
+      // Moving between nested spans/icons inside the same project row
+      // does not change its badge hover/focus state.
+      if(from===to)return;
+    }
     if(!countPositionFrame)countPositionFrame=requestAnimationFrame(()=>{countPositionFrame=0;positionProjectCounts();positionFixedSidebarTop();});
   }
   // Apply directly to our own noninteractive badges, independent of
@@ -922,14 +945,14 @@
         if(badge.getAttribute(k)!==v)badge.setAttribute(k,v);
     }
     for(const [row,record] of countHosts)if(!live.has(row)||!row.isConnected)restoreProjectCount(row,record);
-    pruneCountLayers();positionProjectCounts(ref);
+    pruneCountLayers();cachedCountReference=ref;positionProjectCounts(ref,true);
   }
   function restoreProjectCounts() {
     if(countPositionFrame)cancelAnimationFrame(countPositionFrame);countPositionFrame=0;
     for(const type of ['scroll','pointerover','pointerout','focusin','focusout'])
       document.removeEventListener(type,queueProjectCountPosition,true);
     for(const [row,record] of countHosts)restoreProjectCount(row,record);
-    pruneCountLayers();
+    pruneCountLayers();cachedCountReference=null;
   }
 
   function synchronizeSidebar() {
@@ -1027,7 +1050,8 @@
     const main=context?.form||context?.shell;
     const containers=[main,context?.shell].filter(Boolean);
     const suffix=/(?:^|[\s·|])(?:Extra\s+High|High|Medium|Low|Instant|Auto)$/iu;
-    const buttons=[...document.querySelectorAll('button,[role="button"],[aria-haspopup]')];
+    const buttonSelector='button,[role="button"],[aria-haspopup]';
+    const buttons=new Set(containers.flatMap(root=>[...root.querySelectorAll(buttonSelector)]));
     const chosen=new Set();
     const eligible=(node)=>{
       const b=node.getBoundingClientRect();
@@ -1035,7 +1059,8 @@
       if(containers.some(root=>root?.contains(node)))return true;
       return b.bottom>=window.innerHeight-300 && b.left>=window.innerWidth*.37;
     };
-    for(const btn of buttons){
+    function inspectButtons(nodes) { for(const btn of nodes){
+      if(btn.closest('[data-message-author-role]'))continue;
       const text=[btn.textContent,btn.getAttribute('title'),btn.getAttribute('aria-label')]
         .map(s=>(s||'').replace(/\s+/g,' ').trim()).find(s=>s&&s.length<=80&&suffix.test(s));
       if(!text||!eligible(btn))continue;
@@ -1044,7 +1069,9 @@
         if(suffix.test((node.textContent||'').replace(/\s+/g,' ').trim()) && node.childElementCount===0)
           chosen.add(node);
       }
-    }
+    }}
+    inspectButtons(buttons);
+    if(!chosen.size)inspectButtons(document.querySelectorAll(buttonSelector));
     // The selected effort may be a text span adjacent to a chevron, not a
     // button. If so, mark a short wrapper that contains both label and icon.
     if(!chosen.size&&main){
@@ -1077,7 +1104,7 @@
       normalize(document.title.replace(/\s*[-|]\s*ChatGPT\s*$/iu,''))]
       .filter(s=>s.length>=7&&s.length<=80);
     const headers=[...document.querySelectorAll('#page-header,[data-testid="conversation-header"],header,[role="banner"]')]
-      .filter(h=>!h.closest(SIDE_ROOTS)&&h.getBoundingClientRect().top<180);
+      .filter(h=>!h.closest(SIDE_ROOTS+', [data-message-author-role]')&&h.getBoundingClientRect().top<180);
     const candidates=[];
     for(const header of headers){
       for(const el of header.querySelectorAll('span,h1,h2,button,[role="button"],div')){
@@ -1092,16 +1119,15 @@
     }
     // Newer ChatGPT may render the breadcrumb in a non-header container.
     // As a fallback, inspect only visible nodes at the very top of main.
-    if(!candidates.length){
+    if(!candidates.length&&names.length){
       const main=document.querySelector('main,[role="main"]');
       if(main)for(const el of main.querySelectorAll('span,h1,h2,button,[role="button"]')){
-        if(el.closest(SIDE_ROOTS))continue;
+        if(el.closest(SIDE_ROOTS+', [data-message-author-role]'))continue;
+        const title=normalize(el.textContent);
+        if(title.length<7||title.length>95||!names.some(n=>title===n||n.endsWith(title)&&title.length>=10))continue;
         const rect=el.getBoundingClientRect();
         if(rect.width<=0||rect.top<0||rect.top>=140)continue;
-        const title=normalize(el.textContent);
-        if(title.length<7||title.length>95)continue;
-        if(names.some(n=>title===n||n.endsWith(title)&&title.length>=10))
-          candidates.push({el,length:title.length,depth:el.querySelectorAll('*').length});
+        candidates.push({el,length:title.length,depth:el.querySelectorAll('*').length});
       }
     }
     candidates.sort((x,y)=>x.length-y.length||x.depth-y.depth);
@@ -1272,13 +1298,14 @@
   function markUploadDivider() {
     const c=activeComposer();
     if(!c?.shell||!c.editor){clearUploadDivider();return;}
+    const selected=[...composerFrameOriginal.keys()].find(el=>el.isConnected&&el.contains(c.editor));
+    const roots=[...new Set([selected,c.shell,c.form].filter(el=>el?.isConnected&&el.contains(c.editor)))];
+    const intent=performance.now()<uploadIntentUntil;
+    if(!intent&&!roots.some(root=>root.querySelector(attachmentCandidates))){clearUploadDivider();return;}
     const er=c.editor.getBoundingClientRect();
     if(!er.width||!er.height){clearUploadDivider();return;}
     const textTop=editorFirstLineTop(c.editor,er);
-    const selected=[...composerFrameOriginal.keys()].find(el=>el.isConnected&&el.contains(c.editor));
-    const roots=[...new Set([selected,c.shell,c.form].filter(el=>el?.isConnected&&el.contains(c.editor)))];
     let chosen=null,pending=null;
-    const intent=performance.now()<uploadIntentUntil;
     for(const shell of roots) {
       const sr=visibleUploadRect(shell);
       if(!sr||sr.width<40||textTop-sr.top<12)continue;
@@ -1433,10 +1460,16 @@
       else el.style.removeProperty(p);
     }
   }
+  const importantValues=new WeakMap();
   function makeImportant(el,property,value){
-    if(el.style.getPropertyValue(property)!==value ||
-       el.style.getPropertyPriority(property)!=='important')
-      el.style.setProperty(property,value,'important');
+    const actual=el.style.getPropertyValue(property),priority=el.style.getPropertyPriority(property);
+    if(actual===value&&priority==='important')return;
+    const previous=importantValues.get(el)?.get(property);
+    if(priority==='important'&&previous?.requested===value&&previous.actual===actual)return;
+    el.style.setProperty(property,value,'important');
+    let values=importantValues.get(el);
+    if(!values){values=new Map();importantValues.set(el,values);}
+    values.set(property,{requested:value,actual:el.style.getPropertyValue(property)});
   }
   function syncComposerFrame() {
     const context=activeComposer();
@@ -1561,14 +1594,14 @@
   const promptTypeProps=['font-size','font-weight','font-synthesis-weight','letter-spacing','color','-webkit-text-fill-color','line-height'];
   function markPromptTypography(scope='all') {
     const chosen=new Map();
-    const reading=getComputedStyle(document.documentElement)
-      .getPropertyValue('--eb-prompt-optical-size').trim() || '16px';
+    const tokens=getComputedStyle(document.documentElement);
+    const reading=tokens.getPropertyValue('--eb-prompt-optical-size').trim() || '16px';
     // Fixed sent-message values prevent a stale Stylus CSS token (14px / 700)
     // from silently overriding this newer userscript's 15px / 650 target.
     // Keep composer, assistant and sidebar typography unchanged.
-    const sentReading=getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim()||'16.067px';
-    const ink=getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-sent-ink').trim()||'#292D30';
-    const sentWeight=getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-sent-weight').trim()||'572';
+    const sentReading=tokens.getPropertyValue('--eb-user-sent-optical-size').trim()||'16.067px';
+    const ink=tokens.getPropertyValue('--eb-prompt-sent-ink').trim()||'#292D30';
+    const sentWeight=tokens.getPropertyValue('--eb-prompt-sent-weight').trim()||'572';
     const hasDirectText=el=>[...el.childNodes].some(node=>
       node.nodeType===Node.TEXT_NODE && (node.nodeValue||'').trim().length>0);
     const add=(el,kind)=>{
@@ -1583,18 +1616,22 @@
         if(hasDirectText(el))add(el,'editor');
       }
     }
-    if(scope!=='editor')for(const message of document.querySelectorAll(
-      '[data-message-author-role="user"],[data-user-message],[data-user-message-bubble="true"],.bg-user-message'
-    )){
-      const bubble=message.matches('[data-user-message],[data-user-message-bubble="true"],.bg-user-message')
-        ? message
-        : message.querySelector('[data-user-message],[data-user-message-bubble="true"],.bg-user-message');
-      const target=bubble||message;
-      if(bubble)add(bubble,'sent');
-      else if(hasDirectText(message))add(message,'sent');
-      const nodes=target.querySelectorAll('p,li,span,div,[data-d-component="text"],[data-d-text-flow],.whitespace-pre-wrap');
-      for(const el of nodes){
-        if(hasDirectText(el))add(el,'sent');
+    if(scope!=='editor') {
+      const targets=new Map();
+      for(const message of document.querySelectorAll(
+        '[data-message-author-role="user"],[data-user-message],[data-user-message-bubble="true"],.bg-user-message'
+      )) {
+        const bubble=message.matches('[data-user-message],[data-user-message-bubble="true"],.bg-user-message')
+          ? message : message.querySelector('[data-user-message],[data-user-message-bubble="true"],.bg-user-message');
+        const target=bubble||message;
+        targets.set(target,!!bubble||hasDirectText(message)||!!targets.get(target));
+      }
+      // The native outer turn and nested bubble often identify the same
+      // target. Scan and apply its text descendants only once per pass.
+      for(const [target,include] of targets) {
+        if(include)add(target,'sent');
+        for(const el of target.querySelectorAll('p,li,span,div,[data-d-component="text"],[data-d-text-flow],.whitespace-pre-wrap'))
+          if(hasDirectText(el))add(el,'sent');
       }
     }
     for(const [el,record] of promptTypeOriginal){
@@ -1631,11 +1668,7 @@
         required.color=ink;
         required['-webkit-text-fill-color']=ink;
       }
-      for(const [p,v] of Object.entries(required)){
-        if(el.style.getPropertyValue(p)!==v ||
-           el.style.getPropertyPriority(p)!=='important')
-          el.style.setProperty(p,v,'important');
-      }
+      for(const [p,v] of Object.entries(required))makeImportant(el,p,v);
     }
     for(const el of promptTypeOriginal.keys())if(!el.isConnected)
       promptTypeOriginal.delete(el);
@@ -1655,7 +1688,10 @@
   function timed(key,fn) {
     const started=performance.now();
     fn();
-    timings[key]=Math.round((performance.now()-started)*100)/100;
+    const ms=performance.now()-started;
+    timings[key]=Math.round(ms*100)/100;
+    const p=perfPasses[key]||(perfPasses[key]={runs:0,totalMs:0,peakMs:0});
+    p.runs++;p.totalMs+=ms;p.peakMs=Math.max(p.peakMs,ms);
   }
   function update(mask) {
     if(disposed||!document.body||!document.documentElement)return;
@@ -1664,8 +1700,8 @@
       attachObservers();
       synchronizeSidebar();
       enforceOpticalSidebarText();
-      markDotCounter();
       markQuickActionLabels();
+      markDotCounter();
       markSidebarSeam();
       markFixedSidebarTop();
       markProjectTitles();
@@ -1688,9 +1724,12 @@
   function schedule(mask=ALL) {
     if(disposed)return;
     dirty|=typeof mask==='number'?mask:ALL;
-    if(frame)return;
+    perfEvents.scheduled++;
+    if(document.hidden){perfEvents.hiddenDeferred++;return;}
+    if(frame){perfEvents.coalesced++;return;}
     frame=window.requestAnimationFrame(()=>{
       frame=0;
+      if(document.hidden)return;
       const work=dirty;dirty=0;
       if(document.body&&document.documentElement)update(work);
       else dirty|=work;
@@ -1701,20 +1740,22 @@
   }
   function onPageMutation(records) {
     if(!document.body)return;
+    if(document.hidden){dirty|=ALL;return;}
     if(location.pathname!==lastRoute){lastRoute=location.pathname;schedule(ALL);return;}
     let mask=0;
+    const structure=SIDE_ROOTS+','+PROJECT_ROW+','+EDITOR_NODE+',#composer-background,[data-testid="composer"],'+USER_NODE+','+HEADER_NODE+',#'+CLOCK_HOST;
     for(const m of records) {
-      if(ownMutation(m))continue;
       const target=m.target.nodeType===1?m.target:m.target.parentElement;
       // Streaming assistant output and ordinary editor/sidebar mutations
       // have their own scoped observers or require no helper processing.
       if(target?.closest?.('[data-message-author-role="assistant"]'))continue;
       if(composerObserved?.contains(target))continue;
       if(observedRoots.some(root=>root.contains(target)))continue;
+      if(ownMutation(m))continue;
       if(target?.closest?.(USER_NODE)){mask|=PASS.SENT;continue;}
       if(target?.closest?.(HEADER_NODE)){mask|=PASS.HEADER;continue;}
       for(const n of [...m.addedNodes,...m.removedNodes]) {
-        if(n.nodeType!==1||isOwnNode(n))continue;
+        if(n.nodeType!==1||isOwnNode(n)||!matchesOrContains(n,structure))continue;
         if(matchesOrContains(n,SIDE_ROOTS+','+PROJECT_ROW))mask|=PASS.NAV|PASS.HEADER;
         if(matchesOrContains(n,EDITOR_NODE+',#composer-background,[data-testid="composer"]'))
           mask|=PASS.COMPOSER|PASS.EDITOR|PASS.DIVIDER;
@@ -1725,7 +1766,7 @@
     }
     if(mask)schedule(mask);
   }
-  function onRouteOrResize(){schedule(ALL);}
+  function onRouteOrResize(event){schedule(event?.type==='resize'?PASS.NAV|PASS.COMPOSER|PASS.HEADER|PASS.DIVIDER:ALL);}
   function recoverLightly() {
     if(document.hidden||disposed||!document.body)return;
     if(location.pathname!==lastRoute){lastRoute=location.pathname;schedule(ALL);return;}
@@ -1738,7 +1779,7 @@
     const now=performance.now();
     // Low-frequency safety net for native changes not emitted as DOM
     // child mutations; no full scan every four seconds.
-    if(now-lastRecovery>20000){lastRecovery=now;mask|=ALL;}
+    if(now-lastRecovery>60000){lastRecovery=now;mask|=ALL;}
     if(mask)schedule(mask);
   }
 
@@ -1808,7 +1849,7 @@
   window.addEventListener('focus',schedule);
   window.addEventListener('popstate',onRouteOrResize);
   window.addEventListener('resize',onRouteOrResize);
-  recoverTimer=setInterval(recoverLightly,2000);
+  recoverTimer=setInterval(recoverLightly,5000);
   schedule(ALL);
 
   /* On-demand read-only font audit. Gives the actual computed CSS pixel size
@@ -1845,7 +1886,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.2.32',dispose,refresh:schedule,
-    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state'),overflow:n.getAttribute('data-ebook-count-overflow')==='true',confirmed:n.getAttribute('data-ebook-count-confirmed')===''?null:Number(n.getAttribute('data-ebook-count-confirmed'))})),lastPassMs:{...timings},fixedSidebarTop:[...topBands.values()].map(n=>({height:n.height,visible:getComputedStyle(n.strip).visibility==='visible',pattern:getComputedStyle(n.strip).backgroundImage})),projectCountBorders:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({border:getComputedStyle(n).borderTopWidth,style:getComputedStyle(n).borderTopStyle,outline:getComputedStyle(n).outlineStyle})),projectCountLayers:countLayers.size,visibleProjectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].filter(n=>getComputedStyle(n).visibility!=='hidden').length,projectCountAxis:findDotCountReference()?.circle.getBoundingClientRect().left??null,fontAudit:fontAudit()})
+    version:'0.2.33',dispose,refresh:schedule,
+    diagnostics:() => ({...errors,roots:observedRoots.length,clockSkinned:!!document.getElementById(CLOCK_HOST)?.shadowRoot?.querySelector(`#${CLOCK_CSS_ID}`),dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-nav-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:composerFrameOriginal.size,mutedComposerFrames:composerMutedOriginal.size,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state'),overflow:n.getAttribute('data-ebook-count-overflow')==='true',confirmed:n.getAttribute('data-ebook-count-confirmed')===''?null:Number(n.getAttribute('data-ebook-count-confirmed'))})),lastPassMs:{...timings},performance:{events:{...perfEvents},passes:Object.fromEntries(Object.entries(perfPasses).map(([k,v])=>[k,{runs:v.runs,averageMs:Math.round(v.totalMs/v.runs*100)/100,peakMs:Math.round(v.peakMs*100)/100}]))},fixedSidebarTop:[...topBands.values()].map(n=>({height:n.height,visible:getComputedStyle(n.strip).visibility==='visible',pattern:getComputedStyle(n.strip).backgroundImage})),projectCountBorders:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({border:getComputedStyle(n).borderTopWidth,style:getComputedStyle(n).borderTopStyle,outline:getComputedStyle(n).outlineStyle})),projectCountLayers:countLayers.size,visibleProjectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].filter(n=>getComputedStyle(n).visibility!=='hidden').length,projectCountAxis:findDotCountReference()?.circle.getBoundingClientRect().left??null,fontAudit:fontAudit()})
   };
 })();
