@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.2.36
+// @version      0.2.37
 // @description  E-book visual dot indicators for role prefixes plus a light Clock skin; keeps original chat titles, React data and RUN/DONE logic intact.
 // @match        https://chatgpt.com/*
 // @run-at       document-start
@@ -975,6 +975,52 @@
     pruneCountLayers();cachedCountReference=null;
   }
 
+
+  /* v0.2.37 — recent section hierarchy. Read native sidebar headings only.
+     Never infer "recent" merely from missing role glyph/project membership. */
+  const RECENT_CHAT_ATTR='data-ebook-recent-chat';
+  const RECENT_LABELS=new Set(['최근','최근 채팅','최근 대화','recent','recent chats','recent conversations','your chats','내 채팅','내 대화']);
+  function recentHeading(heading) {
+    const label=s=>RECENT_LABELS.has(normalizeLabel(s).toLowerCase());
+    if(label(heading.getAttribute('aria-label'))||label(heading.getAttribute('data-app-action-sidebar-section-heading'))||label(heading.textContent))return true;
+    if(!heading.querySelector('a[href*="/c/"]'))return false;
+    return [...heading.querySelectorAll('button,[role="button"],h2,h3,[role="heading"],span')]
+      .some(el=>!el.closest('a[href*="/c/"],'+PROJECT_ROW)&&label(el.textContent));
+  }
+  function markRecentChats() {
+    const wanted=new Map(),headingSelector=NATIVE_NAV_SECTIONS;
+    const chatSelector='a[href*="/c/"]';
+    const knownRail=SIDE_ROOTS+',aside,[role="complementary"],[data-ebook-count-rail="true"],[data-ebook-sidebar-seam="true"]';
+    const projectGroups=[...document.querySelectorAll(PROJECT_ROW)].map(nativeProjectScope).filter(Boolean);
+    const roots=new Set();
+    for(const heading of document.querySelectorAll(headingSelector)) {
+      if(!recentHeading(heading))continue;
+      const rail=heading.closest(knownRail);
+      if(rail&&rail.querySelector(chatSelector)){roots.add(rail);continue;}
+      // Native layout variants: find the smallest bounded ancestor with
+      // both a native section heading and conversation rows.
+      for(let p=heading,depth=0;p&&depth<7;p=p.parentElement,depth++) {
+        if(p.matches('body,html,main,[role="main"],header,[role="banner"]'))break;
+        if(p.querySelector(chatSelector)){roots.add(p);break;}
+      }
+    }
+    const activeId=location.pathname.match(/\/c\/([^/?#]+)/u)?.[1]||null;
+    const projectOrPinned='[data-sidebar-project-kind],'+PROJECT_ROW+',[data-pinned="true"],[data-sidebar-pinned="true"],[data-is-pinned="true"]';
+    const selected='[aria-current="page"],[aria-current="true"],[aria-selected="true"],[data-jaroo-selected="true"],[data-selected="true"]';
+    for(const root of roots) {
+      let inRecent=root.matches(headingSelector)&&recentHeading(root);
+      for(const el of root.querySelectorAll(headingSelector+','+chatSelector)) {
+        if(el.matches(headingSelector)){inRecent=recentHeading(el);continue;}
+        if(!inRecent||el.closest(projectOrPinned)||projectGroups.some(g=>g.contains(el)))continue;
+        if(/\/g\//u.test(el.getAttribute('href')||''))continue;
+        if(el.hasAttribute(CHAT_LIFECYCLE_ATTR)||el.querySelector('['+CHAT_LIFECYCLE_ATTR+']')||chatLifecycle(el.textContent))continue;
+        const isActive=(activeId&&conversationKey(el)===activeId)||!!el.closest(selected);
+        wanted.set(el,isActive?'active':'idle');
+      }
+    }
+    syncPresentationMarks(RECENT_CHAT_ATTR,wanted);
+  }
+
   function synchronizeSidebar() {
     if (disposed) return;
     for (const root of observedRoots) {
@@ -1014,7 +1060,7 @@
     observer.disconnect();
     observedRoots = roots;
     for (const root of roots) observer.observe(root,{subtree:true,childList:true,characterData:true,
-      attributes:true,attributeFilter:['aria-expanded','aria-busy','data-has-more','data-conversation-count','data-chat-count','data-thread-count','data-total-conversations','data-total-threads','data-total-chats']});
+      attributes:true,attributeFilter:['aria-expanded','aria-busy','data-has-more','data-conversation-count','data-chat-count','data-thread-count','data-total-conversations','data-total-threads','data-total-chats','aria-current','aria-selected','data-selected','data-jaroo-selected','data-pinned','data-sidebar-pinned','data-is-pinned']});
     // Actual geometry targets are reconciled after the project overlays are mounted.
   }
 
@@ -1777,6 +1823,7 @@
     if(mask&PASS.NAV)timed('nav',()=>{
       attachObservers();
       synchronizeSidebar();
+      markRecentChats();
       enforceOpticalSidebarText();
       markQuickActionLabels();
       markDotCounter();
@@ -1881,6 +1928,7 @@
     }
     touched.clear();
     document.querySelectorAll('['+CHAT_LIFECYCLE_ATTR+']').forEach(el=>el.removeAttribute(CHAT_LIFECYCLE_ATTR));
+    syncPresentationMarks(RECENT_CHAT_ATTR,new Map());
     for (const badge of document.querySelectorAll('[data-ebook-dot-counter="true"]'))
       badge.removeAttribute('data-ebook-dot-counter');
   }
