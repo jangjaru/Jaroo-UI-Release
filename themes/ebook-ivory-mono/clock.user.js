@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.2
+// @version      3.11.3
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -141,7 +141,7 @@
       .fallback-brand[aria-disabled="true"]{cursor:default}
       .fallback-brand:focus-visible,.ebook-time-toggle:focus-visible{outline:1px solid #879398;outline-offset:1px}
       .brand-word{display:flex;flex:1 1 auto;flex-direction:column;align-items:flex-start;min-width:0;max-width:100%;gap:4px}
-      .brand-title{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 .38em;font:700 22px/1.18 var(--font);font-synthesis:weight;letter-spacing:-.045em;text-align:left;min-width:0;max-width:100%}
+      .brand-title{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 .38em;font:700 24px/1.18 var(--font);font-synthesis:weight;letter-spacing:-.045em;text-align:left;min-width:0;max-width:100%}
       .brand-title span{max-width:100%;overflow-wrap:anywhere}
       .brand-subtitle{font:450 12px/1.3 var(--font);letter-spacing:.075em;color:var(--muted);max-width:100%;overflow-wrap:normal}
       .brand-arrow{display:none}
@@ -1046,9 +1046,9 @@
     if (window[RUNTIME_KEY]?.dispose === dispose) delete window[RUNTIME_KEY];
   }
   window[RUNTIME_KEY] = {
-    version: '3.11.2', dispose,
+    version: '3.11.3', dispose,
     diagnostics: () => ({
-      version: '3.11.2', ...placementReport,
+      version: '3.11.3', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
