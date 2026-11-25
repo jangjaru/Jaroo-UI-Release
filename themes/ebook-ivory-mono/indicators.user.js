@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.3.9
+// @version      0.3.10
 // @description  E-book role markers, sidebar presentation, outline and safe composer attachment layout. No editable text mutation; Clock owns its first paint.
 // @match        https://chatgpt.com/*
 // @run-at       document-start
@@ -1368,6 +1368,88 @@
     for(const el of roleDotPixelMarks)clearRoleDotPixelMark(el);
   }
 
+  /* Compact native navigation below the dashboard. Identify actual row
+     surfaces and their bounded wrappers; never shrink the app rail,
+     dashboard, scrollport height, dialogs, or unrecognized controls. */
+  function markCompactSidebar() {
+    const rows=new Map(),groups=new Map();
+    const clock=document.getElementById(CLOCK_HOST);
+    const blocked='[role="dialog"],[role="menu"],[role="toolbar"],[hidden],[aria-hidden="true"],.sr-only,[data-message-author-role]';
+    const chat='a[href*="/c/"]',archive='[data-sidebar-archive-chatgpt-id]',section='[data-app-action-sidebar-section-heading]';
+    const known=PROJECT_ROW+','+chat+','+archive+',[data-ebook-quick-label]';
+    const afterClock=el=>!clock||clock.parentElement===document.body||
+      !!(clock.compareDocumentPosition(el)&Node.DOCUMENT_POSITION_FOLLOWING);
+    const headingLabel=/^(고정된\s*(스레드|채팅|대화)|고정\s*채팅|프로젝트|최근(?:\s*(채팅|대화))?|내\s*채팅|내\s*대화|pinned(?:\s*(threads|chats|conversations))?|projects|recent(?:\s*(chats|conversations))?|your\s*chats)$/iu;
+    const moreLabel=/^(더\s*보기|더\s*보기\s*\(\d+\)|간략히\s*보기|새\s*프로젝트|show\s*more|show\s*less|see\s*more|see\s*less|new\s*project)$/iu;
+    for(const root of navigationQueryRoots()){
+      if(!root.querySelector(known))continue;
+      const seeds=new Map();
+      const add=(el,kind)=>{
+        if(!el||el===root||!root.contains(el)||el.closest(blocked)||
+          (clock&&el.contains(clock))||!afterClock(el)||!visibleBox(el))return;
+        seeds.set(el,kind);
+      };
+      for(const leaf of root.querySelectorAll('[data-ebook-quick-label]'))
+        add(leaf.closest('button,a,[role="button"],[role="link"]'),'item');
+      for(const row of root.querySelectorAll(PROJECT_ROW))
+        if(!row.querySelector(chat))add(row,'item');
+      for(const link of root.querySelectorAll(chat))add(link,'item');
+      for(const row of root.querySelectorAll(archive))
+        if(!row.matches(chat)&&!row.querySelector(chat))
+          add(row.querySelector('[data-thread-title-trigger="true"]')||row,'item');
+      for(const node of root.querySelectorAll(section)){
+        if(!node.querySelector(known)&&headingLabel.test(normalizeLabel(node.textContent))){add(node,'heading');continue;}
+        for(const leaf of node.querySelectorAll('h2,h3,h4,[role="heading"],button,[role="button"],span')){
+          if(leaf.querySelector(known)||!headingLabel.test(normalizeLabel(leaf.textContent)))continue;
+          const control=leaf.closest('button,[role="button"],h2,h3,h4,[role="heading"]')||leaf;
+          if(node.contains(control)&&!control.querySelector(known))add(control,'heading');
+          break;
+        }
+      }
+      for(const el of root.querySelectorAll('button,[role="button"],a'))
+        if(!el.closest(PROJECT_ROW+','+chat)&&moreLabel.test(normalizeLabel(el.textContent)))add(el,'item');
+      // Prefer the outer actual row when native markers are nested.
+      for(const el of [...seeds.keys()])
+        for(let p=el.parentElement;p&&p!==root;p=p.parentElement)
+          if(seeds.has(p)){seeds.delete(el);break;}
+      const membership=new Map();
+      for(const [seed,kind] of seeds){
+        rows.set(seed,kind);
+        for(let p=seed,depth=0;p&&p!==root&&depth<16;p=p.parentElement,depth++){
+          if(clock&&p.contains(clock))break;
+          if(p.matches('html,body,main,header,footer,[role="banner"],[role="main"]'))break;
+          if(!membership.has(p))membership.set(p,new Set());
+          membership.get(p).add(seed);
+        }
+      }
+      for(const [el,members] of membership){
+        if(seeds.has(el)||el.closest(blocked))continue;
+        const cs=getComputedStyle(el);
+        if(/^(fixed|absolute|sticky)$/u.test(cs.position)||cs.display==='contents')continue;
+        const scroll=/^(auto|scroll|overlay)$/u.test(cs.overflowY);
+        if(members.size===1){
+          const r=visibleBox(el);
+          const seed=[...members][0];
+          // Bound the scope to a short single-row wrapper, and do not resize
+          // a list viewport, virtual spacer, or native structural section.
+          if(scroll||!r||r.height>96||el.matches('nav,aside,[role="navigation"],[role="complementary"],[role="list"],[role="group"],'+section))continue;
+          const safe=[...el.children].every(child=>child.contains(seed)||!visibleBox(child)||
+            child.matches('svg,button,[role="button"],[role="toolbar"]')||
+            (!normalizeLabel(child.textContent)&&!child.querySelector(known)));
+          if(safe)rows.set(el,'wrapper');
+        }else if(sidebarSingleTrack(el,cs)){
+          // Only reduce gaps in lists whose visible children are known
+          // navigation entries. Leave native virtualized layouts alone.
+          const complete=[...el.children].every(child=>membership.has(child)||!visibleBox(child)||
+            child.matches('[data-ebook-top-hatch-layer],[data-ebook-project-count-layer],[data-ebook-project-count]'));
+          if(complete)groups.set(el,scroll?'scroll':'list');
+        }
+      }
+    }
+    syncPresentationMarks('data-ebook-compact-row',rows);
+    syncPresentationMarks('data-ebook-compact-group',groups);
+  }
+
   function synchronizeSidebar() {
     if (disposed) return;
     for (const root of observedRoots) {
@@ -2386,6 +2468,7 @@
       markQuickActionLabels();
       markDotCounter();
       markSidebarSeam();
+      markCompactSidebar();
       sortSidebarOrder();
       markFixedSidebarTop();
       markProjectTitles();
@@ -2514,6 +2597,8 @@
     restoreOpticalSidebarText();
     restorePromptTypography();
     restoreQuickDotTypography();
+    syncPresentationMarks('data-ebook-compact-row',new Map());
+    syncPresentationMarks('data-ebook-compact-group',new Map());
     restoreProjectCounts();
     restoreFixedSidebarTop();
     restoreNotebookMarks();
@@ -2591,7 +2676,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.3.9',dispose,refresh:schedule,outlineDiagnostic,
+    version:'0.3.10',dispose,refresh:schedule,outlineDiagnostic,
     diagnostics:() => ({...errors,sorting:{...sidebarSortDiagnostics,styledRows:sidebarSortSaved.size},roots:observedRoots.length,clockSkinned:document.getElementById(CLOCK_HOST)?.getAttribute('data-ebook-clock-ready')==='true',dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),firstPaintNav:getComputedStyle(document.documentElement).getPropertyValue('--eb-first-paint-nav').trim()==='1',opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-project-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:'css-only',mutedComposerFrames:0,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state'),overflow:n.getAttribute('data-ebook-count-overflow')==='true',confirmed:n.getAttribute('data-ebook-count-confirmed')===''?null:Number(n.getAttribute('data-ebook-count-confirmed'))})),lastPassMs:{...timings},performance:{events:{...perfEvents},passes:Object.fromEntries(Object.entries(perfPasses).map(([k,v])=>[k,{runs:v.runs,averageMs:Math.round(v.totalMs/v.runs*100)/100,peakMs:Math.round(v.peakMs*100)/100}]))},fixedSidebarTop:[...topBands.values()].map(n=>({height:n.height,visible:getComputedStyle(n.strip).visibility==='visible',pattern:getComputedStyle(n.strip).backgroundImage})),projectCountBorders:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({border:getComputedStyle(n).borderTopWidth,style:getComputedStyle(n).borderTopStyle,outline:getComputedStyle(n).outlineStyle})),projectCountLayers:countLayers.size,positionResizeTargets:navResizeTargets.size,visibleProjectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].filter(n=>getComputedStyle(n).visibility!=='hidden').length,projectCountAxis:findDotCountReference()?.circle.getBoundingClientRect().left??null,fontAudit:fontAudit()})
   };
 })();
