@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.17
+// @version      3.11.18
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -260,7 +260,8 @@
       .life-card.retire .life-value:has(>.life-duration-hours){display:contents}
       .life-card.retire .life-duration-hours{grid-column:2;grid-row:2;justify-self:end;align-self:baseline}
       .life-card.retire .life-duration-tail{grid-column:3;grid-row:2;justify-self:end;align-self:baseline}
-      @container jaroo-dashboard (max-width:249px){
+      .life-card.retire .life-duration-hours::after{content:" 시간";font:inherit;letter-spacing:inherit}
+      @container jaroo-dashboard (max-width:279px){
         .life-card.retire .life-card-main{grid-template-columns:minmax(0,1fr) auto;column-gap:4px}
         .life-card.retire .life-label{grid-column:1;grid-row:1}
         .life-card.retire .life-value{grid-column:2;grid-row:1}
@@ -268,7 +269,10 @@
         .life-card.retire .life-duration-tail{grid-column:2;grid-row:2}
         .life-card.retire .life-duration-tail::before{content:none}
       }
-      @container jaroo-dashboard (max-width:159px){
+      @container jaroo-dashboard (max-width:199px){
+        .life-card.retire .life-duration-hours::after{font-size:70%}
+      }
+      @container jaroo-dashboard (max-width:179px){
         .life-card.retire .life-label{grid-column:1/-1}
         .life-card.retire .life-value,.life-card.retire .life-duration-hours{grid-column:2;grid-row:2}
         .life-card.retire .life-duration-tail{grid-row:3}
@@ -1099,9 +1103,9 @@
     if (window[RUNTIME_KEY]?.dispose === dispose) delete window[RUNTIME_KEY];
   }
   window[RUNTIME_KEY] = {
-    version: '3.11.17', dispose,
+    version: '3.11.18', dispose,
     diagnostics: () => ({
-      version: '3.11.17', ...placementReport,
+      version: '3.11.18', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
