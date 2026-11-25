@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo · Google Calendar E-Book Companion
 // @namespace    jaroo.calendar.ebook
-// @version      0.4.6
+// @version      0.4.7
 // @description  Cool E-Ink Graph Paper · native Calendar event labels, More popup and local agenda.
 // @match        https://calendar.google.com/calendar/*
 // @run-at       document-idle
@@ -12,7 +12,7 @@
 // ==/UserScript==
 
 /*
- * Jaroo Calendar E-Book v0.4.6 · 2026-11-25
+ * Jaroo Calendar E-Book v0.4.7 · 2026-11-25
  * Requires the paired E-Book Stylus CSS and native Light appearance.
  * Forked from the working Calendar Companion v1.3.7; history below is retained.
  * v1.3.1: preserve visually present month-grid/list colors when Calendar temporarily
@@ -223,7 +223,7 @@
   // BEGIN_JAROO_ADAPTER
   const RUNTIME = '__jarooCalendarCompanionV1';
   window[RUNTIME]?.dispose?.();
-  const VERSION = '0.4.6';
+  const VERSION = '0.4.7';
   const CONFIG = Object.freeze({ timeZone: 'Asia/Seoul', futureDays: 7, maxPins: 3, maxEvents: 1200, settleMs: 180, recoveryMs: 5000 });
   const EVENT = '[data-eventid]';
   const EXCLUDE = '[role="dialog"],[role="menu"],[role="listbox"],[hidden],[inert],[aria-hidden="true"]';
@@ -1560,8 +1560,8 @@
       outline:2px solid #517E89;outline-offset:2px}
     .wrap{display:flex;flex-direction:column;align-items:flex-end;gap:10px}
     .launch{pointer-events:auto;display:flex;align-items:center;gap:9px;min-height:38px;
-      padding:8px 14px;background:#EFF1F2;border:1px solid #89979E;border-radius:999px;
-      box-shadow:0 2px 6px #27303818;color:#303438;font-weight:600}
+      padding:8px 14px;background:#EFF1F2;border:1px solid transparent;border-radius:999px;
+      box-shadow:0 4px 12px #27303826,0 1px 3px #27303812;color:#303438;font-weight:600}
     .launch:hover{background:#E4E8EA}
     .launch-dot{width:6px;height:6px;background:#F3B9CB;border-radius:50%;flex:none}
     .panel{pointer-events:auto;width:390px;max-width:calc(100vw - 24px);
