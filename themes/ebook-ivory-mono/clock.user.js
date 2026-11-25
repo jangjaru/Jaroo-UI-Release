@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.54
+// @version      3.11.55
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -599,6 +599,23 @@
     }
     return total;
   }
+  // Cache the invariant future-day work suffix for the current KST day.
+  let workDayCache=null;
+  function remainingWorkDurationMs(nowMs,retirementMs) {
+    if(nowMs>=retirementMs)return 0;
+    if(!Number.isFinite(nowMs)||!Number.isFinite(retirementMs))
+      return calculateWorkDurationMs(nowMs,retirementMs);
+    let c=workDayCache;
+    if(!c||c.retirementMs!==retirementMs||nowMs<c.day||nowMs>=c.nextDay){
+      const day=kstDayStartUtcMs(nowMs),nextDay=day+DAY_MS;
+      const weekday=new Date(day+KST_HOUR_OFFSET_MS).getUTCDay();
+      c=workDayCache={day,nextDay,retirementMs,weekday,
+        end:Math.min(nextDay,retirementMs),tail:calculateWorkDurationMs(nextDay,retirementMs)};
+    }
+    if(c.weekday===0||c.weekday===6)return c.tail;
+    return c.tail+overlapMs(nowMs,c.end,c.day+9*HOUR_MS,c.day+12*HOUR_MS)
+      +overlapMs(nowMs,c.end,c.day+13*HOUR_MS,c.day+18*HOUR_MS);
+  }
   // Bounded cache of hour labels: unchanged for most countdown ticks.
   const durationHourLabels=new Map();
   function durationParts(ms,elapsed=false) {
@@ -694,7 +711,7 @@
     const careerRemaining=careerRemainingPercent(ms,retirementMs,startMs);
     setLifeDuration(lifeEls.retireValue,retirementMs-ms,{careerRemaining});
     updateCareerBar(careerRemaining,lifeEls.careerBar,lifeEls.careerBarFill,careerDescription+' · 전체 사회생활 기간 중');
-    const remainingWorkMs=calculateWorkDurationMs(Number.isFinite(startMs)?Math.max(ms,startMs):ms,retirementMs);
+    const remainingWorkMs=remainingWorkDurationMs(Number.isFinite(startMs)?Math.max(ms,startMs):ms,retirementMs);
     const workRemaining=remainingDurationPercent(remainingWorkMs,totalWorkMs);
     setLifeDuration(lifeEls.workValue,remainingWorkMs,{careerRemaining:workRemaining});
     updateCareerBar(workRemaining,lifeEls.workBar,lifeEls.workBarFill,careerDescription+' · 평일 8시간 기준 전체 예정 근무시간 중');
@@ -1468,9 +1485,9 @@
     if (PAGE[RUNTIME_KEY]?.dispose === dispose) delete PAGE[RUNTIME_KEY];
   }
   PAGE[RUNTIME_KEY] = {
-    version: '3.11.54', dispose,
+    version: '3.11.55', dispose,
     diagnostics: () => ({
-      version: '3.11.54', ...placementReport,
+      version: '3.11.55', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),

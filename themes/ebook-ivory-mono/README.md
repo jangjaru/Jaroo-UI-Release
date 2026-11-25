@@ -1,3 +1,14 @@
+# 성능 최적화 2차 — Clock v3.11.55 / Indicators v0.3.22 / Status v6.9.18 / Mapper v1.3.7 (2026-11-25)
+
+- 기준: 25292b482cd477e6db0645c323a525b4c89a41d7. Stylus CSS v0.3.7 및 기존 JS의 디자인 CSS, 글꼴, 애니메이션, 설치 URL 유지. Calendar 및 Dracula CSS/Clock/Status 미변경. 공용 Mapper만 표시 전용 최적화 적용.
+- Clock: KST 일자·은퇴일별 이후 근무시간 합계 캐시, 현재일 근무시간만 계산. 근무·점심·주말·은퇴 경계 및 시간 역행의 기존 계산 결과 보존.
+- Indicators: 숨김 탭의 sidebar/composer/mode/outline 감시 및 UI ResizeObserver 3개, 예약 frame·타이머 정지. 복귀 시 전체 갱신 및 열린 검색의 검색어·상태 보존. MutationRecord 배열 복제·이미 완료된 pass의 탐색 생략, sent typography 선언 목록 재사용. Status 독립 감시 유지.
+- Status: 대량 childList 배치의 행 재사용 판정에서 변경 노드 집합과 조상 체인 이용, 작은 배치 기존 방식 유지. 카운터 단일 순회, 팝업 클릭 경로 재사용. RUN/DONE, 네이티브 상태 전이, 리스, 탭 통신 및 ACK 정책 변경 없음.
+- Mapper: 숨김 탭의 감시·복구 interval·예약 frame 정지, 복귀 시 재연결·갱신, 최초 중복 frame 제거 및 진단 버전 일치.
+- SHA256 목록의 기존 E-book 4개 값이 6.9.12 시점에 머무른 것을 과거 커밋의 실제 해시로 확인하여 최신 값으로 정정.
+- 검증: JS 4개 전후 구문, 근무시간 19578조건, 자체 변경 판정 128조건, 행 이동 300개 모의 배치, Indicators/Mapper 숨김·복귀·정리 상태 모의 검증. 실제 로그인 Chrome/IME/동기화 장시간 회귀·CPU/메모리/프레임 실측, 개발 저장소 동기화는 별도. 실제 절감률은 미측정.
+- 문제가 발생하면 위 기준 커밋의 파일로 복원. 설치 및 업데이트 URL 유지.
+
 # Status v6.9.17 — 리뷰 목록 헤더 가독성 개선
 
 - Only tasks to review 아래 `Running · Completed` 및 우측 건수(숫자와 건 단위) 글자 크기를 12px에서 14px로 확대. 단위는 부모 em의 크기를 상속. 기존 글꼴·굵기·색·자간·줄높이 비율·정렬 및 간격 규칙 유지. 빈 목록 안내와 채팅 항목, Running/Completed 팝업 및 최적화 로직은 변경하지 않음.

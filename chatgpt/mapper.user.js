@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo · Organization Mapper
 // @namespace    https://chatgpt.com/
-// @version      1.3.6
+// @version      1.3.7
 // @description  Jaroo organization color mappings; updates via pinned release URLs.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -30,7 +30,7 @@
   let disposed = false, frame = 0;
   const sync = () => {
     frame = 0;
-    if (disposed) return;
+    if (disposed||document.hidden) return;
     for (const row of document.querySelectorAll(PROJECT)) {
       const title = row.querySelector('[data-marquee-content="true"]');
       if (!title) continue;
@@ -40,7 +40,7 @@
       else if (!value && row.hasAttribute('data-jaroo-org')) row.removeAttribute('data-jaroo-org');
     }
   };
-  const schedule = () => {if (!disposed && !frame) frame = requestAnimationFrame(sync);};
+  const schedule = () => {if (!disposed && !document.hidden && !frame) frame = requestAnimationFrame(sync);};
   const SIDEBAR = '#stage-sidebar,#stage-slideover-sidebar,[data-testid="sidebar"],aside';
   let watching = [], recovery = 0;
   const observer = new MutationObserver(changes => {
@@ -54,6 +54,7 @@
     }
   });
   function attach() {
+    if(disposed||document.hidden)return;
     const all=[...document.querySelectorAll(SIDEBAR)];
     const roots=all.filter(x=>!all.some(p=>p!==x&&p.contains(x)));
     if(roots.length===watching.length && roots.every((x,i)=>x===watching[i] && x.isConnected))return;
@@ -61,11 +62,20 @@
     for(const root of roots) observer.observe(root,{subtree:true,childList:true,characterData:true});
     schedule();
   }
-  const onVisible = () => {if(!document.hidden){attach();schedule();}};
+  const onVisible = () => {
+    if(disposed)return;
+    if(document.hidden){
+      observer.disconnect();watching=[];
+      clearInterval(recovery);recovery=0;
+      if(frame)cancelAnimationFrame(frame);frame=0;
+      return;
+    }
+    attach();schedule();
+    if(!recovery)recovery=setInterval(attach,8000);
+  };
   document.addEventListener('visibilitychange', onVisible);
   window.addEventListener('focus', attach);
-  recovery=setInterval(()=>{if(!document.hidden)attach();},8000);
-  attach();
+  onVisible();
   const dispose = () => {
     if (disposed) return;
     disposed = true;
@@ -76,6 +86,6 @@
     window.removeEventListener('focus', attach);
     if (window[RUNTIME]?.dispose === dispose) delete window[RUNTIME];
   };
-  window[RUNTIME] = {version: '1.3.1', dispose};
-  sync();
+  window[RUNTIME] = {version: '1.3.7', dispose};
+  if(!document.hidden){if(frame)cancelAnimationFrame(frame);sync();}
 })();

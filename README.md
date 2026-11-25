@@ -9,7 +9,7 @@ The user wants **only the left sidebar project names and chat-list names** about
 | ChatGPT CSS | **8.3.4** | sidebar project/chat titles +30% weight |
 | Clock JS | 3.10.2 | unchanged |
 | Status JS | 6.8.2 | unchanged |
-| Mapper JS | 1.3.6 | unchanged |
+| Mapper JS | 1.3.7 | shared hidden-tab optimization |
 | Calendar Companion | 1.3.7 | unchanged |
 | Calendar CSS | 1.2.2 | unchanged |
 
@@ -25,19 +25,19 @@ Colors, font sizes, layout, icons, animations, message body (including variable 
 
 The reversible flat saturated Monokai/pixel-edge layer is available as [CSS](chatgpt/flat-neon-pixel.user.css) and [JS](chatgpt/flat-neon-pixel.user.js). Install each once, leaving Dracula 8.3.4 and Clock/Status/Mapper enabled; these existing files are unchanged. See [Korean installation and rollback instructions](docs/INSTALL_FLAT_NEON_PIXEL_v0.1.0_KO.md). Signed-in Chrome visual acceptance remains pending.
 
-## E-book Cool E-Ink Graph Paper — 0.3.1 responsive release
+## E-book Cool E-Ink Graph Paper — 2026-11-25 performance pass 2
 
 E-book is an independent, opt-in theme. Disable Dracula / Flat Neon visual styles when using it. The dedicated E-book Clock and Status render the final design directly, without the legacy neon layer. Replace the previous Clock/Status entries (same script names and namespaces); do not enable duplicate copies. Existing local private profile remains local.
 
 | E-book component | Version |
 |---|---|
-| [Stylus CSS](themes/ebook-ivory-mono/theme.user.css) | 0.3.5 |
-| [Indicators JS](themes/ebook-ivory-mono/indicators.user.js) | 0.3.19 |
-| [Clock JS](themes/ebook-ivory-mono/clock.user.js) | 3.11.50 |
-| [Status JS](themes/ebook-ivory-mono/status.user.js) | 6.9.12 |
+| [Stylus CSS](themes/ebook-ivory-mono/theme.user.css) | 0.3.7 |
+| [Indicators JS](themes/ebook-ivory-mono/indicators.user.js) | 0.3.22 |
+| [Clock JS](themes/ebook-ivory-mono/clock.user.js) | 3.11.55 |
+| [Status JS](themes/ebook-ivory-mono/status.user.js) | 6.9.18 |
 
 - [Release and installation details](themes/ebook-ivory-mono/README.md)
-- Legacy shared Clock/Status and Calendar/Dracula files remain unchanged.
+- Legacy shared Clock/Status, Calendar and Dracula CSS remain unchanged; the shared Mapper is now v1.3.7.
 - Source/algorithm checks completed; signed-in Chrome / Korean IME visual acceptance remains pending.
 
 

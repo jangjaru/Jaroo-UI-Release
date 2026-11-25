@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.3.21
+// @version      0.3.22
 // @description  E-book role markers, sidebar presentation, outline and safe composer attachment layout. No editable text mutation; Clock owns its first paint.
 // @match        https://chatgpt.com/*
 // @run-at       document-start
@@ -51,8 +51,10 @@
   };
   function ownMutation(m) {
     if(isOwnNode(m.target))return true;
-    const changed=[...m.addedNodes,...m.removedNodes];
-    return changed.length>0&&changed.every(n=>isOwnNode(n));
+    if(!m.addedNodes.length&&!m.removedNodes.length)return false;
+    for(const n of m.addedNodes)if(!isOwnNode(n))return false;
+    for(const n of m.removedNodes)if(!isOwnNode(n))return false;
+    return true;
   }
   const observer=new MutationObserver(records=>{
     if(document.hidden){dirty|=PASS.NAV|PASS.HEADER;return;}
@@ -1463,7 +1465,7 @@
     });
   }
   function scheduleResizeReconcile() {
-    if(disposed)return;
+    if(disposed||document.hidden)return;
     clearTimeout(resizeReconcileTimer);
     resizeReconcileTimer=setTimeout(()=>{
       resizeReconcileTimer=0;
@@ -2034,6 +2036,11 @@
       }
       promptTypeOriginal.delete(el);
     }
+    const baseRequired=Object.entries({'font-size':sentReading,'line-height':'1.55'});
+    const sentRequired=[...baseRequired,...Object.entries({
+      'font-weight':sentWeight,'font-synthesis-weight':'none','letter-spacing':'-0.01em',
+      color:ink,'-webkit-text-fill-color':ink
+    })];
     for(const [el,kind] of chosen){
       if(!promptTypeOriginal.has(el)){
         const previous={};
@@ -2045,18 +2052,7 @@
       }
       if(el.getAttribute('data-ebook-prompt-text')!==kind)
         el.setAttribute('data-ebook-prompt-text',kind);
-      const required={
-        'font-size':sentReading,
-        'line-height':'1.55'
-      };
-      if(kind==='sent'){
-        required['font-weight']=sentWeight;
-        required['font-synthesis-weight']='none';
-        required['letter-spacing']='-0.01em';
-        required.color=ink;
-        required['-webkit-text-fill-color']=ink;
-      }
-      for(const [p,v] of Object.entries(required))makeImportant(el,p,v);
+      for(const [p,v] of kind==='sent'?sentRequired:baseRequired)makeImportant(el,p,v);
     }
     for(const el of promptTypeOriginal.keys())if(!el.isConnected)
       promptTypeOriginal.delete(el);
@@ -2311,7 +2307,7 @@
       }))queue();
     });
     function queue() {
-      if(!open||timer)return;
+      if(!open||timer||document.hidden)return;
       // Throttle during streaming; one scoped refresh per 700ms maximum.
       timer=setTimeout(()=>{timer=0;if(open)refresh();},700);
     }
@@ -2354,7 +2350,7 @@
       if(focusTarget){const next=[...list.querySelectorAll('button')].find(b=>b.__jarooOutlineTarget===focusTarget);next?.focus({preventScroll:true});}
     }
     function refresh() {
-      if(!open||outlineRoute(location.pathname)!==route)return;
+      if(!open||document.hidden||outlineRoute(location.pathname)!==route)return;
       try{
         bindRoot();entries=outlineEntries(root);
         // Retry from the document if a native region was too narrow.
@@ -2379,7 +2375,10 @@
       if(event.key==='Escape'&&open){event.stopPropagation();event.preventDefault();setOpen(false);}
       else if(event.target===search)event.stopPropagation();
     });
-    return {route,host,sync(){if(open&&(!root||!root.isConnected||!entries.length))queue();},dispose(){setOpen(false,false);host.remove();}};
+    return {route,host,sync(){if(open&&(!root||!root.isConnected||!entries.length))queue();},
+      suspend(){observer.disconnect();clearTimeout(timer);timer=0;root=null;},
+      resume(){if(open)queue();},
+      dispose(){setOpen(false,false);host.remove();}};
   }
   function syncConversationOutline() {
     const route=outlineRoute(location.pathname);
@@ -2453,6 +2452,7 @@
     let mask=0;
     const structure=SIDE_ROOTS+','+NATIVE_NAV_SECTIONS+','+PROJECT_ROW+','+EDITOR_NODE+',#composer-background,[data-testid="composer"],'+USER_NODE+','+HEADER_NODE+',#'+CLOCK_HOST;
     for(const m of records) {
+      if(mask===ALL)break;
       const target=m.target.nodeType===1?m.target:m.target.parentElement;
       // Streaming assistant output and ordinary editor/sidebar mutations
       // have their own scoped observers or require no helper processing.
@@ -2463,14 +2463,20 @@
       if(target?.closest?.(NATIVE_NAV_SECTIONS)){mask|=PASS.NAV|PASS.HEADER;continue;}
       if(target?.closest?.(USER_NODE)){mask|=PASS.SENT;continue;}
       if(target?.closest?.(HEADER_NODE)){mask|=PASS.HEADER;continue;}
-      for(const n of [...m.addedNodes,...m.removedNodes]) {
-        if(n.nodeType!==1||isOwnNode(n)||!matchesOrContains(n,structure))continue;
-        if(matchesOrContains(n,SIDE_ROOTS+','+NATIVE_NAV_SECTIONS+','+PROJECT_ROW))mask|=PASS.NAV|PASS.HEADER;
-        if(matchesOrContains(n,EDITOR_NODE+',#composer-background,[data-testid="composer"]'))
-          mask|=PASS.COMPOSER|PASS.DIVIDER;
-        if(matchesOrContains(n,USER_NODE))mask|=PASS.SENT;
-        if(matchesOrContains(n,HEADER_NODE))mask|=PASS.HEADER;
-        if(matchesOrContains(n,'#'+CLOCK_HOST))mask|=PASS.NAV;
+      for(const nodes of [m.addedNodes,m.removedNodes]) {
+        for(const n of nodes) {
+          if(mask===ALL)break;
+          if(n.nodeType!==1||isOwnNode(n)||!matchesOrContains(n,structure))continue;
+          if((mask&(PASS.NAV|PASS.HEADER))!==(PASS.NAV|PASS.HEADER)&&
+             matchesOrContains(n,SIDE_ROOTS+','+NATIVE_NAV_SECTIONS+','+PROJECT_ROW))mask|=PASS.NAV|PASS.HEADER;
+          if((mask&(PASS.COMPOSER|PASS.DIVIDER))!==(PASS.COMPOSER|PASS.DIVIDER)&&
+             matchesOrContains(n,EDITOR_NODE+',#composer-background,[data-testid="composer"]'))
+            mask|=PASS.COMPOSER|PASS.DIVIDER;
+          if(!(mask&PASS.SENT)&&matchesOrContains(n,USER_NODE))mask|=PASS.SENT;
+          if(!(mask&PASS.HEADER)&&matchesOrContains(n,HEADER_NODE))mask|=PASS.HEADER;
+          if(!(mask&PASS.NAV)&&matchesOrContains(n,'#'+CLOCK_HOST))mask|=PASS.NAV;
+        }
+        if(mask===ALL)break;
       }
     }
     if(mask)schedule(mask);
@@ -2565,13 +2571,25 @@
     if(document.hidden){
       // UI-only; Status retains its independent evidence observers.
       pageObserver?.disconnect();
+      observer.disconnect();observedRoots=[];
+      composerObserver.disconnect();composerObserved=null;composerEditor=null;
+      modeObserver.disconnect();modeObserved=null;
+      navResizeObserver?.disconnect();navResizeTargets.clear();
+      composerResizeObserver?.disconnect();
+      uploadResizeObserver?.disconnect();uploadResizeTargets.clear();
+      conversationOutline?.suspend();
       clearInterval(recoverTimer);recoverTimer=0;
+      clearTimeout(resizeReconcileTimer);resizeReconcileTimer=0;
+      clearTimeout(roleDotScrollTimer);roleDotScrollTimer=0;
       if(frame){cancelAnimationFrame(frame);frame=0;}
+      if(countPositionFrame){cancelAnimationFrame(countPositionFrame);countPositionFrame=0;}
+      if(roleDotPixelFrame){cancelAnimationFrame(roleDotPixelFrame);roleDotPixelFrame=0;}
       dirty|=ALL;
       return;
     }
     pageObserver?.observe(document,{childList:true,subtree:true});
     if(!recoverTimer)recoverTimer=setInterval(recoverLightly,5000);
+    conversationOutline?.resume();
     schedule(ALL);
   }
   function onVisibility() { syncIndicatorVisibility(); }
@@ -2628,7 +2646,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.3.21',dispose,refresh:schedule,outlineDiagnostic,
+    version:'0.3.22',dispose,refresh:schedule,outlineDiagnostic,
     diagnostics:() => ({...errors,sorting:{...sidebarSortDiagnostics,styledRows:sidebarSortSaved.size},roots:observedRoots.length,clockSkinned:document.getElementById(CLOCK_HOST)?.getAttribute('data-ebook-clock-ready')==='true',dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),firstPaintNav:getComputedStyle(document.documentElement).getPropertyValue('--eb-first-paint-nav').trim()==='1',opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-project-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:'css-only',mutedComposerFrames:0,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state'),overflow:n.getAttribute('data-ebook-count-overflow')==='true',confirmed:n.getAttribute('data-ebook-count-confirmed')===''?null:Number(n.getAttribute('data-ebook-count-confirmed'))})),lastPassMs:{...timings},performance:{events:{...perfEvents},passes:Object.fromEntries(Object.entries(perfPasses).map(([k,v])=>[k,{runs:v.runs,averageMs:Math.round(v.totalMs/v.runs*100)/100,peakMs:Math.round(v.peakMs*100)/100}]))},fixedSidebarTop:[...topBands.values()].map(n=>({height:n.height,visible:getComputedStyle(n.strip).visibility==='visible',pattern:getComputedStyle(n.strip).backgroundImage})),projectCountBorders:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({border:getComputedStyle(n).borderTopWidth,style:getComputedStyle(n).borderTopStyle,outline:getComputedStyle(n).outlineStyle})),projectCountLayers:countLayers.size,positionResizeTargets:navResizeTargets.size,visibleProjectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].filter(n=>getComputedStyle(n).visibility!=='hidden').length,projectCountAxis:findDotCountReference()?.circle.getBoundingClientRect().left??null,fontAudit:fontAudit()})
   };
 })();

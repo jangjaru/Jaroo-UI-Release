@@ -1,14 +1,14 @@
 {
   "chatgpt/clock.user.js": "664e63bef66dd29ce333cc76823e00ae228206e7713b5b3f9018151f0175d349",
   "chatgpt/status.user.js": "431e7ffdfbdf5b6f2b6cb5dbb70a4d6664c3ebad22a483d59c1361a95832d0c2",
-  "chatgpt/mapper.user.js": "cd61c0a18cad92d0f80608b4d0459f0a2875f39ebb4dadd65fc713666ef600d6",
+  "chatgpt/mapper.user.js": "f3718b961a06027f658fcf834856da946aaa3d966a2e7ad826294d15c9f3b908",
   "chatgpt/theme.user.css": "881caab35a0b9a753e83e565b2836beaf8c9f4350f598439b1d83c96f3941fe3",
   "calendar/companion.user.js": "e7feacb7a3565aaa8bef7aa0ea21a63407c66921ca9ccd675b7f5c8709468aba",
   "calendar/theme.user.css": "c10a60802290db0d891dcfe60251b18c4134759e44c98e38fcc77b69cb64f9cd",
   "chatgpt/flat-neon-pixel.user.css": "4a1621b45ea57ee17da962da3e0e328d0da87d4728d82c135f13b656233e8dee",
   "chatgpt/flat-neon-pixel.user.js": "9cbed00d9df9528e3a0ec8be53a30cdc742dcb4980a8270003fa9230d976d1e6",
-  "themes/ebook-ivory-mono/theme.user.css": "8419b01ac327cfe4f085e73909ff6303a392d0f5461d90fdc11f734e4e1f07fd",
-  "themes/ebook-ivory-mono/indicators.user.js": "361a71b90cc9c6407a66c9576892046493c05fd780476abfd5759738f353b3d4",
-  "themes/ebook-ivory-mono/clock.user.js": "597e7148af3b0eb320f514050590b26c3f94f7502e288f6933f2511122f20de0",
-  "themes/ebook-ivory-mono/status.user.js": "97a6b5b83c50a9b7a9890103f7a230b55dec4d3d13db0ac3de3a3641303ef806"
+  "themes/ebook-ivory-mono/theme.user.css": "1f308a06dec6bd72bafd309aa6761ad53f7d59409b028b9e26a7b6de277243cb",
+  "themes/ebook-ivory-mono/indicators.user.js": "f12ffac657371cd0c494293489d2e120dbc0ab951b71bfb04bb6c806957b3301",
+  "themes/ebook-ivory-mono/clock.user.js": "a01b0fc3be1e0d1819a2d2095bc73a10e15545ec6d7b44431d4159428beae8ce",
+  "themes/ebook-ivory-mono/status.user.js": "542c7050879a145bc2cc5ca7d8a0b52b465d6c1b1a1c0d8a8f9252f004d4717e"
 }

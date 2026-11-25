@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo · Status & Command Center
 // @namespace    jaroo-company.local
-// @version      6.9.17
+// @version      6.9.18
 // @description  E-book RUN/DONE and ALL/ONLY; first-paint quiet controls, verified native-state detection and cross-tab synchronization.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -15,7 +15,7 @@
   const RUNTIME = '__jarooCommandCenterRuntimeV4';
   window[RUNTIME]?.dispose?.();
   window.__jarooNativeCapture?.stop?.();
-  const VERSION = '6.9.17';
+  const VERSION = '6.9.18';
   const HOVER_MS = 400;
   const ROOTS = '#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]';
   const ARCHIVE = '[data-sidebar-archive-chatgpt-id]';
@@ -1321,9 +1321,11 @@
   }
   function renderDock(records) {
     if (!setupDock()) return;
+    const counts={working:0,done:0};
+    for(const record of records)if(record.status==='working'||record.status==='done')counts[record.status]++;
     for(const status of ['working','done']) {
       const counter=dock.querySelector(`[data-jstatus="${status}"] .count`);
-      const value=records.filter(r=>r.status===status).length;
+      const value=counts[status];
       const display=formatDockCount(value);
       if (counter) {
         if(counter.textContent!==display.digit)counter.textContent=display.digit;
@@ -1443,16 +1445,28 @@
     }
     return result.reverse();
   }
+  function markMovedRows(events,rows,idsChanged) {
+    const nodes=new Set();
+    for(const event of events)if(event.type==='childList'){
+      for(const list of [event.removedNodes,event.addedNodes])
+        for(const node of list)if(node instanceof Element)nodes.add(node);
+    }
+    if(!nodes.size)return;
+    if(nodes.size<=4){
+      for(const node of nodes)for(const row of rows)
+        if(node===row||node.contains(row))idsChanged.add(row);
+      return;
+    }
+    // Visit each cached row's ancestors once for larger mutation batches.
+    for(const row of rows)for(let node=row;node;node=node.parentNode){
+      if(nodes.has(node)){idsChanged.add(row);break;}
+    }
+  }
   function captureNativeChanges(events) {
     const idsChanged = new Set(events.filter(event => event.type === 'attributes' &&
       ['data-sidebar-archive-chatgpt-id', 'href'].includes(event.attributeName)).map(event =>
         event.target.closest?.(ARCHIVE) || event.target));
-    for (const event of events) if (event.type === 'childList') {
-      for (const node of [...event.removedNodes, ...event.addedNodes]) {
-        if (!(node instanceof Element)) continue;
-        for (const row of rowNodes) if (node === row || node.contains(row)) idsChanged.add(row);
-      }
-    }
+    markMovedRows(events,rowNodes,idsChanged);
     if (idsChanged.size) {
       for (const row of idsChanged) nativeSeen.delete(row);
       pendingNative = pendingNative.filter(entry => !idsChanged.has(entry.row));
@@ -1629,7 +1643,10 @@
   function clickHandler(event) {
     readAcknowledgement.handleClick(event);
     composerProbe.noteSubmit(event);
-    if (panelOpen && panel && !event.composedPath().includes(panel) && !event.composedPath().includes(dock)) closePanel();
+    if (panelOpen && panel) {
+      const path=event.composedPath();
+      if(!path.includes(panel)&&!path.includes(dock))closePanel();
+    }
   }
   function dispose() {
     if (disposed) return;
