@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo Google Calendar E-Book
 @namespace    jaroo.calendar.ebook
-@version      0.5.9
+@version      0.5.10
 @description  Cool E-Ink Graph Paper · paired with Calendar E-Book Companion
 @author       Jaroo
 @license      UNLICENSED
@@ -42,7 +42,7 @@
 /* Light appearance is selected in Google Calendar itself. No layout,
    event text, native date/colour data, or click targets are rewritten. */
 html[data-jaroo-calendar-theme="ebook"] {
-  --jaroo-cal-style-version: 0.5.9;
+  --jaroo-cal-style-version: 0.5.10;
   --jaroo-cal-bg:#EFF1F2;
   --jaroo-cal-sidebar:#E7EAEB;
   --jaroo-cal-surface:#F5F6F6;
@@ -861,28 +861,6 @@ html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-control="create"]{
     -webkit-text-stroke:.18px currentColor;
   }
 }
-@media(forced-colors:none){
-  html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-people-search-shell="true"],[data-jaroo-cal-people-search-paint="true"]){
-    background-color:transparent!important;background-image:none!important;
-    border-color:transparent!important;box-shadow:none!important;
-    border-radius:999px!important;
-  }
-  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"]{
-    background-color:transparent!important;background-image:none!important;
-    border-color:transparent!important;box-shadow:none!important;
-  }
-  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"]:not(:focus-visible):not(:has(:focus-visible)){
-    outline:none!important;
-  }
-  html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-people-search-shell="true"],[data-jaroo-cal-people-search-paint="true"])::before,
-  html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-people-search-shell="true"],[data-jaroo-cal-people-search-paint="true"])::after{
-    background-color:transparent!important;background-image:none!important;border-color:transparent!important;box-shadow:none!important;
-  }
-  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"]:is(:focus-visible,:has(:focus-visible)){
-    outline:2px solid var(--jaroo-cal-focus)!important;outline-offset:2px!important;
-  }
-}
-
 
 /* v0.5.6: completed events are unmarked paper, not colored highlights.
    Preserve native task state, title, geometry, and the keyboard indicator. */
@@ -999,26 +977,43 @@ html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-caption="t
 }
 
 
-/* v0.5.9 — plain paper people search. Remove the remaining inner
-   Google blue input/placeholder surfaces as well as the outer ring.
-   Do not reset the native icon artwork, popup suggestions, or focus cue. */
+/* v0.5.10 — People search: ink only, no capsule.
+   DevTools shows the native filled field reads
+   --gm3-text-field-filled-container-color. Reset that source token on the
+   verified shell and field surfaces, not the sidebar or other inputs. */
 @media(forced-colors:none){
-  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"] input:is([data-jaroo-cal-people-search-input="true"],[aria-label="사용자 검색"],[aria-label="사용자 찾기"],[aria-label="Search for people"],[aria-label="Search people"],[aria-label="Find people"]):not(:is([role="listbox"],[role="listbox"] *,[role="option"],[role="option"] *,[role="dialog"],[role="dialog"] *,[role="menu"],[role="menu"] *)),
-  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"] :is(div,span,label):has(input:is([data-jaroo-cal-people-search-input="true"],[aria-label="사용자 검색"],[aria-label="사용자 찾기"],[aria-label="Search for people"],[aria-label="Search people"],[aria-label="Find people"])):not(:is([role="listbox"],[role="listbox"] *,[role="option"],[role="option"] *,[role="dialog"],[role="dialog"] *,[role="menu"],[role="menu"] *)),
-  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"] :is([data-jaroo-cal-people-search-group="true"],[data-jaroo-cal-people-search-field="true"],[data-jaroo-cal-people-search-caption="true"]):not(:is([role="listbox"],[role="listbox"] *,[role="option"],[role="option"] *,[role="dialog"],[role="dialog"] *,[role="menu"],[role="menu"] *)),
-  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"] [data-jaroo-cal-people-search-field="true"] :is(div,span,label):not(:is([role="listbox"],[role="listbox"] *,[role="option"],[role="option"] *,[role="dialog"],[role="dialog"] *,[role="menu"],[role="menu"] *)):not(:is([data-jaroo-cal-people-search-icon],[data-jaroo-cal-people-search-icon] *)){
-    background-color:transparent!important;background-image:none!important;
-    border-color:transparent!important;box-shadow:none!important;
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"],
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"] :is([data-jaroo-cal-people-search-paint="true"],[data-jaroo-cal-people-search-control="true"],[data-jaroo-cal-people-search-group="true"],[data-jaroo-cal-people-search-field="true"],[data-jaroo-cal-people-search-caption="true"],input:is([data-jaroo-cal-people-search-input="true"],[aria-label="사용자 검색"],[aria-label="사용자 찾기"],[aria-label="Search for people"],[aria-label="Search people"],[aria-label="Find people"])):not(:is([role="listbox"],[role="listbox"] *,[role="option"],[role="option"] *,[role="dialog"],[role="dialog"] *,[role="menu"],[role="menu"] *)):not(:is([data-jaroo-cal-people-search-icon],[data-jaroo-cal-people-search-icon] *,svg,svg *,img,i,[role="img"],[role="img"] *)),
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"] :is(div,span,label):has(input:is([data-jaroo-cal-people-search-input="true"],[aria-label="사용자 검색"],[aria-label="사용자 찾기"],[aria-label="Search for people"],[aria-label="Search people"],[aria-label="Find people"])):not(:is([role="listbox"],[role="listbox"] *,[role="option"],[role="option"] *,[role="dialog"],[role="dialog"] *,[role="menu"],[role="menu"] *)):not(:is([data-jaroo-cal-people-search-icon],[data-jaroo-cal-people-search-icon] *,svg,svg *,img,i,[role="img"],[role="img"] *)),
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"] [data-jaroo-cal-people-search-group="true"] :is(div,span,label,input):not(:is([role="listbox"],[role="listbox"] *,[role="option"],[role="option"] *,[role="dialog"],[role="dialog"] *,[role="menu"],[role="menu"] *)):not(:is([data-jaroo-cal-people-search-icon],[data-jaroo-cal-people-search-icon] *,svg,svg *,img,i,[role="img"],[role="img"] *)){
+    --gm3-text-field-filled-container-color:transparent!important;
+    --gm3-text-field-filled-active-indicator-color:transparent!important;
+    --gm3-text-field-filled-hover-active-indicator-color:transparent!important;
+    --gm3-text-field-filled-focus-active-indicator-color:transparent!important;
+    background:transparent!important;
+    border-color:transparent!important;
+    outline:none!important;
+    box-shadow:none!important;
   }
-  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"] input:is([data-jaroo-cal-people-search-input="true"],[aria-label="사용자 검색"],[aria-label="사용자 찾기"],[aria-label="Search for people"],[aria-label="Search people"],[aria-label="Find people"]):not(:is([role="listbox"],[role="listbox"] *,[role="option"],[role="option"] *,[role="dialog"],[role="dialog"] *,[role="menu"],[role="menu"] *))::before,
-  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"] :is(div,span,label):has(input:is([data-jaroo-cal-people-search-input="true"],[aria-label="사용자 검색"],[aria-label="사용자 찾기"],[aria-label="Search for people"],[aria-label="Search people"],[aria-label="Find people"])):not(:is([role="listbox"],[role="listbox"] *,[role="option"],[role="option"] *,[role="dialog"],[role="dialog"] *,[role="menu"],[role="menu"] *))::before,
-  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"] :is([data-jaroo-cal-people-search-group="true"],[data-jaroo-cal-people-search-field="true"],[data-jaroo-cal-people-search-caption="true"]):not(:is([role="listbox"],[role="listbox"] *,[role="option"],[role="option"] *,[role="dialog"],[role="dialog"] *,[role="menu"],[role="menu"] *))::before,
-  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"] [data-jaroo-cal-people-search-field="true"] :is(div,span,label):not(:is([role="listbox"],[role="listbox"] *,[role="option"],[role="option"] *,[role="dialog"],[role="dialog"] *,[role="menu"],[role="menu"] *)):not(:is([data-jaroo-cal-people-search-icon],[data-jaroo-cal-people-search-icon] *))::before,
-  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"] input:is([data-jaroo-cal-people-search-input="true"],[aria-label="사용자 검색"],[aria-label="사용자 찾기"],[aria-label="Search for people"],[aria-label="Search people"],[aria-label="Find people"]):not(:is([role="listbox"],[role="listbox"] *,[role="option"],[role="option"] *,[role="dialog"],[role="dialog"] *,[role="menu"],[role="menu"] *))::after,
-  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"] :is(div,span,label):has(input:is([data-jaroo-cal-people-search-input="true"],[aria-label="사용자 검색"],[aria-label="사용자 찾기"],[aria-label="Search for people"],[aria-label="Search people"],[aria-label="Find people"])):not(:is([role="listbox"],[role="listbox"] *,[role="option"],[role="option"] *,[role="dialog"],[role="dialog"] *,[role="menu"],[role="menu"] *))::after,
-  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"] :is([data-jaroo-cal-people-search-group="true"],[data-jaroo-cal-people-search-field="true"],[data-jaroo-cal-people-search-caption="true"]):not(:is([role="listbox"],[role="listbox"] *,[role="option"],[role="option"] *,[role="dialog"],[role="dialog"] *,[role="menu"],[role="menu"] *))::after,
-  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"] [data-jaroo-cal-people-search-field="true"] :is(div,span,label):not(:is([role="listbox"],[role="listbox"] *,[role="option"],[role="option"] *,[role="dialog"],[role="dialog"] *,[role="menu"],[role="menu"] *)):not(:is([data-jaroo-cal-people-search-icon],[data-jaroo-cal-people-search-icon] *))::after{
-    background-color:transparent!important;border-color:transparent!important;box-shadow:none!important;
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"]::before,
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"] :is([data-jaroo-cal-people-search-paint="true"],[data-jaroo-cal-people-search-control="true"],[data-jaroo-cal-people-search-group="true"],[data-jaroo-cal-people-search-field="true"],[data-jaroo-cal-people-search-caption="true"],input:is([data-jaroo-cal-people-search-input="true"],[aria-label="사용자 검색"],[aria-label="사용자 찾기"],[aria-label="Search for people"],[aria-label="Search people"],[aria-label="Find people"])):not(:is([role="listbox"],[role="listbox"] *,[role="option"],[role="option"] *,[role="dialog"],[role="dialog"] *,[role="menu"],[role="menu"] *)):not(:is([data-jaroo-cal-people-search-icon],[data-jaroo-cal-people-search-icon] *,svg,svg *,img,i,[role="img"],[role="img"] *))::before,
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"] :is(div,span,label):has(input:is([data-jaroo-cal-people-search-input="true"],[aria-label="사용자 검색"],[aria-label="사용자 찾기"],[aria-label="Search for people"],[aria-label="Search people"],[aria-label="Find people"])):not(:is([role="listbox"],[role="listbox"] *,[role="option"],[role="option"] *,[role="dialog"],[role="dialog"] *,[role="menu"],[role="menu"] *)):not(:is([data-jaroo-cal-people-search-icon],[data-jaroo-cal-people-search-icon] *,svg,svg *,img,i,[role="img"],[role="img"] *))::before,
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"] [data-jaroo-cal-people-search-group="true"] :is(div,span,label,input):not(:is([role="listbox"],[role="listbox"] *,[role="option"],[role="option"] *,[role="dialog"],[role="dialog"] *,[role="menu"],[role="menu"] *)):not(:is([data-jaroo-cal-people-search-icon],[data-jaroo-cal-people-search-icon] *,svg,svg *,img,i,[role="img"],[role="img"] *))::before,
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"]::after,
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"] :is([data-jaroo-cal-people-search-paint="true"],[data-jaroo-cal-people-search-control="true"],[data-jaroo-cal-people-search-group="true"],[data-jaroo-cal-people-search-field="true"],[data-jaroo-cal-people-search-caption="true"],input:is([data-jaroo-cal-people-search-input="true"],[aria-label="사용자 검색"],[aria-label="사용자 찾기"],[aria-label="Search for people"],[aria-label="Search people"],[aria-label="Find people"])):not(:is([role="listbox"],[role="listbox"] *,[role="option"],[role="option"] *,[role="dialog"],[role="dialog"] *,[role="menu"],[role="menu"] *)):not(:is([data-jaroo-cal-people-search-icon],[data-jaroo-cal-people-search-icon] *,svg,svg *,img,i,[role="img"],[role="img"] *))::after,
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"] :is(div,span,label):has(input:is([data-jaroo-cal-people-search-input="true"],[aria-label="사용자 검색"],[aria-label="사용자 찾기"],[aria-label="Search for people"],[aria-label="Search people"],[aria-label="Find people"])):not(:is([role="listbox"],[role="listbox"] *,[role="option"],[role="option"] *,[role="dialog"],[role="dialog"] *,[role="menu"],[role="menu"] *)):not(:is([data-jaroo-cal-people-search-icon],[data-jaroo-cal-people-search-icon] *,svg,svg *,img,i,[role="img"],[role="img"] *))::after,
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"] [data-jaroo-cal-people-search-group="true"] :is(div,span,label,input):not(:is([role="listbox"],[role="listbox"] *,[role="option"],[role="option"] *,[role="dialog"],[role="dialog"] *,[role="menu"],[role="menu"] *)):not(:is([data-jaroo-cal-people-search-icon],[data-jaroo-cal-people-search-icon] *,svg,svg *,img,i,[role="img"],[role="img"] *))::after{
+    background-color:transparent!important;
+    border-color:transparent!important;
+    outline:none!important;
+    box-shadow:none!important;
+  }
+  /* Preserve keyboard access without drawing a rectangle around the
+     search field. Neither pointer focus nor keyboard focus restores fill. */
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"]:focus-visible,
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"]:has(:focus-visible) :is([data-jaroo-cal-people-search-caption="true"],[data-jaroo-cal-people-search-input="true"]){
+    text-decoration:underline!important;
+    text-underline-offset:3px!important;
   }
 }
 
