@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.29
+// @version      3.11.30
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -182,10 +182,10 @@
       .life-card .life-meta{white-space:nowrap;line-height:1.02}
       .life-card .life-value{white-space:nowrap;line-height:.95}
       .life-progress{margin:6px 0 0;padding:7px 0 0;border-top:1px solid #D4DADC}
-      .life-progress-head{display:flex;flex-direction:row;align-items:baseline;justify-content:space-between;flex-wrap:nowrap;gap:10px;margin-bottom:9px}
+      .life-progress-head{display:flex;flex-direction:row;align-items:baseline;justify-content:space-between;flex-wrap:nowrap;gap:10px;margin-bottom:11px}
       .life-progress-title{font:650 calc(var(--widget-main) + 1px)/1.3 var(--font);color:var(--ink);letter-spacing:.025em;text-transform:uppercase;white-space:nowrap;flex:0 0 auto}
-      .life-progress-scale{white-space:nowrap;flex:0 0 auto;margin-inline-start:auto;text-align:right}
-      @container jaroo-dashboard (min-width:185px) and (max-width:209px){.life-progress-title{font-size:var(--widget-main)}.life-progress-scale{font-size:11px}.life-progress-head{gap:8px}}
+      .life-progress-scale{white-space:nowrap;flex:0 0 auto;margin-inline-start:auto;text-align:right;letter-spacing:-.035em;line-height:1.02}
+      @container jaroo-dashboard (min-width:185px) and (max-width:209px){.life-progress-title{font-size:var(--widget-main)}.life-progress-head{gap:8px}}
       .life-bar{height:5px;border-radius:999px;background:#D0D5D7;overflow:hidden}
       .life-bar-fill{height:100%;width:0;border-radius:999px;background:#879398}
       .life-bar-glow{display:none}
@@ -248,7 +248,7 @@
       }
       /* All Life Clock metrics: compact width uses two shared baselines; wider width keeps the full duration inline. */
       .life-duration-tail::before{content:" : ";word-spacing:normal}
-      .life-card .life-card-main{grid-template-columns:minmax(0,1fr) auto auto;align-items:baseline;gap:2px 0}
+      .life-card .life-card-main{grid-template-columns:minmax(0,1fr) auto auto;align-items:baseline;gap:3px 0}
       .life-card .life-caption{display:contents}
       .life-card .life-label{grid-column:1/-1;grid-row:1;align-self:baseline}
       .life-card .life-meta{grid-column:1;grid-row:2;align-self:baseline;padding-inline-end:4px}
@@ -1169,9 +1169,9 @@
     if (window[RUNTIME_KEY]?.dispose === dispose) delete window[RUNTIME_KEY];
   }
   window[RUNTIME_KEY] = {
-    version: '3.11.29', dispose,
+    version: '3.11.30', dispose,
     diagnostics: () => ({
-      version: '3.11.29', ...placementReport,
+      version: '3.11.30', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
