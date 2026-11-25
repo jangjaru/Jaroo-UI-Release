@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo · Status & Command Center
 // @namespace    jaroo-company.local
-// @version      6.9.6
+// @version      6.9.7
 // @description  E-book RUN/DONE and ALL/ONLY; first-paint quiet controls, verified native-state detection and cross-tab synchronization.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -15,7 +15,7 @@
   const RUNTIME = '__jarooCommandCenterRuntimeV4';
   window[RUNTIME]?.dispose?.();
   window.__jarooNativeCapture?.stop?.();
-  const VERSION = '6.9.6';
+  const VERSION = '6.9.7';
   const HOVER_MS = 400;
   const ROOTS = '#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]';
   const ARCHIVE = '[data-sidebar-archive-chatgpt-id]';
@@ -965,6 +965,8 @@
     .jaroo-focus-header{display:flex;align-items:center;justify-content:space-between;gap:4px}
     .jaroo-focus-header strong,.jaroo-focus-header em,.jaroo-focus-empty{color:#535B60;font-size:12px;line-height:1.3;font-style:normal}
     .jaroo-focus-header strong{min-width:0;overflow-wrap:anywhere}.jaroo-focus-total{white-space:nowrap;flex:none}
+    .jaroo-focus-total .jaroo-focus-count{color:var(--eb-accent-ink,#303438);font-variant-numeric:tabular-nums}
+    .jaroo-focus-total .jaroo-focus-unit{margin-inline-start:.18em}
     .jaroo-focus-entries{display:flex;flex-direction:column;gap:4px;max-height:min(340px,42vh);overflow:auto}
     .jaroo-focus-row{display:flex;align-items:center;gap:5px;min-width:0;padding:5px 2px;color:#292D30;text-decoration:none;border-radius:3px;cursor:pointer}
     .jaroo-focus-row:hover,.jaroo-focus-row:focus-visible{background:#DFE3E5}
@@ -1010,7 +1012,7 @@
     focusList.className='jaroo-focus-list';focusList.id='jaroo-focus-list';focusList.setAttribute('data-ebook-status-ready','true');
     focusList.hidden=true;focusList.setAttribute('role','region');
     focusList.setAttribute('aria-label','진행 중이거나 확인할 완료 작업 목록');
-    focusList.innerHTML='<div class="jaroo-focus-header"><strong>Running · Completed</strong><em class="jaroo-focus-total">0건</em></div>'+ 
+    focusList.innerHTML='<div class="jaroo-focus-header"><strong>Running · Completed</strong><em class="jaroo-focus-total"><strong class="jaroo-focus-count">0</strong><span class="jaroo-focus-unit">건</span></em></div>'+ 
       '<div class="jaroo-focus-entries" role="list"></div>';
     dock.after(focusList);
     focusEntries=focusList.querySelector('.jaroo-focus-entries');
@@ -1167,8 +1169,8 @@
       focusEntries.append(row);
     }
     focusEntries.scrollTop=previousScroll;
-    const badge=focusList?.querySelector('.jaroo-focus-total');
-    if (badge) badge.textContent=`${records.length}건`;
+    const badge=focusList?.querySelector('.jaroo-focus-count');
+    if (badge) badge.textContent=String(records.length);
   }
   function syncFocusView(records) {
     const modeButton=dock?.querySelector('[data-jaroo-filter-toggle]');
