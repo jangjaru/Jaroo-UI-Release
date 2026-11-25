@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.19
+// @version      3.11.20
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -281,7 +281,7 @@
       .life-card.retire:has(.career-bar:not([hidden])){border-bottom:0;padding-bottom:0}
       .career-bar{height:4px;border-radius:2px;background:#D0D5D7;overflow:hidden;margin-top:8px}
       .career-bar[hidden]{display:none}
-      .career-bar-fill{height:100%;width:var(--career-remaining,0%);border-radius:2px;background:#8FB7AE}
+      .career-bar-fill{height:100%;width:var(--career-remaining,0%);border-radius:2px;background:#879398}
       .career-remaining-percent{font:400 11px/1.2 var(--font);letter-spacing:-.04em;color:var(--muted);white-space:nowrap;margin-inline-start:3px}
       .career-remaining-percent[hidden]{display:none}
       @container jaroo-dashboard (max-width:220px){.career-remaining-percent{font-size:10px;margin-inline-start:2px}}
@@ -1146,9 +1146,9 @@
     if (window[RUNTIME_KEY]?.dispose === dispose) delete window[RUNTIME_KEY];
   }
   window[RUNTIME_KEY] = {
-    version: '3.11.19', dispose,
+    version: '3.11.20', dispose,
     diagnostics: () => ({
-      version: '3.11.19', ...placementReport,
+      version: '3.11.20', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
