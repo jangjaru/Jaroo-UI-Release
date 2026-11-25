@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo · Status & Command Center
 // @namespace    jaroo-company.local
-// @version      6.9.1
+// @version      6.9.2
 // @description  E-book RUN/DONE and ALL/ONLY; first-paint quiet controls, verified native-state detection and cross-tab synchronization.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -15,7 +15,7 @@
   const RUNTIME = '__jarooCommandCenterRuntimeV4';
   window[RUNTIME]?.dispose?.();
   window.__jarooNativeCapture?.stop?.();
-  const VERSION = '6.9.1';
+  const VERSION = '6.9.2';
   const HOVER_MS = 400;
   const ROOTS = '#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]';
   const ARCHIVE = '[data-sidebar-archive-chatgpt-id]';
@@ -937,7 +937,7 @@
   const dockCSS = `
     .jaroo-center,.jaroo-focus-list{--widget-main:var(--eb-chat-corrected-size,15.333px);--widget-meta:13px;box-sizing:border-box;color:#292D30;font:400 var(--widget-main)/1.3 var(--eb-font,"IBM Plex Mono","Pretendard Variable","Pretendard",sans-serif);min-width:0}
     .jaroo-center *, .jaroo-focus-list *{box-sizing:border-box}
-    .jaroo-center{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 44px;gap:6px;margin:0;padding:8px 0;border-top:1px solid #C5CDD0;align-items:stretch}
+    .jaroo-center{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 44px;gap:6px;margin:0;padding:8px 0;border-top:1px solid var(--eb-accent-ink,#303438);align-items:stretch}
     .jaroo-center button{display:flex;align-items:center;justify-content:center;width:100%;min-width:0;height:100%;min-height:52px;padding:0;margin:0;background:none;border:0;border-radius:3px;cursor:pointer;color:inherit;font-family:inherit}
     .jaroo-center button:focus-visible,.jaroo-focus-row:focus-visible{outline:1px solid #879398;outline-offset:1px}
     .jaroo-center .jaroo-top-badge{display:flex;flex-direction:column;justify-content:center;align-items:stretch;gap:4px;width:100%;min-width:0;height:100%;min-height:52px;padding:6px;background:#DFE3E5;border:0;border-radius:3px}
