@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.26
+// @version      3.11.27
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -277,14 +277,13 @@
         .life-card .life-value,.life-card .life-duration-hours{grid-column:2;grid-row:2}
         .life-card .life-duration-tail{grid-row:3}
       }
-      /* Unmeasured metrics use a neutral rounded divider, not a fabricated progress fill. */
+      /* All three metrics share the rounded progress track. */
       .life-card:not(.retire){border-bottom:0;padding-bottom:0}
-      .life-card .life-neutral-bar{height:5px;border-radius:999px;background:#D0D5D7;margin-top:8px}
       .life-grid+.life-progress{border-top:0}
       @container jaroo-dashboard (min-width:180px) and (max-width:249px){
         .life-card.work .life-label{overflow-wrap:anywhere;word-break:normal}
       }
-      /* Career remaining time replaces only the retirement divider. */
+      /* Remaining-time progress uses the same colors, thickness and caps for all three metrics. */
       .life-card.retire:has(.career-bar:not([hidden])){border-bottom:0;padding-bottom:0}
       .career-bar{height:5px;border-radius:999px;background:#D0D5D7;overflow:hidden;margin-top:8px}
       .career-bar[hidden]{display:none}
@@ -328,11 +327,11 @@
         </article>
         <article class="life-card work">
           <div class="life-card-main"><div class="life-caption"><div class="life-label">남은 근무시간</div><div class="life-meta" data-life="workMeta" title="평일 8시간 기준">평일 8시간 기준</div></div><div class="life-value" data-life="workValue">0 : 00 : 00</div></div>
-          <div class="life-neutral-bar" aria-hidden="true"></div>
+          <div class="career-bar" data-life="workBar" role="progressbar" aria-label="전체 예정 근무시간 대비 남은 근무시간" aria-valuemin="0" aria-valuemax="100" hidden><div class="career-bar-fill" data-life="workBarFill"></div></div>
         </article>
         <article class="life-card after">
           <div class="life-card-main"><div class="life-caption"><div class="life-label">은퇴 이후</div><div class="life-meta" data-life="afterMeta" title="65~80세까지">65~80세까지</div></div><div class="life-value" data-life="afterValue">0 : 00 : 00</div></div>
-          <div class="life-neutral-bar" aria-hidden="true"></div>
+          <div class="career-bar" data-life="afterBar" role="progressbar" aria-label="은퇴 후 계획기간 중 남은 시간" aria-valuemin="0" aria-valuemax="100" hidden><div class="career-bar-fill" data-life="afterBarFill"></div></div>
         </article>
       </div>
       <div class="life-progress">
@@ -392,8 +391,12 @@
     careerBar: shadow.querySelector('[data-life="careerBar"]'),
     careerBarFill: shadow.querySelector('[data-life="careerBarFill"]'),
     workValue: shadow.querySelector('[data-life="workValue"]'),
+    workBar: shadow.querySelector('[data-life="workBar"]'),
+    workBarFill: shadow.querySelector('[data-life="workBarFill"]'),
     workMeta: shadow.querySelector('[data-life="workMeta"]'),
     afterValue: shadow.querySelector('[data-life="afterValue"]'),
+    afterBar: shadow.querySelector('[data-life="afterBar"]'),
+    afterBarFill: shadow.querySelector('[data-life="afterBarFill"]'),
     afterMeta: shadow.querySelector('[data-life="afterMeta"]'),
     progressBar: shadow.querySelector('[data-life="progressBar"]'),
     progressPercent: shadow.querySelector('[data-life="progressPercent"]'),
@@ -437,6 +440,8 @@
       lifeEls.progressPercent.textContent='—';
       lifeEls.progressBar.style.width='0%';
       updateCareerBar(null);
+      updateCareerBar(null,lifeEls.workBar,lifeEls.workBarFill);
+      updateCareerBar(null,lifeEls.afterBar,lifeEls.afterBarFill);
     }
     if(started)schedulePlacement();
   }
@@ -524,17 +529,21 @@
     if(![nowMs,retirementMs,startMs].every(Number.isFinite)||retirementMs<=startMs)return null;
     return Math.max(0,Math.min(100,(retirementMs-nowMs)/(retirementMs-startMs)*100));
   }
-  function updateCareerBar(percent) {
-    const bar=lifeEls.careerBar,fill=lifeEls.careerBarFill;
+  function remainingDurationPercent(remainingMs,totalMs) {
+    if(!Number.isFinite(remainingMs)||!Number.isFinite(totalMs)||totalMs<=0)return null;
+    return Math.max(0,Math.min(100,remainingMs/totalMs*100));
+  }
+  function updateCareerBar(percent,bar=lifeEls.careerBar,fill=lifeEls.careerBarFill,
+      description='2007.08.01 시작(월 기준 가정) ~ 은퇴일 · 전체 사회생활 기간 중') {
     const valid=percent!==null&&Number.isFinite(percent);
     if(bar.hidden===valid)bar.hidden=!valid;
-    if(!valid){bar.removeAttribute('aria-valuenow');bar.removeAttribute('aria-valuetext');return;}
+    if(!valid){bar.removeAttribute('aria-valuenow');bar.removeAttribute('aria-valuetext');bar.removeAttribute('title');return;}
     const width=percent.toFixed(8)+'%',label=percent.toFixed(1);
     if(fill.style.getPropertyValue('--career-remaining')!==width)fill.style.setProperty('--career-remaining',width);
     if(bar.getAttribute('aria-valuenow')!==label){
       bar.setAttribute('aria-valuenow',label);
       bar.setAttribute('aria-valuetext',label+'% 남음');
-      bar.title='2007.08.01 시작(월 기준 가정) ~ 은퇴일 · 전체 사회생활 기간 중 '+label+'% 남음';
+      bar.title=description+' '+label+'% 남음';
     }
   }
   const durationNodes=new WeakMap();
@@ -574,8 +583,16 @@
     const careerRemaining=careerRemainingPercent(ms,retirementMs);
     setLifeDuration(lifeEls.retireValue,retirementMs-ms,{careerRemaining});
     updateCareerBar(careerRemaining);
-    setLifeDuration(lifeEls.workValue,calculateWorkDurationMs(ms,retirementMs));
-    setLifeDuration(lifeEls.afterValue,beforeRetirement?age80Ms-retirementMs:age80Ms-ms);
+    const totalWorkMs=calculateWorkDurationMs(CAREER_START_MS,retirementMs);
+    const remainingWorkMs=calculateWorkDurationMs(Math.max(ms,CAREER_START_MS),retirementMs);
+    const workRemaining=remainingDurationPercent(remainingWorkMs,totalWorkMs);
+    setLifeDuration(lifeEls.workValue,remainingWorkMs,{careerRemaining:workRemaining});
+    updateCareerBar(workRemaining,lifeEls.workBar,lifeEls.workBarFill,'2007.08.01 시작(월 기준 가정) ~ 은퇴일 · 평일 8시간 기준 전체 예정 근무시간 중');
+    const totalAfterMs=age80Ms-retirementMs;
+    const remainingAfterMs=Math.max(0,age80Ms-Math.max(ms,retirementMs));
+    const afterRemaining=remainingDurationPercent(remainingAfterMs,totalAfterMs);
+    setLifeDuration(lifeEls.afterValue,remainingAfterMs,{careerRemaining:afterRemaining});
+    updateCareerBar(afterRemaining,lifeEls.afterBar,lifeEls.afterBarFill,'은퇴일 ~ 80세 기준일 · 은퇴 이후 계획시간 중');
     setLifeDuration(lifeEls.usedHours,Math.min(ms,age80Ms)-LIFE.birth.getTime(),{elapsed:true});
     setLifeDuration(lifeEls.remainingHours,age80Ms-ms);
     const values=[
@@ -1155,9 +1172,9 @@
     if (window[RUNTIME_KEY]?.dispose === dispose) delete window[RUNTIME_KEY];
   }
   window[RUNTIME_KEY] = {
-    version: '3.11.26', dispose,
+    version: '3.11.27', dispose,
     diagnostics: () => ({
-      version: '3.11.26', ...placementReport,
+      version: '3.11.27', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
