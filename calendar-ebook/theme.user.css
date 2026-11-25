@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo Google Calendar E-Book
 @namespace    jaroo.calendar.ebook
-@version      0.5.7
+@version      0.5.8
 @description  Cool E-Ink Graph Paper · paired with Calendar E-Book Companion
 @author       Jaroo
 @license      UNLICENSED
@@ -42,7 +42,7 @@
 /* Light appearance is selected in Google Calendar itself. No layout,
    event text, native date/colour data, or click targets are rewritten. */
 html[data-jaroo-calendar-theme="ebook"] {
-  --jaroo-cal-style-version: 0.5.7;
+  --jaroo-cal-style-version: 0.5.8;
   --jaroo-cal-bg:#EFF1F2;
   --jaroo-cal-sidebar:#E7EAEB;
   --jaroo-cal-surface:#F5F6F6;
@@ -936,38 +936,62 @@ html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-control="create"]{
 }
 
 
-/* v0.5.7 — match search to the measured mini-calendar columns.
-   Keep the real native control and editing/focus behavior. */
+
+/* v0.5.8 — DevTools-confirmed native Create caption container.
+   The native .x5FT4e explicitly sets Google Sans and weight 500.
+   Scope the override exclusively to the already verified Create control. */
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-control="create"] .x5FT4e,
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-control="create"] .x5FT4e .bjMtic,
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-control="create"] [data-jaroo-cal-create-label="true"]{
+  font-family:"Pretendard Variable","Pretendard","Noto Sans KR",sans-serif!important;
+  font-weight:800!important;font-synthesis:weight!important;
+  color:var(--jaroo-cal-active-ink)!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-control="create"] .x5FT4e .bjMtic :is(span,div):not(:has(svg)):not([aria-hidden="true"]):not([role="img"]){
+  font-weight:800!important;
+}
+@media(forced-colors:none){
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-control="create"] [data-jaroo-cal-create-label="true"]:not(:has(svg)){
+    -webkit-text-stroke:.24px currentColor;
+  }
+}
+/* Use a real narrow native search shell, even if size measurement fails.
+   Default 20px per side; measured date table edges win when available. */
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"]{
+  box-sizing:border-box!important;
+  width:calc(100% - 40px)!important;inline-size:calc(100% - 40px)!important;
+  max-inline-size:100%!important;min-inline-size:0!important;
+  flex:0 0 auto!important;margin-inline:auto!important;align-self:center!important;
+}
 @supports(width:attr(data-jaroo-cal-people-search-width type(<length>), 0px)){
   html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"][data-jaroo-cal-people-search-width]{
-    box-sizing:border-box!important;
     width:attr(data-jaroo-cal-people-search-width type(<length>))!important;
     inline-size:attr(data-jaroo-cal-people-search-width type(<length>))!important;
-    max-inline-size:100%!important;min-inline-size:0!important;
-    flex-shrink:0!important;margin-inline:auto!important;align-self:center!important;
     translate:attr(data-jaroo-cal-people-search-offset type(<length>), 0px) 0!important;
   }
 }
-html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-control="true"]:not(input,[role="combobox"],[role="searchbox"]):has([data-jaroo-cal-people-search-group="true"]){
+/* Center only the idle native input's existing icon + caption row.
+   A blank native placeholder is still :placeholder-shown; the visible
+   caption can be a separate overlay, so do not use field-sizing:content. */
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"]:not(:focus-within):has([data-jaroo-cal-people-search-input="true"]:placeholder-shown) [data-jaroo-cal-people-search-group="true"],
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"]:not(:focus-within):has([data-jaroo-cal-people-search-caption="true"]):not(:has(input)) [data-jaroo-cal-people-search-group="true"]{
   display:flex!important;align-items:center!important;justify-content:center!important;
-  box-sizing:border-box!important;inline-size:100%!important;min-inline-size:0!important;
-  padding-inline:0!important;margin-inline:auto!important;
+  width:fit-content!important;inline-size:fit-content!important;max-inline-size:100%!important;
+  flex:0 0 auto!important;margin-inline:auto!important;padding-inline:0!important;column-gap:8px!important;
 }
-html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-group="true"]{
-  display:flex!important;justify-content:center!important;align-items:center!important;
-  column-gap:8px!important;max-inline-size:100%!important;
-  margin-inline:auto!important;padding-inline:0!important;
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"]:not(:focus-within):has([data-jaroo-cal-people-search-input="true"]:placeholder-shown) [data-jaroo-cal-people-search-field="true"]{
+  flex:0 0 6.5em!important;width:6.5em!important;inline-size:6.5em!important;
+  min-inline-size:0!important;max-inline-size:100%!important;margin-inline:0!important;padding-inline:0!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-input="true"]:placeholder-shown:not(:focus){
+  field-sizing:fixed!important;width:100%!important;inline-size:100%!important;min-inline-size:0!important;
+  box-sizing:border-box!important;margin-inline:0!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"]:not(:focus-within):has([data-jaroo-cal-people-search-input="true"]:placeholder-shown) [data-jaroo-cal-people-search-icon="true"]{
+  flex:0 0 auto!important;margin-inline:0!important;
 }
 html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-caption="true"]{
-  flex:0 0 auto!important;width:auto!important;min-inline-size:0!important;
-  margin-inline:0!important;text-align:center!important;
-}
-/* Only the idle placeholder may size to its caption. An actual edit keeps
-   the native input available rather than restricting the typed value. */
-html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-input="true"]:placeholder-shown:not(:focus){
-  field-sizing:content;flex:0 1 auto!important;
-  width:auto!important;min-inline-size:0!important;margin-inline:0!important;
-  text-align:center!important;
+  flex:0 0 auto!important;width:auto!important;min-inline-size:0!important;margin-inline:0!important;
 }
 
 }
