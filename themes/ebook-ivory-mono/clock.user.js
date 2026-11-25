@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.4
+// @version      3.11.5
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -172,6 +172,12 @@
       .life-label{font:500 var(--widget-main)/1.35 var(--font);letter-spacing:-.025em;max-width:100%;overflow-wrap:normal;word-break:keep-all}
       .life-meta{letter-spacing:-.035em}
       .life-value{min-width:0;max-width:100%;font:600 19px/1.25 var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.045em;text-align:right;white-space:normal;word-break:keep-all;overflow-wrap:normal;justify-self:end}
+      /* Retirement metric: title on row one, metadata and value share a baseline. */
+      .life-card.retire .life-card-main{grid-template-columns:minmax(0,1fr) auto;align-items:last baseline;gap:3px 4px}
+      .life-card.retire .life-caption{display:contents}
+      .life-card.retire .life-label{grid-column:1/-1;grid-row:1;font-weight:550;color:#23272B}
+      .life-card.retire .life-meta{grid-column:1;grid-row:2;white-space:nowrap}
+      .life-card.retire .life-value{grid-column:2;grid-row:2;white-space:nowrap}
       .life-progress{margin:6px 0 0;padding:7px 0 0;border-top:1px solid #D4DADC}
       .life-progress-head{display:flex;flex-direction:column;gap:3px;align-items:flex-start;margin-bottom:6px}
       .life-progress-title{font:650 var(--widget-main)/1.3 var(--font);color:var(--ink);letter-spacing:.025em;text-transform:uppercase}
@@ -227,6 +233,8 @@
         .life-title-full{display:none}
         .life-title-short{display:inline}
         .life-card{padding:5px 0}
+        .life-card.retire .life-card-main{grid-template-columns:minmax(0,1fr)}
+        .life-card.retire .life-value{grid-column:1;white-space:normal}
         .life-progress-stat,.life-progress-stat.remaining{flex-direction:column;align-items:stretch;gap:2px}
         .life-progress-stat strong{text-align:right}
         .life-head,.life-progress-head{gap:0}
@@ -1049,9 +1057,9 @@
     if (window[RUNTIME_KEY]?.dispose === dispose) delete window[RUNTIME_KEY];
   }
   window[RUNTIME_KEY] = {
-    version: '3.11.4', dispose,
+    version: '3.11.5', dispose,
     diagnostics: () => ({
-      version: '3.11.4', ...placementReport,
+      version: '3.11.5', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
