@@ -3,7 +3,7 @@
 - 사용자 제공 DevTools 캡처에서 만들기 버튼 내부 .x5FT4e의 Google Sans/500 직접 지정과 .bjMtic flex 행 확인. 기존 버튼 인식 마커 아래 해당 실제 텍스트 컨테이너를 800으로 직접 override, 확인된 텍스트의 획 보강. 기존 아이콘, 테두리, 클릭 동작 유지.
 - 사용자 검색 role=search 외곽 shell의 width/offset 속성이 없는 상태 확인. 부모 box 확인을 필수 조건에서 제거하고 td[data-date]와 주차 th의 실제 테이블 좌우를 우선 측정. 미인식/구형 브라우저에서도 100% - 40px 폭으로 양쪽 여백을 확보. 실측 폭 우선, 기존 1px 테두리 유지.
 - 실제 aria-label="사용자 검색", placeholder=" ", role=combobox의 input 구조 기준으로 기존 field span과 앞 아이콘 span을 찾아 한 묶음으로 중앙 정렬. CSS로 그린 아이콘도 인식. 검색 입력 중에는 native 필드 폭/배치 유지. 기존 잘못된 field-sizing:content 의존 제거.
-- JS 구문/CSS 균형/보호 함수 대조 완료. 기존 본문·상단·스케줄러·일정 기능 변경 없음. 사용자 캡처 기반 수정이며 실제 Chrome 실행 확인은 별도. CSS와 JS 모두 업데이트.
+- JS 구문/CSS 균형/보호 함수 대조 및 캡처 구조 재현 모의 검증 11조건 통과. 실제 테이블 폭, 부모 box 미확인, CSS 아이콘, 빈 placeholder 입력, 기본 폭 fallback을 검증. 기존 본문·상단·스케줄러·일정 기능 변경 없음. 사용자 캡처 기반 수정이며 실제 Chrome 실행 확인은 별도. CSS와 JS 모두 업데이트.
 
 # Jaroo Calendar E-Book v0.5.7 — 사이드바 폭·타이포그래피 마감
 
