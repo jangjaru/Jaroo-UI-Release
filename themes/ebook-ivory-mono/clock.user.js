@@ -1,11 +1,14 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.41
+// @version      3.11.42
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
-// @grant        none
+// @grant        GM_xmlhttpRequest
+// @grant        unsafeWindow
+// @connect      api.open-meteo.com
+// @connect      geocoding-api.open-meteo.com
 // @updateURL    https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/clock.user.js
 // @downloadURL  https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/main/themes/ebook-ivory-mono/clock.user.js
 // ==/UserScript==
@@ -15,7 +18,8 @@
 
   // Dedicated E-book renderer. One style is installed before first visible mount.
   const RUNTIME_KEY = '__jarooCompanyClockRuntime';
-  window[RUNTIME_KEY]?.dispose?.();
+  const PAGE=typeof unsafeWindow==='undefined'?window:unsafeWindow;
+  PAGE[RUNTIME_KEY]?.dispose?.();
 
   const HOST_ID = 'jaroo-clock-overlay-v25'; // Keep existing host ID; avoid duplicate clocks
   const STYLE_ID = 'jaroo-clock-menu-layout-v25';
@@ -50,7 +54,7 @@
     try{return parseWeatherRegion(JSON.parse(localStorage.getItem(WEATHER_LOCAL_PREF)));}catch(_){return null;}
   }
   function legacyWeatherRegion() {
-    const raw=window.__jarooPrivateProfileV1;
+    const raw=PAGE.__jarooPrivateProfileV1;
     return parseWeatherRegion({latitude:raw?.weatherLatitude,longitude:raw?.weatherLongitude,city:raw?.weatherLabel});
   }
   function weatherRegionKey(region) {
@@ -93,7 +97,7 @@
   let localLife=null,legacyLife=null,legacyKey=null,LIFE=null,lifeKey=null,lifeSource='missing';
   try{localLife=localBirthProfile(localStorage.getItem(LIFE_LOCAL_PREF));}catch(_){}
   function resolveLifeProfile() {
-    const raw=window.__jarooPrivateProfileV1;
+    const raw=PAGE.__jarooPrivateProfileV1;
     const key=JSON.stringify([raw?.birthDate,raw?.retirementDate,raw?.lifePlanEndDate].map(v=>typeof v==='string'?v:null));
     if(key!==legacyKey){legacyKey=key;legacyLife=parseLifeProfile(raw);}
     return legacyLife?{profile:legacyLife,source:'legacy'}:localLife?{profile:localLife,source:'local'}:{profile:null,source:'missing'};
@@ -367,7 +371,7 @@
           <label for="ebook-weather-query">날씨 지역 설정</label>
           <div class="weather-search-row"><input id="ebook-weather-query" type="search" placeholder="도시명 (예: 서울)" maxlength="80" autocomplete="off" required/><button type="submit">검색</button></div>
           <select class="weather-results" aria-label="검색된 지역" hidden></select>
-          <div class="weather-help">검색 지역명과 선택 좌표는 Open-Meteo 조회에 사용됩니다. 선택 지역은 이 브라우저에 저장됩니다.</div>
+          <div class="weather-help">주요 국내 도시는 인터넷 검색 없이 선택할 수 있습니다. 그 외 지역 검색과 날씨 조회는 Open-Meteo를 사용하며 선택 지역은 이 브라우저에 저장됩니다.</div>
           <div class="weather-message" role="status"></div>
           <div class="weather-actions"><button type="button" class="weather-cancel">닫기</button><button type="button" class="weather-apply" disabled>저장</button></div>
         </form>
@@ -701,6 +705,78 @@
     }
     return result;
   }
+  // Public city-center presets (approximate coordinates). Local search never
+  // requires network access; no city is automatically selected.
+  const WEATHER_CITIES=[
+    ['서울','Seoul',37.5665,126.9780],['부산','Busan',35.1796,129.0756],
+    ['대구','Daegu',35.8714,128.6014],['인천','Incheon',37.4563,126.7052],
+    ['광주','Gwangju',35.1595,126.8526],['대전','Daejeon',36.3504,127.3845],
+    ['울산','Ulsan',35.5384,129.3114],['세종','Sejong',36.4800,127.2890],
+    ['수원','Suwon',37.2636,127.0286],['춘천','Chuncheon',37.8813,127.7298],
+    ['청주','Cheongju',36.6424,127.4890],['전주','Jeonju',35.8242,127.1480],
+    ['목포','Mokpo',34.8118,126.3922],['여수','Yeosu',34.7604,127.6622],
+    ['순천','Suncheon',34.9506,127.4872],['나주','Naju',35.0150,126.7108],
+    ['창원','Changwon',35.2270,128.6811],['제주','Jeju',33.4996,126.5312]
+  ];
+  function presetWeatherCandidates(name) {
+    const q=String(name||'').trim().toLowerCase().replace(/\s+/g,'');
+    return WEATHER_CITIES.filter(([ko,en])=>q===ko||q===ko+'시'||q===en.toLowerCase())
+      .map(([ko,en,latitude,longitude])=>({latitude,longitude,city:ko+' · 대한민국'}));
+  }
+  function weatherErrorMessage(error) {
+    const code=String(error?.message||'');
+    if(code==='timeout'||code==='aborted')return '응답 시간 초과';
+    if(/^HTTP \d{3}$/.test(code))return code;
+    if(code==='invalid-json')return '응답 형식 오류';
+    if(code==='network'||code==='network-denied')return '연결 또는 권한 오류';
+    return '연결 실패';
+  }
+  function getWeatherJson(url,signal) {
+    // Only internal URLSearchParams-generated queries for the two weather endpoints.
+    const allowed=/^https:\/\/(?:geocoding-api\.open-meteo\.com\/v1\/search|api\.open-meteo\.com\/v1\/forecast)\?[A-Za-z0-9%+&=._~-]+$/.test(url);
+    if(!allowed)return Promise.reject(Error('network-denied'));
+    if(signal.aborted)return Promise.reject(Error('aborted'));
+    if(typeof GM_xmlhttpRequest!=='function'){
+      return fetch(url,{mode:'cors',cache:'no-store',signal,credentials:'omit',referrerPolicy:'no-referrer'})
+        .then(resp=>{if(!resp.ok)throw Error('HTTP '+resp.status);return resp.json();});
+    }
+    return new Promise((resolve,reject)=>{
+      let request,settled=false;
+      function finish(fn,value){
+        if(settled)return;
+        settled=true;signal.removeEventListener('abort',cancel);fn(value);
+      }
+      function cancel(){
+        finish(reject,Error('aborted'));
+        try{request?.abort();}catch(_){}
+      }
+      signal.addEventListener('abort',cancel,{once:true});
+      try{
+        request=GM_xmlhttpRequest({
+          method:'GET',url,anonymous:true,timeout:9000,
+          onload:r=>{
+            if(r.status<200||r.status>=300){finish(reject,Error('HTTP '+r.status));return;}
+            try{finish(resolve,JSON.parse(r.responseText));}
+            catch(_){finish(reject,Error('invalid-json'));}
+          },
+          onerror:()=>finish(reject,Error('network')),
+          ontimeout:()=>finish(reject,Error('timeout')),
+          onabort:()=>finish(reject,Error('aborted'))
+        });
+        if(signal.aborted)cancel();
+      }catch(_){finish(reject,Error('network-denied'));}
+    });
+  }
+  function showWeatherCandidates(candidates,message) {
+    weatherCandidates=candidates;
+    weatherResults.replaceChildren();
+    candidates.forEach((region,index)=>{
+      const option=document.createElement('option');option.value=String(index);option.textContent=region.city;weatherResults.append(option);
+    });
+    weatherResults.hidden=!candidates.length;weatherApply.disabled=!candidates.length;
+    weatherMessage.textContent=message;
+    schedulePlacement();
+  }
   weatherLine.addEventListener('click',()=>showWeatherSetup(weatherSetup.hidden));
   weatherCancel.addEventListener('click',()=>{showWeatherSetup(false);weatherLine.focus();});
   weatherQuery.addEventListener('input',()=>{clearWeatherSearch();weatherMessage.textContent='';});
@@ -708,24 +784,20 @@
     event.preventDefault();
     const name=weatherQuery.value.trim();clearWeatherSearch();
     if(name.length<2){weatherMessage.textContent='지역명을 두 글자 이상 입력해 주세요.';return;}
+    const local=presetWeatherCandidates(name);
+    if(local.length){showWeatherCandidates(local,'지역을 선택한 후 저장하세요. (도시 중심 기준)');return;}
     weatherMessage.textContent='지역 검색 중…';
     const ctrl=new AbortController();weatherSearchRequest=ctrl;
     const timeout=setTimeout(()=>ctrl.abort(),9000);
     try{
       const params=new URLSearchParams({name,count:'10',language:'ko',format:'json'});
-      const resp=await fetch(`https://geocoding-api.open-meteo.com/v1/search?${params}`,{mode:'cors',cache:'no-store',signal:ctrl.signal,credentials:'omit',referrerPolicy:'no-referrer'});
-      if(!resp.ok)throw Error('weather-region-http');
-      const json=await resp.json();
+      const json=await getWeatherJson(`https://geocoding-api.open-meteo.com/v1/search?${params}`,ctrl.signal);
       if(disposed||weatherSearchRequest!==ctrl)return;
-      weatherCandidates=parseWeatherCandidates(json?.results);
-      if(!weatherCandidates.length){weatherMessage.textContent='검색 결과가 없습니다. 영문 지역명으로도 검색해 보세요.';return;}
-      weatherCandidates.forEach((region,index)=>{
-        const option=document.createElement('option');option.value=String(index);option.textContent=region.city;weatherResults.append(option);
-      });
-      weatherResults.hidden=false;weatherApply.disabled=false;
-      weatherMessage.textContent='지역을 선택한 후 저장하세요.';
-    }catch(_){
-      if(!disposed&&weatherSearchRequest===ctrl)weatherMessage.textContent='지역 검색 실패. 다시 검색해 주세요.';
+      const candidates=parseWeatherCandidates(json?.results);
+      if(!candidates.length){weatherMessage.textContent='검색 결과가 없습니다. 영문 지역명으로도 검색해 보세요.';return;}
+      showWeatherCandidates(candidates,'지역을 선택한 후 저장하세요.');
+    }catch(error){
+      if(!disposed&&weatherSearchRequest===ctrl)weatherMessage.textContent='지역 검색 실패: '+weatherErrorMessage(error)+'. 서울 등 주요 도시는 오프라인 검색 가능합니다.';
     }finally{
       clearTimeout(timeout);
       if(weatherSearchRequest===ctrl){weatherSearchRequest=null;schedulePlacement();}
@@ -750,14 +822,15 @@
     const timeout=setTimeout(()=>ctrl.abort(),9000);
     try{
       const qs=new URLSearchParams({latitude:String(region.latitude),longitude:String(region.longitude),current:'weather_code,is_day',timezone:'Asia/Seoul'});
-      const resp=await fetch(`https://api.open-meteo.com/v1/forecast?${qs}`,{mode:'cors',cache:'no-store',signal:ctrl.signal,credentials:'omit',referrerPolicy:'no-referrer'});
-      if(!resp.ok)throw Error(`HTTP ${resp.status}`);
-      const json=await resp.json();
+      const json=await getWeatherJson(`https://api.open-meteo.com/v1/forecast?${qs}`,ctrl.signal);
       if(typeof json?.current?.weather_code!=='number')throw Error('invalid-weather-data');
       const [icon,label]=weatherName(json.current.weather_code,Boolean(json.current.is_day));
       if(!disposed&&weatherRequest===ctrl)setWeather(icon,label,'ready');
-    }catch(_){
-      if(!disposed&&weatherRequest===ctrl)setWeather('◌','날씨 불가','error');
+    }catch(error){
+      if(!disposed&&weatherRequest===ctrl){
+        setWeather('◌','날씨 불가','error');
+        weatherLine.title=(region.city?region.city+' · ':'')+'날씨 조회 실패: '+weatherErrorMessage(error)+' · 클릭하여 지역 설정';
+      }
     }finally{
       clearTimeout(timeout);if(weatherRequest===ctrl)weatherRequest=null;
     }
@@ -1303,12 +1376,12 @@
     densitySidebars.clear();
     host.remove();
     stylesheet.remove();
-    if (window[RUNTIME_KEY]?.dispose === dispose) delete window[RUNTIME_KEY];
+    if (PAGE[RUNTIME_KEY]?.dispose === dispose) delete PAGE[RUNTIME_KEY];
   }
-  window[RUNTIME_KEY] = {
-    version: '3.11.41', dispose,
+  PAGE[RUNTIME_KEY] = {
+    version: '3.11.42', dispose,
     diagnostics: () => ({
-      version: '3.11.41', ...placementReport,
+      version: '3.11.42', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
