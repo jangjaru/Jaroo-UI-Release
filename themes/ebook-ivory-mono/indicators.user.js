@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.3.23
+// @version      0.3.24
 // @description  E-book role markers, sidebar presentation, outline and safe composer attachment layout. No editable text mutation; Clock owns its first paint.
 // @match        https://chatgpt.com/*
 // @run-at       document-start
@@ -66,7 +66,8 @@
   const ALL=47;
   let dirty=0,lastRoute=location.pathname,lastRecovery=0;
   const timings={nav:0,composer:0,sent:0,header:0,divider:0,runs:0};
-  const perfPasses={},perfEvents={scheduled:0,coalesced:0,hiddenDeferred:0};
+  const perfPasses={},perfEvents={scheduled:0,coalesced:0,hiddenDeferred:0,scrollDeferred:0};
+  let visualScrollAt=-Infinity,visualQueuedAt=-Infinity,visualDelay=0,visualUrgent=false;
   const OWN_NODE='[data-ebook-top-hatch-layer="true"],[data-ebook-project-count-layer="true"],[data-ebook-project-count],[data-ebook-upload-divider="true"],[data-ebook-glyph="true"],.jaroo-native-badge';
   const USER_NODE='[data-message-author-role="user"],[data-user-message-bubble="true"],[data-user-message]';
   const EDITOR_NODE='#prompt-textarea,[data-testid="prompt-textarea"],[data-composer-input] .ProseMirror[contenteditable="true"]';
@@ -768,7 +769,7 @@
   }
   // v0.2.30: keep badges in a separate, noninteractive layer. The native
   // project button may be narrower than the Dot axis or clip its children.
-  const countLayers=new Map(),countLooks=new WeakMap();
+  const countLayers=new Map(),countLooks=new WeakMap(),badgeAppearance=new WeakMap();
   let countPositionFrame=0;
   function validCountRail(el) {
     const r=visibleBox(el);
@@ -811,10 +812,11 @@
     }
     return validCountRail(known)?known:fallback;
   }
+  const fallbackCountAppearance=Object.freeze({'--eb-count-diameter':'19px','--eb-count-bg':'#C9CDCF',
+    '--eb-count-border':'0 solid transparent','--eb-count-ink':'#292D30',
+    '--eb-count-font':'var(--eb-mono)','--eb-count-font-size':'11px','--eb-count-weight':'500'});
   function counterAppearance(ref) {
-    const fallback={'--eb-count-diameter':'19px','--eb-count-bg':'#C9CDCF',
-      '--eb-count-border':'0 solid transparent','--eb-count-ink':'#292D30',
-      '--eb-count-font':'var(--eb-mono)','--eb-count-font-size':'11px','--eb-count-weight':'500'};
+    const fallback=fallbackCountAppearance;
     if(!ref)return fallback;
     const box=getComputedStyle(ref.circle),num=getComputedStyle(ref.number),r=ref.circle.getBoundingClientRect();
     if(r.width<12||r.width>36||r.height<12||r.height>36)return fallback;
@@ -906,7 +908,12 @@
     }
     for(const {badge,p,appearance,hidden} of plans) {
       if(p) {
-        for(const [k,v] of Object.entries(appearance))makeImportant(badge,k,v);
+        // The badge is our own node. Geometry changes on scroll; its palette
+        // and font do not. Reapply appearance only when the reference changes.
+        if(badgeAppearance.get(badge)!==appearance){
+          for(const [k,v] of Object.entries(appearance))makeImportant(badge,k,v);
+          badgeAppearance.set(badge,appearance);
+        }
         makeImportant(badge,'--eb-count-x',Math.round(p.x*10)/10+'px');
         makeImportant(badge,'--eb-count-y',Math.round(p.y*10)/10+'px');
       }
@@ -1397,6 +1404,9 @@
   }
   function onRoleDotScroll(event) {
     if(disposed||document.hidden)return;
+    // This existing passive listener also supplies a timestamp for visual
+    // scheduling. It never starts a full scan just because of a scroll.
+    visualScrollAt=performance.now();
     const target=event.target;
     if(target!==document&&target!==document.documentElement&&
        (target?.nodeType!==1||!observedRoots.some(root=>root.contains(target)||target.contains(root))))return;
@@ -2026,8 +2036,11 @@
     const sentReading=tokens.getPropertyValue('--eb-user-sent-optical-size').trim()||'16.067px';
     const ink=tokens.getPropertyValue('--eb-prompt-sent-ink').trim()||'#292D30';
     const sentWeight=tokens.getPropertyValue('--eb-prompt-sent-weight').trim()||'572';
-    const hasDirectText=el=>[...el.childNodes].some(node=>
-      node.nodeType===Node.TEXT_NODE && (node.nodeValue||'').trim().length>0);
+    const hasDirectText=el=>{
+      for(const node of el.childNodes)
+        if(node.nodeType===Node.TEXT_NODE&&(node.nodeValue||'').trim().length>0)return true;
+      return false;
+    };
     const add=(el,kind)=>{
       if(isEditableTarget(el))return;
       if(el.closest('button,[role="button"],[role="toolbar"],svg,pre,code,kbd,samp,table,[role="table"],[data-d-component="math"]'))return;
@@ -2455,20 +2468,48 @@
       markCurrentChatTitle();
     });
   }
-  function schedule(mask=ALL) {
-    if(disposed)return;
-    dirty|=typeof mask==='number'?mask:ALL;
-    perfEvents.scheduled++;
-    if(document.hidden){perfEvents.hiddenDeferred++;return;}
-    if(frame){perfEvents.coalesced++;return;}
+  // Nonurgent presentation work can wait for a brief scroll gap, but never
+  // intentionally wait over 180ms. Explicit navigation and editor/attachment
+  // work bypass this gate; Status owns its evidence and is untouched.
+  function visualWorkDelay(now,lastScroll,queued,urgent,mask){
+    if(urgent||(mask&(PASS.COMPOSER|PASS.DIVIDER)))return 0;
+    return Math.max(0,Math.min(110-(now-lastScroll),180-(now-queued)));
+  }
+  function cancelVisualDelay(){
+    clearTimeout(visualDelay);visualDelay=0;
+    visualQueuedAt=-Infinity;visualUrgent=false;
+  }
+  function queueVisualFrame(){
+    if(frame||disposed||document.hidden)return;
     frame=window.requestAnimationFrame(()=>{
       frame=0;
-      if(document.hidden)return;
+      if(disposed||document.hidden)return;
+      const wait=visualWorkDelay(performance.now(),visualScrollAt,visualQueuedAt,visualUrgent,dirty);
+      if(wait>0){
+        perfEvents.scrollDeferred++;
+        visualDelay=setTimeout(()=>{visualDelay=0;queueVisualFrame();},Math.ceil(wait));
+        return;
+      }
       firstPaint.check();
-      const work=dirty;dirty=0;
+      const work=dirty;dirty=0;visualQueuedAt=-Infinity;visualUrgent=false;
       if(document.body&&document.documentElement)update(work);
       else dirty|=work;
     });
+  }
+  function schedule(mask=ALL,urgent=false) {
+    if(disposed)return;
+    if(typeof mask!=='number'){mask=ALL;urgent=true;}
+    dirty|=mask;
+    perfEvents.scheduled++;
+    if(document.hidden){perfEvents.hiddenDeferred++;return;}
+    if(urgent)visualUrgent=true;
+    if(!Number.isFinite(visualQueuedAt))visualQueuedAt=performance.now();
+    if(frame){perfEvents.coalesced++;return;}
+    if(visualDelay){
+      if(!visualUrgent&&!(dirty&(PASS.COMPOSER|PASS.DIVIDER))){perfEvents.coalesced++;return;}
+      clearTimeout(visualDelay);visualDelay=0;
+    }
+    queueVisualFrame();
   }
   function matchesOrContains(el,selector) {
     return el?.nodeType===1&&(el.matches(selector)||!!el.querySelector(selector));
@@ -2476,7 +2517,7 @@
   function onPageMutation(records) {
     if(!document.body)return;
     if(document.hidden){dirty|=ALL;return;}
-    if(location.pathname!==lastRoute){lastRoute=location.pathname;schedule(ALL);return;}
+    if(location.pathname!==lastRoute){lastRoute=location.pathname;schedule(ALL,true);return;}
     let mask=0;
     const structure=SIDE_ROOTS+','+NATIVE_NAV_SECTIONS+','+PROJECT_ROW+','+EDITOR_NODE+',#composer-background,[data-testid="composer"],'+USER_NODE+','+HEADER_NODE+',#'+CLOCK_HOST;
     for(const m of records) {
@@ -2511,7 +2552,7 @@
   }
   function onNavigationEntry() {
     if(location.pathname===lastRoute)return;
-    lastRoute=location.pathname;schedule(ALL);
+    lastRoute=location.pathname;schedule(ALL,true);
   }
   function onRouteOrResize(event) {
     if(event?.type==='resize') {
@@ -2520,12 +2561,12 @@
       scheduleResizeReconcile();
     } else {
       clearTimeout(resizeReconcileTimer);resizeReconcileTimer=0;
-      schedule(ALL);
+      schedule(ALL,true);
     }
   }
   function recoverLightly() {
     if(document.hidden||disposed||!document.body)return;
-    if(location.pathname!==lastRoute){lastRoute=location.pathname;schedule(ALL);return;}
+    if(location.pathname!==lastRoute){lastRoute=location.pathname;schedule(ALL,true);return;}
     let mask=0;
     if((window.devicePixelRatio||1)!==lastRoleDotDpr)queueRoleDotPixels();
     const roots=sidebarObserverRoots();
@@ -2560,6 +2601,7 @@
 
   function dispose() {
     disposed = true;
+    cancelVisualDelay();
     firstPaint.dispose();
     disposeRoleDotPixels();
     disposeConversationOutline();
@@ -2615,6 +2657,7 @@
       clearInterval(recoverTimer);recoverTimer=0;
       clearTimeout(resizeReconcileTimer);resizeReconcileTimer=0;
       clearTimeout(roleDotScrollTimer);roleDotScrollTimer=0;
+      cancelVisualDelay();visualScrollAt=-Infinity;
       if(frame){cancelAnimationFrame(frame);frame=0;}
       if(countPositionFrame){cancelAnimationFrame(countPositionFrame);countPositionFrame=0;}
       if(roleDotPixelFrame){cancelAnimationFrame(roleDotPixelFrame);roleDotPixelFrame=0;}
@@ -2624,7 +2667,7 @@
     pageObserver?.observe(document,{childList:true,subtree:true});
     if(!recoverTimer)recoverTimer=setInterval(recoverLightly,5000);
     conversationOutline?.resume();
-    schedule(ALL);
+    schedule(ALL,true);
   }
   function onVisibility() { syncIndicatorVisibility(); }
 
@@ -2681,7 +2724,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.3.23',dispose,refresh:schedule,outlineDiagnostic,
+    version:'0.3.24',dispose,refresh:schedule,outlineDiagnostic,
     diagnostics:() => ({...errors,sorting:{...sidebarSortDiagnostics,styledRows:sidebarSortSaved.size},roots:observedRoots.length,clockSkinned:document.getElementById(CLOCK_HOST)?.getAttribute('data-ebook-clock-ready')==='true',dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),firstPaintNav:getComputedStyle(document.documentElement).getPropertyValue('--eb-first-paint-nav').trim()==='1',opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-project-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:'css-only',mutedComposerFrames:0,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state'),overflow:n.getAttribute('data-ebook-count-overflow')==='true',confirmed:n.getAttribute('data-ebook-count-confirmed')===''?null:Number(n.getAttribute('data-ebook-count-confirmed'))})),lastPassMs:{...timings},performance:{events:{...perfEvents},passes:Object.fromEntries(Object.entries(perfPasses).map(([k,v])=>[k,{runs:v.runs,averageMs:Math.round(v.totalMs/v.runs*100)/100,peakMs:Math.round(v.peakMs*100)/100}]))},fixedSidebarTop:[...topBands.values()].map(n=>({height:n.height,visible:getComputedStyle(n.strip).visibility==='visible',pattern:getComputedStyle(n.strip).backgroundImage})),projectCountBorders:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({border:getComputedStyle(n).borderTopWidth,style:getComputedStyle(n).borderTopStyle,outline:getComputedStyle(n).outlineStyle})),projectCountLayers:countLayers.size,positionResizeTargets:navResizeTargets.size,visibleProjectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].filter(n=>getComputedStyle(n).visibility!=='hidden').length,projectCountAxis:findDotCountReference()?.circle.getBoundingClientRect().left??null,fontAudit:fontAudit()})
   };
 })();
