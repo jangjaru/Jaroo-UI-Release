@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.39
+// @version      3.11.40
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -195,8 +195,7 @@
       .life-progress-stat{display:flex;flex-direction:column;gap:var(--life-metric-row-gap,3px);min-width:0;align-items:flex-end;text-align:right}
       .life-progress-stat.remaining{align-items:flex-start;text-align:left}
       .life-progress-stat > span{font:450 var(--widget-meta)/1.02 var(--font);color:var(--muted);letter-spacing:-.035em;white-space:nowrap}
-      .life-progress-stat strong{display:block;font:500 var(--widget-main)/1.02 var(--mono);font-variant-numeric:tabular-nums;color:var(--muted);max-width:100%;white-space:nowrap;letter-spacing:-.035em}
-      .life-progress-stat.remaining strong{font-weight:600;color:var(--ink)}
+      .life-progress-stat strong{display:block;font:650 var(--widget-main)/1.02 var(--mono);font-variant-numeric:tabular-nums;color:var(--ink);max-width:100%;white-space:nowrap;letter-spacing:-.035em}
       .life-progress-unit{font-size:85%}
       .life-progress-stat strong[data-unavailable] .life-progress-unit{display:none}
       @container jaroo-dashboard (max-width:219px){.life-progress-unit{font-size:70%}}
@@ -603,8 +602,8 @@
       ['workMeta','평일 8시간 기준'],
       ['afterMeta',beforeRetirement?'65~80세까지':'80세까지'],
       ['progressPercent',`${used.toFixed(1)}%`],
-      ['usedMeta',`${used.toFixed(1)}%`],
-      ['remainingMeta',`${(100-used).toFixed(1)}%`]
+      ['usedMeta',`(${used.toFixed(1)}%)`],
+      ['remainingMeta',`(${(100-used).toFixed(1)}%)`]
     ];
     for(const [key,val] of values){if(lifeEls[key]?.textContent!==val)lifeEls[key].textContent=val; if(key.endsWith('Meta') && ['retireMeta','workMeta','afterMeta'].includes(key) && lifeEls[key]?.title!==val)lifeEls[key].title=val;}
     const width=`${(100-used).toFixed(8)}%`;
@@ -1204,9 +1203,9 @@
     if (window[RUNTIME_KEY]?.dispose === dispose) delete window[RUNTIME_KEY];
   }
   window[RUNTIME_KEY] = {
-    version: '3.11.39', dispose,
+    version: '3.11.40', dispose,
     diagnostics: () => ({
-      version: '3.11.39', ...placementReport,
+      version: '3.11.40', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
