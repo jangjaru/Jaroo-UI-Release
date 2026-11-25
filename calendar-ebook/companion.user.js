@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo · Google Calendar E-Book Companion
 // @namespace    jaroo.calendar.ebook
-// @version      0.2.0
+// @version      0.3.0
 // @description  Cool E-Ink Graph Paper · native Calendar event labels, More popup and local agenda.
 // @match        https://calendar.google.com/calendar/*
 // @run-at       document-idle
@@ -12,7 +12,7 @@
 // ==/UserScript==
 
 /*
- * Jaroo Calendar E-Book v0.2.0 · 2026-11-25
+ * Jaroo Calendar E-Book v0.3.0 · 2026-11-25
  * Requires the paired E-Book Stylus CSS and native Light appearance.
  * Forked from the working Calendar Companion v1.3.7; history below is retained.
  * v1.3.1: preserve visually present month-grid/list colors when Calendar temporarily
@@ -223,11 +223,11 @@
   // BEGIN_JAROO_ADAPTER
   const RUNTIME = '__jarooCalendarCompanionV1';
   window[RUNTIME]?.dispose?.();
-  const VERSION = '0.2.0';
+  const VERSION = '0.3.0';
   const CONFIG = Object.freeze({ timeZone: 'Asia/Seoul', futureDays: 7, maxPins: 3, maxEvents: 1200, settleMs: 180, recoveryMs: 5000 });
   const EVENT = '[data-eventid]';
   const EXCLUDE = '[role="dialog"],[role="menu"],[role="listbox"],[hidden],[inert],[aria-hidden="true"]';
-  const MARKERS = ['data-jaroo-cal-event','data-jaroo-cal-color','data-jaroo-cal-title','data-jaroo-cal-date-label','data-jaroo-cal-today','data-jaroo-cal-selected','data-jaroo-cal-grid','data-jaroo-cal-month-grid','data-jaroo-cal-month-title','data-jaroo-cal-today-label','data-jaroo-cal-brand','data-jaroo-cal-section','data-jaroo-cal-mini','data-jaroo-cal-mini-title','data-jaroo-cal-mini-day','data-jaroo-cal-mini-number','data-jaroo-cal-calendar-label','data-jaroo-cal-create-label','data-jaroo-cal-control','data-jaroo-cal-sidebar-panel','data-jaroo-cal-surface','data-jaroo-cal-deadline','data-jaroo-cal-priority','data-jaroo-cal-semantic','data-jaroo-cal-category','data-jaroo-cal-status'];
+  const MARKERS = ['data-jaroo-cal-event','data-jaroo-cal-color','data-jaroo-cal-title','data-jaroo-cal-date-label','data-jaroo-cal-today','data-jaroo-cal-selected','data-jaroo-cal-grid','data-jaroo-cal-month-grid','data-jaroo-cal-month-title','data-jaroo-cal-today-label','data-jaroo-cal-month-weekend','data-jaroo-cal-date-tone','data-jaroo-cal-day-header','data-jaroo-cal-more-label','data-jaroo-cal-event-time','data-jaroo-cal-brand','data-jaroo-cal-section','data-jaroo-cal-mini','data-jaroo-cal-mini-title','data-jaroo-cal-mini-day','data-jaroo-cal-mini-number','data-jaroo-cal-calendar-label','data-jaroo-cal-create-label','data-jaroo-cal-control','data-jaroo-cal-sidebar-panel','data-jaroo-cal-surface','data-jaroo-cal-deadline','data-jaroo-cal-priority','data-jaroo-cal-semantic','data-jaroo-cal-category','data-jaroo-cal-status'];
   const eventStyles = new Map(), marked = new Set(), dateCache = new WeakMap(), textRenderCache = new WeakMap();
   let markerPlan = null;
   let moreProbe = { textCandidates:0, gridAnchoredCandidates:0, verifiedOverlays:0, rowCandidates:0 };
@@ -471,10 +471,27 @@
       deadline: Boolean(active && record.deadline && !status) };
   }
 
+
+  // Presentation-only: require a separate native time leaf and a different
+  // non-time title leaf. Never strip text or change the event record.
+  function isStandaloneEventTime(value){
+    const v=text(value);
+    return /^(?:(?:[01]?\d|2[0-3]):[0-5]\d|(?:1[0-2]|0?[1-9])(?::[0-5]\d)?\s*(?:AM|PM)|(?:오전|오후)\s*(?:1[0-2]|0?[1-9])(?::[0-5]\d|시(?:\s*[0-5]?\d분)?)?|종일|All day)$/iu.test(v);
+  }
+  function eventTimeLeaves(record){
+    if(record.titleConfidence<=0||record.titleNodes.length<2)return [];
+    const node=record.node;
+    const leaves=record.titleNodes.filter(leaf=>leaf!==node&&node.contains(leaf)&&!leaf.childElementCount&&text(leaf.textContent)&&
+      !leaf.closest('[role="menu"],[role="listbox"],svg')&&!/material|symbol|icon/i.test(getComputedStyle(leaf).fontFamily||''));
+    if(!leaves.some(leaf=>!isStandaloneEventTime(leaf.textContent)))return [];
+    return leaves.filter(leaf=>isStandaloneEventTime(leaf.textContent));
+  }
+
   function paintRecord(record, touched) {
     const node = record.node, presentation = eventPresentation(record);
     mark(node, 'data-jaroo-cal-event'); touched.add(node);
     for (const titleNode of record.titleNodes) { mark(titleNode, 'data-jaroo-cal-title'); touched.add(titleNode); }
+    try{for(const leaf of eventTimeLeaves(record))mark(leaf,'data-jaroo-cal-event-time');}catch(_){/* Optional time paint cannot block normal event rendering. */}
     const paint = presentation.active && presentation.color && record.titleNodes.length;
     if (paint) { rememberStyle(node, presentation.color); mark(node, 'data-jaroo-cal-color'); }
     else { removeMarker(node, 'data-jaroo-cal-color'); restoreStyle(node); }
@@ -1038,6 +1055,67 @@
     return plan;
   }
 
+
+  // Require an exact visible month heading and a month-sized set of dates
+  // in the same grid. No date is guessed from a day number.
+  function displayMonthKey(value){
+    const v=text(value);
+    if(!hdrIsMonthLabel(v))return null;
+    let m=v.match(/^(\d{4})년\s*(\d{1,2})월$/u);
+    if(m)return m[1]+'-'+m[2].padStart(2,'0');
+    m=v.match(/^([A-Za-z]+)\s+(\d{4})$/u);
+    if(!m)return null;
+    const n=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'].indexOf(m[1].slice(0,3).toLowerCase());
+    return n<0?null:m[2]+'-'+String(n+1).padStart(2,'0');
+  }
+  function monthDateKind(date,month){
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date||'')||!month)return null;
+    const day=new Date(date+'T00:00:00Z');
+    if(!Number.isFinite(day.getTime())||day.toISOString().slice(0,10)!==date)return null;
+    return {outside:date.slice(0,7)!==month,weekend:day.getUTCDay()===0||day.getUTCDay()===6};
+  }
+  function weekdayKind(value){
+    const v=text(value).toLowerCase();
+    if(/^(?:토(?:요일)?|일(?:요일)?|sat(?:urday)?\.?|sun(?:day)?\.?)$/u.test(v))return 'weekend';
+    if(/^(?:[월화수목금](?:요일)?|mon(?:day)?\.?|tue(?:sday)?\.?|wed(?:nesday)?\.?|thu(?:rsday)?\.?|fri(?:day)?\.?)$/u.test(v))return 'weekday';
+    return null;
+  }
+  function isMoreLabel(value){
+    return /^(?:\+?\d{1,3}\s*(?:개\s*)?(?:더\s*보기|more)|(?:더\s*보기|more)\s*\(\d{1,3}\))$/iu.test(text(value));
+  }
+  function paintMonthDetails(dates,chromePlan){
+    if(!isMonthCalendarView())return;
+    const headings=chromePlan.filter(([,key])=>key==='data-jaroo-cal-month-title').map(([node])=>displayMonthKey(node.textContent));
+    if(headings.length!==1||!headings[0])return;
+    const month=headings[0],groups=new Map();
+    for(const info of dates){
+      const grid=info.cell.closest('[role="grid"]');
+      if(!grid||!grids.includes(grid))continue;
+      if(!groups.has(grid))groups.set(grid,[]);
+      groups.get(grid).push(info);
+    }
+    for(const [grid,items] of groups){
+      const distinct=new Set(items.map(i=>i.date));
+      if(distinct.size<28||[...distinct].filter(d=>d.slice(0,7)===month).length<20)continue;
+      for(const info of items){
+        const kind=monthDateKind(info.date,month);if(!kind)continue;
+        if(kind.weekend&&info.cell.matches('[role="gridcell"]'))mark(info.cell,'data-jaroo-cal-month-weekend');
+        if(kind.outside&&info.date!==currentDay&&!info.selected)for(const label of info.labels)
+          if(textIsRendered(label))mark(label,'data-jaroo-cal-date-tone','outside');
+      }
+      for(const header of grid.querySelectorAll('[role="columnheader"]')){
+        if(header.closest('[role="grid"]')!==grid||header.closest(EVENT)||!textIsRendered(header))continue;
+        const kind=weekdayKind(header.textContent)||weekdayKind(header.getAttribute('aria-label'));
+        if(kind)mark(header,'data-jaroo-cal-day-header',kind);
+      }
+      for(const control of grid.querySelectorAll('button,[role="button"]')){
+        if(control.closest('[role="grid"]')!==grid||control.closest(EVENT)||!textIsRendered(control)||!isMoreLabel(control.textContent))continue;
+        const leaves=[...control.querySelectorAll('span,div')].filter(n=>!n.childElementCount&&isMoreLabel(n.textContent)&&textIsRendered(n));
+        mark(leaves.length===1?leaves[0]:control,'data-jaroo-cal-more-label');
+      }
+    }
+  }
+
   function collect() {
     scanNumber++;
     // Finish all layout/style reads before applying any of our markers/styles.
@@ -1059,6 +1137,7 @@
       if (isMonthCalendarView()) for (const grid of grids) {
         if (grid.querySelector('[role="gridcell"]')) { mark(grid, 'data-jaroo-cal-month-grid'); touched.add(grid); }
       }
+      try{paintMonthDetails(dates,chromePlan);}catch(_){/* Keep the base date paint. */}
       for (const record of collected) paintRecord(record, touched);
       // Popover chips may be outside roots; paint them in the same marker pass.
       morePopupPainted = paintMorePopup(touched);
@@ -1095,7 +1174,7 @@
       outline:2px solid #517E89;outline-offset:2px}
     .wrap{display:flex;flex-direction:column;align-items:flex-end;gap:10px}
     .launch{pointer-events:auto;display:flex;align-items:center;gap:9px;min-height:38px;
-      padding:8px 14px;background:#EFF1F2;border:1px solid #89979E;border-radius:6px;
+      padding:8px 14px;background:#EFF1F2;border:1px solid #89979E;border-radius:999px;
       box-shadow:0 2px 6px #27303818;color:#303438;font-weight:600}
     .launch:hover{background:#E4E8EA}
     .launch-dot{width:6px;height:6px;background:#F3B9CB;border-radius:50%;flex:none}
@@ -1104,32 +1183,32 @@
       background:#F5F6F6;border:1px solid #B9C1C5;border-radius:6px;
       box-shadow:0 5px 16px #27303822;overscroll-behavior:contain;scrollbar-width:thin}
     .head{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:16px 16px 12px;border-bottom:1px solid #C5CDD0;margin-bottom:10px}
-    .brand{font-size:16px;font-weight:650;letter-spacing:-.3px;background:linear-gradient(transparent 54%,#F3B9CB 54% 93%,transparent 93%);width:max-content;max-width:100%}
-    .date{font-size:13px;color:#303438;margin-top:2px;font-variant-numeric:tabular-nums}
+    .brand{font-size:17px;font-weight:650;letter-spacing:-.3px;background:linear-gradient(transparent 54%,#F3B9CB 54% 93%,transparent 93%);width:max-content;max-width:100%}
+    .date{font-size:13px;color:#535B60;margin-top:4px;font-variant-numeric:tabular-nums}
     .close{min-width:32px;min-height:32px;padding:0;border:1px solid #C5CDD0;
       border-radius:8px;background:transparent;font-size:21px;line-height:1}
     .close:hover{background:#DCE2E4}
-    .filters{display:flex;gap:4px;background:#E7EAEB;border-radius:9px;padding:4px;margin:0 16px 10px}
+    .filters{display:flex;gap:4px;background:#E7EAEB;border:1px solid #C5CDD0;border-radius:5px;padding:4px;margin:0 16px 12px}
     .filters button{flex:1;min-width:0;padding:7px 4px;border:0;border-radius:6px;
       background:transparent;color:#535B60;white-space:nowrap}
-    .filters button[aria-pressed=true]{background:#C5CDD0;color:#292D30}
-    .scope{font-size:13px;color:#737D83;margin:0 16px 11px;overflow-wrap:anywhere}
+    .filters button[aria-pressed=true]{background:#D4DADC;color:#292D30;box-shadow:inset 0 0 0 1px #89979E;font-weight:600}
+    .scope{font-size:13px;color:#5C676D;margin:0 16px 13px;overflow-wrap:anywhere}
     .status{font-size:13px;color:#535B60;padding:9px 11px;margin:0 16px 12px;
       background:#E4E8EA;border-radius:7px;overflow-wrap:anywhere}
     .status.warn{color:#303438}
     .section{padding:0 16px 12px}
     .section-heading{display:flex;gap:9px;justify-content:space-between;align-items:baseline;
       margin:0 0 9px;padding-bottom:6px;border-bottom:1px solid #C5CDD0;font-size:14px;font-weight:600}
-    .meta,.small{font-size:13px;font-weight:400;color:#737D83}
+    .meta,.small{font-size:13px;font-weight:400;color:#5C676D}
     .small{margin:5px 0 8px;overflow-wrap:anywhere}
-    .day-heading{font-size:13px;font-weight:500;color:#535B60;margin:14px 0 7px}
+    .day-heading{font-size:13px;font-weight:600;color:#535B60;margin:17px 0 8px;padding-bottom:4px;border-bottom:1px solid #D4DADC}
     .day-heading:first-child{margin-top:0}
     .event{--accent:#737D83;display:grid;grid-template-columns:minmax(0,1fr) 36px;
-      gap:7px;align-items:start;padding:9px 0 9px 10px;border-left:2px solid var(--accent);
-      margin:0 0 8px;background:#F5F6F6;border-radius:0 5px 5px 0}
+      gap:7px;align-items:start;padding:10px 0 10px 10px;border-left:2px solid var(--accent);
+      margin:0 0 9px;background:#F5F6F6;border-radius:0 4px 4px 0}
     .event-open{display:block;width:100%;text-align:left;background:none;border:0;padding:0;
       min-width:0;white-space:normal;overflow-wrap:anywhere;line-height:1.65}
-    .event[data-semantic=true]{background:color-mix(in srgb,var(--accent) 38%,#EFF1F2)}
+    .event[data-semantic=true]{background:color-mix(in srgb,var(--accent) 28%,#EFF1F2);border-left-color:color-mix(in srgb,var(--accent) 78%,#303438)}
     .event[data-status="completed"],.event[data-status="cancelled"]{background:color-mix(in srgb,var(--accent) 19%,#EFF1F2)}
     .event[data-status="stopped"]{background:color-mix(in srgb,var(--accent) 10%,#EFF1F2)}
     .event[data-semantic=true] .event-open{color:var(--ink,#292D30)}
@@ -1138,7 +1217,8 @@
     .event-tags{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 5px}
     .tag{font-size:13px;line-height:1.45;color:#98375C;padding:1px 5px;background:#F8E1E9;border-radius:4px}
     .tag.priority{color:#303438;background:#F9EDC5}
-    .tag.category{color:var(--ink,#292D30);background:#F5F6F6}
+    .tag.category{color:var(--ink,#292D30);background:color-mix(in srgb,var(--accent) 60%,#F5F6F6);font-weight:500}
+    .event[data-status] .tag.category{background:#F5F6F6}
     .tag.state{color:var(--ink,#535B60);background:#F5F6F6}
     .pin{width:30px;min-height:30px;background:transparent;border:1px solid #C5CDD0;
       border-radius:6px;padding:0;font-size:17px;line-height:1.2;color:#737D83}
@@ -1151,7 +1231,7 @@
     .settings-body{padding-top:12px;display:grid;gap:10px}
     .legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 10px;color:#41494D}
     .legend-item{display:flex;gap:7px;align-items:center;min-width:0}
-    .swatch{display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--swatch);flex:none}
+    .swatch{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--swatch);box-shadow:inset 0 0 0 1px #30343822;flex:none}
     .check{display:flex;align-items:center;gap:9px;color:#41494D}
     .check input{accent-color:#303438;width:16px;height:16px;margin:0}
     .actions{display:flex;gap:6px;flex-wrap:wrap}
@@ -1366,7 +1446,7 @@
     const status = shadow.getElementById('jaroo-cal-ui-status'), notes = [];
     status.className = 'status';
     if (!cssApplied) { notes.push('테마 CSS가 아직 적용되지 않았어. Stylus 적용 주소를 확인해줘.'); status.classList.add('warn'); }
-    else if (enabled && cssVersion !== '0.2.0') { notes.push('E-Book v0.2.0 CSS가 필요해. 같은 채널의 Stylus 스타일을 확인해줘.'); status.classList.add('warn'); }
+    else if (enabled && cssVersion !== '0.3.0') { notes.push('E-Book v0.3.0 CSS가 필요해. 같은 채널의 Stylus 스타일을 확인해줘.'); status.classList.add('warn'); }
     if (dirty) notes.push('화면 확인 중… 이전에 읽은 항목이 잠시 표시될 수 있어.');
     else if (lastError) { notes.push('화면을 다시 읽지 못했어. 표시 설정에서 다시 읽기를 눌러줘.'); status.classList.add('warn'); }
     else if (panelFilter === 'today' && !todayKnown) notes.push('현재 화면에서 오늘 날짜를 확인하지 못했어. 기본 캘린더를 오늘로 이동한 뒤 다시 읽어줘.');
@@ -1546,7 +1626,7 @@
         .swatch{width:8px;height:8px;border-radius:50%;background:var(--tone);box-shadow:inset 0 0 0 1px #30343822;flex:none}
         button{font:inherit;color:inherit;cursor:pointer;pointer-events:auto}
         .trigger{height:32px;white-space:nowrap;padding:4px 10px;background:#EFF1F2;
-          border:1px solid #B9C1C5;border-radius:7px}
+          border:1px solid #89979E;border-radius:5px}
         button:focus-visible{outline:2px solid #517E89;outline-offset:2px}
         .popup{position:fixed;pointer-events:auto;background:#F5F6F6;border:1px solid #B9C1C5;
           border-radius:5px;padding:12px;box-shadow:0 5px 16px #27303822;overflow:auto}
@@ -1748,6 +1828,10 @@
       removeMarker(node, 'data-jaroo-cal-selected');
       removeMarker(node, 'data-jaroo-cal-today-label');
       removeMarker(node, 'data-jaroo-cal-mini-day');
+      removeMarker(node, 'data-jaroo-cal-date-tone');
+      removeMarker(node, 'data-jaroo-cal-month-weekend');
+      removeMarker(node, 'data-jaroo-cal-day-header');
+      removeMarker(node, 'data-jaroo-cal-more-label');
     }
   }
   function syncContext() {
@@ -1842,7 +1926,11 @@
         miniCalendars:document.querySelectorAll('[data-jaroo-cal-mini]').length,
         miniToday:document.querySelectorAll('[data-jaroo-cal-mini-day="today"]').length,
         controls:document.querySelectorAll('[data-jaroo-cal-control]').length,
-        moreSurfaces:document.querySelectorAll('[data-jaroo-cal-surface="more"]').length},
+        moreSurfaces:document.querySelectorAll('[data-jaroo-cal-surface="more"]').length,
+        monthWeekendCells:document.querySelectorAll('[data-jaroo-cal-month-weekend]').length,
+        outsideDateLabels:document.querySelectorAll('[data-jaroo-cal-date-tone="outside"]').length,
+        eventTimeLabels:document.querySelectorAll('[data-jaroo-cal-event-time]').length,
+        moreLabels:document.querySelectorAll('[data-jaroo-cal-more-label]').length},
       renderedEventElements: stats.eventElements || 0, datedItems: stats.datedRecords || 0,
       undatedItems: stats.undatedRecords || 0, nativeDescriptionDateItems: stats.nativeLabelDatedRecords || 0, dateRangeItems: stats.rangeRecords || 0, unknownTitleItems: stats.unknownTitles || 0, recoloredElements: stats.coloredElements || 0,
       semanticColorItems: stats.semanticItems || 0, titleKeywordCategoryItems: stats.inferredCategoryItems || 0, authoredStatusItems: stats.explicitStatusItems || 0,
