@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.3
+// @version      3.11.4
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -151,11 +151,11 @@
       :host([data-ebook-time-collapsed="true"]) .ebook-time-toggle svg{transform:rotate(-90deg)}
       :host([data-ebook-time-collapsed="true"]) :is(.life-clock,.clock){display:none}
       .life-clock{margin:0;padding:10px 0 9px;background:transparent}
-      .life-head{display:flex;flex-direction:column;align-items:flex-start;gap:3px;margin:0 0 5px}
-      .life-title{font:650 var(--widget-main)/1.3 var(--font);letter-spacing:.025em;text-transform:uppercase;color:var(--ink);max-width:100%;overflow-wrap:normal}
+      .life-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 0 5px;flex-wrap:nowrap}
+      .life-title{font:650 var(--widget-main)/1.3 var(--font);letter-spacing:.025em;text-transform:uppercase;color:var(--ink);max-width:100%;overflow-wrap:normal;white-space:nowrap}
       .life-title .ico,.life-title-short,.life-progress-percent{display:none}
       .life-sub,.life-meta,.life-progress-scale{font:450 var(--widget-meta)/1.35 var(--font);color:var(--muted);max-width:100%;overflow-wrap:normal}
-      .life-sub{text-align:left}
+      .life-sub{flex:0 0 auto;margin-inline-start:auto;text-align:right;white-space:nowrap}
       .life-setup[hidden],.life-setup form[hidden]{display:none}
       .life-setup{margin:5px 0;padding:6px 0;border-bottom:1px solid #D4DADC;font:400 var(--widget-meta)/1.4 var(--font);color:var(--muted)}
       .life-setup-line{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px}
@@ -211,6 +211,9 @@
         .clock-line{flex-direction:column;align-items:stretch;gap:6px;min-height:0}
         .date-chip{flex:0 0 auto;min-height:0;width:100%;flex-direction:row;flex-wrap:wrap;justify-content:space-between;align-items:center;padding:0;border:0}
         .digital-time{justify-content:center;align-self:center;max-width:100%}
+      }
+      @container jaroo-dashboard (max-width: 269px){
+        .life-sub{display:none}
       }
       @container jaroo-dashboard (max-width: 229px){
         .life-progress-meta{grid-template-columns:minmax(0,1fr);gap:7px}
@@ -1046,9 +1049,9 @@
     if (window[RUNTIME_KEY]?.dispose === dispose) delete window[RUNTIME_KEY];
   }
   window[RUNTIME_KEY] = {
-    version: '3.11.3', dispose,
+    version: '3.11.4', dispose,
     diagnostics: () => ({
-      version: '3.11.3', ...placementReport,
+      version: '3.11.4', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
