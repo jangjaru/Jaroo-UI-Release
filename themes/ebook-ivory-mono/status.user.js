@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo · Status & Command Center
 // @namespace    jaroo-company.local
-// @version      6.9.7
+// @version      6.9.8
 // @description  E-book RUN/DONE and ALL/ONLY; first-paint quiet controls, verified native-state detection and cross-tab synchronization.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -15,7 +15,7 @@
   const RUNTIME = '__jarooCommandCenterRuntimeV4';
   window[RUNTIME]?.dispose?.();
   window.__jarooNativeCapture?.stop?.();
-  const VERSION = '6.9.7';
+  const VERSION = '6.9.8';
   const HOVER_MS = 400;
   const ROOTS = '#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]';
   const ARCHIVE = '[data-sidebar-archive-chatgpt-id]';
@@ -940,13 +940,16 @@
     .jaroo-center{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:0;padding:10.5px 0 4px;border-top:1px solid var(--eb-accent-ink,#303438);align-items:stretch}
     .jaroo-center button{display:flex;align-items:center;justify-content:center;width:100%;min-width:0;height:100%;min-height:46px;padding:0;margin:0;background:none;border:0;border-radius:3px;cursor:pointer;color:inherit;font-family:inherit}
     .jaroo-center button:focus-visible,.jaroo-focus-row:focus-visible{outline:1px solid #879398;outline-offset:1px}
-    .jaroo-center .jaroo-top-badge{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:3px;width:100%;min-width:0;height:100%;min-height:46px;padding:4px 10px 4px 9px;background:#DFE3E5;border:0;border-radius:3px;text-align:left}
+    .jaroo-center .jaroo-top-badge{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:last baseline;align-content:center;gap:3px;width:100%;min-width:0;height:100%;min-height:46px;padding:4px 6px 4px 9px;background:#DFE3E5;border:0;border-radius:3px;text-align:left}
     .jaroo-top-copy{display:flex;flex-direction:column;gap:2px;min-width:0}
     .jaroo-top-word{display:block;color:#41494D;font-size:clamp(11px,6cqi,14px);font-weight:650;line-height:1.12;letter-spacing:-.055em;overflow-wrap:anywhere}
-    @keyframes jaroo-running-pulse{0%,100%{opacity:1}50%{opacity:.35}}
-    .jaroo-center .run[data-active="true"] .jaroo-top-word,.jaroo-focus-tag[data-jstatus="working"]{animation:jaroo-running-pulse 1.6s ease-in-out infinite}
-    @media(prefers-reduced-motion:reduce){.jaroo-center .run[data-active="true"] .jaroo-top-word,.jaroo-focus-tag[data-jstatus="working"]{animation:none}}
+    @keyframes jaroo-running-pulse{0%,24%,100%{opacity:1}46%,58%{opacity:.08}}
+    .jaroo-center .run[data-active="true"] .jaroo-top-word,.jaroo-focus-tag[data-jstatus="working"]{animation:jaroo-running-pulse 1.2s ease-in-out infinite}
+    @media(prefers-reduced-motion:reduce){.jaroo-center .run[data-active="true"] .jaroo-top-word,.jaroo-focus-tag[data-jstatus="working"]{animation:none;-webkit-text-stroke:.2px currentColor}}
+    .jaroo-center .done[data-active="true"] .jaroo-top-badge{box-shadow:inset 0 0 0 1px var(--eb-accent-ink,#303438)}
+    .jaroo-center .done[data-active="true"] .jaroo-top-word{color:var(--eb-accent-ink,#303438);-webkit-text-stroke:.18px currentColor}
     .jaroo-center .count{position:relative;flex:none;font-family:var(--eb-mono,"IBM Plex Mono",monospace);font-size:22px;font-weight:600;letter-spacing:-.04em;margin-left:auto;color:#292D30;font-variant-numeric:tabular-nums;line-height:1;white-space:nowrap}
+    .jaroo-center .count[data-capped="true"]{margin-inline-end:5px}
     .jaroo-center .count[data-capped="true"]::after{content:"+";position:absolute;right:-8px;top:-10px;font-size:17px;font-weight:600;line-height:1;letter-spacing:0;color:inherit;pointer-events:none}
     .jaroo-center button[data-active="false"] .count{color:#9099A2;font-weight:500}
     .jaroo-center .jaroo-mini-label{display:block;font-size:clamp(11px,5.7cqi,13px);font-weight:400;line-height:1.12;color:#9099A2;text-align:left;letter-spacing:-.035em;overflow-wrap:anywhere}
@@ -958,7 +961,7 @@
     .jaroo-mode-switch[aria-pressed="true"] .jaroo-mode-thumb{left:16px}
     .jaroo-mode-switch:disabled{opacity:.45;cursor:not-allowed}
     .jaroo-mode-caption{min-width:0;font-size:clamp(10px,5.5cqi,13px);font-weight:500;line-height:1.2;white-space:normal;overflow-wrap:anywhere}
-    @container jaroo-dashboard (max-width:219px){.jaroo-center .jaroo-top-badge{padding-inline:8px 10px}}
+    @container jaroo-dashboard (max-width:219px){.jaroo-center .jaroo-top-badge{padding-inline:8px 6px}}
     @container jaroo-dashboard (max-width:184px){.jaroo-center{grid-template-columns:minmax(0,1fr)}.jaroo-center button,.jaroo-center .jaroo-top-badge{min-height:32px}}
     .jaroo-focus-list{display:flex;flex-direction:column;gap:4px;border-top:1px solid #C5CDD0;margin:0;padding:6px 0 8px;background:transparent}
     .jaroo-focus-list[hidden]{display:none!important}
