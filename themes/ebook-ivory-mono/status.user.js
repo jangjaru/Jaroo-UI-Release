@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo · Status & Command Center
 // @namespace    jaroo-company.local
-// @version      6.9.11
+// @version      6.9.12
 // @description  E-book RUN/DONE and ALL/ONLY; first-paint quiet controls, verified native-state detection and cross-tab synchronization.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -15,7 +15,7 @@
   const RUNTIME = '__jarooCommandCenterRuntimeV4';
   window[RUNTIME]?.dispose?.();
   window.__jarooNativeCapture?.stop?.();
-  const VERSION = '6.9.11';
+  const VERSION = '6.9.12';
   const HOVER_MS = 400;
   const ROOTS = '#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]';
   const ARCHIVE = '[data-sidebar-archive-chatgpt-id]';
@@ -54,6 +54,30 @@
       border-block-width:0!important;overflow:hidden!important;visibility:hidden!important;
       opacity:0!important;pointer-events:none!important;
     }
+  `;
+  focusStyle.textContent+=`
+    /* Display-only fallback. Preserve native row layout and state attributes. */
+    html body [data-jaroo-native-row="true"][data-jaroo-sync-position="relative"]{position:relative!important}
+    html body [data-jaroo-native-row="true"][data-jaroo-sync-status] > .jaroo-native-badge[data-jaroo-shared-display="true"]{
+      display:grid!important;place-items:center!important;box-sizing:border-box!important;
+      position:absolute!important;inset-inline-start:auto!important;inset-inline-end:5px!important;top:50%!important;bottom:auto!important;
+      transform:translateY(-50%)!important;width:22px!important;height:18px!important;min-width:0!important;min-height:0!important;
+      max-width:22px!important;max-height:18px!important;padding:0!important;margin:0!important;border:0!important;border-radius:0!important;
+      z-index:1;pointer-events:none!important;overflow:hidden!important;contain:layout paint;
+      color:var(--eb-accent-ink,#303438)!important;background:linear-gradient(90deg,transparent,var(--eb-rail,#EBEEEF) 24%)!important;
+    }
+    html body [data-jaroo-native-row="true"][data-jaroo-selected="true"][data-jaroo-sync-status] > .jaroo-native-badge[data-jaroo-shared-display="true"]{background:linear-gradient(90deg,transparent,#E4E6E8 24%)!important}
+    /* Native overflow controls take precedence during interaction; no reflow. */
+    html body [data-jaroo-native-row="true"][data-jaroo-sync-status]:is(:hover,:focus-within) > .jaroo-native-badge[data-jaroo-shared-display="true"]{opacity:0!important}
+    html body [data-jaroo-shared-display="true"] svg{display:block!important;width:15px!important;height:15px!important;fill:none!important;stroke:currentColor!important}
+    html body [data-jaroo-shared-display="true"] .jaroo-focus-spinner,#jaroo-v4-quick-panel[data-jaroo-status-panel="true"] .jaroo-focus-spinner{
+      display:block!important;box-sizing:border-box!important;width:14px!important;height:14px!important;min-width:14px!important;
+      border:1.8px solid rgba(48,52,56,.20)!important;border-top-color:currentColor!important;border-right-color:currentColor!important;
+      border-radius:50%!important;background:transparent!important;transform:translate3d(0,0,0) rotate(0deg);will-change:transform;
+      animation:jaroo-shared-spin .9s linear infinite!important;
+    }
+    @keyframes jaroo-shared-spin{from{transform:translate3d(0,0,0) rotate(0deg)}to{transform:translate3d(0,0,0) rotate(360deg)}}
+    @media(prefers-reduced-motion:reduce){html body [data-jaroo-shared-display="true"] .jaroo-focus-spinner,#jaroo-v4-quick-panel[data-jaroo-status-panel="true"] .jaroo-focus-spinner{animation:none!important;will-change:auto}}
   `;
   (document.head || document.documentElement).append(focusStyle);
   const iconCache = new Map();
@@ -132,15 +156,38 @@
       if (el.closest('[data-jaroo-native-row="true"]') !== row) continue;
       for (const attr of ['data-jaroo-native-hidden','data-jaroo-native-leading','data-jaroo-status-slot','data-jaroo-status','data-jaroo-status-label','data-jaroo-badge-host']) el.removeAttribute(attr);
     }
-    for (const attr of ['data-jaroo-native-row','data-jaroo-chat-row','data-jaroo-selected','data-jaroo-live-status','data-jaroo-badge-layout','data-jaroo-badge-host','data-jaroo-sync-status','data-jaroo-last-badge-state','data-jaroo-effective-status']) row.removeAttribute(attr);
+    for (const attr of ['data-jaroo-native-row','data-jaroo-chat-row','data-jaroo-selected','data-jaroo-live-status','data-jaroo-badge-layout','data-jaroo-badge-host','data-jaroo-sync-status','data-jaroo-sync-position','data-jaroo-last-badge-state','data-jaroo-effective-status']) row.removeAttribute(attr);
     row.style.removeProperty('--jaroo-selected-frame-left');
     row.style.removeProperty('--jaroo-selected-frame-right');
   }
 
-  // The native chat list owns visual RUN/unread indicators. Our aggregate
-  // state observer only marks the selected row and keeps its row identity.
-  function renderRows() {
+  // Shared status is visual fallback only; do not write native evidence.
+  function sharedDisplayState(row,link,record) {
+    if(!record||!['working','done'].includes(record.status))return null;
+    if(nativeStatus(row)||nativeStatus(link)||row.querySelector('[data-sidebar-indicator="working"],[data-sidebar-indicator="unread"]'))return null;
+    return record.status;
+  }
+  function syncSharedRowBadge(row,link,record) {
+    const status=sharedDisplayState(row,link,record);
+    const badge=row.querySelector(':scope > .jaroo-native-badge[data-jaroo-shared-display="true"]');
+    if(!status||getComputedStyle(row).display==='contents'){
+      row.removeAttribute('data-jaroo-sync-status');
+      row.removeAttribute('data-jaroo-sync-position');
+      badge?.remove();return;
+    }
+    if(!row.hasAttribute('data-jaroo-sync-position')&&getComputedStyle(row).position==='static')
+      setAttr(row,'data-jaroo-sync-position','relative');
+    setAttr(row,'data-jaroo-sync-status',status);
+    if(badge?.dataset.jstatus===status)return;
+    const next=createFocusStatusIcon(status);
+    next.className='jaroo-focus-tag jaroo-native-badge';
+    next.setAttribute('data-jaroo-shared-display','true');
+    next.setAttribute('aria-hidden','true');
+    if(badge)badge.replaceWith(next);else row.append(next);
+  }
+  function renderRows(records) {
     const current = idFromPath();
+    const shared=new Map(records.map(record=>[record.id,record]));
     for (const row of rows()) {
       const id = getRowId(row);
       if (!row.hasAttribute('data-sidebar-archive-chatgpt-id')) setAttr(row, 'data-jaroo-chat-row', 'true');
@@ -148,6 +195,7 @@
       const link = row.matches('a[href*="/c/"]') ? row : row.querySelector('a[href*="/c/"]');
       if (id === current || row.getAttribute('aria-current') === 'page' || link?.getAttribute('aria-current') === 'page') setAttr(row, 'data-jaroo-selected', 'true');
       else row.removeAttribute('data-jaroo-selected');
+      syncSharedRowBadge(row,link,shared.get(id));
     }
   }
 
@@ -1042,7 +1090,7 @@
   function setupPanel() {
     if (panel?.isConnected) return;
     panel=document.createElement('div');panel.id='jaroo-v4-quick-panel';panel.setAttribute('role','dialog');
-    panel.setAttribute('aria-label','작업 상태 바로가기');panel.tabIndex=-1;
+    panel.setAttribute('aria-label','작업 상태 바로가기');panel.setAttribute('data-jaroo-status-panel','true');panel.tabIndex=-1;
     const css=document.createElement('style');css.id='jaroo-v4-panel-style';
     css.textContent=`
       #jaroo-v4-quick-panel{position:fixed;z-index:2147483400;min-width:240px;max-width:min(350px,calc(100vw - 20px));max-height:min(360px,65vh);overflow:auto;padding:10px;border:1px solid #C5CDD0;border-radius:5px;background:#F5F6F6;color:#292D30;font:14px/1.4 "Pretendard Variable","Pretendard",sans-serif;display:none;box-sizing:border-box}
@@ -1054,6 +1102,18 @@
       #jaroo-v4-quick-panel .name{flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
       #jaroo-v4-quick-panel .empty{padding:8px;color:#737D83}
       #jaroo-v4-title-tip{position:fixed;z-index:2147483401;max-width:min(380px,calc(100vw - 22px));padding:9px 12px;border:1px solid #C5CDD0;border-radius:5px;background:#F5F6F6;color:#292D30;font:14px/1.4 "Pretendard Variable","Pretendard",sans-serif;pointer-events:none;display:none;overflow-wrap:anywhere;box-sizing:border-box}
+    `;
+    css.textContent+=`
+      /* Scope palette overrides to the two status quick panels. */
+      html body #jaroo-v4-quick-panel[data-jaroo-status-panel="true"]{background:#EEF1F2!important;border:1px solid #B9C1C5!important;box-shadow:0 5px 16px rgba(39,47,54,.12)!important;overflow-x:hidden!important;color:var(--eb-ink,#292D30)!important;outline:none!important}
+      html body #jaroo-v4-quick-panel[data-jaroo-status-panel="true"] .head{padding-bottom:8px;border-bottom:1px solid #C5CDD0;margin-bottom:4px}
+      html body #jaroo-v4-quick-panel[data-jaroo-status-panel="true"] .head-title{font-weight:700!important;font-size:15px!important;line-height:1.3!important;color:var(--eb-accent-ink,#303438)!important;-webkit-text-fill-color:var(--eb-accent-ink,#303438)!important;min-width:0}
+      html body #jaroo-v4-quick-panel[data-jaroo-status-panel="true"] .dismiss{flex:none;background:#E7EAEB!important;border-color:#B9C1C5!important}
+      html body #jaroo-v4-quick-panel[data-jaroo-status-panel="true"] a{display:grid!important;grid-template-columns:minmax(0,1fr) 16px;align-items:center;gap:6px;min-width:0;overflow:hidden}
+      html body #jaroo-v4-quick-panel[data-jaroo-status-panel="true"] .name{grid-column:1;grid-row:1;min-width:0;overflow-wrap:anywhere}
+      html body #jaroo-v4-quick-panel[data-jaroo-status-panel="true"] .jaroo-focus-tag{grid-column:2;grid-row:1;display:grid!important;place-items:center;width:16px;height:16px;overflow:hidden;contain:layout paint;color:var(--eb-accent-ink,#303438)!important;-webkit-text-fill-color:var(--eb-accent-ink,#303438)!important}
+      html body #jaroo-v4-quick-panel[data-jaroo-status-panel="true"] .jaroo-focus-tag svg{display:block;width:15px;height:15px;fill:none;stroke:currentColor!important}
+      html body #jaroo-v4-quick-panel[data-jaroo-status-panel="true"] .clear-completed{margin-top:6px}
     `;
     document.head.append(css);
     tooltipStyle=css;
@@ -1072,23 +1132,21 @@
     panelSignature=signature;
     panel.replaceChildren();
     const head=document.createElement('div');head.className='head';
-    const title=document.createElement('span');title.textContent=(filter==='working'?'Running Prompts':'Completed Prompts')+` · ${records.length}건`;
+    const title=document.createElement('span');title.className='head-title';title.textContent=(filter==='working'?'Running Prompts':'Completed Prompts')+` · ${records.length}건`;
     const close=document.createElement('button');close.className='dismiss';close.type='button';close.textContent='닫기';close.onclick=closePanel;
     head.append(title,close);panel.append(head);
     if (!records.length) {const empty=document.createElement('div');empty.className='empty';empty.textContent='표시할 상태가 없어.';panel.append(empty);}
     else records.forEach(r => {
       const link=document.createElement('a');link.href=r.href || '#';
-      const token=document.createElement('span');token.className='tag';token.dataset.jstatus=filter;token.textContent=filter==='working'?'Running':'Completed';
+      const token=createFocusStatusIcon(filter);
       const name=document.createElement('span');name.className='name';name.textContent=r.title || `채팅 ${r.id.slice(0,8)}`;
-      link.append(token,name);
+      link.append(name,token);
       if (!r.href) {link.style.opacity='.55';link.title='현재 사이드바에서 위치를 찾을 수 없음';link.setAttribute('aria-disabled','true');}
       link.onclick=e => {if (!r.href) {e.preventDefault();return;}closePanel();};
       panel.append(link);
     });
-    const scope=document.createElement('div');scope.className='empty';
-    scope.textContent='같은 브라우저 프로필의 상태 · 채팅 본문·입력창 확인 시 완료 표시 해제';panel.append(scope);
     if (filter === 'done' && records.length) {
-      const clear = document.createElement('button'); clear.type = 'button'; clear.className = 'dismiss';
+      const clear = document.createElement('button'); clear.type = 'button'; clear.className = 'dismiss clear-completed';
       clear.textContent = '이 목록의 완료 표시 지우기';
       clear.addEventListener('click', () => { for (const record of records) statusBus.acknowledge(record.id, record.run); scheduleRefresh(); });
       panel.append(clear);
@@ -1413,8 +1471,8 @@
     if (disposed) return;
     try {
       syncSignals();
-      renderRows();
       const list = validRecords(), route = idFromPath();
+      renderRows(list);
       const signature = JSON.stringify(list.map(record => [record.id, record.status, record.title, record.href, record.run]));
       if (signature !== lastSignature || route !== lastRoute || document.title !== lastAppliedTitle) renderTab(list);
       if (signature !== lastSignature || !dock?.isConnected || !dockStyle?.isConnected) renderDock(list);
