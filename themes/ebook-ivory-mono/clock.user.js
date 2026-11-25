@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.31
+// @version      3.11.32
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -303,9 +303,9 @@
       <span class="brand-arrow" aria-hidden="true"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m2 5 5 5 5-5"/></svg></span>
     </button>
     <button class="ebook-time-toggle" type="button" aria-expanded="true" aria-label="시간 정보 접기" title="시간 정보 접기"><svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3.5 6 4.5 4.5L12.5 6"/></svg></button>
-    <section class="life-clock" aria-label="Jaroo Life Clock">
+    <section class="life-clock" aria-label="Life Clock">
       <div class="life-head">
-        <div class="life-title"><span class="ico" aria-hidden="true">◔</span><span class="life-title-full"><span class="life-marker">Jaroo Life Clock</span></span><span class="life-title-short" aria-hidden="true"><span class="life-marker">Life Clock</span></span></div>
+        <div class="life-title"><span class="ico" aria-hidden="true">◔</span><span class="life-title-full"><span class="life-marker">Life Clock</span></span><span class="life-title-short" aria-hidden="true"><span class="life-marker">Life Clock</span></span></div>
         <div class="life-sub">남은 인생 시간</div>
       </div>
       <div class="life-setup" hidden>
@@ -1199,9 +1199,9 @@
     if (window[RUNTIME_KEY]?.dispose === dispose) delete window[RUNTIME_KEY];
   }
   window[RUNTIME_KEY] = {
-    version: '3.11.31', dispose,
+    version: '3.11.32', dispose,
     diagnostics: () => ({
-      version: '3.11.31', ...placementReport,
+      version: '3.11.32', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),

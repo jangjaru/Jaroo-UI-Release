@@ -32,8 +32,8 @@ E-book is an independent, opt-in theme. Disable Dracula / Flat Neon visual style
 | E-book component | Version |
 |---|---|
 | [Stylus CSS](themes/ebook-ivory-mono/theme.user.css) | 0.3.2 |
-| [Indicators JS](themes/ebook-ivory-mono/indicators.user.js) | 0.3.6 |
-| [Clock JS](themes/ebook-ivory-mono/clock.user.js) | 3.11.31 |
+| [Indicators JS](themes/ebook-ivory-mono/indicators.user.js) | 0.3.7 |
+| [Clock JS](themes/ebook-ivory-mono/clock.user.js) | 3.11.32 |
 | [Status JS](themes/ebook-ivory-mono/status.user.js) | 6.9.1 |
 
 - [Release and installation details](themes/ebook-ivory-mono/README.md)
