@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.33
+// @version      3.11.34
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -150,8 +150,8 @@
       .ebook-time-toggle svg{width:13px;height:13px;display:block}
       :host([data-ebook-time-collapsed="true"]) .ebook-time-toggle svg{transform:rotate(-90deg)}
       :host([data-ebook-time-collapsed="true"]) :is(.life-clock,.clock){display:none}
-      .life-clock{--life-section-gap:21px;margin:0;padding:var(--life-section-gap) 0 9px;background:transparent}
-      .life-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 0 5px;flex-wrap:nowrap}
+      .life-clock{--life-section-gap:21px;margin:0;padding:calc(var(--life-section-gap) / 2) 0 9px;background:transparent}
+      .life-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 0 2.5px;flex-wrap:nowrap}
       .life-title{font:650 calc(var(--widget-main) + 1px)/1.3 var(--font);letter-spacing:.025em;text-transform:uppercase;color:var(--ink);max-width:100%;overflow-wrap:normal;white-space:nowrap}
       /* Small-text legibility: one white text layer on a full-height, irregular accent marker. */
       .life-marker{display:inline-block;position:relative;isolation:isolate;color:#fff;-webkit-text-fill-color:currentColor}
@@ -169,6 +169,7 @@
       .life-setup .life-setup-error{color:#A33F46;min-height:0}
       .life-grid{display:flex;flex-direction:column}
       .life-card{margin:0;padding:8px 0;border-bottom:1px solid #D4DADC;min-width:0}
+      .life-grid>.life-card:first-child{padding-top:4px}
       .life-card.after{border:0}
       .life-card-main{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:6px 10px;min-width:0}
       .life-caption{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0}
@@ -243,6 +244,7 @@
         .life-title-full{display:none}
         .life-title-short{display:inline}
         .life-card{padding:5px 0}
+        .life-grid>.life-card:first-child{padding-top:2.5px}
         .life-progress-stat,.life-progress-stat.remaining{flex-direction:column;align-items:stretch;gap:2px}
         .life-progress-stat strong{text-align:right}
         .life-head,.life-progress-head{gap:0}
@@ -1199,9 +1201,9 @@
     if (window[RUNTIME_KEY]?.dispose === dispose) delete window[RUNTIME_KEY];
   }
   window[RUNTIME_KEY] = {
-    version: '3.11.33', dispose,
+    version: '3.11.34', dispose,
     diagnostics: () => ({
-      version: '3.11.33', ...placementReport,
+      version: '3.11.34', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
