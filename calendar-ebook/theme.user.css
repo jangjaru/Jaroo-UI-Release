@@ -544,7 +544,7 @@ html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="more"] :is(h1,h
     border-color:transparent!important;box-shadow:none!important;text-shadow:none!important;
   }
   /* Inset ring changes paint only. Native date target and focus outline stay. */
-  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-today-ring="true"]{
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [data-jaroo-cal-today-ring="true"]:is([data-jaroo-cal-today-ring],[data-jaroo-cal-today-label]){
     background-color:transparent!important;background-image:none!important;
     border-color:transparent!important;border-radius:50%!important;
     box-shadow:inset 0 0 0 2px var(--jaroo-cal-month-ink)!important;
