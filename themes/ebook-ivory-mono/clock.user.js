@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.15
+// @version      3.11.16
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -250,6 +250,22 @@
         .life-progress-stat strong{text-align:right}
         .life-head,.life-progress-head{gap:0}
       }
+      /* Retirement: the metadata and hours occupy the same baseline row; only the suffix may move. */
+      .life-duration-tail::before{content:" : "}
+      .life-card.retire .life-card-main{grid-template-columns:minmax(0,1fr) auto auto;align-items:baseline;gap:1px 0}
+      .life-card.retire .life-caption{display:contents}
+      .life-card.retire .life-label{grid-column:1/-1;grid-row:1}
+      .life-card.retire .life-meta{grid-column:1;grid-row:2;align-self:baseline;padding-inline-end:4px}
+      .life-card.retire .life-value{grid-column:2/-1;grid-row:2;align-self:baseline}
+      .life-card.retire .life-value:has(>.life-duration-hours){display:contents}
+      .life-card.retire .life-duration-hours{grid-column:2;grid-row:2;justify-self:end;align-self:baseline}
+      .life-card.retire .life-duration-tail{grid-column:3;grid-row:2;justify-self:end;align-self:baseline}
+      @container jaroo-dashboard (max-width:249px){
+        .life-card.retire .life-card-main{grid-template-columns:minmax(0,1fr) auto}
+        .life-card.retire .life-duration-hours{grid-column:2}
+        .life-card.retire .life-duration-tail{grid-column:2;grid-row:3}
+        .life-card.retire .life-duration-tail::before{content:none}
+      }
       /* Below the six-digit physical width, show HH:MM at the same glyph
          size. The actual seconds still tick and remain in the accessible label. */
       @container jaroo-dashboard (max-width: 159px){
@@ -468,7 +484,7 @@
   }
   function durationParts(ms,elapsed=false) {
     const seconds=(elapsed?Math.floor:Math.ceil)(Math.max(0,ms)/1000);
-    return [TIME_FORMAT.format(Math.floor(seconds/3600)),' : '+String(Math.floor(seconds/60)%60).padStart(2,'0')+' : '+String(seconds%60).padStart(2,'0')];
+    return [TIME_FORMAT.format(Math.floor(seconds/3600)),String(Math.floor(seconds/60)%60).padStart(2,'0')+' : '+String(seconds%60).padStart(2,'0')];
   }
   const durationNodes=new WeakMap();
   function setLifeDuration(el,ms,{elapsed=false}={}) {
@@ -1076,9 +1092,9 @@
     if (window[RUNTIME_KEY]?.dispose === dispose) delete window[RUNTIME_KEY];
   }
   window[RUNTIME_KEY] = {
-    version: '3.11.15', dispose,
+    version: '3.11.16', dispose,
     diagnostics: () => ({
-      version: '3.11.15', ...placementReport,
+      version: '3.11.16', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
