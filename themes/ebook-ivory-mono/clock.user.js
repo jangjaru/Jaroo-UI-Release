@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.32
+// @version      3.11.33
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -150,7 +150,7 @@
       .ebook-time-toggle svg{width:13px;height:13px;display:block}
       :host([data-ebook-time-collapsed="true"]) .ebook-time-toggle svg{transform:rotate(-90deg)}
       :host([data-ebook-time-collapsed="true"]) :is(.life-clock,.clock){display:none}
-      .life-clock{margin:0;padding:10px 0 9px;background:transparent}
+      .life-clock{--life-section-gap:21px;margin:0;padding:var(--life-section-gap) 0 9px;background:transparent}
       .life-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 0 5px;flex-wrap:nowrap}
       .life-title{font:650 calc(var(--widget-main) + 1px)/1.3 var(--font);letter-spacing:.025em;text-transform:uppercase;color:var(--ink);max-width:100%;overflow-wrap:normal;white-space:nowrap}
       /* Small-text legibility: one white text layer on a full-height, irregular accent marker. */
@@ -181,7 +181,7 @@
       .life-card .life-label{font-weight:550;color:#23272B;line-height:1.02}
       .life-card .life-meta{white-space:nowrap;line-height:1.02}
       .life-card .life-value{white-space:nowrap;line-height:.95}
-      .life-progress{margin:14px 0 0;padding:7px 0 0;border-top:1px solid #D4DADC}
+      .life-progress{margin:calc(var(--life-section-gap,21px) - 7px) 0 0;padding:7px 0 0;border-top:1px solid #D4DADC}
       .life-progress-head{display:flex;flex-direction:row;align-items:baseline;justify-content:space-between;flex-wrap:nowrap;gap:10px;margin-bottom:11px}
       .life-progress-title{font:650 calc(var(--widget-main) + 1px)/1.3 var(--font);color:var(--ink);letter-spacing:.025em;text-transform:uppercase;white-space:nowrap;flex:0 0 auto}
       .life-progress-scale{white-space:nowrap;flex:0 0 auto;margin-inline-start:auto;text-align:right;letter-spacing:-.035em;line-height:1.02}
@@ -1199,9 +1199,9 @@
     if (window[RUNTIME_KEY]?.dispose === dispose) delete window[RUNTIME_KEY];
   }
   window[RUNTIME_KEY] = {
-    version: '3.11.32', dispose,
+    version: '3.11.33', dispose,
     diagnostics: () => ({
-      version: '3.11.32', ...placementReport,
+      version: '3.11.33', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
