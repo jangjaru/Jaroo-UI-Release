@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo · Status & Command Center
 // @namespace    jaroo-company.local
-// @version      6.9.4
+// @version      6.9.5
 // @description  E-book RUN/DONE and ALL/ONLY; first-paint quiet controls, verified native-state detection and cross-tab synchronization.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -15,7 +15,7 @@
   const RUNTIME = '__jarooCommandCenterRuntimeV4';
   window[RUNTIME]?.dispose?.();
   window.__jarooNativeCapture?.stop?.();
-  const VERSION = '6.9.4';
+  const VERSION = '6.9.5';
   const HOVER_MS = 400;
   const ROOTS = '#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]';
   const ARCHIVE = '[data-sidebar-archive-chatgpt-id]';
@@ -940,15 +940,16 @@
     .jaroo-center{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:0;padding:10.5px 0 4px;border-top:1px solid var(--eb-accent-ink,#303438);align-items:stretch}
     .jaroo-center button{display:flex;align-items:center;justify-content:center;width:100%;min-width:0;height:100%;min-height:52px;padding:0;margin:0;background:none;border:0;border-radius:3px;cursor:pointer;color:inherit;font-family:inherit}
     .jaroo-center button:focus-visible,.jaroo-focus-row:focus-visible{outline:1px solid #879398;outline-offset:1px}
-    .jaroo-center .jaroo-top-badge{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:3px;width:100%;min-width:0;height:100%;min-height:52px;padding:6px;background:#DFE3E5;border:0;border-radius:3px;text-align:left}
+    .jaroo-center .jaroo-top-badge{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:3px;width:100%;min-width:0;height:100%;min-height:52px;padding:6px 10px 6px 9px;background:#DFE3E5;border:0;border-radius:3px;text-align:left}
     .jaroo-top-copy{display:flex;flex-direction:column;gap:2px;min-width:0}
-    .jaroo-center button{--status-ink:#9099A2}
-    .jaroo-center .run[data-active="true"]{--status-ink:#A57900}
-    .jaroo-center .done[data-active="true"]{--status-ink:#218C77}
-    .jaroo-top-word{display:block;color:var(--status-ink);font-size:clamp(10px,5.6cqi,13px);font-weight:600;line-height:1.12;letter-spacing:-.035em;overflow-wrap:anywhere}
-    .jaroo-center .count{font-family:var(--eb-mono,"IBM Plex Mono",monospace);font-size:22px;font-weight:600;letter-spacing:-.04em;margin-left:auto;color:#292D30;font-variant-numeric:tabular-nums;line-height:1;white-space:nowrap}
+    .jaroo-top-word{display:block;color:#41494D;font-size:clamp(11px,6cqi,14px);font-weight:650;line-height:1.12;letter-spacing:-.055em;overflow-wrap:anywhere}
+    @keyframes jaroo-running-pulse{0%,100%{opacity:1}50%{opacity:.35}}
+    .jaroo-center .run[data-active="true"] .jaroo-top-word,.jaroo-focus-tag[data-jstatus="working"]{animation:jaroo-running-pulse 1.6s ease-in-out infinite}
+    @media(prefers-reduced-motion:reduce){.jaroo-center .run[data-active="true"] .jaroo-top-word,.jaroo-focus-tag[data-jstatus="working"]{animation:none}}
+    .jaroo-center .count{position:relative;flex:none;font-family:var(--eb-mono,"IBM Plex Mono",monospace);font-size:22px;font-weight:600;letter-spacing:-.04em;margin-left:auto;color:#292D30;font-variant-numeric:tabular-nums;line-height:1;white-space:nowrap}
+    .jaroo-center .count[data-capped="true"]::after{content:"+";position:absolute;right:-8px;top:-10px;font-size:17px;font-weight:600;line-height:1;letter-spacing:0;color:inherit;pointer-events:none}
     .jaroo-center button[data-active="false"] .count{color:#9099A2;font-weight:500}
-    .jaroo-center .jaroo-mini-label{display:block;font-size:clamp(10px,5.6cqi,13px);font-weight:450;line-height:1.12;color:#535B60;text-align:left;letter-spacing:-.035em;overflow-wrap:anywhere}
+    .jaroo-center .jaroo-mini-label{display:block;font-size:clamp(11px,5.7cqi,13px);font-weight:400;line-height:1.12;color:#9099A2;text-align:left;letter-spacing:-.035em;overflow-wrap:anywhere}
     .jaroo-center .jaroo-mode-switch{grid-column:1/-1;min-height:24px;height:auto;justify-content:flex-start;padding:3px 0}
     .jaroo-mode-frame{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:6px;width:100%;min-width:0;color:#737D83;text-align:left}
     .jaroo-mode-track{position:relative;flex:0 0 28px;width:28px;height:14px;border:0;border-radius:8px;background:#C9D0D3}
@@ -957,7 +958,7 @@
     .jaroo-mode-switch[aria-pressed="true"] .jaroo-mode-thumb{left:16px}
     .jaroo-mode-switch:disabled{opacity:.45;cursor:not-allowed}
     .jaroo-mode-caption{min-width:0;font-size:clamp(10px,5.5cqi,13px);font-weight:500;line-height:1.2;white-space:normal;overflow-wrap:anywhere}
-    @container jaroo-dashboard (max-width:219px){.jaroo-center .jaroo-top-badge{padding-inline:4px}}
+    @container jaroo-dashboard (max-width:219px){.jaroo-center .jaroo-top-badge{padding-inline:8px 10px}}
     @container jaroo-dashboard (max-width:184px){.jaroo-center{grid-template-columns:minmax(0,1fr)}.jaroo-center button,.jaroo-center .jaroo-top-badge{min-height:32px}}
     .jaroo-focus-list{display:flex;flex-direction:column;gap:4px;border-top:1px solid #C5CDD0;margin:0;padding:6px 0 8px;background:transparent}
     .jaroo-focus-list[hidden]{display:none!important}
@@ -970,8 +971,7 @@
     .jaroo-focus-row[aria-disabled="true"]{opacity:.55;cursor:default}
     .jaroo-focus-name{flex:1 1 auto;min-width:0;font-size:var(--widget-main);line-height:1.35;overflow-wrap:anywhere}
     /* Only the explicitly filtered list needs a plain state label. */
-    .jaroo-focus-tag{order:2;flex:0 0 auto;margin-left:auto;font:600 var(--widget-meta)/1.3 var(--eb-font,"IBM Plex Mono",monospace);color:#986B24}
-    .jaroo-focus-tag[data-jstatus="done"]{color:#3E8369}
+    .jaroo-focus-tag{order:2;flex:0 0 auto;margin-left:auto;font:600 var(--widget-meta)/1.3 var(--eb-font,"IBM Plex Mono",monospace);color:#41494D}
     @container jaroo-dashboard (max-width: 184px){
       .jaroo-focus-row{flex-wrap:wrap}
       .jaroo-focus-name{flex-basis:100%}
@@ -1136,7 +1136,7 @@
     focusEntries.replaceChildren();
     if (!records.length) {
       const empty=document.createElement('div');empty.className='jaroo-focus-empty';
-      empty.textContent='진행 중이거나 확인할 완료가 없어.';
+      empty.textContent='No running or completed tasks.';
       focusEntries.append(empty);
     }
     for (const record of records) {
@@ -1203,12 +1203,20 @@
           setAttr(sidebar,'data-jaroo-focus-fallback','true');
     }
   }
+  function formatDockCount(value) {
+    return {digit:String(Math.min(value,9)),capped:value>=9};
+  }
   function renderDock(records) {
     if (!setupDock()) return;
     for(const status of ['working','done']) {
       const counter=dock.querySelector(`[data-jstatus="${status}"] .count`);
       const value=records.filter(r=>r.status===status).length;
-      if (counter && counter.textContent!==String(value)) counter.textContent=String(value);
+      const display=formatDockCount(value);
+      if (counter) {
+        if(counter.textContent!==display.digit)counter.textContent=display.digit;
+        const capped=String(display.capped);
+        if(counter.dataset.capped!==capped)counter.dataset.capped=capped;
+      }
       const button=counter?.closest('button');
       if (button) {
         const active=String(value>0), digits=String(String(value).length);
@@ -1216,6 +1224,7 @@
         if (button.dataset.digits!==digits) button.dataset.digits=digits;
         const label=(status==='working'?'진행 중인 작업':'확인하지 않은 완료')+` ${value}개 목록`;
         if (button.getAttribute('aria-label')!==label) button.setAttribute('aria-label',label);
+        if(button.title!==label)button.title=label;
       }
     }
     alignDockToClock();
