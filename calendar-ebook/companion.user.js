@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo · Google Calendar E-Book Companion
 // @namespace    jaroo.calendar.ebook
-// @version      0.4.0
+// @version      0.4.1
 // @description  Cool E-Ink Graph Paper · native Calendar event labels, More popup and local agenda.
 // @match        https://calendar.google.com/calendar/*
 // @run-at       document-idle
@@ -12,7 +12,7 @@
 // ==/UserScript==
 
 /*
- * Jaroo Calendar E-Book v0.4.0 · 2026-11-25
+ * Jaroo Calendar E-Book v0.4.1 · 2026-11-25
  * Requires the paired E-Book Stylus CSS and native Light appearance.
  * Forked from the working Calendar Companion v1.3.7; history below is retained.
  * v1.3.1: preserve visually present month-grid/list colors when Calendar temporarily
@@ -223,7 +223,7 @@
   // BEGIN_JAROO_ADAPTER
   const RUNTIME = '__jarooCalendarCompanionV1';
   window[RUNTIME]?.dispose?.();
-  const VERSION = '0.4.0';
+  const VERSION = '0.4.1';
   const CONFIG = Object.freeze({ timeZone: 'Asia/Seoul', futureDays: 7, maxPins: 3, maxEvents: 1200, settleMs: 180, recoveryMs: 5000 });
   const EVENT = '[data-eventid]';
   const EXCLUDE = '[role="dialog"],[role="menu"],[role="listbox"],[hidden],[inert],[aria-hidden="true"]';
@@ -287,20 +287,41 @@
     }
     return null;
   }
-  function rememberStyle(node, color) {
-    let saved = eventStyles.get(node);
-    if (!saved) {
-      saved = { value: node.style.getPropertyValue('--jaroo-cal-event-color'), priority: node.style.getPropertyPriority('--jaroo-cal-event-color'), native: '' };
-      eventStyles.set(node, saved);
+
+  // Paint-only SVG, encoded locally. The shallow uneven path is drawn into a
+  // background image, never overlaid on native text/controls. Bounded cache.
+  const BRUSH_PATH="M1 11.4 L12 11.1 24 11.8 37 11.3 52 10.9 65 11.4 78 10.8 91 11.5 106 11.1 120 11.7 136 11.0 149 11.5 164 10.8 179 11.4 193 11.0 208 11.7 222 11.2 239 11.5 L238.5 21.1 225 21.4 210 20.7 196 21.2 181 20.8 167 21.5 151 21.0 137 21.4 123 20.8 108 21.3 93 20.9 78 21.5 63 21.1 48 20.7 34 21.4 20 20.9 7 21.3 1.5 21 Z";
+  const BRUSH_PROPS=['--jaroo-cal-event-color','--jaroo-cal-event-brush','--jaroo-cal-event-brush-hover'];
+  const brushCache=new Map();
+  function brushImage(color,opacity){
+    const key=JSON.stringify([color,opacity]);
+    if(brushCache.has(key))return brushCache.get(key);
+    const escaped=String(color).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 24" preserveAspectRatio="none"><path d="'+BRUSH_PATH+'" fill="'+escaped+'" fill-opacity="'+opacity+'"/></svg>';
+    const result='url("data:image/svg+xml,'+encodeURIComponent(svg)+'")';
+    if(brushCache.size>=96)brushCache.clear();
+    brushCache.set(key,result);return result;
+  }
+  function rememberStyle(node,color,semantic=false,status=null) {
+    if(!color){restoreStyle(node);return;}
+    let saved=eventStyles.get(node);
+    if(!saved){
+      saved={props:BRUSH_PROPS.map(name=>[name,node.style.getPropertyValue(name),node.style.getPropertyPriority(name)]),native:''};
+      eventStyles.set(node,saved);
     }
-    saved.native = nativePaintSignature(node);
-    if (color && node.style.getPropertyValue('--jaroo-cal-event-color') !== color) node.style.setProperty('--jaroo-cal-event-color', color);
-    if (!color) restoreStyle(node);
+    saved.native=nativePaintSignature(node);
+    const strength=semantic?.82:.28,hover=semantic?.92:.32;
+    const values=[color,status?'none':brushImage(color,strength),status?'none':brushImage(color,hover)];
+    for(let i=0;i<BRUSH_PROPS.length;i++){
+      if(node.style.getPropertyValue(BRUSH_PROPS[i])!==values[i])node.style.setProperty(BRUSH_PROPS[i],values[i]);
+    }
   }
   function restoreStyle(node) {
-    const saved = eventStyles.get(node); if (!saved) return;
-    if (saved.value) node.style.setProperty('--jaroo-cal-event-color', saved.value, saved.priority);
-    else node.style.removeProperty('--jaroo-cal-event-color');
+    const saved=eventStyles.get(node);if(!saved)return;
+    for(const [name,value,priority] of saved.props){
+      if(value)node.style.setProperty(name,value,priority);
+      else node.style.removeProperty(name);
+    }
     eventStyles.delete(node);
   }
   function cleanupNode(node) {
@@ -493,7 +514,7 @@
     for (const titleNode of record.titleNodes) { mark(titleNode, 'data-jaroo-cal-title'); touched.add(titleNode); }
     try{for(const leaf of eventTimeLeaves(record))mark(leaf,'data-jaroo-cal-event-time');}catch(_){/* Optional time paint cannot block normal event rendering. */}
     const paint = presentation.active && presentation.color && record.titleNodes.length;
-    if (paint) { rememberStyle(node, presentation.color); mark(node, 'data-jaroo-cal-color'); }
+    if (paint) { rememberStyle(node,presentation.color,presentation.semantic,presentation.status); mark(node, 'data-jaroo-cal-color'); }
     else { removeMarker(node, 'data-jaroo-cal-color'); restoreStyle(node); }
     for (const [attribute, value] of [
       ['data-jaroo-cal-semantic', paint && presentation.semantic ? 'true' : null],
@@ -1208,12 +1229,11 @@
       margin:0 0 9px;background:transparent;border-radius:0}
     .event-open{display:block;width:100%;text-align:left;background:none;border:0;padding:0;
       min-width:0;white-space:normal;overflow-wrap:anywhere;line-height:1.65}
-    .event[data-semantic=true]{background:transparent;border-left-color:color-mix(in srgb,var(--accent) 70%,#89979E)}
-    .event[data-status]{background:transparent;border-left-color:color-mix(in srgb,var(--accent) 40%,#C5CDD0)}
+    .event[data-semantic=true],.event[data-status]{background:transparent;border-left-color:transparent}
     .event[data-semantic=true] .event-open{color:var(--ink,#292D30)}
     .event-open{font-size:14px;font-weight:500}
     .event[data-semantic=true]:not([data-status]) .event-title-ink{
-      background-image:linear-gradient(to bottom,transparent 0 45%,color-mix(in srgb,var(--accent) 45%,transparent) 47%,color-mix(in srgb,var(--accent) 82%,transparent) 51% 88%,color-mix(in srgb,var(--accent) 45%,transparent) 92%,transparent 96%);
+      background-image:var(--event-title-brush,none);background-size:100% 100%;background-repeat:no-repeat;
       -webkit-box-decoration-break:clone;box-decoration-break:clone;
     }
     .event[data-status] .event-open{text-decoration:line-through;text-decoration-thickness:1px;font-weight:400}
@@ -1394,7 +1414,8 @@
   function uiEvent(record) {
     const item = uiElement('div','event'), presentation = eventPresentation(record);
     if (presentation.color) item.style.setProperty('--accent', presentation.color);
-    if (presentation.semantic) { item.dataset.semantic = 'true'; item.style.setProperty('--ink', presentation.ink); }
+    if (presentation.semantic) { item.dataset.semantic = 'true'; item.style.setProperty('--ink', presentation.ink);
+      if(presentation.color&&!presentation.status)item.style.setProperty('--event-title-brush',brushImage(presentation.color,.82)); }
     if (presentation.status) item.dataset.status = presentation.status;
     const content = uiElement('div');
     if (presentation.deadline || presentation.priority || presentation.category || presentation.status) {
@@ -1455,7 +1476,7 @@
     const status = shadow.getElementById('jaroo-cal-ui-status'), notes = [];
     status.className = 'status';
     if (!cssApplied) { notes.push('테마 CSS가 아직 적용되지 않았어. Stylus 적용 주소를 확인해줘.'); status.classList.add('warn'); }
-    else if (enabled && cssVersion !== '0.4.0') { notes.push('E-Book v0.4.0 CSS가 필요해. 같은 채널의 Stylus 스타일을 확인해줘.'); status.classList.add('warn'); }
+    else if (enabled && cssVersion !== '0.4.1') { notes.push('E-Book v0.4.1 CSS가 필요해. 같은 채널의 Stylus 스타일을 확인해줘.'); status.classList.add('warn'); }
     if (dirty) notes.push('화면 확인 중… 이전에 읽은 항목이 잠시 표시될 수 있어.');
     else if (lastError) { notes.push('화면을 다시 읽지 못했어. 표시 설정에서 다시 읽기를 눌러줘.'); status.classList.add('warn'); }
     else if (panelFilter === 'today' && !todayKnown) notes.push('현재 화면에서 오늘 날짜를 확인하지 못했어. 기본 캘린더를 오늘로 이동한 뒤 다시 읽어줘.');
@@ -1803,7 +1824,7 @@
     });
   }
   function withoutOwnStyle(value) {
-    return String(value || '').replace(/(?:^|;)\s*--jaroo-cal-event-color\s*:[^;]*(?=;|$)/gi, '').replace(/;+/g, ';').trim().replace(/^;|;$/g, '').trim();
+    return String(value || '').replace(/(?:^|;)\s*--jaroo-cal-event-(?:color|brush(?:-hover)?)\s*:[^;]*(?=;|$)/gi, '').replace(/;+/g, ';').trim().replace(/^;|;$/g, '').trim();
   }
   function mutationRelevant(change) {
     const node = change.target instanceof Element ? change.target : change.target.parentElement;

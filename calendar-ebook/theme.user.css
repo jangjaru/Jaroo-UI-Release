@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo Google Calendar E-Book
 @namespace    jaroo.calendar.ebook
-@version      0.4.0
+@version      0.4.1
 @description  Cool E-Ink Graph Paper · paired with Calendar E-Book Companion
 @author       Jaroo
 @license      UNLICENSED
@@ -42,7 +42,7 @@
 /* Light appearance is selected in Google Calendar itself. No layout,
    event text, native date/colour data, or click targets are rewritten. */
 html[data-jaroo-calendar-theme="ebook"] {
-  --jaroo-cal-style-version: 0.4.0;
+  --jaroo-cal-style-version: 0.4.1;
   --jaroo-cal-bg:#EFF1F2;
   --jaroo-cal-sidebar:#E7EAEB;
   --jaroo-cal-surface:#F5F6F6;
@@ -404,7 +404,7 @@ html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="more"] :is(h1,h
 }
 
 
-/* v0.4 — felt-tip marker on paper, not a colored card.
+/* v0.4.1 — slightly uneven highlighter, without bracket-shaped ends.
    CSS paints only the existing, verified event-color markers. No changes
    to event geometry, title text, duration, continuation, or hit targets.
    Month and More rows show the paper through the stroke. Other views keep
@@ -417,22 +417,24 @@ html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="more"] :is(h1,h
     --jaroo-cal-stroke:color-mix(in srgb,var(--jaroo-cal-event-color) var(--jaroo-cal-stroke-strength),transparent);
     --jaroo-cal-stroke-edge:color-mix(in srgb,var(--jaroo-cal-stroke) 55%,transparent);
     --jaroo-cal-duration-wash:color-mix(in srgb,var(--jaroo-cal-event-color) 5%,var(--jaroo-cal-bg));
-    --jaroo-cal-left-accent:inset 1px 0 0 color-mix(in srgb,var(--jaroo-cal-event-color) 55%,#89979E);
+    --jaroo-cal-left-accent:inset 0 0 0 0 transparent;
+    border-inline-color:transparent!important;
     background-color:var(--jaroo-cal-duration-wash)!important;
-    background-image:linear-gradient(to bottom,transparent 0 42%,var(--jaroo-cal-stroke-edge) 44%,var(--jaroo-cal-stroke) 48% 88%,var(--jaroo-cal-stroke-edge) 92%,transparent 96%)!important;
-    background-size:calc(100% - 2px) min(100%,22px)!important;
-    background-position:1px top!important;
+    background-image:var(--jaroo-cal-event-brush,linear-gradient(to bottom,transparent 0 46%,var(--jaroo-cal-stroke) 46% 90%,transparent 90%))!important;
+    background-size:100% min(100%,22px)!important;
+    background-position:left top!important;
     background-repeat:no-repeat!important;
   }
   html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-color="true"]:hover {
     --jaroo-cal-stroke-strength:var(--jaroo-cal-stroke-hover);
     background-color:var(--jaroo-cal-duration-wash)!important;
+    background-image:var(--jaroo-cal-event-brush-hover,var(--jaroo-cal-event-brush,linear-gradient(to bottom,transparent 0 46%,var(--jaroo-cal-stroke) 46% 90%,transparent 90%)))!important;
   }
   html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-color="true"][data-jaroo-cal-semantic="true"] {
     --jaroo-cal-stroke-alpha:82%;
     --jaroo-cal-stroke-hover:92%;
     --jaroo-cal-duration-wash:color-mix(in srgb,var(--jaroo-cal-event-color) 7%,var(--jaroo-cal-bg));
-    --jaroo-cal-left-accent:inset 1px 0 0 color-mix(in srgb,var(--jaroo-cal-event-color) 70%,#89979E);
+    --jaroo-cal-left-accent:inset 0 0 0 0 transparent;
   }
   html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-month-grid="true"],[data-jaroo-cal-surface="more"]) [data-jaroo-cal-event="true"][data-jaroo-cal-color="true"] {
     --jaroo-cal-duration-wash:transparent;
@@ -443,26 +445,32 @@ html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="more"] :is(h1,h
   html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-color="true"][data-jaroo-cal-semantic="true"][data-jaroo-cal-status] {
     --jaroo-cal-stroke-alpha:0%;
     --jaroo-cal-stroke-hover:0%;
-    --jaroo-cal-left-accent:inset 1px 0 0 color-mix(in srgb,var(--jaroo-cal-event-color) 40%,#C5CDD0);
+    --jaroo-cal-left-accent:inset 0 0 0 0 transparent;
     background-image:none!important;
   }
   html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-color="true"][data-jaroo-cal-semantic="true"]:not([data-jaroo-cal-status]) [data-jaroo-cal-event-time="true"] {
     color:#41494D!important;-webkit-text-fill-color:#41494D!important;
   }
+  /* Priority retains a top rule, rather than a ring with vertical end caps. */
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-color="true"][data-jaroo-cal-priority="true"]{
+    --jaroo-cal-priority-ring:inset 0 1px 0 var(--jaroo-cal-gold);
+  }
   /* A shared marker edge for the four native labels and today's numeral.
      Keep today's native cell/selection outline and mini-grid geometry. */
   html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-brand="true"],[data-jaroo-cal-month-title="true"],[data-jaroo-cal-create-label="true"],[data-jaroo-cal-section="true"]) {
-    --jaroo-cal-label-marker:#D6DDE0;
-    background-image:linear-gradient(to bottom,transparent 0 46%,color-mix(in srgb,var(--jaroo-cal-label-marker) 55%,transparent) 48%,var(--jaroo-cal-label-marker) 52% 88%,color-mix(in srgb,var(--jaroo-cal-label-marker) 55%,transparent) 92%,transparent 96%)!important;
+    --jaroo-cal-label-brush:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%2024%22%20preserveAspectRatio%3D%22none%22%3E%3Cpath%20d%3D%22M1%2011.4%20L12%2011.1%2024%2011.8%2037%2011.3%2052%2010.9%2065%2011.4%2078%2010.8%2091%2011.5%20106%2011.1%20120%2011.7%20136%2011.0%20149%2011.5%20164%2010.8%20179%2011.4%20193%2011.0%20208%2011.7%20222%2011.2%20239%2011.5%20L238.5%2021.1%20225%2021.4%20210%2020.7%20196%2021.2%20181%2020.8%20167%2021.5%20151%2021.0%20137%2021.4%20123%2020.8%20108%2021.3%2093%2020.9%2078%2021.5%2063%2021.1%2048%2020.7%2034%2021.4%2020%2020.9%207%2021.3%201.5%2021%20Z%22%20fill%3D%22%23D6DDE0%22%20fill-opacity%3D%221%22%2F%3E%3C%2Fsvg%3E");
+    background-image:var(--jaroo-cal-label-brush)!important;
+    background-size:100% 100%!important;
     background-repeat:no-repeat!important;
   }
-  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-brand="true"]{--jaroo-cal-label-marker:var(--jaroo-cal-pink)}
-  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-title="true"]{--jaroo-cal-label-marker:var(--jaroo-cal-today)}
-  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-create-label="true"]{--jaroo-cal-label-marker:var(--jaroo-cal-marker)}
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-brand="true"]{--jaroo-cal-label-brush:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%2024%22%20preserveAspectRatio%3D%22none%22%3E%3Cpath%20d%3D%22M1%2011.4%20L12%2011.1%2024%2011.8%2037%2011.3%2052%2010.9%2065%2011.4%2078%2010.8%2091%2011.5%20106%2011.1%20120%2011.7%20136%2011.0%20149%2011.5%20164%2010.8%20179%2011.4%20193%2011.0%20208%2011.7%20222%2011.2%20239%2011.5%20L238.5%2021.1%20225%2021.4%20210%2020.7%20196%2021.2%20181%2020.8%20167%2021.5%20151%2021.0%20137%2021.4%20123%2020.8%20108%2021.3%2093%2020.9%2078%2021.5%2063%2021.1%2048%2020.7%2034%2021.4%2020%2020.9%207%2021.3%201.5%2021%20Z%22%20fill%3D%22%23F3B9CB%22%20fill-opacity%3D%221%22%2F%3E%3C%2Fsvg%3E")}
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-title="true"]{--jaroo-cal-label-brush:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%2024%22%20preserveAspectRatio%3D%22none%22%3E%3Cpath%20d%3D%22M1%2011.4%20L12%2011.1%2024%2011.8%2037%2011.3%2052%2010.9%2065%2011.4%2078%2010.8%2091%2011.5%20106%2011.1%20120%2011.7%20136%2011.0%20149%2011.5%20164%2010.8%20179%2011.4%20193%2011.0%20208%2011.7%20222%2011.2%20239%2011.5%20L238.5%2021.1%20225%2021.4%20210%2020.7%20196%2021.2%20181%2020.8%20167%2021.5%20151%2021.0%20137%2021.4%20123%2020.8%20108%2021.3%2093%2020.9%2078%2021.5%2063%2021.1%2048%2020.7%2034%2021.4%2020%2020.9%207%2021.3%201.5%2021%20Z%22%20fill%3D%22%23D8EA8B%22%20fill-opacity%3D%221%22%2F%3E%3C%2Fsvg%3E")}
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-create-label="true"]{--jaroo-cal-label-brush:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%2024%22%20preserveAspectRatio%3D%22none%22%3E%3Cpath%20d%3D%22M1%2011.4%20L12%2011.1%2024%2011.8%2037%2011.3%2052%2010.9%2065%2011.4%2078%2010.8%2091%2011.5%20106%2011.1%20120%2011.7%20136%2011.0%20149%2011.5%20164%2010.8%20179%2011.4%20193%2011.0%20208%2011.7%20222%2011.2%20239%2011.5%20L238.5%2021.1%20225%2021.4%20210%2020.7%20196%2021.2%20181%2020.8%20167%2021.5%20151%2021.0%20137%2021.4%20123%2020.8%20108%2021.3%2093%2020.9%2078%2021.5%2063%2021.1%2048%2020.7%2034%2021.4%2020%2020.9%207%2021.3%201.5%2021%20Z%22%20fill%3D%22%23F2D778%22%20fill-opacity%3D%221%22%2F%3E%3C%2Fsvg%3E")}
   html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [data-jaroo-cal-today-label="true"],
   html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-mini-day="today"]{
     background-color:transparent!important;
-    background-image:linear-gradient(to bottom,transparent 0 45%,var(--jaroo-cal-today) 47% 90%,transparent 94%)!important;
+    background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%2024%22%20preserveAspectRatio%3D%22none%22%3E%3Cpath%20d%3D%22M1%2011.4%20L12%2011.1%2024%2011.8%2037%2011.3%2052%2010.9%2065%2011.4%2078%2010.8%2091%2011.5%20106%2011.1%20120%2011.7%20136%2011.0%20149%2011.5%20164%2010.8%20179%2011.4%20193%2011.0%20208%2011.7%20222%2011.2%20239%2011.5%20L238.5%2021.1%20225%2021.4%20210%2020.7%20196%2021.2%20181%2020.8%20167%2021.5%20151%2021.0%20137%2021.4%20123%2020.8%20108%2021.3%2093%2020.9%2078%2021.5%2063%2021.1%2048%2020.7%2034%2021.4%2020%2020.9%207%2021.3%201.5%2021%20Z%22%20fill%3D%22%23D8EA8B%22%20fill-opacity%3D%221%22%2F%3E%3C%2Fsvg%3E")!important;
+    background-size:100% 100%!important;
     background-repeat:no-repeat!important;
   }
   html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-control="segment"]:is([aria-selected="true"],[aria-pressed="true"]):hover:not([aria-disabled="true"]):not(:disabled){
