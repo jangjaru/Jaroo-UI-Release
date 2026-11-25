@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo · Google Calendar E-Book Companion
 // @namespace    jaroo.calendar.ebook
-// @version      0.5.1
+// @version      0.5.2
 // @description  Cool E-Ink Graph Paper · native Calendar event labels, More popup and local agenda.
 // @match        https://calendar.google.com/calendar/*
 // @run-at       document-start
@@ -12,7 +12,7 @@
 // ==/UserScript==
 
 /*
- * Jaroo Calendar E-Book v0.5.1 · 2026-11-25
+ * Jaroo Calendar E-Book v0.5.2 · 2026-11-25
  * Requires the paired E-Book Stylus CSS and native Light appearance.
  * Forked from the working Calendar Companion v1.3.7; history below is retained.
  * v1.3.1: preserve visually present month-grid/list colors when Calendar temporarily
@@ -234,11 +234,11 @@
   // BEGIN_JAROO_ADAPTER
   const RUNTIME = '__jarooCalendarCompanionV1';
   window[RUNTIME]?.dispose?.();
-  const VERSION = '0.5.1';
+  const VERSION = '0.5.2';
   const CONFIG = Object.freeze({ timeZone: 'Asia/Seoul', futureDays: 7, maxPins: 3, maxEvents: 1200, recoveryMs: 5000, minScanGapMs: 60 });
   const EVENT = '[data-eventid]';
   const EXCLUDE = '[role="dialog"],[role="menu"],[role="listbox"],[hidden],[inert],[aria-hidden="true"]';
-  const MARKERS = ['data-jaroo-cal-event','data-jaroo-cal-event-ready','data-jaroo-cal-color','data-jaroo-cal-title','data-jaroo-cal-date-label','data-jaroo-cal-today','data-jaroo-cal-selected','data-jaroo-cal-grid','data-jaroo-cal-month-grid','data-jaroo-cal-month-title','data-jaroo-cal-today-label','data-jaroo-cal-month-frame','data-jaroo-cal-month-vertical','data-jaroo-cal-month-column-layer','data-jaroo-cal-month-horizontal','data-jaroo-cal-month-row-rule','data-jaroo-cal-week-gutter','data-jaroo-cal-week-number','data-jaroo-cal-month-today-cell','data-jaroo-cal-month-today-layer','data-jaroo-cal-today-ring','data-jaroo-cal-today-ring-part','data-jaroo-cal-month-weekend','data-jaroo-cal-date-tone','data-jaroo-cal-day-header','data-jaroo-cal-more-label','data-jaroo-cal-event-time','data-jaroo-cal-time-display','data-jaroo-cal-brand','data-jaroo-cal-section','data-jaroo-cal-mini','data-jaroo-cal-mini-title','data-jaroo-cal-mini-day','data-jaroo-cal-mini-number','data-jaroo-cal-calendar-label','data-jaroo-cal-create-label','data-jaroo-cal-control','data-jaroo-cal-sidebar-panel','data-jaroo-cal-surface','data-jaroo-cal-deadline','data-jaroo-cal-priority','data-jaroo-cal-semantic','data-jaroo-cal-category','data-jaroo-cal-status'];
+  const MARKERS = ['data-jaroo-cal-event','data-jaroo-cal-event-ready','data-jaroo-cal-color','data-jaroo-cal-title','data-jaroo-cal-date-label','data-jaroo-cal-today','data-jaroo-cal-selected','data-jaroo-cal-grid','data-jaroo-cal-month-grid','data-jaroo-cal-month-title','data-jaroo-cal-today-label','data-jaroo-cal-month-frame','data-jaroo-cal-month-vertical','data-jaroo-cal-month-column-layer','data-jaroo-cal-month-horizontal','data-jaroo-cal-month-row-rule','data-jaroo-cal-week-gutter','data-jaroo-cal-week-number','data-jaroo-cal-month-today-cell','data-jaroo-cal-month-today-layer','data-jaroo-cal-today-ring','data-jaroo-cal-today-ring-part','data-jaroo-cal-month-weekend','data-jaroo-cal-date-tone','data-jaroo-cal-day-header','data-jaroo-cal-more-label','data-jaroo-cal-event-time','data-jaroo-cal-time-display','data-jaroo-cal-brand','data-jaroo-cal-section','data-jaroo-cal-mini','data-jaroo-cal-mini-title','data-jaroo-cal-mini-day','data-jaroo-cal-mini-number','data-jaroo-cal-calendar-label','data-jaroo-cal-create-label','data-jaroo-cal-control','data-jaroo-cal-header-switch','data-jaroo-cal-switch-part','data-jaroo-cal-sidebar-panel','data-jaroo-cal-surface','data-jaroo-cal-deadline','data-jaroo-cal-priority','data-jaroo-cal-semantic','data-jaroo-cal-category','data-jaroo-cal-status'];
   const eventStyles = new Map(), marked = new Set(), ownedMarkers=new WeakMap(), dateCache = new WeakMap(), textRenderCache = new WeakMap();
   let markerPlan = null, layoutSnapshot=null, layoutDirty=true;
   let moreRequestUntil=0, moreOpenLastScan=false;
@@ -961,6 +961,24 @@
       Math.max(...rgb.slice(0,3))-Math.min(...rgb.slice(0,3))<=18&&
       (rgb.length===3||rgb[3]>=.75)&&(!style.backgroundImage||style.backgroundImage==='none');
   }
+
+  function headerSegmentGroup(segments,header,box){
+    if(segments.length!==2)return null;
+    const pair=segments.map(node=>({node,r:box(node)}));
+    if(pair.some(x=>!x.r))return null;
+    pair.sort((a,b)=>a.r.left-b.r.left);
+    const [a,b]=pair;
+    if(Math.abs(a.r.top-b.r.top)>3||Math.abs(a.r.bottom-b.r.bottom)>3||Math.abs(a.r.right-b.r.left)>4)return null;
+    for(let p=a.node.parentElement,depth=0;p&&p!==header&&depth<4;p=p.parentElement,depth++){
+      if(!p.contains(b.node))continue;
+      const r=box(p);
+      if(!r||Math.abs(r.left-a.r.left)>5||Math.abs(r.right-b.r.right)>5||Math.abs(r.top-a.r.top)>5||Math.abs(r.bottom-a.r.bottom)>5)continue;
+      if([...p.querySelectorAll(CHROME_CONTROL)].some(n=>n!==a.node&&n!==b.node&&!a.node.contains(n)&&!b.node.contains(n)))continue;
+      return {group:p,first:a.node,last:b.node};
+    }
+    return null;
+  }
+
   function inspectCalendarChrome(){
     const cache=new WeakMap(),box=node=>chromeBox(node,cache),plan=[];
     const miniDayPriority=new Map();
@@ -1002,9 +1020,19 @@
       const brands=exactChromeLabels(header,v=>/^(?:Calendar|Google Calendar|캘린더)$/iu.test(v),cache,500)
         .filter(node=>!node.closest('[aria-pressed],[aria-selected],[role="tab"]'));
       if(brands.length===1)add(brands[0],'data-jaroo-cal-brand');
+      const segments=[];
       for(const control of header.querySelectorAll(CHROME_CONTROL)){
         const kind=roleControl(control,'header');
-        if(kind&&box(control))add(control,'data-jaroo-cal-control',kind);
+        if(kind&&box(control)){
+          add(control,'data-jaroo-cal-control',kind);
+          if(kind==='segment')segments.push(control);
+        }
+      }
+      const pair=headerSegmentGroup(segments,header,box);
+      if(pair){
+        add(pair.group,'data-jaroo-cal-header-switch');
+        add(pair.first,'data-jaroo-cal-switch-part','first');
+        add(pair.last,'data-jaroo-cal-switch-part','last');
       }
     }
     // Find the real left rail using its own calendar labels and bounded
@@ -1901,7 +1929,7 @@
     const status = shadow.getElementById('jaroo-cal-ui-status'), notes = [];
     status.className = 'status';
     if (!cssApplied) { notes.push('테마 CSS가 아직 적용되지 않았어. Stylus 적용 주소를 확인해줘.'); status.classList.add('warn'); }
-    else if (enabled && cssVersion !== '0.5.1') { notes.push('E-Book v0.5.1 CSS가 필요해. 같은 채널의 Stylus 스타일을 확인해줘.'); status.classList.add('warn'); }
+    else if (enabled && cssVersion !== '0.5.2') { notes.push('E-Book v0.5.2 CSS가 필요해. 같은 채널의 Stylus 스타일을 확인해줘.'); status.classList.add('warn'); }
     if (dirty) notes.push('화면 확인 중… 이전에 읽은 항목이 잠시 표시될 수 있어.');
     else if (lastError) { notes.push('화면을 다시 읽지 못했어. 표시 설정에서 다시 읽기를 눌러줘.'); status.classList.add('warn'); }
     else if (panelFilter === 'today' && !todayKnown) notes.push('현재 화면에서 오늘 날짜를 확인하지 못했어. 기본 캘린더를 오늘로 이동한 뒤 다시 읽어줘.');
@@ -1949,12 +1977,13 @@
     return /^(?:19[7-9]\d|20\d{2}|21\d{2})년\s*(?:[1-9]|1[0-2])월$/.test(hdrText) ||
       /^(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+(?:19[7-9]\d|20\d{2}|21\d{2})$/i.test(hdrText);
   }
-  function hdrComputeGap(hdrHeaderBox, hdrTitleBox, hdrBlockers, hdrViewportWidth, hdrViewportHeight) {
+  function hdrComputeGap(hdrHeaderBox, hdrTitleBox, hdrBlockers, hdrViewportWidth, hdrViewportHeight,hdrTextBottomOffset=NaN) {
     if (!hdrHeaderBox || !hdrTitleBox || hdrHeaderBox.height < 34 || hdrTitleBox.width <= 0 || hdrTitleBox.height <= 0) return null;
     if (hdrHeaderBox.top < -2 || hdrHeaderBox.top > 160 || hdrHeaderBox.height > 180 || hdrHeaderBox.bottom > hdrViewportHeight) return null;
     if (hdrTitleBox.left < hdrHeaderBox.left - 1 || hdrTitleBox.right > hdrHeaderBox.right + 1 || hdrTitleBox.top < hdrHeaderBox.top - 1 || hdrTitleBox.bottom > hdrHeaderBox.bottom + 1) return null;
     const hdrHeight = 32;
-    const hdrTop = Math.max(hdrHeaderBox.top + 1, Math.min(hdrTitleBox.top + (hdrTitleBox.height - hdrHeight) / 2, hdrHeaderBox.bottom - hdrHeight - 1));
+    const hdrWantedTop=Number.isFinite(hdrTextBottomOffset)?hdrTitleBox.bottom-hdrTextBottomOffset:hdrTitleBox.top+(hdrTitleBox.height-hdrHeight)/2;
+    const hdrTop=Math.max(hdrHeaderBox.top+1,Math.min(hdrWantedTop,hdrHeaderBox.bottom-hdrHeight-1));
     const hdrLeft = Math.max(8, hdrHeaderBox.left + 8, hdrTitleBox.right + 16);
     let hdrRight = Math.min(hdrViewportWidth - 12, hdrHeaderBox.right - 12);
     for (const hdrBox of hdrBlockers) {
@@ -1966,7 +1995,8 @@
   function hdrSelectMode(hdrAvailable, hdrWidths) {
     for (const hdrMode of ['full', 'short', 'compact']) {
       const hdrWidth = hdrWidths[hdrMode];
-      if (Number.isFinite(hdrWidth) && hdrWidth > 0 && hdrWidth <= hdrAvailable) return hdrMode;
+      const available=typeof hdrAvailable==='number'?hdrAvailable:hdrAvailable[hdrMode];
+      if(Number.isFinite(hdrWidth)&&hdrWidth>0&&hdrWidth<=available)return hdrMode;
     }
     return 'hidden';
   }
@@ -2078,10 +2108,10 @@
         .row{display:flex;align-items:center;gap:12px;list-style:none;padding:0;margin:0;
           height:32px;white-space:nowrap;width:max-content}.row.short{gap:10px}
         .item{display:inline-flex;align-items:center;gap:6px;color:#292D30}
-        .swatch{width:8px;height:8px;border-radius:50%;background:var(--tone);box-shadow:inset 0 0 0 1px #30343822;flex:none}
+        .swatch{width:8px;height:8px;border-radius:50%;background:var(--tone);border:0;box-shadow:none;flex:none}
         button{font:inherit;color:inherit;cursor:pointer;pointer-events:auto}
-        .trigger{height:32px;white-space:nowrap;padding:4px 10px;background:#EFF1F2;
-          border:1px solid #89979E;border-radius:5px}
+        .trigger{height:32px;white-space:nowrap;padding:4px 10px;background:transparent;
+          border:1px solid #303438;border-radius:5px}
         button:focus-visible{outline:2px solid #517E89;outline-offset:2px}
         .popup{position:fixed;pointer-events:auto;background:#F5F6F6;border:1px solid #B9C1C5;
           border-radius:5px;padding:12px;box-shadow:0 5px 16px #27303822;overflow:auto}
@@ -2183,21 +2213,35 @@
         if (hdrNodeValue.contains(hdrAnchor)) { hdrBox.right = Math.max(hdrBox.right, hdrRect.right); continue; }
         hdrBlockers.push(hdrRect);
       }
-      const hdrPreviousGap = hdrGap;
-      hdrGap = hdrComputeGap(hdrHeaderBox, hdrBox, hdrBlockers, window.innerWidth, window.innerHeight);
-      hdrBindObservers([hdrHeader, hdrAnchor, ...hdrNativeControls]);
-      if (!hdrGap) { hdrHide('no-safe-gap'); return; }
+      const hdrPreviousGap=hdrGap;
+      hdrBindObservers([hdrHeader,hdrAnchor,...hdrNativeControls]);
       hdrEnsureHost();
-      if (hdrPopupOpen && (!hdrPreviousGap || hdrPreviousGap.left !== hdrGap.left || hdrPreviousGap.headerBottom !== hdrGap.headerBottom)) hdrClosePopup();
-      hdrHost.style.visibility = 'hidden'; hdrHost.hidden = false;
-      hdrHost.style.zIndex = String(hdrNativeLayer());
-      hdrHost.style.left = `${hdrGap.left}px`; hdrHost.style.top = `${hdrGap.top}px`;
-      const hdrWidths = {};
-      for (const hdrValue of ['full', 'short', 'compact']) { hdrSetMode(hdrValue); hdrWidths[hdrValue] = hdrHost.getBoundingClientRect().width; }
-      hdrMode = hdrSelectMode(hdrGap.width, hdrWidths);
-      if (hdrMode === 'hidden') { hdrHide('insufficient-horizontal-space'); return; }
-      if (hdrMode !== 'compact') hdrClosePopup();
-      hdrSetMode(hdrMode); hdrHost.style.visibility = 'visible'; hdrReason = 'ready';
+      hdrHost.style.visibility='hidden';hdrHost.hidden=false;
+      hdrHost.style.zIndex=String(hdrNativeLayer());
+      hdrHost.style.left=`${hdrHeaderBox.left}px`;hdrHost.style.top=`${hdrHeaderBox.top}px`;
+      const hdrWidths={},hdrGaps={},hdrAvailable={};
+      for(const hdrValue of ['full','short','compact']){
+        hdrSetMode(hdrValue);
+        const hostBox=hdrHost.getBoundingClientRect();
+        hdrWidths[hdrValue]=hostBox.width;
+        const label=hdrValue==='compact'?hdrShadow.getElementById('hdr-trigger'):
+          hdrShadow.getElementById('hdr-'+hdrValue).querySelector('.item > span:last-child');
+        let offset=NaN;
+        try{
+          const labelRange=document.createRange();labelRange.selectNodeContents(label);
+          const r=labelRange.getBoundingClientRect();
+          if(r.height>0)offset=r.bottom-hostBox.top;
+        }catch(_){/* Safe centered fallback. */}
+        const gap=hdrComputeGap(hdrHeaderBox,hdrBox,hdrBlockers,window.innerWidth,window.innerHeight,offset);
+        hdrGaps[hdrValue]=gap;hdrAvailable[hdrValue]=gap?.width||0;
+      }
+      hdrMode=hdrSelectMode(hdrAvailable,hdrWidths);
+      if(hdrMode==='hidden'){hdrGap=null;hdrHide('insufficient-horizontal-space');return;}
+      hdrGap=hdrGaps[hdrMode];
+      if(hdrPopupOpen&&(!hdrPreviousGap||hdrPreviousGap.left!==hdrGap.left||hdrPreviousGap.headerBottom!==hdrGap.headerBottom))hdrClosePopup();
+      if(hdrMode!=='compact')hdrClosePopup();
+      hdrHost.style.left=`${hdrGap.left}px`;hdrHost.style.top=`${hdrGap.top}px`;
+      hdrSetMode(hdrMode);hdrHost.style.visibility='visible';hdrReason='ready';
     }
     function hdrUpdateSafe() {
       try { hdrUpdate(); }
