@@ -344,6 +344,13 @@ html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="detail"]{
   html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-surface="sidebar"],[data-jaroo-cal-brand],[data-jaroo-cal-section],[data-jaroo-cal-create-label]){background-image:none!important}
   html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-control],[data-jaroo-cal-mini-day],[data-jaroo-cal-today-label]){background-color:Canvas!important;color:CanvasText!important;box-shadow:none!important}
   html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-mini-day],[data-jaroo-cal-today-label]){outline:1px solid Highlight!important;outline-offset:-1px!important}
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-control]:not([aria-disabled="true"]):not(:disabled),
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-control]:not([aria-disabled="true"]):not(:disabled):hover{
+    background-color:Canvas!important;color:CanvasText!important;box-shadow:none!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [role="gridcell"][data-jaroo-cal-today="true"]{
+    background-color:Canvas!important;box-shadow:none!important;outline:1px solid Highlight!important;outline-offset:-1px!important;
+  }
 }
 
 @media(max-width:900px){

@@ -862,6 +862,13 @@
     }
     return found.filter(node=>!found.some(other=>node!==other&&node.contains(other)));
   }
+  function railPanelPaintEligible(style,owned=false){
+    if(owned)return true;
+    const rgb=(style.backgroundColor||'').match(/[\d.]+/g)?.map(Number)||[];
+    return rgb.length>=3&&Math.min(...rgb.slice(0,3))>=195&&
+      Math.max(...rgb.slice(0,3))-Math.min(...rgb.slice(0,3))<=18&&
+      (rgb.length===3||rgb[3]>=.75)&&(!style.backgroundImage||style.backgroundImage==='none');
+  }
   function inspectCalendarChrome(){
     const cache=new WeakMap(),box=node=>chromeBox(node,cache),plan=[];
     const miniDayPriority=new Map();
@@ -952,12 +959,11 @@
         for(let p=anchor.parentElement,depth=0;p&&p!==rail&&depth<8;p=p.parentElement,depth++){
           if(p.matches(CHROME_CONTROL+',label,[role="checkbox"],[role="grid"],table')||p.closest('[role="grid"],table'))continue;
           const r=box(p);if(!r||r.width<railRect.width*.70||r.height<20)continue;
-          const style=getComputedStyle(p),rgb=(style.backgroundColor||'').match(/[\d.]+/g)?.map(Number)||[];
-          // Only neutral, light, opaque native wrapper backgrounds. The
-          // original calendar swatches/checkboxes and nonneutral fills stay.
-          if(rgb.length<3||Math.min(...rgb.slice(0,3))<195||
-             Math.max(...rgb.slice(0,3))-Math.min(...rgb.slice(0,3))>18||
-             (rgb.length>3&&rgb[3]<.75)||style.backgroundImage&&style.backgroundImage!=='none')continue;
+          const style=getComputedStyle(p);
+          // Keep an already-owned paint marker on the same verified rail
+          // wrapper. Its computed background is now transparent by design.
+          // Re-testing that as native paint would alternate every scan.
+          if(!railPanelPaintEligible(style,p.hasAttribute('data-jaroo-cal-sidebar-panel')))continue;
           if(!panels.has(p)){panels.add(p);add(p,'data-jaroo-cal-sidebar-panel');}
         }
       };
