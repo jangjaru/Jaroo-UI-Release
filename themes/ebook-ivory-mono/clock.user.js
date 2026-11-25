@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.13
+// @version      3.11.14
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -190,9 +190,15 @@
       .life-progress-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin-top:7px}
       .life-progress-stat{display:flex;flex-direction:column;gap:3px;min-width:0;align-items:flex-start}
       .life-progress-stat.remaining{align-items:flex-end;text-align:right}
-      .life-progress-stat span{font:450 var(--widget-meta)/1.35 var(--font);color:var(--muted);overflow-wrap:anywhere}
+      .life-progress-stat > span{font:450 var(--widget-meta)/1.35 var(--font);color:var(--muted);overflow-wrap:anywhere}
       .life-progress-stat strong{font:500 var(--widget-main)/1.25 var(--mono);font-variant-numeric:tabular-nums;color:var(--muted);max-width:100%;white-space:normal;word-break:keep-all}
       .life-progress-stat.remaining strong{font-weight:600;color:var(--ink)}
+      /* Live durations use the existing large hours and a compact seconds suffix. */
+      .life-value,.life-progress-stat strong{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:flex-end;gap:2px 6px}
+      .life-duration-hours{white-space:nowrap;font:inherit;color:inherit;letter-spacing:inherit}
+      .life-duration-tail{white-space:nowrap;font:450 12px/1.2 var(--mono);color:var(--muted);letter-spacing:-.035em;font-variant-numeric:tabular-nums}
+      .life-duration-tail[hidden]{display:none}
+      .life-progress-stat:not(.remaining) strong{justify-content:flex-start}
       .clock{margin:0;padding:0;border-top:1px solid var(--line);user-select:none}
       .clock-content{display:flex;flex-direction:column;min-width:0}
       .clock-line{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:53px;padding:7px 0}
@@ -212,8 +218,8 @@
       .separator{display:inline-flex;align-items:center;justify-content:center;flex:0 0 8px;width:8px;height:38px;margin-inline:4px;color:#41494D;font:380 30px/1 Consolas,monospace}
       /* Reflow before hiding secondary detail; never shrink the core type.
          Named container queries respond to the actual dashboard content width. */
-      @container jaroo-dashboard (max-width: 279px){
-        .life-card-main{grid-template-columns:minmax(0,1fr);gap:4px}
+      @container jaroo-dashboard (max-width: 329px){
+        .life-card-main,.life-card.retire .life-card-main{grid-template-columns:minmax(0,1fr);align-items:start;gap:4px}
         .life-value{justify-self:end}
       }
       @container jaroo-dashboard (max-width: 309px){
@@ -228,8 +234,9 @@
         .life-progress-meta{grid-template-columns:minmax(0,1fr);gap:7px}
         .life-progress-stat{flex-direction:row;align-items:baseline;justify-content:space-between;gap:6px}
         .life-progress-stat.remaining{text-align:left;align-items:baseline}
-        .life-progress-stat span{flex:1;min-width:0}
+        .life-progress-stat > span{flex:1;min-width:0}
         .life-progress-stat strong{text-align:right;flex:0 1 auto}
+        .life-progress-stat:not(.remaining) strong{justify-content:flex-end}
       }
       @container jaroo-dashboard (max-width: 184px){
         .life-meta,.life-sub,.life-progress-scale,.brand-subtitle{display:none}
@@ -369,7 +376,7 @@
   function syncLifeProfile() {
     const {profile,source}=resolveLifeProfile(),key=profile?.key||'';
     if(key===lifeKey&&source===lifeSource)return;
-    LIFE=profile;lifeKey=key;lifeSource=source;lastLifeMinuteKey='';
+    LIFE=profile;lifeKey=key;lifeSource=source;lastLifeSecondKey='';
     // Never hide the whole calculator on missing settings.
     lifeSetup.hidden=!!LIFE;
     if(LIFE){
@@ -439,13 +446,10 @@
     const shifted = new Date(instantMs + KST_HOUR_OFFSET_MS);
     return Date.UTC(shifted.getUTCFullYear(),shifted.getUTCMonth(),shifted.getUTCDate()) - KST_HOUR_OFFSET_MS;
   }
-  function hoursUntil(nowMs, targetMs) {
-    return Math.max(0, Math.ceil((targetMs - nowMs) / HOUR_MS));
-  }
   function overlapMs(a, b, c, d) {
     return Math.max(0, Math.min(b,d) - Math.max(a,c));
   }
-  function calculateWorkHours(nowMs, retirementMs) {
+  function calculateWorkDurationMs(nowMs, retirementMs) {
     if(nowMs>=retirementMs)return 0;
     const first=kstDayStartUtcMs(nowMs),last=kstDayStartUtcMs(retirementMs);
     const weekday=day=>new Date(day+KST_HOUR_OFFSET_MS).getUTCDay();
@@ -459,37 +463,49 @@
       for(let i=0;i<full%7;i++)if(isWork(first+(i+1)*DAY_MS))weekdays++;
       total+=weekdays*8*HOUR_MS;
     }
-    return Math.ceil(total/HOUR_MS);
+    return total;
   }
-  const lifeHour = ms => `${TIME_FORMAT.format(Math.max(0,ms))} 시간`;
-  let lastLifeMinuteKey = '';
+  function durationParts(ms,elapsed=false) {
+    const seconds=(elapsed?Math.floor:Math.ceil)(Math.max(0,ms)/1000);
+    return [TIME_FORMAT.format(Math.floor(seconds/3600))+' 시간',String(Math.floor(seconds/60)%60).padStart(2,'0')+'분 '+String(seconds%60).padStart(2,'0')+'초'];
+  }
+  const durationNodes=new WeakMap();
+  function setLifeDuration(el,ms,{elapsed=false,fixed=false}={}) {
+    let nodes=durationNodes.get(el);
+    if(!nodes||nodes.hours.parentNode!==el){
+      const hours=document.createElement('span'),tail=document.createElement('span');
+      hours.className='life-duration-hours';tail.className='life-duration-tail';
+      el.replaceChildren(hours,tail);nodes={hours,tail};durationNodes.set(el,nodes);
+    }
+    const [hours,tail]=durationParts(ms,elapsed);
+    if(nodes.hours.textContent!==hours)nodes.hours.textContent=hours;
+    if(nodes.tail.textContent!==tail)nodes.tail.textContent=tail;
+    if(nodes.tail.hidden!==fixed)nodes.tail.hidden=fixed;
+  }
+  let lastLifeSecondKey = '';
   function updateLifeClock(now) {
     syncLifeProfile();
     if(!LIFE)return;
-    const ms=now.getTime();
-    const minuteKey=Math.floor(ms/60000);
-    if(minuteKey===lastLifeMinuteKey) return;
-    lastLifeMinuteKey=minuteKey;
+    const ms=now.getTime(),secondKey=Math.floor(ms/1000);
+    if(secondKey===lastLifeSecondKey)return;
+    lastLifeSecondKey=secondKey;
 
     const retirementMs=LIFE.retirement.getTime(),age80Ms=LIFE.age80.getTime();
-    const retireHours=hoursUntil(ms,retirementMs);
-    const age80Hours=hoursUntil(ms,age80Ms);
-    const workHours=calculateWorkHours(ms,retirementMs);
-    const plannedAfterHours=ms<retirementMs ? (age80Ms-retirementMs)/HOUR_MS : hoursUntil(ms,age80Ms);
+    const beforeRetirement=ms<retirementMs;
     const lifeMs=age80Ms-LIFE.birth.getTime();
     const used=Math.min(1,Math.max(0,(ms-LIFE.birth.getTime())/lifeMs))*100;
+    setLifeDuration(lifeEls.retireValue,retirementMs-ms);
+    setLifeDuration(lifeEls.workValue,calculateWorkDurationMs(ms,retirementMs));
+    setLifeDuration(lifeEls.afterValue,beforeRetirement?age80Ms-retirementMs:age80Ms-ms,{fixed:beforeRetirement});
+    setLifeDuration(lifeEls.usedHours,Math.min(ms,age80Ms)-LIFE.birth.getTime(),{elapsed:true});
+    setLifeDuration(lifeEls.remainingHours,age80Ms-ms);
     const values=[
-      ['retireValue',lifeHour(retireHours)],
       ['retireMeta','65세 기준'],
-      ['workValue',lifeHour(workHours)],
       ['workMeta','평일 8시간 기준'],
-      ['afterValue',lifeHour(plannedAfterHours)],
-      ['afterMeta',ms<retirementMs?'65~80세 계획기간':'80세까지 잔여기간'],
+      ['afterMeta',beforeRetirement?'65~80세 계획기간':'80세까지 잔여기간'],
       ['progressPercent',`${used.toFixed(1)}%`],
       ['usedMeta',`지나온 시간 · ${used.toFixed(1)}%`],
-      ['remainingMeta',`남은 시간 · ${(100-used).toFixed(1)}%`],
-      ['usedHours',lifeHour(Math.floor(Math.max(0,Math.min(ms,age80Ms)-LIFE.birth.getTime())/HOUR_MS))],
-      ['remainingHours',lifeHour(age80Hours)]
+      ['remainingMeta',`남은 시간 · ${(100-used).toFixed(1)}%`]
     ];
     for(const [key,val] of values){if(lifeEls[key]?.textContent!==val)lifeEls[key].textContent=val; if(key.endsWith('Meta') && ['retireMeta','workMeta','afterMeta'].includes(key) && lifeEls[key]?.title!==val)lifeEls[key].title=val;}
     const width=`${used.toFixed(1)}%`;
@@ -1060,9 +1076,9 @@
     if (window[RUNTIME_KEY]?.dispose === dispose) delete window[RUNTIME_KEY];
   }
   window[RUNTIME_KEY] = {
-    version: '3.11.13', dispose,
+    version: '3.11.14', dispose,
     diagnostics: () => ({
-      version: '3.11.13', ...placementReport,
+      version: '3.11.14', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
