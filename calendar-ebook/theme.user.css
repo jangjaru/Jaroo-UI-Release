@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo Google Calendar E-Book
 @namespace    jaroo.calendar.ebook
-@version      0.5.13
+@version      0.5.14
 @description  Cool E-Ink Graph Paper · paired with Calendar E-Book Companion
 @author       Jaroo
 @license      UNLICENSED
@@ -42,7 +42,7 @@
 /* Light appearance is selected in Google Calendar itself. No layout,
    event text, native date/colour data, or click targets are rewritten. */
 html[data-jaroo-calendar-theme="ebook"] {
-  --jaroo-cal-style-version: 0.5.13;
+  --jaroo-cal-style-version: 0.5.14;
   --jaroo-cal-bg:#EFF1F2;
   --jaroo-cal-sidebar:#E7EAEB;
   --jaroo-cal-surface:#F5F6F6;
@@ -1017,12 +1017,42 @@ html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-caption="t
   }
 }
 
-/* v0.5.13 — DevTools-confirmed native MONTH content frame.
+/* v0.5.14 — DevTools-confirmed native MONTH content frame.
    Paint only the transparent parent behind the month grid's right/bottom
    gutters. Preserve all child backgrounds and native layout/scrolling. */
 @media(forced-colors:none){
   html[data-jaroo-calendar-theme="ebook"] body[data-viewfamily="EVENT"][data-viewkey="MONTH"] div.SGWAac{
     background-color:var(--jaroo-cal-bg)!important;
+  }
+}
+
+/* v0.5.14 — initial native surfaces before the Companion sets its theme flag.
+   The missing-flag state is only a static preview; the user's explicit OFF
+   flag bypasses these rules. Never hide the page or change its geometry. */
+@media(forced-colors:none){
+  html:not([data-jaroo-calendar-theme]),html:not([data-jaroo-calendar-theme]) body{
+    color-scheme:light!important;background-color:#EFF1F2!important;color:#292D30;
+    font-family:"Jaroo Cal Plex Latin","Pretendard Variable","Pretendard","Noto Sans KR",sans-serif;
+  }
+  html:not([data-jaroo-calendar-theme]) body{
+    --gm3-sys-color-background:#EFF1F2;
+    --gm3-sys-color-surface:#F5F6F6;
+    --gm3-sys-color-surface-container-low:#EFF1F2;
+    --gm3-sys-color-surface-container:#E7EAEB;
+    --gm3-sys-color-surface-container-high:#E4E8EA;
+    --gm3-sys-color-on-surface:#292D30;
+  }
+  html:not([data-jaroo-calendar-theme]) :is(main,[role="main"]){background-color:#EFF1F2!important}
+  html:not([data-jaroo-calendar-theme]) :is([role="banner"],[role="complementary"]){background-color:#E7EAEB!important}
+  html:not([data-jaroo-calendar-theme]) body[data-viewfamily="EVENT"][data-viewkey="MONTH"] div.SGWAac{background-color:#EFF1F2!important}
+  /* New month grids inherit paper before their verified marker is attached.
+     Native selection, event colors, details and mini calendars are excluded. */
+  html:is([data-jaroo-calendar-theme="ebook"],:not([data-jaroo-calendar-theme]))
+    body[data-viewfamily="EVENT"][data-viewkey="MONTH"] :is(main,[role="main"])
+    [role="grid"]:has([data-datekey]):not([data-jaroo-cal-month-grid]):not(:is([role="dialog"] *,[role="menu"] *,[role="listbox"] *,[role="complementary"] *,[role="grid"] [role="grid"])){
+    background-color:#EFF1F2!important;
+    background-image:linear-gradient(to right,rgba(85,97,105,.055) 1px,transparent 1px),linear-gradient(to bottom,rgba(85,97,105,.055) 1px,transparent 1px)!important;
+    background-size:22px 22px!important;
   }
 }
 

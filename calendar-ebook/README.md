@@ -1,3 +1,9 @@
+# Jaroo Calendar E-Book v0.5.14 — 최초 렌더링·화면 이동 전환 완화
+
+- 기준 f59446cc8b876c74d6ff508fcd49bf4d177aa408 (사용자 확인 v0.5.13). Stylus에서 Companion의 초기 활성화 속성이 아직 없을 때 기본 종이/헤더/사이드바를 먼저 적용. 실제 MONTH 본문 grid의 확인 가능한 날짜 구조에 한정해 마커 부착 전 모눈 적용. 기존 우측/하단 프레임 보정 유지. OFF 토글은 명시적인 off 상태로 유지하여 초기 스타일을 차단. CSS와 JS 함께 갱신.
+- Companion document-start에서 이전 런타임 정리 후 테마 속성을 Model 생성 전에 설정. 실제 Stylus 버전 토큰이 없을 때만 1.6초 한정 저우선순위 임시 CSS(동일 팔레트·로컬 폰트)를 사용하고 정식 CSS 발견/토글 OFF/dispose/시간 초과 시 제거. 원격 호출, 화면 숨김, 신규 상시 타이머 없음. Navigation API의 실제 경로 변경을 기존 즉시 스캔에 연결. 기존 데이터·분류·더보기·고정·완료·성능 스케줄러 유지.
+- JS 구문, CSS 기존 규칙 역검사, Model 원문 비교, 임시 CSS 적용·인계·제거 모의 검사. 실제 로그인 Chrome의 첫 프레임/화면 이동 측정은 미실시. 확장 프로그램 주입 전 브라우저 화면 및 늦게 생성되는 동적 요소의 변화까지 완전 제거를 보장하지 않음. Stylus만 활성화한 경우 초기 정적 스타일은 적용될 수 있으므로 기본 화면 복원 시 CSS/JS 모두 비활성화.
+
 # Jaroo Calendar E-Book v0.5.13 — 실제 월간 외곽 프레임 배경 보정
 
 - 사용자 DevTools 캡처: 선택 요소 div.SGWAac, body[data-viewfamily="EVENT"][data-viewkey="MONTH"], 네이티브 position:relative, width:100%, height:calc(100% - 64px), display:flex. 해당 스타일 목록에 자체 background 지정이 보이지 않음. 사용자 캡처 실제 픽셀에서 본문 #EFF1F2, 우측/하단 잔여 띠 #F8FAFD 재확인.

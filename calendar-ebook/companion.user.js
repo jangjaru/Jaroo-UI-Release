@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo · Google Calendar E-Book Companion
 // @namespace    jaroo.calendar.ebook
-// @version      0.5.13
+// @version      0.5.14
 // @description  Cool E-Ink Graph Paper · native Calendar event labels, More popup and local agenda.
 // @match        https://calendar.google.com/calendar/*
 // @run-at       document-start
@@ -12,7 +12,7 @@
 // ==/UserScript==
 
 /*
- * Jaroo Calendar E-Book v0.5.13 · 2026-11-25
+ * Jaroo Calendar E-Book v0.5.14 · 2026-11-25
  * Requires the paired E-Book Stylus CSS and native Light appearance.
  * Forked from the working Calendar Companion v1.3.7; history below is retained.
  * v1.3.1: preserve visually present month-grid/list colors when Calendar temporarily
@@ -45,6 +45,30 @@
     wait.observe(document,{childList:true});return;
   }
 
+  const RUNTIME = '__jarooCalendarCompanionV1';
+  window[RUNTIME]?.dispose?.();
+  const originalThemeAttribute=document.documentElement.getAttribute('data-jaroo-calendar-theme');
+  document.documentElement.setAttribute('data-jaroo-calendar-theme','ebook');
+  // Short first-paint bridge; the installed Stylus CSS owns the final style.
+  function installFirstPaint(css, readyToken, id) {
+    let style=null,timer=0,stopped=false;
+    function stop(){
+      if(stopped)return;stopped=true;
+      if(timer)clearTimeout(timer);timer=0;style?.remove();style=null;
+    }
+    function check(){
+      if(stopped)return true;
+      if(getComputedStyle(document.documentElement).getPropertyValue(readyToken).trim()){stop();return true;}
+      return false;
+    }
+    timer=setTimeout(stop,1600);
+    if(!check()){
+      style=document.createElement('style');style.id=id;style.textContent=css;
+      (document.head||document.documentElement).appendChild(style);
+    }
+    return {check,dispose:stop};
+  }
+  const firstPaint=installFirstPaint("@font-face {\n    font-family:\"Jaroo Cal Plex Latin\";\n    src:local(\"IBM Plex Mono Regular\"),local(\"IBMPlexMono-Regular\"),local(\"IBM Plex Mono\");\n    font-weight:400;\n    font-style:normal;\n    unicode-range:U+0021-007E,U+00A1-024F,U+1E00-1EFF,U+20AC;\n  }\n  @font-face {\n    font-family:\"Jaroo Cal Plex Latin\";\n    src:local(\"IBM Plex Mono Medium\"),local(\"IBMPlexMono-Medium\"),local(\"IBM Plex Mono\");\n    font-weight:500;\n    font-style:normal;\n    unicode-range:U+0021-007E,U+00A1-024F,U+1E00-1EFF,U+20AC;\n  }\n  @font-face {\n    font-family:\"Jaroo Cal Plex Latin\";\n    src:local(\"IBM Plex Mono SemiBold\"),local(\"IBMPlexMono-SemiBold\"),local(\"IBM Plex Mono\");\n    font-weight:600;\n    font-style:normal;\n    unicode-range:U+0021-007E,U+00A1-024F,U+1E00-1EFF,U+20AC;\n  }\n  @font-face {\n    font-family:\"Jaroo Cal Plex Latin\";\n    src:local(\"IBM Plex Mono Bold\"),local(\"IBMPlexMono-Bold\"),local(\"IBM Plex Mono\");\n    font-weight:700;\n    font-style:normal;\n    unicode-range:U+0021-007E,U+00A1-024F,U+1E00-1EFF,U+20AC;\n  }\n@media(forced-colors:none){\n:where(html[data-jaroo-calendar-theme=\"ebook\"]){color-scheme:light!important;--jaroo-cal-boot-font:\"Jaroo Cal Plex Latin\",\"Pretendard Variable\",\"Pretendard\",\"Noto Sans KR\",sans-serif;background-color:#EFF1F2!important}\n:where(html[data-jaroo-calendar-theme=\"ebook\"] body){background-color:#EFF1F2!important;color:#292D30!important;font-family:var(--jaroo-cal-boot-font)!important;--gm3-sys-color-background:#EFF1F2!important;--gm3-sys-color-surface:#F5F6F6!important;--gm3-sys-color-surface-container-low:#EFF1F2!important;--gm3-sys-color-surface-container:#E7EAEB!important;--gm3-sys-color-surface-container-high:#E4E8EA!important;--gm3-sys-color-on-surface:#292D30!important}\n:where(html[data-jaroo-calendar-theme=\"ebook\"] :is(main,[role=\"main\"])){background-color:#EFF1F2!important}\n:where(html[data-jaroo-calendar-theme=\"ebook\"] :is([role=\"banner\"],[role=\"complementary\"])){background-color:#E7EAEB!important}\n:where(html[data-jaroo-calendar-theme=\"ebook\"] body[data-viewfamily=\"EVENT\"][data-viewkey=\"MONTH\"] div.SGWAac){background-color:#EFF1F2!important}\n:where(html[data-jaroo-calendar-theme=\"ebook\"] body[data-viewfamily=\"EVENT\"][data-viewkey=\"MONTH\"] :is(main,[role=\"main\"]) [role=\"grid\"]:has([data-datekey]):not(:is([role=\"dialog\"] *,[role=\"menu\"] *,[role=\"listbox\"] *,[role=\"complementary\"] *,[role=\"grid\"] [role=\"grid\"]))){background-color:#EFF1F2!important;background-image:linear-gradient(to right,rgba(85,97,105,.055) 1px,transparent 1px),linear-gradient(to bottom,rgba(85,97,105,.055) 1px,transparent 1px)!important;background-size:22px 22px!important}\n}",'--jaroo-cal-style-version','jaroo-calendar-first-paint');
   // BEGIN_JAROO_MODEL
   // MODEL_BEGIN -- date-only values never acquire an invented time/duration.
   const Model = (() => {
@@ -232,9 +256,7 @@
   // END_JAROO_MODEL
 
   // BEGIN_JAROO_ADAPTER
-  const RUNTIME = '__jarooCalendarCompanionV1';
-  window[RUNTIME]?.dispose?.();
-  const VERSION = '0.5.13';
+  const VERSION = '0.5.14';
   const CONFIG = Object.freeze({ timeZone: 'Asia/Seoul', futureDays: 7, maxPins: 3, maxEvents: 1200, recoveryMs: 5000, minScanGapMs: 60 });
   const EVENT = '[data-eventid]';
   const EXCLUDE = '[role="dialog"],[role="menu"],[role="listbox"],[hidden],[inert],[aria-hidden="true"]';
@@ -2233,7 +2255,7 @@
       if (event.target.id !== 'jaroo-cal-enabled') return;
       enabled=event.target.checked;syncFastPaint(dirty);
       if (enabled) document.documentElement.setAttribute('data-jaroo-calendar-theme', 'ebook');
-      else document.documentElement.removeAttribute('data-jaroo-calendar-theme');
+      else {document.documentElement.setAttribute('data-jaroo-calendar-theme','off');firstPaint.dispose();}
       syncHeaderLegend(enabled && semanticEnabled && !document.hidden);
       dirty = true; uiSignature = ''; scheduleScan(); renderUI(); announce(enabled ? '테마 표시를 켰어.' : '테마 표시를 껐어.');
     });
@@ -2375,7 +2397,7 @@
     const status = shadow.getElementById('jaroo-cal-ui-status'), notes = [];
     status.className = 'status';
     if (!cssApplied) { notes.push('테마 CSS가 아직 적용되지 않았어. Stylus 적용 주소를 확인해줘.'); status.classList.add('warn'); }
-    else if (enabled && cssVersion !== '0.5.13') { notes.push('E-Book v0.5.13 CSS가 필요해. 같은 채널의 Stylus 스타일을 확인해줘.'); status.classList.add('warn'); }
+    else if (enabled && cssVersion !== '0.5.14') { notes.push('E-Book v0.5.14 CSS가 필요해. 같은 채널의 Stylus 스타일을 확인해줘.'); status.classList.add('warn'); }
     if (dirty) notes.push('화면 확인 중… 이전에 읽은 항목이 잠시 표시될 수 있어.');
     else if (lastError) { notes.push('화면을 다시 읽지 못했어. 표시 설정에서 다시 읽기를 눌러줘.'); status.classList.add('warn'); }
     else if (panelFilter === 'today' && !todayKnown) notes.push('현재 화면에서 오늘 날짜를 확인하지 못했어. 기본 캘린더를 오늘로 이동한 뒤 다시 읽어줘.');
@@ -2724,7 +2746,6 @@
 
   // BEGIN_JAROO_LIFECYCLE
   // LIFECYCLE_BEGIN -- native events remain the only source of calendar data.
-  const originalThemeAttribute = document.documentElement.getAttribute('data-jaroo-calendar-theme');
   const listeners = [];
   let queuedAt=0, delayedScan=0, lastScanEnd=-Infinity;
   const originalFastPaint=document.documentElement.getAttribute('data-jaroo-cal-fast-paint');
@@ -2835,6 +2856,7 @@
     if(pending)cancelAnimationFrame(pending);pending=0;
     if(delayedScan)clearTimeout(delayedScan);delayedScan=0;
     if(disposed||document.hidden)return;
+    firstPaint.check();
     const start=performance.now();
     perfStats.lastQueueMs=queuedAt?Math.max(0,start-queuedAt):0;queuedAt=0;
     observer.disconnect();
@@ -2928,7 +2950,7 @@
   }
   function dispose() {
     if (disposed) return;
-    disposed = true; observer.disconnect(); disposeHeaderLegend();
+    disposed = true; firstPaint.dispose(); observer.disconnect(); disposeHeaderLegend();
     if(pending)cancelAnimationFrame(pending);pending=0;
     clearTimeout(delayedScan);delayedScan=0;
     clearTimeout(recoveryTimer);clearTimeout(moreAfterClick);layoutSnapshot=null;
@@ -2945,7 +2967,6 @@
   const runtime = Object.freeze({ version: VERSION, dispose, diagnostics: makeDiagnostics, refresh: () => scheduleScan({ immediate: true }) });
 
   window[RUNTIME]=runtime;
-  document.documentElement.setAttribute('data-jaroo-calendar-theme','ebook');
   let moreAfterClick=0;
   function isMoreTrigger(node){
     for(let p=node,d=0;p&&d<5;p=p.parentElement,d++){
@@ -2985,6 +3006,9 @@
   listen(window,'focus',()=>scheduleScan());
   listen(window,'pageshow',()=>scheduleScan({immediate:true}));
   listen(window,'popstate',()=>scheduleScan({immediate:true}));
+  if(window.navigation)listen(window.navigation,'currententrychange',()=>{
+    if(route!==location.pathname+location.search)scheduleScan({immediate:true});
+  });
   listen(window,'resize',()=>scheduleScan());
   listen(document,'click',nativeInputSignal,true);
   listen(document,'keydown',event=>{
