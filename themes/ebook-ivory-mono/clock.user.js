@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.40
+// @version      3.11.41
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -32,21 +32,32 @@
 
   // Privacy-preserving compatibility with the existing local-only Tampermonkey
   // profile. Never publish personal dates, locations, or the profile itself.
-  const PROFILE = window.__jarooPrivateProfileV1 || null;
   const parseLocalDate = value =>
     typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
       ? new Date(value + 'T00:00:00+09:00') : new Date(NaN);
-  const WEATHER = Object.freeze({
-    latitude: Number(PROFILE?.weatherLatitude),
-    longitude: Number(PROFILE?.weatherLongitude),
-    city: typeof PROFILE?.weatherLabel === 'string' ? PROFILE.weatherLabel : '',
-    intervalMs: 30*60*1000
-  });
-  const WEATHER_PROFILE_VALID = !!PROFILE &&
-    Number.isFinite(WEATHER.latitude) &&
-    Number.isFinite(WEATHER.longitude) &&
-    WEATHER.latitude >= -90 && WEATHER.latitude <= 90 &&
-    WEATHER.longitude >= -180 && WEATHER.longitude <= 180;
+  // Weather selections remain in this browser. No geolocation permission or
+  // personal default location is used. Keep compatibility with local profiles.
+  const WEATHER_LOCAL_PREF='jaroo:ebook:weather-region:v1';
+  const WEATHER_INTERVAL_MS=30*60*1000;
+  function parseWeatherRegion(raw) {
+    const coordinate=value=>(typeof value==='number'||(typeof value==='string'&&value.trim()!==''))?Number(value):NaN;
+    const latitude=coordinate(raw?.latitude),longitude=coordinate(raw?.longitude);
+    if(!Number.isFinite(latitude)||!Number.isFinite(longitude)||Math.abs(latitude)>90||Math.abs(longitude)>180)return null;
+    const city=typeof raw?.city==='string'?raw.city.trim().slice(0,160):'';
+    return {latitude,longitude,city};
+  }
+  function readWeatherRegion() {
+    try{return parseWeatherRegion(JSON.parse(localStorage.getItem(WEATHER_LOCAL_PREF)));}catch(_){return null;}
+  }
+  function legacyWeatherRegion() {
+    const raw=window.__jarooPrivateProfileV1;
+    return parseWeatherRegion({latitude:raw?.weatherLatitude,longitude:raw?.weatherLongitude,city:raw?.weatherLabel});
+  }
+  function weatherRegionKey(region) {
+    return region?JSON.stringify([region.latitude,region.longitude,region.city]):'';
+  }
+  let localWeatherRegion=readWeatherRegion();
+  let WEATHER=localWeatherRegion||legacyWeatherRegion();
   const formatter = new Intl.DateTimeFormat('ko-KR', {
     timeZone: 'Asia/Seoul',
     year: 'numeric', month: '2-digit', day: '2-digit',
@@ -207,28 +218,36 @@
       .life-duration-tail{white-space:pre;font:var(--life-tail-weight,360) 70%/1.2 var(--mono);color:var(--muted);letter-spacing:-.035em;word-spacing:-.5ch;font-variant-numeric:tabular-nums}
       .clock{margin:0;padding:0;border-top:1px solid var(--line);user-select:none}
       .clock-content{display:flex;flex-direction:column;min-width:0}
-      .clock-line{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:53px;padding:7px 0}
-      .date-chip{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;flex:1 1 120px;min-width:0;min-height:44px;padding:0 8px 0 0;gap:4px;border-right:1px solid var(--line)}
-      .date-main{font:550 var(--widget-main)/1.3 var(--font);white-space:normal;word-break:keep-all}
-      .weather-line{display:flex;align-items:center;gap:3px;max-width:100%;min-width:0;color:var(--muted);font:450 var(--widget-meta)/1.3 var(--font)}
-      .weather-symbol{flex:0 0 auto}.weather-label{min-width:0;overflow-wrap:normal;white-space:normal;word-break:keep-all}
-      .digital-time{display:flex;align-items:center;justify-content:flex-end;flex:0 0 auto;height:38px;color:#41494D;white-space:nowrap}
+      .clock-line{--clock-digit-height:clamp(30px,15cqi,38px);--clock-digit-width:clamp(12px,8cqi,21px);--clock-separator-width:clamp(5px,2.8cqi,10px);--clock-segment-thickness:calc(var(--clock-digit-height)*.1266);display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:6px;padding:7px 0;min-width:0}
+      .date-chip{display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;min-width:0;height:var(--clock-digit-height);padding:0;gap:2px}
+      .date-main{font:550 var(--widget-main)/1.08 var(--font);white-space:nowrap;word-break:keep-all}
+      .weather-line{display:flex;align-items:center;gap:3px;max-width:100%;min-width:0;color:var(--muted);font:450 var(--widget-meta)/1.08 var(--font);padding:0;margin:0;border:0;background:transparent;text-align:left;cursor:pointer}
+      .weather-symbol{flex:0 0 auto}.weather-label{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .digital-time{display:flex;align-items:center;justify-content:flex-end;min-width:0;height:var(--clock-digit-height);color:#41494D;white-space:nowrap}
       .pair{display:inline-flex;align-items:center;gap:0;flex:0 0 auto}
-      .digit{display:inline-block;position:relative;flex:0 0 21px;width:21px;height:38px}
-      .digit .seg{position:absolute;display:block;pointer-events:none;background:#D5DADC}
+      .digit{display:inline-block;position:relative;flex:0 0 var(--clock-digit-width);width:var(--clock-digit-width);height:var(--clock-digit-height)}
+      .digit .seg{position:absolute;display:block;pointer-events:none;background:#CACFD1}
       .digit .seg.on{background:#41494D}
-      .seg-a,.seg-g,.seg-d{left:4px;width:13.6px;height:3.7px;clip-path:polygon(13% 0,87% 0,100% 50%,87% 100%,13% 100%,0 50%)}
-      .seg-a{top:1px}.seg-g{top:18px}.seg-d{top:35px}
-      .seg-f,.seg-e,.seg-b,.seg-c{width:3.7px;height:15px;clip-path:polygon(50% 0,100% 11%,100% 89%,50% 100%,0 89%,0 11%)}
-      .seg-f{left:1px;top:3px}.seg-e{left:1px;top:20px}.seg-b{right:1px;top:3px}.seg-c{right:1px;top:20px}
-      .separator{display:inline-flex;align-items:center;justify-content:center;flex:0 0 8px;width:8px;height:38px;margin-inline:4px;color:#41494D;font:380 30px/1 Consolas,monospace}
-      /* Reflow before hiding secondary detail; never shrink the core type.
-         Named container queries respond to the actual dashboard content width. */
-      @container jaroo-dashboard (max-width: 309px){
-        .clock-line{flex-direction:column;align-items:stretch;gap:6px;min-height:0}
-        .date-chip{flex:0 0 auto;min-height:0;width:100%;flex-direction:row;flex-wrap:wrap;justify-content:space-between;align-items:center;padding:0;border:0}
-        .digital-time{justify-content:center;align-self:center;max-width:100%}
-      }
+      .seg-a,.seg-g,.seg-d{left:calc(var(--clock-segment-thickness)*.65 + .5px);right:calc(var(--clock-segment-thickness)*.65 + .5px);height:var(--clock-segment-thickness);clip-path:polygon(13% 0,87% 0,100% 50%,87% 100%,13% 100%,0 50%)}
+      .seg-a{top:0}.seg-g{top:calc(50% - var(--clock-segment-thickness)/2)}.seg-d{bottom:0}
+      .seg-f,.seg-e,.seg-b,.seg-c{width:var(--clock-segment-thickness);height:calc(50% - var(--clock-segment-thickness)*.7);clip-path:polygon(50% 0,100% 11%,100% 89%,50% 100%,0 89%,0 11%)}
+      .seg-f,.seg-b{top:calc(var(--clock-segment-thickness)*.35)}.seg-e,.seg-c{bottom:calc(var(--clock-segment-thickness)*.35)}.seg-f,.seg-e{left:.7px}.seg-b,.seg-c{right:.7px}
+      .separator{display:inline-block;position:relative;flex:0 0 var(--clock-separator-width);width:var(--clock-separator-width);height:var(--clock-digit-height);font-size:0;line-height:0;color:#41494D}
+      .separator::before,.separator::after{content:"";position:absolute;left:50%;width:calc(var(--clock-segment-thickness)*.78);height:calc(var(--clock-segment-thickness)*.78);border-radius:50%;background:currentColor;transform:translateX(-50%)}
+      .separator::before{top:29%}.separator::after{bottom:29%}
+      @container jaroo-dashboard (max-width:229px){.date-main{font-size:13px}.weather-line{font-size:12px;gap:2px}}
+      @container jaroo-dashboard (max-width:169px){.clock-line{grid-template-columns:minmax(0,1fr);gap:6px}.date-chip{height:auto;gap:3px}.digital-time{justify-self:end}}
+      /* Weather setup is opened explicitly, without automatic location access. */
+      .weather-line:focus-visible,.weather-setup button:focus-visible{outline:1px solid #879398;outline-offset:2px}
+      .weather-setup{display:grid;gap:6px;padding:7px 0 9px;border-top:1px solid var(--line);font:400 var(--widget-meta)/1.3 var(--font);min-width:0}
+      .weather-setup[hidden],.weather-setup [hidden]{display:none}
+      .weather-setup input,.weather-setup select{width:100%;min-width:0;max-width:100%;font:inherit;color:var(--ink);border:1px solid var(--line);background:#F5F6F6;border-radius:3px;padding:5px}
+      .weather-search-row{display:flex;align-items:center;gap:4px}
+      .weather-search-row input{flex:1 1 auto}
+      .weather-setup button{flex:0 0 auto;font:500 var(--widget-meta)/1.2 var(--font);color:var(--ink);border:1px solid var(--line);background:#F5F6F6;border-radius:3px;padding:5px 6px;cursor:pointer}
+      .weather-setup button:disabled{opacity:.5;cursor:default}
+      .weather-actions{display:flex;justify-content:flex-end;gap:5px}
+      .weather-help,.weather-message{font:400 11px/1.35 var(--font);color:var(--muted);overflow-wrap:anywhere}
       @container jaroo-dashboard (max-width: 269px){
         .life-sub{display:none}
       }
@@ -282,11 +301,6 @@
       .life-card .career-remaining-percent{line-height:1.02}
       .career-remaining-percent[hidden]{display:none}
       @container jaroo-dashboard (max-width:220px){.career-remaining-percent{margin-inline-start:2px}}
-      /* Below the six-digit physical width, show HH:MM at the same glyph
-         size. The actual seconds still tick and remain in the accessible label. */
-      @container jaroo-dashboard (max-width: 159px){
-        .digital-time>.pair:last-child,.digital-time>.separator:nth-last-child(2){display:none}
-      }
       /* An old Status installation cannot briefly paint a neon dock here. */
       :host .jaroo-center:not([data-ebook-status-ready="true"]),
       :host .jaroo-focus-list:not([data-ebook-status-ready="true"]){display:none!important}
@@ -343,12 +357,20 @@
     <div class="clock" role="timer" aria-live="off" aria-label="한국 표준시">
       <div class="clock-content">
         <div class="clock-line">
-          <div class="date-chip" title="날짜 및 설정 지역 현재 기상 상태 · Open-Meteo">
+          <div class="date-chip">
             <span class="date-main"></span>
-            <span class="weather-line" data-weather="loading"><span class="weather-symbol" aria-hidden="true">◌</span><span class="weather-label">날씨 조회</span></span>
+            <button type="button" class="weather-line" aria-controls="ebook-weather-setup" aria-expanded="false" data-weather="loading"><span class="weather-symbol" aria-hidden="true">◌</span><span class="weather-label">날씨 조회</span></button>
           </div>
           <div class="digital-time" aria-hidden="true"></div>
         </div>
+        <form class="weather-setup" id="ebook-weather-setup" hidden>
+          <label for="ebook-weather-query">날씨 지역 설정</label>
+          <div class="weather-search-row"><input id="ebook-weather-query" type="search" placeholder="도시명 (예: 서울)" maxlength="80" autocomplete="off" required/><button type="submit">검색</button></div>
+          <select class="weather-results" aria-label="검색된 지역" hidden></select>
+          <div class="weather-help">검색 지역명과 선택 좌표는 Open-Meteo 조회에 사용됩니다. 선택 지역은 이 브라우저에 저장됩니다.</div>
+          <div class="weather-message" role="status"></div>
+          <div class="weather-actions"><button type="button" class="weather-cancel">닫기</button><button type="button" class="weather-apply" disabled>저장</button></div>
+        </form>
       </div>
     </div>
   `;
@@ -375,6 +397,12 @@
   const weatherLabel = shadow.querySelector('.weather-label');
   const clockEl = shadow.querySelector('.clock');
   const timeEl = shadow.querySelector('.digital-time');
+  const weatherSetup=shadow.querySelector('.weather-setup');
+  const weatherQuery=shadow.querySelector('#ebook-weather-query');
+  const weatherResults=shadow.querySelector('.weather-results');
+  const weatherMessage=shadow.querySelector('.weather-message');
+  const weatherApply=shadow.querySelector('.weather-apply');
+  const weatherCancel=shadow.querySelector('.weather-cancel');
 
   const lifeEls = {
     retireValue: shadow.querySelector('[data-life="retireValue"]'),
@@ -610,7 +638,8 @@
     if(lifeEls.progressBar.style.width!==width)lifeEls.progressBar.style.width=width;
   }
 
-  let weatherStatus = 'loading', weatherLastAttempt = 0, weatherInFlight = false;
+  let weatherStatus='loading',weatherLastAttempt=0,weatherRequest=null,weatherSearchRequest=null;
+  let weatherCandidates=[];
   const weatherName = (code, isDay) => {
     const n = Number(code);
     if (n===0) return [isDay ? '☀' : '☾','맑음'];
@@ -626,39 +655,111 @@
   };
   function setWeather(icon,label,status='ready') {
     weatherStatus=status;
-    if (weatherSymbol.textContent!==icon) weatherSymbol.textContent=icon;
-    if (weatherLabel.textContent!==label) weatherLabel.textContent=label;
-    if (weatherLine.dataset.weather!==status) weatherLine.dataset.weather=status;
+    if(weatherSymbol.textContent!==icon)weatherSymbol.textContent=icon;
+    if(weatherLabel.textContent!==label)weatherLabel.textContent=label;
+    if(weatherLine.dataset.weather!==status)weatherLine.dataset.weather=status;
+    const title=(WEATHER?.city?WEATHER.city+' · ':'')+label+' · 클릭하여 지역 설정';
+    if(weatherLine.title!==title)weatherLine.title=title;
+    if(weatherLine.getAttribute('aria-label')!==title)weatherLine.setAttribute('aria-label',title);
   }
-  async function updateWeather() {
-    if (!WEATHER_PROFILE_VALID) {
-      if (!disposed) setWeather('◌', '지역 설정 필요', 'error');
-      return;
+  function syncWeatherRegion() {
+    const next=localWeatherRegion||legacyWeatherRegion();
+    if(weatherRegionKey(next)===weatherRegionKey(WEATHER))return;
+    weatherRequest?.abort();weatherRequest=null;weatherLastAttempt=0;
+    WEATHER=next;
+    if(next)setWeather('◌','날씨 조회','loading');
+    else setWeather('◌','지역 설정','unconfigured');
+  }
+  function onWeatherSettingsStorage(event) {
+    if(event.key!==WEATHER_LOCAL_PREF&&event.key!==null)return;
+    localWeatherRegion=readWeatherRegion();
+    if(!disposed)updateWeather();
+  }
+  function clearWeatherSearch() {
+    weatherSearchRequest?.abort();weatherSearchRequest=null;
+    weatherCandidates=[];weatherResults.replaceChildren();weatherResults.hidden=true;weatherApply.disabled=true;
+  }
+  function showWeatherSetup(open) {
+    if(!open)clearWeatherSearch();
+    weatherSetup.hidden=!open;
+    weatherLine.setAttribute('aria-expanded',String(open));
+    weatherMessage.textContent='';
+    if(open){weatherQuery.value=WEATHER?.city?.split(' · ')[0]||'';weatherQuery.focus();}
+    schedulePlacement();
+  }
+  function parseWeatherCandidates(rows) {
+    if(!Array.isArray(rows))return [];
+    const result=[],seen=new Set();
+    for(const item of rows){
+      const parts=[item?.name,item?.admin1,item?.country].filter(x=>typeof x==='string'&&x.trim()).map(x=>x.trim());
+      if(!parts.length)continue;
+      const region=parseWeatherRegion({latitude:item.latitude,longitude:item.longitude,city:[...new Set(parts)].join(' · ')});
+      const key=weatherRegionKey(region);
+      if(!region||seen.has(key))continue;
+      seen.add(key);result.push(region);
+      if(result.length===10)break;
     }
-    if (disposed || document.hidden || weatherInFlight) return;
-    const now = Date.now();
-    if (now-weatherLastAttempt < WEATHER.intervalMs) return;
-    weatherLastAttempt=now;
-    weatherInFlight=true;
-    const ctrl = new AbortController();
+    return result;
+  }
+  weatherLine.addEventListener('click',()=>showWeatherSetup(weatherSetup.hidden));
+  weatherCancel.addEventListener('click',()=>{showWeatherSetup(false);weatherLine.focus();});
+  weatherQuery.addEventListener('input',()=>{clearWeatherSearch();weatherMessage.textContent='';});
+  weatherSetup.addEventListener('submit',async event=>{
+    event.preventDefault();
+    const name=weatherQuery.value.trim();clearWeatherSearch();
+    if(name.length<2){weatherMessage.textContent='지역명을 두 글자 이상 입력해 주세요.';return;}
+    weatherMessage.textContent='지역 검색 중…';
+    const ctrl=new AbortController();weatherSearchRequest=ctrl;
     const timeout=setTimeout(()=>ctrl.abort(),9000);
-    try {
-      const qs = new URLSearchParams({
-        latitude:String(WEATHER.latitude), longitude:String(WEATHER.longitude),
-        current:'weather_code,is_day', timezone:'Asia/Seoul'
+    try{
+      const params=new URLSearchParams({name,count:'10',language:'ko',format:'json'});
+      const resp=await fetch(`https://geocoding-api.open-meteo.com/v1/search?${params}`,{mode:'cors',cache:'no-store',signal:ctrl.signal,credentials:'omit',referrerPolicy:'no-referrer'});
+      if(!resp.ok)throw Error('weather-region-http');
+      const json=await resp.json();
+      if(disposed||weatherSearchRequest!==ctrl)return;
+      weatherCandidates=parseWeatherCandidates(json?.results);
+      if(!weatherCandidates.length){weatherMessage.textContent='검색 결과가 없습니다. 영문 지역명으로도 검색해 보세요.';return;}
+      weatherCandidates.forEach((region,index)=>{
+        const option=document.createElement('option');option.value=String(index);option.textContent=region.city;weatherResults.append(option);
       });
-      const resp=await fetch(`https://api.open-meteo.com/v1/forecast?${qs}`,{
-        mode:'cors',cache:'no-store',signal:ctrl.signal,credentials:'omit',referrerPolicy:'no-referrer'
-      });
+      weatherResults.hidden=false;weatherApply.disabled=false;
+      weatherMessage.textContent='지역을 선택한 후 저장하세요.';
+    }catch(_){
+      if(!disposed&&weatherSearchRequest===ctrl)weatherMessage.textContent='지역 검색 실패. 다시 검색해 주세요.';
+    }finally{
+      clearTimeout(timeout);
+      if(weatherSearchRequest===ctrl){weatherSearchRequest=null;schedulePlacement();}
+    }
+  });
+  weatherApply.addEventListener('click',()=>{
+    const region=weatherCandidates[Number(weatherResults.value)];
+    if(!region)return;
+    try{localStorage.setItem(WEATHER_LOCAL_PREF,JSON.stringify(region));}catch(_){weatherMessage.textContent='브라우저 저장소에 저장할 수 없습니다.';return;}
+    localWeatherRegion=region;showWeatherSetup(false);weatherLine.focus();updateWeather();
+  });
+  async function updateWeather() {
+    if(disposed||document.hidden)return;
+    syncWeatherRegion();
+    const region=WEATHER;
+    if(!region){setWeather('◌','지역 설정','unconfigured');return;}
+    if(weatherRequest)return;
+    const now=Date.now();
+    if(now-weatherLastAttempt<WEATHER_INTERVAL_MS)return;
+    weatherLastAttempt=now;
+    const ctrl=new AbortController();weatherRequest=ctrl;
+    const timeout=setTimeout(()=>ctrl.abort(),9000);
+    try{
+      const qs=new URLSearchParams({latitude:String(region.latitude),longitude:String(region.longitude),current:'weather_code,is_day',timezone:'Asia/Seoul'});
+      const resp=await fetch(`https://api.open-meteo.com/v1/forecast?${qs}`,{mode:'cors',cache:'no-store',signal:ctrl.signal,credentials:'omit',referrerPolicy:'no-referrer'});
       if(!resp.ok)throw Error(`HTTP ${resp.status}`);
       const json=await resp.json();
-      if (typeof json?.current?.weather_code!=='number') throw Error('invalid-weather-data');
+      if(typeof json?.current?.weather_code!=='number')throw Error('invalid-weather-data');
       const [icon,label]=weatherName(json.current.weather_code,Boolean(json.current.is_day));
-      if(!disposed) setWeather(icon,label,'ready');
-    } catch(err){
-      if(!disposed)setWeather('◌','날씨 불가','error');
+      if(!disposed&&weatherRequest===ctrl)setWeather(icon,label,'ready');
+    }catch(_){
+      if(!disposed&&weatherRequest===ctrl)setWeather('◌','날씨 불가','error');
     }finally{
-      clearTimeout(timeout);weatherInFlight=false;
+      clearTimeout(timeout);if(weatherRequest===ctrl)weatherRequest=null;
     }
   }
 
@@ -1093,9 +1194,7 @@
         .filter(part => part.type !== 'literal')
         .map(part => [part.type, part.value])
     );
-    const dateMain = host.dataset.jarooWidth==='narrow'
-      ? `${parts.month}.${parts.day}`
-      : `${parts.month}.${parts.day} (${parts.weekday})`;
+    const dateMain = `${parts.month}.${parts.day}(${parts.weekday})`;
     if(dateMainEl.textContent !== dateMain) dateMainEl.textContent = dateMain;
     updateWeather();
     // Visible glyphs are lightweight monospace text; screen readers receive the full label.
@@ -1177,6 +1276,7 @@
     window.addEventListener('resize', schedulePlacement, { passive: true });
     window.addEventListener('focus', onFocus);
     window.addEventListener('storage',onLifeSettingsStorage);
+    window.addEventListener('storage',onWeatherSettingsStorage);
     window.visualViewport?.addEventListener('resize', schedulePlacement, { passive: true });
     document.addEventListener('visibilitychange', onVisibility);
   }
@@ -1191,6 +1291,9 @@
     window.removeEventListener('resize', schedulePlacement);
     window.removeEventListener('focus', onFocus);
     window.removeEventListener('storage',onLifeSettingsStorage);
+    window.removeEventListener('storage',onWeatherSettingsStorage);
+    weatherRequest?.abort();weatherRequest=null;
+    weatherSearchRequest?.abort();weatherSearchRequest=null;
     window.visualViewport?.removeEventListener('resize', schedulePlacement);
     document.removeEventListener('visibilitychange', onVisibility);
     document.removeEventListener('DOMContentLoaded', start);
@@ -1203,9 +1306,9 @@
     if (window[RUNTIME_KEY]?.dispose === dispose) delete window[RUNTIME_KEY];
   }
   window[RUNTIME_KEY] = {
-    version: '3.11.40', dispose,
+    version: '3.11.41', dispose,
     diagnostics: () => ({
-      version: '3.11.40', ...placementReport,
+      version: '3.11.41', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
@@ -1213,8 +1316,7 @@
       segmentClock: shadow.querySelectorAll('.digital-time .digit').length === 6,
       fontLoaded: Boolean(document.fonts?.check?.('12px Pretendard')),
       counterPresent: Boolean(shadow.querySelector('.jaroo-center')),
-      weatherStatus: weatherStatus,
-      weatherLocation: WEATHER_PROFILE_VALID ? 'configured' : 'unconfigured',
+      weatherConfigured:!!WEATHER,
       lifeClockPresent: Boolean(lifeCard),
       lifeProfileState:lifeSource,lifeProfileValid:!!LIFE,lifeClockFolded:clockFolded,
       lifeClockVisible:!!lifeCard.getClientRects().length&&getComputedStyle(lifeCard).display!=='none',
@@ -1225,7 +1327,7 @@
       readableMode:host.dataset.jarooWidth,
       timeUnit:'시간',
       lifeMetricCount:shadow.querySelectorAll('.life-card').length,
-      weatherLocation:WEATHER.city,
+      weatherLocation:WEATHER?.city||'',
       weatherStatus,
       viewport: [innerWidth, innerHeight]
     })
