@@ -700,12 +700,12 @@ html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"] [data-jaro
     :is(main,[role="main"]) [data-eventid]:not([data-jaroo-cal-event-ready]):not([data-jaroo-cal-event]):not(:is([role="dialog"] *,[role="menu"] *,[role="listbox"] *,[hidden] *,[inert] *)):is(button,[role="button"],:has(:is(button,[role="button"]):not([aria-haspopup]):not([aria-checked]):not([aria-pressed]))):not([aria-haspopup]):not([aria-checked]):not([aria-pressed]):not([disabled]):not([aria-disabled="true"]){
     background-color:transparent!important;background-image:none!important;
     border-color:transparent!important;box-shadow:none!important;
-    color:var(--jaroo-cal-active-ink)!important;
+    color:var(--jaroo-cal-active-ink)!important;-webkit-text-fill-color:currentColor!important;
   }
   html[data-jaroo-calendar-theme="ebook"][data-jaroo-cal-fast-paint="on"]
     :is(main,[role="main"]) [data-eventid]:not([data-jaroo-cal-event-ready]):not([data-jaroo-cal-event]):not(:is([role="dialog"] *,[role="menu"] *,[role="listbox"] *,[hidden] *,[inert] *))
-    :is(span,div):not(:has(*)):not([aria-hidden="true"]):not(:is(button[aria-checked] *,[role="checkbox"] *,[role="menu"] *,svg *)){
-    color:var(--jaroo-cal-active-ink)!important;
+    :is(span,div):not(:is([aria-hidden="true"],[aria-hidden="true"] *,button[aria-checked] *,[role="checkbox"] *,[role="menu"] *,svg *)){
+    color:var(--jaroo-cal-active-ink)!important;-webkit-text-fill-color:currentColor!important;
   }
 }
 

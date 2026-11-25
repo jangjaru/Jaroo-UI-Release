@@ -235,7 +235,7 @@
   const RUNTIME = '__jarooCalendarCompanionV1';
   window[RUNTIME]?.dispose?.();
   const VERSION = '0.5.0';
-  const CONFIG = Object.freeze({ timeZone: 'Asia/Seoul', futureDays: 7, maxPins: 3, maxEvents: 1200, recoveryMs: 5000 });
+  const CONFIG = Object.freeze({ timeZone: 'Asia/Seoul', futureDays: 7, maxPins: 3, maxEvents: 1200, recoveryMs: 5000, minScanGapMs: 60 });
   const EVENT = '[data-eventid]';
   const EXCLUDE = '[role="dialog"],[role="menu"],[role="listbox"],[hidden],[inert],[aria-hidden="true"]';
   const MARKERS = ['data-jaroo-cal-event','data-jaroo-cal-event-ready','data-jaroo-cal-color','data-jaroo-cal-title','data-jaroo-cal-date-label','data-jaroo-cal-today','data-jaroo-cal-selected','data-jaroo-cal-grid','data-jaroo-cal-month-grid','data-jaroo-cal-month-title','data-jaroo-cal-today-label','data-jaroo-cal-month-frame','data-jaroo-cal-month-vertical','data-jaroo-cal-month-column-layer','data-jaroo-cal-month-horizontal','data-jaroo-cal-month-row-rule','data-jaroo-cal-week-gutter','data-jaroo-cal-week-number','data-jaroo-cal-month-today-cell','data-jaroo-cal-month-today-layer','data-jaroo-cal-today-ring','data-jaroo-cal-today-ring-part','data-jaroo-cal-month-weekend','data-jaroo-cal-date-tone','data-jaroo-cal-day-header','data-jaroo-cal-more-label','data-jaroo-cal-event-time','data-jaroo-cal-time-display','data-jaroo-cal-brand','data-jaroo-cal-section','data-jaroo-cal-mini','data-jaroo-cal-mini-title','data-jaroo-cal-mini-day','data-jaroo-cal-mini-number','data-jaroo-cal-calendar-label','data-jaroo-cal-create-label','data-jaroo-cal-control','data-jaroo-cal-sidebar-panel','data-jaroo-cal-surface','data-jaroo-cal-deadline','data-jaroo-cal-priority','data-jaroo-cal-semantic','data-jaroo-cal-category','data-jaroo-cal-status'];
@@ -2235,7 +2235,7 @@
   // LIFECYCLE_BEGIN -- native events remain the only source of calendar data.
   const originalThemeAttribute = document.documentElement.getAttribute('data-jaroo-calendar-theme');
   const listeners = [];
-  let queuedAt=0;
+  let queuedAt=0, delayedScan=0, lastScanEnd=-Infinity;
   const originalFastPaint=document.documentElement.getAttribute('data-jaroo-cal-fast-paint');
   function listen(target, name, handler, options) {
     target.addEventListener(name, handler, options);
@@ -2254,7 +2254,7 @@
   }
 
   const STRUCTURE='main,[role="main"],[role="dialog"],[role="listbox"]';
-  const OWN_UI='#jaroo-calendar-companion-v1,[id^="jaroo-calendar-header-"]';
+  const OWN_UI='#jaroo-calendar-companion-v1,#jaroo-calendar-header-legend-v1';
   function mutationRelevant(change){
     const node=change.target instanceof Element?change.target:change.target.parentElement;
     if(!node||node===host||node.closest(OWN_UI))return false;
@@ -2262,9 +2262,10 @@
       if(change.type!=='childList')return false;
       if(roots.some(root=>!root.isConnected))return true;
       if(node.closest('[role="banner"],header,[data-jaroo-cal-surface="sidebar"],[role="dialog"],[role="listbox"],[data-jaroo-cal-surface="more"]'))return true;
+      const changed=[...change.addedNodes,...change.removedNodes].filter(child=>child instanceof Element&&!child.matches(OWN_UI));
+      if(!changed.length)return false;
       if(moreOpenLastScan||performance.now()<moreRequestUntil)return true;
-      return [...change.addedNodes,...change.removedNodes].some(child=>child instanceof Element&&
-        !child.matches(OWN_UI)&&(child.matches(STRUCTURE)||child.querySelector(STRUCTURE)));
+      return changed.some(child=>child.matches(STRUCTURE)||child.querySelector(STRUCTURE));
     }
     if(change.type==='characterData')return Boolean(node.closest('[data-eventid],[data-datekey],[role="gridcell"],[role="columnheader"]'));
     if(change.type==='attributes'){
@@ -2292,7 +2293,7 @@
       relevant=true;
       if(!eventTextOnly(change)){layout=true;break;}
     }
-    if(relevant)scheduleScan({layout});
+    if(relevant)scheduleScan({layout,immediate:route!==location.pathname+location.search||roots.some(root=>!root.isConnected)});
   });
   function syncContext() {
     const nextScope = accountScope(), nextRoute = location.pathname + location.search;
@@ -2318,14 +2319,26 @@
     if(options.layout!==false)layoutDirty=true;
     if(document.hidden)return;
     syncFastPaint(true);
-    // Do not restart a trailing debounce. Every burst gets the next frame.
+    // First/navigation work gets the next frame. Sustained event mutations
+    // cannot force a full layout scan at 60 Hz; the next nonurgent scan is
+    // bounded by a short, non-restarting gap from the last completed scan.
     if(pending){perfStats.coalesced++;return;}
-    queuedAt=performance.now();
-    pending=requestAnimationFrame(runScan);
+    if(delayedScan){
+      perfStats.coalesced++;
+      if(!options.immediate)return;
+      clearTimeout(delayedScan);delayedScan=0;
+    }else queuedAt=performance.now();
+    const wait=options.immediate?0:Math.max(0,CONFIG.minScanGapMs-(performance.now()-lastScanEnd));
+    if(wait>0)delayedScan=setTimeout(()=>{
+      delayedScan=0;
+      if(!disposed&&!document.hidden&&!pending)pending=requestAnimationFrame(runScan);
+    },wait);
+    else pending=requestAnimationFrame(runScan);
     if(panelOpen&&!wasDirty&&document.body)renderUI();
   }
   function runScan(){
     if(pending)cancelAnimationFrame(pending);pending=0;
+    if(delayedScan)clearTimeout(delayedScan);delayedScan=0;
     if(disposed||document.hidden)return;
     const start=performance.now();
     perfStats.lastQueueMs=queuedAt?Math.max(0,start-queuedAt):0;queuedAt=0;
@@ -2337,12 +2350,14 @@
       roots=next;
       if(!document.body)return;
       collect();lastError='';dirty=false;perfStats.scans++;
+      if(moreOpenLastScan&&moreAfterClick){clearTimeout(moreAfterClick);moreAfterClick=0;}
     }catch(_){
       records=[];coverage.clear();stats={};layoutSnapshot=null;layoutDirty=true;
       moreOpenLastScan=false;lastError='달력 화면 구조를 읽지 못했어. 기본 일정은 그대로 사용할 수 있어.';dirty=false;
       for(const node of [...marked])cleanupNode(node);
     }finally{
-      perfStats.lastMs=Math.round((performance.now()-start)*100)/100;
+      lastScanEnd=performance.now();
+      perfStats.lastMs=Math.round((lastScanEnd-start)*100)/100;
       perfStats.maxMs=Math.max(perfStats.maxMs,perfStats.lastMs);
       syncFastPaint(false);observeRoots();
       if(!disposed&&document.body){syncHeaderLegend(enabled&&semanticEnabled&&!document.hidden);renderUI();}
@@ -2388,7 +2403,7 @@
       cssLoaded: Boolean(getComputedStyle(document.documentElement).getPropertyValue('--jaroo-cal-bg').trim()),
       cssVersion: getComputedStyle(document.documentElement).getPropertyValue('--jaroo-cal-style-version').trim() || null,
       documentVisible: !document.hidden, pendingScreenRead: dirty, mainRoots: roots.length,
-      performance:{...perfStats,framePending:Boolean(pending),retainedMarkerNodes:marked.size,brushCacheEntries:brushCache.size,layoutCached:Boolean(layoutSnapshot),fastPaint:document.documentElement.hasAttribute('data-jaroo-cal-fast-paint')},
+      performance:{...perfStats,framePending:Boolean(pending||delayedScan),retainedMarkerNodes:marked.size,brushCacheEntries:brushCache.size,layoutCached:Boolean(layoutSnapshot),fastPaint:document.documentElement.hasAttribute('data-jaroo-cal-fast-paint')},
       calendarGrids: stats.grids || 0, identifiableDateCells: stats.dateCells || 0,
       ebookChrome:{headers:document.querySelectorAll('[data-jaroo-cal-surface="header"]').length,
         sidebars:document.querySelectorAll('[data-jaroo-cal-surface="sidebar"]').length,
@@ -2419,6 +2434,7 @@
     if (disposed) return;
     disposed = true; observer.disconnect(); disposeHeaderLegend();
     if(pending)cancelAnimationFrame(pending);pending=0;
+    clearTimeout(delayedScan);delayedScan=0;
     clearTimeout(recoveryTimer);clearTimeout(moreAfterClick);layoutSnapshot=null;
     for (const remove of listeners.splice(0)) remove();
     for (const node of [...marked]) cleanupNode(node);
@@ -2437,7 +2453,8 @@
   let moreAfterClick=0;
   function isMoreTrigger(node){
     for(let p=node,d=0;p&&d<5;p=p.parentElement,d++){
-      if(!inRoots(p)||p.closest(EVENT))break;
+      if(!inRoots(p)||p.closest(EVENT)||p.matches('main,[role="main"],[role="grid"],[role="row"],[role="gridcell"]'))break;
+      if(p.hasAttribute('data-jaroo-cal-more-label'))return true;
       if([p.getAttribute('aria-label'),p.getAttribute('title'),p.textContent].some(value=>
         isMoreLabel(value)||/^(?:\+?\d{1,3}\s+more(?:\s+events?)?|\d{1,3}\s*(?:개\s*)?일정\s*더\s*보기)$/iu.test(text(value))))return true;
     }
@@ -2449,7 +2466,7 @@
     if(!node||node.closest(OWN_UI))return;
     const more=isMonthCalendarView()&&isMoreTrigger(node);
     if(more||moreOpenLastScan||node.closest('[data-jaroo-cal-surface="more"]')){
-      moreRequestUntil=performance.now()+1500;scheduleScan();
+      moreRequestUntil=performance.now()+1500;scheduleScan({immediate:true});
       // Only a genuine More activation retains the late portal fallback.
       if(more){
         clearTimeout(moreAfterClick);
@@ -2457,12 +2474,13 @@
       }
     }else if(node.closest('[role="banner"],header,[data-jaroo-cal-surface="sidebar"],[role="complementary"]')||
         (inRoots(node)&&!node.closest(EVENT))){
-      scheduleScan();
+      scheduleScan({immediate:true});
     }
   }
   listen(document,'visibilitychange',()=>{
     if(document.hidden){
       observer.disconnect();if(pending)cancelAnimationFrame(pending);pending=0;queuedAt=0;
+      clearTimeout(delayedScan);delayedScan=0;
       clearTimeout(moreAfterClick);moreAfterClick=0;moreRequestUntil=0;
       dirty=true;layoutDirty=true;layoutSnapshot=null;syncFastPaint(false);
     }else{observeRoots();scheduleScan({immediate:true});}
@@ -2481,7 +2499,7 @@
     if(!node||!inRoots(node)||node.closest(EVENT)||node.closest('[role="dialog"],[role="menu"]'))return;
     scanNumber++;
     const info=dateInfo(node);
-    if(info){selectedDay=info.date;scheduleScan();}
+    if(info){selectedDay=info.date;scheduleScan({immediate:true});}
   },true);
   // Start observing immediately, including late/replaced main roots. The
   // first scan waits for a rendering frame instead of document-idle.
