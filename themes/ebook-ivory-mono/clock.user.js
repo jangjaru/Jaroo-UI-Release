@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.11
+// @version      3.11.12
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -152,10 +152,10 @@
       :host([data-ebook-time-collapsed="true"]) :is(.life-clock,.clock){display:none}
       .life-clock{margin:0;padding:10px 0 9px;background:transparent}
       .life-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 0 5px;flex-wrap:nowrap}
-      .life-title{font:650 var(--widget-main)/1.3 var(--font);letter-spacing:.025em;text-transform:uppercase;color:var(--ink);max-width:100%;overflow-wrap:normal;white-space:nowrap}
-      /* One clipped layer paints both the accent marker and its white text; the original ink remains outside. */
-      .life-marker{display:inline-block;position:relative;isolation:isolate;color:var(--eb-accent-ink,#303438);-webkit-text-fill-color:currentColor}
-      .life-marker-ink{position:absolute;inset-block:0;inset-inline:-2px;padding-inline:2px;pointer-events:none;user-select:none;background:var(--eb-accent-ink,#303438);color:#fff;-webkit-text-fill-color:currentColor;clip-path:polygon(0% 42.59%,8% 36.49%,26% 38.32%,43% 34.05%,65% 37.10%,84% 33.44%,98% 38.93%,100% 49.91%,98% 57.84%,100% 69.43%,97% 82.24%,79% 87.73%,57% 85.90%,35% 90.17%,15% 86.51%,1% 92.00%,2% 74.92%,0% 62.11%,2% 51.74%)}
+      .life-title{font:650 calc(var(--widget-main) + 1px)/1.3 var(--font);letter-spacing:.025em;text-transform:uppercase;color:var(--ink);max-width:100%;overflow-wrap:normal;white-space:nowrap}
+      /* Small-text legibility: one white text layer on a full-height, irregular accent marker. */
+      .life-marker{display:inline-block;position:relative;isolation:isolate;color:#fff;-webkit-text-fill-color:currentColor}
+      .life-marker::before{content:"";position:absolute;z-index:-1;pointer-events:none;inset-block:0;inset-inline:-3px;background:var(--eb-accent-ink,#303438);clip-path:polygon(0% 7%,8% 3%,26% 5%,43% 1%,65% 4%,84% 0%,98% 4%,100% 31%,98% 44%,100% 63%,97% 94%,79% 98%,57% 96%,35% 100%,15% 96%,1% 100%,2% 72%,0% 51%,2% 34%)}
       .life-title .ico,.life-title-short,.life-progress-percent{display:none}
       .life-sub,.life-meta,.life-progress-scale{font:450 var(--widget-meta)/1.35 var(--font);color:var(--muted);max-width:100%;overflow-wrap:normal}
       .life-sub{flex:0 0 auto;margin-inline-start:auto;text-align:right;white-space:nowrap}
@@ -258,7 +258,7 @@
     <button class="ebook-time-toggle" type="button" aria-expanded="true" aria-label="시간 정보 접기" title="시간 정보 접기"><svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3.5 6 4.5 4.5L12.5 6"/></svg></button>
     <section class="life-clock" aria-label="Jaroo Life Clock">
       <div class="life-head">
-        <div class="life-title"><span class="ico" aria-hidden="true">◔</span><span class="life-title-full"><span class="life-marker">Jaroo Life Clock<span class="life-marker-ink" aria-hidden="true">Jaroo Life Clock</span></span></span><span class="life-title-short" aria-hidden="true"><span class="life-marker">Life Clock<span class="life-marker-ink" aria-hidden="true">Life Clock</span></span></span></div>
+        <div class="life-title"><span class="ico" aria-hidden="true">◔</span><span class="life-title-full"><span class="life-marker">Jaroo Life Clock</span></span><span class="life-title-short" aria-hidden="true"><span class="life-marker">Life Clock</span></span></div>
         <div class="life-sub">남은 인생 시간</div>
       </div>
       <div class="life-setup" hidden>
@@ -1060,9 +1060,9 @@
     if (window[RUNTIME_KEY]?.dispose === dispose) delete window[RUNTIME_KEY];
   }
   window[RUNTIME_KEY] = {
-    version: '3.11.11', dispose,
+    version: '3.11.12', dispose,
     diagnostics: () => ({
-      version: '3.11.11', ...placementReport,
+      version: '3.11.12', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
