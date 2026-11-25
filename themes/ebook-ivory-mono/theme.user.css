@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.3.4
+@version      0.3.5
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -109,7 +109,7 @@
     --link: var(--eb-ink) !important;
     --link-hover: var(--eb-secondary) !important;
     --jaroo-status-css-version: "6.9.1";
-    --ebook-theme-version: "0.3.4";
+    --ebook-theme-version: "0.3.5";
   }
 
   /* 02. LIGHT-PAPER BASE — do not modify Chrome frame or extension UIs. */
@@ -203,7 +203,7 @@
     box-shadow: none !important;
     filter: none !important;
     border-radius: 8px !important;
-    padding: 1px 4px !important;
+    padding: 3px 4px !important;
     font-family: var(--eb-font) !important;
     font-size: var(--eb-ui-size) !important;
     font-weight: 530 !important;
@@ -552,7 +552,7 @@
     font-size: var(--eb-ui-size) !important;
     font-weight: 600 !important;
     letter-spacing: -.03em !important;
-    line-height: 1.15 !important;
+    line-height: 1.42 !important;
     gap: 0 !important;
     color: var(--eb-ink) !important;
     -webkit-text-fill-color:var(--eb-ink) !important;
@@ -575,7 +575,7 @@
     font-size:var(--eb-sidebar-chat-size) !important;
     font-weight:450 !important;
     letter-spacing:-.035em !important;
-    line-height:1.15 !important;
+    line-height:1.42 !important;
     color:var(--eb-ink) !important;
     -webkit-text-fill-color:var(--eb-ink) !important;
   }
@@ -1037,7 +1037,7 @@
     [data-app-action-sidebar-project-row] [data-marquee-content="true"]
     :is(span,div,[data-d-component="text"]) {
     font-size:var(--eb-project-title-size)!important;
-    line-height:1.15!important;
+    line-height:1.42!important;
   }
   html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"])
     a[href*="/c/"],
@@ -1046,7 +1046,7 @@
        [data-marquee-text],span.truncate,div.truncate,
        span[dir="auto"],[data-d-component="text"]) {
     font-size:var(--eb-chat-title-size)!important;
-    line-height:1.15!important;
+    line-height:1.42!important;
   }
   /* Small utility subtitles and status counts increase from their own
      smaller baseline, preserving the hierarchy and avoiding huge counters. */
@@ -1109,7 +1109,7 @@
       :is(span,div):not([aria-hidden="true"]):not(.sr-only) {
     font-family:var(--eb-font)!important;
     font-size:var(--eb-nav-optical-size)!important;
-    line-height:1.15!important;
+    line-height:1.42!important;
   }
   /* Exact last text span confirmed in the Chrome Elements screenshot. */
   html body span[data-thread-title="true"] [data-marquee-content="true"] span[dir="auto"] > span,
@@ -1448,7 +1448,7 @@
     --eb-composer-single-stroke:2.5px solid #303438!important;
     --eb-quick-nav-size:var(--eb-project-optical-size,16px)!important;
     --eb-marker-yellow:#F2D778!important;
-    --ebook-theme-version:"0.3.4";
+    --ebook-theme-version:"0.3.5";
   }
   /* Preserve the existing procedural paper-grain SVG and only refine grid pitch. */
   html body :is(#thread,[data-testid="conversation-panel"],
@@ -2146,73 +2146,4 @@
     line-height:1.56!important;
   }
 
-
-  /* E-book 0.3.3 — slightly denser project/chat-list rows.
-     Reduce text leading from 1.21 to 1.15 and vertical row padding by 1px per side.
-     Preserve font sizes, colors, weights, horizontal spacing and native controls.
-     The minimum row height is 22px. */
-  html body [data-app-action-sidebar-project-row],
-  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-ebook-count-rail="true"],[data-ebook-sidebar-seam="true"],[data-sidebar-cycle-item],[data-sidebar-archive-chatgpt-id],aside,[role="complementary"]) a[href*="/c/"],
-  html body a:is([data-sidebar-cycle-item],[data-sidebar-archive-chatgpt-id])[href*="/c/"],
-  html body [data-sidebar-archive-chatgpt-id] [data-thread-title-trigger="true"] {
-    min-height:22px!important;
-    height:auto!important;
-    padding-block:1px!important;
-  }
-  /* Some native rows have an additional direct click-surface wrapper. */
-  html body [data-app-action-sidebar-project-row]:has(> :is(button,a,[role="button"]):has([data-marquee-content="true"],[data-marquee-text="true"])) {
-    padding-block:0!important;
-  }
-  html body [data-app-action-sidebar-project-row] > :is(button,a,[role="button"]):has([data-marquee-content="true"],[data-marquee-text="true"]) {
-    min-height:22px!important;
-    height:auto!important;
-    padding-block:1px!important;
-  }
-  html body :is([data-sidebar-cycle-item],[data-sidebar-archive-chatgpt-id]):not(a):has(> a[href*="/c/"]) {
-    min-height:0!important;
-    height:auto!important;
-    padding-block:0!important;
-  }
-
-  /* E-book 0.3.4: compact every recognized native row below ALL.
-     The helper marks only verified navigation surfaces/vertical groups. */
-  html body [data-ebook-compact-row="item"] {
-    box-sizing:border-box!important;
-    height:auto!important;
-    min-height:22px!important;
-    padding-block:1px!important;
-    margin-block:0!important;
-  }
-  html body [data-ebook-compact-row="wrapper"] {
-    height:auto!important;
-    min-height:0!important;
-    padding-block:0!important;
-    margin-block:0!important;
-  }
-  html body [data-ebook-compact-row="heading"] {
-    box-sizing:border-box!important;
-    height:auto!important;
-    min-height:20px!important;
-    padding-block:2px 1px!important;
-    margin-block:3px 0!important;
-  }
-  html body [data-ebook-compact-row="item"] :is(button,[role="button"]):not([data-ebook-compact-row]):not(:is([role="dialog"] *,[role="menu"] *)),
-  html body [data-ebook-compact-row="wrapper"] > :is(button,[role="button"]):not([data-ebook-compact-row]) {
-    height:auto!important;
-    min-height:22px!important;
-    padding-block:1px!important;
-    margin-block:0!important;
-  }
-  html body [data-ebook-compact-row] [data-ebook-quick-label="new-chat"],
-  html body [data-ebook-compact-row] [data-ebook-quick-label="dot"] {
-    line-height:1.15!important;
-  }
-  html body [data-ebook-compact-group] {
-    row-gap:2px!important;
-    padding-block:1px!important;
-  }
-  html body [data-ebook-compact-group="list"] {
-    margin-block:0!important;
-    justify-content:start!important;
-  }
 }
