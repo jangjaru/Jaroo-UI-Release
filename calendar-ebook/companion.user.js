@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo · Google Calendar E-Book Companion
 // @namespace    jaroo.calendar.ebook
-// @version      0.5.4
+// @version      0.5.5
 // @description  Cool E-Ink Graph Paper · native Calendar event labels, More popup and local agenda.
 // @match        https://calendar.google.com/calendar/*
 // @run-at       document-start
@@ -12,7 +12,7 @@
 // ==/UserScript==
 
 /*
- * Jaroo Calendar E-Book v0.5.4 · 2026-11-25
+ * Jaroo Calendar E-Book v0.5.5 · 2026-11-25
  * Requires the paired E-Book Stylus CSS and native Light appearance.
  * Forked from the working Calendar Companion v1.3.7; history below is retained.
  * v1.3.1: preserve visually present month-grid/list colors when Calendar temporarily
@@ -234,11 +234,11 @@
   // BEGIN_JAROO_ADAPTER
   const RUNTIME = '__jarooCalendarCompanionV1';
   window[RUNTIME]?.dispose?.();
-  const VERSION = '0.5.4';
+  const VERSION = '0.5.5';
   const CONFIG = Object.freeze({ timeZone: 'Asia/Seoul', futureDays: 7, maxPins: 3, maxEvents: 1200, recoveryMs: 5000, minScanGapMs: 60 });
   const EVENT = '[data-eventid]';
   const EXCLUDE = '[role="dialog"],[role="menu"],[role="listbox"],[hidden],[inert],[aria-hidden="true"]';
-  const MARKERS = ['data-jaroo-cal-event','data-jaroo-cal-event-ready','data-jaroo-cal-color','data-jaroo-cal-title','data-jaroo-cal-date-label','data-jaroo-cal-today','data-jaroo-cal-selected','data-jaroo-cal-grid','data-jaroo-cal-month-grid','data-jaroo-cal-month-title','data-jaroo-cal-today-label','data-jaroo-cal-month-frame','data-jaroo-cal-month-vertical','data-jaroo-cal-month-column-layer','data-jaroo-cal-month-horizontal','data-jaroo-cal-month-row-rule','data-jaroo-cal-week-gutter','data-jaroo-cal-week-number','data-jaroo-cal-month-today-cell','data-jaroo-cal-month-today-layer','data-jaroo-cal-today-ring','data-jaroo-cal-today-ring-part','data-jaroo-cal-month-weekend','data-jaroo-cal-date-tone','data-jaroo-cal-day-header','data-jaroo-cal-more-label','data-jaroo-cal-event-time','data-jaroo-cal-time-display','data-jaroo-cal-brand','data-jaroo-cal-section','data-jaroo-cal-mini','data-jaroo-cal-mini-title','data-jaroo-cal-mini-day','data-jaroo-cal-mini-number','data-jaroo-cal-calendar-label','data-jaroo-cal-create-label','data-jaroo-cal-create-paint','data-jaroo-cal-create-shell','data-jaroo-cal-event-decor','data-jaroo-cal-event-layer','data-jaroo-cal-event-row','data-jaroo-cal-time-wrap','data-jaroo-cal-event-clean','data-jaroo-cal-mini-week-rail','data-jaroo-cal-mini-week-clear','data-jaroo-cal-mini-week-label','data-jaroo-cal-mini-week-paper','data-jaroo-cal-mini-week-x','data-jaroo-cal-mini-week-y','data-jaroo-cal-mini-week-w','data-jaroo-cal-mini-week-h','data-jaroo-cal-mini-week-segment','data-jaroo-cal-control','data-jaroo-cal-header-switch','data-jaroo-cal-switch-part','data-jaroo-cal-sidebar-panel','data-jaroo-cal-surface','data-jaroo-cal-deadline','data-jaroo-cal-priority','data-jaroo-cal-semantic','data-jaroo-cal-category','data-jaroo-cal-status'];
+  const MARKERS = ['data-jaroo-cal-event','data-jaroo-cal-event-ready','data-jaroo-cal-color','data-jaroo-cal-title','data-jaroo-cal-date-label','data-jaroo-cal-today','data-jaroo-cal-selected','data-jaroo-cal-grid','data-jaroo-cal-month-grid','data-jaroo-cal-month-title','data-jaroo-cal-today-label','data-jaroo-cal-month-frame','data-jaroo-cal-month-vertical','data-jaroo-cal-month-column-layer','data-jaroo-cal-month-horizontal','data-jaroo-cal-month-row-rule','data-jaroo-cal-week-gutter','data-jaroo-cal-week-number','data-jaroo-cal-month-today-cell','data-jaroo-cal-month-today-layer','data-jaroo-cal-today-ring','data-jaroo-cal-today-ring-part','data-jaroo-cal-month-weekend','data-jaroo-cal-date-tone','data-jaroo-cal-day-header','data-jaroo-cal-more-label','data-jaroo-cal-event-time','data-jaroo-cal-time-display','data-jaroo-cal-brand','data-jaroo-cal-section','data-jaroo-cal-mini','data-jaroo-cal-mini-title','data-jaroo-cal-mini-day','data-jaroo-cal-mini-number','data-jaroo-cal-calendar-label','data-jaroo-cal-create-label','data-jaroo-cal-create-paint','data-jaroo-cal-create-shell','data-jaroo-cal-people-search-shell','data-jaroo-cal-people-search-paint','data-jaroo-cal-event-decor','data-jaroo-cal-event-layer','data-jaroo-cal-event-row','data-jaroo-cal-time-wrap','data-jaroo-cal-event-clean','data-jaroo-cal-mini-week-rail','data-jaroo-cal-mini-week-clear','data-jaroo-cal-mini-week-label','data-jaroo-cal-mini-week-paper','data-jaroo-cal-mini-week-x','data-jaroo-cal-mini-week-y','data-jaroo-cal-mini-week-w','data-jaroo-cal-mini-week-h','data-jaroo-cal-mini-week-segment','data-jaroo-cal-control','data-jaroo-cal-header-switch','data-jaroo-cal-switch-part','data-jaroo-cal-sidebar-panel','data-jaroo-cal-surface','data-jaroo-cal-deadline','data-jaroo-cal-priority','data-jaroo-cal-semantic','data-jaroo-cal-category','data-jaroo-cal-status'];
   const eventStyles = new Map(), marked = new Set(), ownedMarkers=new WeakMap(), dateCache = new WeakMap(), textRenderCache = new WeakMap();
   let markerPlan = null, layoutSnapshot=null, layoutDirty=true;
   let moreRequestUntil=0, moreOpenLastScan=false;
@@ -1189,6 +1189,52 @@
     return plan;
   }
 
+
+  // People search may be a native button, combobox or text input. Match
+  // its exact accessible/visible caption inside the verified left rail.
+  function isPeopleSearchCaption(value){
+    return /^(?:사용자\s*검색|사용자\s*찾기|Search (?:for )?people|Find people)$/iu.test(text(value));
+  }
+  function peopleSearchPlan(rail,box){
+    const rr=box(rail);if(!rr)return [];
+    const interactive='button,[role="button"],input,[role="combobox"],[role="searchbox"],[tabindex],[jsaction]';
+    const labelSelector=interactive+',span,div,label';
+    const names=n=>[n.getAttribute('aria-label'),n.getAttribute('placeholder'),n.getAttribute('title'),n.textContent];
+    const fits=n=>{
+      const r=box(n);
+      return r&&r.width>=65&&r.width<=Math.min(340,rr.width+6)&&r.height>=22&&r.height<=72&&r.left>=rr.left-3&&r.right<=rr.right+3&&r.top>=rr.top&&r.bottom<=rr.bottom+3;
+    };
+    const eligible=n=>!n.closest(CHROME_EXCLUDED+', [role="grid"],table,[role="checkbox"]');
+    const targets=new Set();
+    for(const node of [...rail.querySelectorAll(labelSelector)].slice(0,1400)){
+      if(!names(node).some(isPeopleSearchCaption)||!eligible(node))continue;
+      for(let p=node,d=0;p&&p!==rail&&d<6;p=p.parentElement,d++){
+        if(p.matches(interactive)&&fits(p)){targets.add(p);break;}
+      }
+    }
+    const choices=[...targets].filter(n=>![...targets].some(other=>other!==n&&other.contains(n)));
+    if(choices.length!==1)return [];
+    const control=choices[0],cr=box(control);
+    let shell=control;
+    for(let p=control.parentElement,d=0;p&&p!==rail&&d<5;p=p.parentElement,d++){
+      if(!fits(p)||!eligible(p))break;
+      const r=box(p);
+      if(Math.abs(r.top-cr.top)>14||Math.abs(r.bottom-cr.bottom)>14||r.width-cr.width>65)break;
+      // Do not style an entire sidebar section or unrelated adjacent input.
+      if([...p.querySelectorAll('button,[role="button"],input,[role="combobox"],[role="searchbox"]')].some(n=>n!==control&&!control.contains(n)&&!n.contains(control)))break;
+      shell=p;
+    }
+    const plan=[[shell,'data-jaroo-cal-people-search-shell','true']];
+    if(shell!==control)plan.push([control,'data-jaroo-cal-people-search-paint','true']);
+    const sr=box(shell);
+    for(const n of [...shell.querySelectorAll('div,span,input,[role="combobox"],[role="searchbox"]')].slice(0,60)){
+      if(n===control||!eligible(n)||n.matches('button,[role="button"],a,[role="checkbox"]'))continue;
+      const r=box(n);
+      if(r&&r.width>=sr.width*.55&&r.height>=sr.height*.45&&r.left>=sr.left-2&&r.right<=sr.right+2&&r.top>=sr.top-2&&r.bottom<=sr.bottom+2)plan.push([n,'data-jaroo-cal-people-search-paint','true']);
+    }
+    return plan;
+  }
+
   function inspectCalendarChrome(){
     const cache=new WeakMap(),box=node=>chromeBox(node,cache),plan=[];
     const miniDayPriority=new Map();
@@ -1311,9 +1357,10 @@
       for(const control of findSidebarCreate(rail,header,box)){
         if(rail.contains(control))markRailAncestors(control);
         for(const [node,key,value] of createSurfacePlan(control,rail,box))add(node,key,value);
-        const labels=exactChromeLabels(control,v=>/^(?:만들기|Create)$/iu.test(v),cache,40);
-        if(labels.length===1)add(labels[0],'data-jaroo-cal-create-label');
+        const labels=exactChromeLabels(control,v=>/^(?:만들기|일정 만들기|새 일정 만들기|Create(?: event)?)$/iu.test(v),cache,70);
+        for(const label of labels)add(label,'data-jaroo-cal-create-label');
       }
+      for(const [node,key,value] of peopleSearchPlan(rail,box))add(node,key,value);
       const miniGrids=[...rail.querySelectorAll('[role="grid"],table')].filter(node=>{
         const r=box(node);
         return r&&r.width>=75&&r.width<=370&&r.height>=75&&r.height<=350&&node.querySelectorAll('[role="gridcell"],td,button,[role="button"]').length>=20&&!node.querySelector(EVENT);
@@ -2139,7 +2186,7 @@
     const status = shadow.getElementById('jaroo-cal-ui-status'), notes = [];
     status.className = 'status';
     if (!cssApplied) { notes.push('테마 CSS가 아직 적용되지 않았어. Stylus 적용 주소를 확인해줘.'); status.classList.add('warn'); }
-    else if (enabled && cssVersion !== '0.5.4') { notes.push('E-Book v0.5.4 CSS가 필요해. 같은 채널의 Stylus 스타일을 확인해줘.'); status.classList.add('warn'); }
+    else if (enabled && cssVersion !== '0.5.5') { notes.push('E-Book v0.5.5 CSS가 필요해. 같은 채널의 Stylus 스타일을 확인해줘.'); status.classList.add('warn'); }
     if (dirty) notes.push('화면 확인 중… 이전에 읽은 항목이 잠시 표시될 수 있어.');
     else if (lastError) { notes.push('화면을 다시 읽지 못했어. 표시 설정에서 다시 읽기를 눌러줘.'); status.classList.add('warn'); }
     else if (panelFilter === 'today' && !todayKnown) notes.push('현재 화면에서 오늘 날짜를 확인하지 못했어. 기본 캘린더를 오늘로 이동한 뒤 다시 읽어줘.');
