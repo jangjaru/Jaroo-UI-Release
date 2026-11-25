@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.43
+// @version      3.11.44
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -230,11 +230,11 @@
       .digital-time{display:flex;align-items:center;justify-content:flex-end;min-width:0;height:var(--clock-digit-height);color:#41494D;white-space:nowrap}
       .pair{display:inline-flex;align-items:center;gap:0;flex:0 0 auto}
       .digit{display:inline-block;position:relative;flex:0 0 var(--clock-digit-width);width:var(--clock-digit-width);height:var(--clock-digit-height)}
-      .digit .seg{position:absolute;display:block;pointer-events:none;background:#D5DADC}
-      .digit .seg.on{background:#41494D}
-      .seg-a,.seg-g,.seg-d{left:calc(var(--clock-segment-thickness)*.65 + .5px);right:calc(var(--clock-segment-thickness)*.65 + .5px);height:var(--clock-segment-thickness);clip-path:polygon(13% 0,87% 0,100% 50%,87% 100%,13% 100%,0 50%)}
+      .digit .seg{position:absolute;display:block;pointer-events:none;fill:#D5DADC;shape-rendering:geometricPrecision}
+      .digit .seg.on{fill:#41494D}
+      .seg-a,.seg-g,.seg-d{left:calc(var(--clock-segment-thickness)*.65 + .5px);right:calc(var(--clock-segment-thickness)*.65 + .5px);width:calc(100% - (var(--clock-segment-thickness)*1.3 + 1px));height:var(--clock-segment-thickness)}
       .seg-a{top:0}.seg-g{top:calc(50% - var(--clock-segment-thickness)/2)}.seg-d{bottom:0}
-      .seg-f,.seg-e,.seg-b,.seg-c{width:var(--clock-segment-thickness);height:calc(50% - var(--clock-segment-thickness)*.7);clip-path:polygon(50% 0,100% 11%,100% 89%,50% 100%,0 89%,0 11%)}
+      .seg-f,.seg-e,.seg-b,.seg-c{width:var(--clock-segment-thickness);height:calc(50% - var(--clock-segment-thickness)*.7)}
       .seg-f,.seg-b{top:calc(var(--clock-segment-thickness)*.35)}.seg-e,.seg-c{bottom:calc(var(--clock-segment-thickness)*.35)}.seg-f,.seg-e{left:.7px}.seg-b,.seg-c{right:.7px}
       .separator{display:inline-block;position:relative;flex:0 0 var(--clock-separator-width);width:var(--clock-separator-width);height:var(--clock-digit-height);font-size:0;line-height:0;color:#41494D}
       .separator::before,.separator::after{content:"";position:absolute;left:50%;width:calc(var(--clock-segment-thickness)*.78);height:calc(var(--clock-segment-thickness)*.78);border-radius:50%;background:currentColor;transform:translateX(-50%)}
@@ -476,7 +476,11 @@
   }
   let lifeMountState = 'overlay-reserved-space';
 
-  // Digit cells preserve the status dock's .digital-time .digit geometry contract.
+  // Rounded SVG bevels preserve the existing segment boxes, colors, and
+  // status dock's .digital-time .digit geometry. No per-tick geometry work.
+  const LCD_SVG_NS='http://www.w3.org/2000/svg';
+  const LCD_HORIZONTAL='M18 0 H82 Q87 0 90 8 L97 37 Q100 50 97 63 L90 92 Q87 100 82 100 H18 Q13 100 10 92 L3 63 Q0 50 3 37 L10 8 Q13 0 18 0 Z';
+  const LCD_VERTICAL='M38 2 Q50 0 62 2 L93 9 Q100 11 100 15 V85 Q100 89 93 91 L62 98 Q50 100 38 98 L7 91 Q0 89 0 85 V15 Q0 11 7 9 Z';
   const digits = [];
   for (let groupIndex = 0; groupIndex < 3; groupIndex++) {
     const pair = document.createElement('span');
@@ -486,9 +490,15 @@
       cell.className = 'digit';
       cell.dataset.value = '0';
       for (const id of 'abcdefg') {
-        const seg = document.createElement('i');
-        seg.className = 'seg seg-' + id;
+        const seg=document.createElementNS(LCD_SVG_NS,'svg');
+        seg.setAttribute('class','seg seg-'+id);
+        seg.setAttribute('viewBox','0 0 100 100');
+        seg.setAttribute('preserveAspectRatio','none');
         seg.setAttribute('aria-hidden','true');
+        seg.setAttribute('focusable','false');
+        const path=document.createElementNS(LCD_SVG_NS,'path');
+        path.setAttribute('d','agd'.includes(id)?LCD_HORIZONTAL:LCD_VERTICAL);
+        seg.appendChild(path);
         cell.appendChild(seg);
       }
       pair.appendChild(cell);
@@ -1379,9 +1389,9 @@
     if (PAGE[RUNTIME_KEY]?.dispose === dispose) delete PAGE[RUNTIME_KEY];
   }
   PAGE[RUNTIME_KEY] = {
-    version: '3.11.43', dispose,
+    version: '3.11.44', dispose,
     diagnostics: () => ({
-      version: '3.11.43', ...placementReport,
+      version: '3.11.44', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
