@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.8
+// @version      3.11.9
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -140,7 +140,7 @@
       .fallback-brand{display:flex;align-items:center;width:100%;padding:7px 29px 9px 0;margin:0;border:0;border-bottom:1px solid var(--line);background:none;cursor:pointer;text-align:left;color:var(--ink)}
       .fallback-brand[aria-disabled="true"]{cursor:default}
       .fallback-brand:focus-visible,.ebook-time-toggle:focus-visible{outline:1px solid #879398;outline-offset:1px}
-      .brand-word{display:flex;flex:1 1 auto;flex-direction:column;align-items:flex-start;min-width:0;max-width:100%;gap:4px}
+      .brand-word{display:flex;flex:1 1 auto;flex-direction:column;align-items:flex-start;min-width:0;max-width:100%;gap:6px}
       .brand-title{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 .38em;font:700 24px/1.02 var(--font);font-synthesis:weight;letter-spacing:-.045em;text-align:left;min-width:0;max-width:100%}
       .brand-title span{max-width:100%;overflow-wrap:anywhere}
       .brand-subtitle{font:450 12px/1.3 var(--font);letter-spacing:.075em;color:var(--muted);max-width:100%;overflow-wrap:normal}
@@ -174,7 +174,7 @@
       .life-value{min-width:0;max-width:100%;font:600 19px/1.25 var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.045em;text-align:right;white-space:normal;word-break:keep-all;overflow-wrap:normal;justify-self:end}
       /* Retirement metric: title on row one, metadata and value share a baseline. */
       .life-card.retire .life-card-main{grid-template-columns:minmax(0,1fr) auto;align-items:last baseline;gap:0 4px}
-      .life-card.retire .life-caption{display:flex;gap:0}
+      .life-card.retire .life-caption{display:flex;gap:1px}
       .life-card.retire .life-label{font-weight:550;color:#23272B;line-height:1.02}
       .life-card.retire .life-meta{white-space:nowrap;line-height:1.02}
       .life-card.retire .life-value{white-space:nowrap;line-height:1.1}
@@ -1057,9 +1057,9 @@
     if (window[RUNTIME_KEY]?.dispose === dispose) delete window[RUNTIME_KEY];
   }
   window[RUNTIME_KEY] = {
-    version: '3.11.8', dispose,
+    version: '3.11.9', dispose,
     diagnostics: () => ({
-      version: '3.11.8', ...placementReport,
+      version: '3.11.9', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
