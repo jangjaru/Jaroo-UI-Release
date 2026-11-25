@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo · Google Calendar E-Book Companion
 // @namespace    jaroo.calendar.ebook
-// @version      0.5.2
+// @version      0.5.3
 // @description  Cool E-Ink Graph Paper · native Calendar event labels, More popup and local agenda.
 // @match        https://calendar.google.com/calendar/*
 // @run-at       document-start
@@ -12,7 +12,7 @@
 // ==/UserScript==
 
 /*
- * Jaroo Calendar E-Book v0.5.2 · 2026-11-25
+ * Jaroo Calendar E-Book v0.5.3 · 2026-11-25
  * Requires the paired E-Book Stylus CSS and native Light appearance.
  * Forked from the working Calendar Companion v1.3.7; history below is retained.
  * v1.3.1: preserve visually present month-grid/list colors when Calendar temporarily
@@ -234,11 +234,11 @@
   // BEGIN_JAROO_ADAPTER
   const RUNTIME = '__jarooCalendarCompanionV1';
   window[RUNTIME]?.dispose?.();
-  const VERSION = '0.5.2';
+  const VERSION = '0.5.3';
   const CONFIG = Object.freeze({ timeZone: 'Asia/Seoul', futureDays: 7, maxPins: 3, maxEvents: 1200, recoveryMs: 5000, minScanGapMs: 60 });
   const EVENT = '[data-eventid]';
   const EXCLUDE = '[role="dialog"],[role="menu"],[role="listbox"],[hidden],[inert],[aria-hidden="true"]';
-  const MARKERS = ['data-jaroo-cal-event','data-jaroo-cal-event-ready','data-jaroo-cal-color','data-jaroo-cal-title','data-jaroo-cal-date-label','data-jaroo-cal-today','data-jaroo-cal-selected','data-jaroo-cal-grid','data-jaroo-cal-month-grid','data-jaroo-cal-month-title','data-jaroo-cal-today-label','data-jaroo-cal-month-frame','data-jaroo-cal-month-vertical','data-jaroo-cal-month-column-layer','data-jaroo-cal-month-horizontal','data-jaroo-cal-month-row-rule','data-jaroo-cal-week-gutter','data-jaroo-cal-week-number','data-jaroo-cal-month-today-cell','data-jaroo-cal-month-today-layer','data-jaroo-cal-today-ring','data-jaroo-cal-today-ring-part','data-jaroo-cal-month-weekend','data-jaroo-cal-date-tone','data-jaroo-cal-day-header','data-jaroo-cal-more-label','data-jaroo-cal-event-time','data-jaroo-cal-time-display','data-jaroo-cal-brand','data-jaroo-cal-section','data-jaroo-cal-mini','data-jaroo-cal-mini-title','data-jaroo-cal-mini-day','data-jaroo-cal-mini-number','data-jaroo-cal-calendar-label','data-jaroo-cal-create-label','data-jaroo-cal-control','data-jaroo-cal-header-switch','data-jaroo-cal-switch-part','data-jaroo-cal-sidebar-panel','data-jaroo-cal-surface','data-jaroo-cal-deadline','data-jaroo-cal-priority','data-jaroo-cal-semantic','data-jaroo-cal-category','data-jaroo-cal-status'];
+  const MARKERS = ['data-jaroo-cal-event','data-jaroo-cal-event-ready','data-jaroo-cal-color','data-jaroo-cal-title','data-jaroo-cal-date-label','data-jaroo-cal-today','data-jaroo-cal-selected','data-jaroo-cal-grid','data-jaroo-cal-month-grid','data-jaroo-cal-month-title','data-jaroo-cal-today-label','data-jaroo-cal-month-frame','data-jaroo-cal-month-vertical','data-jaroo-cal-month-column-layer','data-jaroo-cal-month-horizontal','data-jaroo-cal-month-row-rule','data-jaroo-cal-week-gutter','data-jaroo-cal-week-number','data-jaroo-cal-month-today-cell','data-jaroo-cal-month-today-layer','data-jaroo-cal-today-ring','data-jaroo-cal-today-ring-part','data-jaroo-cal-month-weekend','data-jaroo-cal-date-tone','data-jaroo-cal-day-header','data-jaroo-cal-more-label','data-jaroo-cal-event-time','data-jaroo-cal-time-display','data-jaroo-cal-brand','data-jaroo-cal-section','data-jaroo-cal-mini','data-jaroo-cal-mini-title','data-jaroo-cal-mini-day','data-jaroo-cal-mini-number','data-jaroo-cal-calendar-label','data-jaroo-cal-create-label','data-jaroo-cal-create-paint','data-jaroo-cal-mini-week-rail','data-jaroo-cal-mini-week-clear','data-jaroo-cal-mini-week-label','data-jaroo-cal-mini-week-paper','data-jaroo-cal-mini-week-x','data-jaroo-cal-mini-week-y','data-jaroo-cal-mini-week-w','data-jaroo-cal-mini-week-h','data-jaroo-cal-mini-week-segment','data-jaroo-cal-control','data-jaroo-cal-header-switch','data-jaroo-cal-switch-part','data-jaroo-cal-sidebar-panel','data-jaroo-cal-surface','data-jaroo-cal-deadline','data-jaroo-cal-priority','data-jaroo-cal-semantic','data-jaroo-cal-category','data-jaroo-cal-status'];
   const eventStyles = new Map(), marked = new Set(), ownedMarkers=new WeakMap(), dateCache = new WeakMap(), textRenderCache = new WeakMap();
   let markerPlan = null, layoutSnapshot=null, layoutDirty=true;
   let moreRequestUntil=0, moreOpenLastScan=false;
@@ -979,6 +979,111 @@
     return null;
   }
 
+
+  // Sidebar only. Identify a week column by 7 consecutive day labels and
+  // its adjacent, consecutive week labels. Do not depend on obfuscated classes.
+  function miniDayFollows(a,b){return b===a+1||(b===1&&a>=28&&a<=31);}
+  function miniWeekRows(items){
+    const grouped=[];
+    for(const item of [...items].sort((a,b)=>a.cy-b.cy||a.cx-b.cx)){
+      let row=grouped.find(r=>Math.abs(r.cy-item.cy)<=5);
+      if(!row){row={cy:item.cy,items:[]};grouped.push(row);}
+      const same=row.items.findIndex(x=>Math.abs(x.cx-item.cx)<=3&&x.value===item.value);
+      if(same<0)row.items.push(item);
+      else if(item.r.width<row.items[same].r.width)row.items[same]=item;
+    }
+    const rows=[];
+    for(const row of grouped){
+      const items=row.items.sort((a,b)=>a.cx-b.cx);
+      if(items.length!==8)continue;
+      const [week,...days]=items;
+      if(week.value<1||week.value>53||days.some(d=>d.value<1||d.value>31))continue;
+      if(days.some((d,i)=>i&&!miniDayFollows(days[i-1].value,d.value)))continue;
+      const gaps=items.slice(1).map((d,i)=>d.cx-items[i].cx),sorted=[...gaps].sort((a,b)=>a-b),pitch=sorted[3];
+      if(pitch<12||pitch>55||gaps.some(g=>Math.abs(g-pitch)>Math.max(5,pitch*.25)))continue;
+      rows.push({week,days,cy:row.cy,pitch});
+    }
+    if(rows.length<4||rows.length>6)return [];
+    rows.sort((a,b)=>a.cy-b.cy);
+    const first=rows[0],step=rows[1].cy-first.cy;
+    if(step<12||step>55)return [];
+    if(rows.some((r,i)=>Math.abs(r.week.cx-first.week.cx)>5||
+      Math.abs(r.pitch-first.pitch)>5||
+      i&&(Math.abs(r.cy-rows[i-1].cy-step)>6||
+        !miniDayFollows(rows[i-1].days[6].value,r.days[0].value)||
+        !(r.week.value===rows[i-1].week.value+1||(r.week.value===1&&[52,53].includes(rows[i-1].week.value))))))return [];
+    return rows;
+  }
+  function miniWeekPlan(mini,rail,box){
+    const mr=box(mini);if(!mr)return [];
+    const selector='span,div,button,[role="button"],[role="rowheader"],[role="gridcell"],td,th';
+    const nodes=[...rail.querySelectorAll(selector)].slice(0,1600),items=[];
+    for(const node of nodes){
+      if(node.childElementCount)continue;
+      const v=text(node.textContent);
+      if(!/^(?:[1-9]|[1-4]\d|5[0-3])$/.test(v))continue;
+      const r=box(node);if(!r||r.width>55||r.height>45||r.left<mr.left-45||r.right>mr.right+6||r.top<mr.top-6||r.bottom>mr.bottom+6)continue;
+      items.push({node,value:Number(v),r,cx:(r.left+r.right)/2,cy:(r.top+r.bottom)/2});
+    }
+    const rows=miniWeekRows(items);if(!rows.length)return [];
+    const step=rows[1].cy-rows[0].cy,pitch=rows[0].pitch,cx=rows[0].week.cx,top=rows[0].cy-step/2,bottom=rows.at(-1).cy+step/2;
+    const weeks=rows.map(r=>r.week.node),days=rows.flatMap(r=>r.days.map(d=>d.node)),plan=[],narrow=new Set();
+    const isNarrow=r=>r&&r.width>=5&&r.width<=pitch*1.35&&r.left>=cx-pitch*.83&&r.right<=cx+pitch*.83&&r.top>=top-8&&r.bottom<=bottom+8;
+    for(const node of weeks){
+      plan.push([node,'data-jaroo-cal-mini-week-label','true']);
+      for(let p=node,d=0;p&&p!==rail&&d<8;p=p.parentElement,d++){
+        if(isNarrow(box(p))&&!days.some(n=>p.contains(n)))narrow.add(p);
+      }
+    }
+    // Native capsule may be a sibling paint layer rather than the label wrapper.
+    for(const node of nodes){
+      if(narrow.has(node)||node.childElementCount||text(node.textContent)||node.matches(CHROME_CONTROL+',a,[tabindex]'))continue;
+      const r=box(node);if(isNarrow(r)&&r.height>=step*.6)narrow.add(node);
+    }
+    const full=[...narrow].filter(n=>{
+      const r=box(n);
+      return !n.matches(CHROME_CONTROL+',a,[tabindex]')&&r.width>=pitch*.58&&r.top<=top+7&&r.bottom>=bottom-7&&
+        (weeks.every(w=>n.contains(w))||(!n.childElementCount&&!text(n.textContent)));
+    }).sort((a,b)=>Number(weeks.every(w=>b.contains(w)))-Number(weeks.every(w=>a.contains(w)))||box(b).height-box(a).height);
+    const capsule=full[0];
+    for(const node of narrow)if(node!==capsule)plan.push([node,'data-jaroo-cal-mini-week-clear','true']);
+    if(capsule){plan.push([capsule,'data-jaroo-cal-mini-week-rail','true']);return plan;}
+    // A single paper background is the non-layout fallback for separate
+    // week rows. It lives only on a compact wrapper covering all eight columns.
+    let paper=null;
+    for(let p=mini,d=0;p&&p!==rail&&d<5;p=p.parentElement,d++){
+      const r=box(p);
+      if(r&&r.width<=370&&r.height<=350&&r.left<=cx-pitch*.4&&r.right>=rows[0].days.at(-1).cx&&r.top<=top+1&&r.bottom>=bottom-1&&weeks.every(w=>p.contains(w))){paper=p;break;}
+    }
+    if(paper&&typeof CSS!=='undefined'&&CSS.supports('width','attr(data-jaroo-cal-mini-week-w type(<length>), 0px)')){
+      const r=box(paper),w=Math.min(pitch*.82,24),h=bottom-top;
+      plan.push([paper,'data-jaroo-cal-mini-week-paper','true']);
+      for(const [key,value] of [['x',cx-w/2-r.left],['y',top-r.top],['w',w],['h',h]])plan.push([paper,'data-jaroo-cal-mini-week-'+key,Math.round(value*10)/10+'px']);
+    }else{
+      // Older browser / unavailable host: use native row wrappers as fallback.
+      for(let i=0;i<rows.length;i++){
+        const candidates=[...narrow].filter(n=>n.contains(weeks[i])&&box(n).height<=step+6&&box(n).width>=pitch*.5);
+        candidates.sort((a,b)=>box(b).height-box(a).height);
+        if(candidates[0])plan.push([candidates[0],'data-jaroo-cal-mini-week-segment',i===0?'first':i===rows.length-1?'last':'middle']);
+      }
+    }
+    return plan;
+  }
+  function createPaintWrappers(control,rail,box){
+    const r=box(control);if(!r)return [];
+    const out=new Set(),close=n=>{
+      const v=box(n);
+      return v&&Math.abs(v.left-r.left)<=5&&Math.abs(v.right-r.right)<=5&&Math.abs(v.top-r.top)<=5&&Math.abs(v.bottom-r.bottom)<=5;
+    };
+    for(let p=control.parentElement,d=0;p&&p!==rail&&d<4;p=p.parentElement,d++){
+      if(!close(p)||[...p.querySelectorAll(CHROME_CONTROL)].some(n=>n!==control&&!control.contains(n)))break;
+      out.add(p);
+    }
+    for(const n of [...control.querySelectorAll('div,span')].slice(0,36))
+      if(close(n)&&!n.matches(CHROME_CONTROL+',a,[tabindex]'))out.add(n);
+    return [...out];
+  }
+
   function inspectCalendarChrome(){
     const cache=new WeakMap(),box=node=>chromeBox(node,cache),plan=[];
     const miniDayPriority=new Map();
@@ -1098,12 +1203,17 @@
           text(node.textContent).length<=80&&box(node)&&!/material|symbol|icon/i.test(getComputedStyle(node).fontFamily||''));
         if(leaves.length===1)add(leaves[0],'data-jaroo-cal-calendar-label');
       }
-      for(const control of rail.querySelectorAll(CHROME_CONTROL)){
-        if(roleControl(control,'sidebar')==='create'&&box(control)){
-          add(control,'data-jaroo-cal-control','create');markRailAncestors(control);
-          const labels=exactChromeLabels(control,v=>/^(?:만들기|Create)$/iu.test(v),cache,40);
-          if(labels.length===1)add(labels[0],'data-jaroo-cal-create-label');
-        }
+      const createControls=new Set([...rail.querySelectorAll(CHROME_CONTROL)].filter(control=>roleControl(control,'sidebar')==='create'&&box(control)));
+      // Exact visible label fallback for native buttons with combined glyphs.
+      if(!createControls.size)for(const label of exactChromeLabels(rail,v=>/^(?:만들기|Create)$/iu.test(v),cache)){
+        const control=label.closest(CHROME_CONTROL),r=box(control);
+        if(control&&rail.contains(control)&&r&&r.width>=65&&r.width<=230&&r.height>=26&&r.height<=85)createControls.add(control);
+      }
+      for(const control of createControls){
+        add(control,'data-jaroo-cal-control','create');markRailAncestors(control);
+        for(const wrapper of createPaintWrappers(control,rail,box))add(wrapper,'data-jaroo-cal-create-paint');
+        const labels=exactChromeLabels(control,v=>/^(?:만들기|Create)$/iu.test(v),cache,40);
+        if(labels.length===1)add(labels[0],'data-jaroo-cal-create-label');
       }
       const miniGrids=[...rail.querySelectorAll('[role="grid"],table')].filter(node=>{
         const r=box(node);
@@ -1112,6 +1222,7 @@
       const mini=miniGrids.find(node=>!miniGrids.some(other=>other!==node&&other.contains(node)));
       if(mini){
         add(mini,'data-jaroo-cal-mini');markRailAncestors(mini);
+        for(const [node,key,value] of miniWeekPlan(mini,rail,box))add(node,key,value);
         const number=v=>/^(?:[1-9]|[12]\d|3[01])$/u.test(v);
         for(const leaf of mini.querySelectorAll('span,div,button,[role="button"],[role="gridcell"],td')){
           if(leaf.childElementCount||!number(text(leaf.textContent))||!box(leaf)||
@@ -1929,7 +2040,7 @@
     const status = shadow.getElementById('jaroo-cal-ui-status'), notes = [];
     status.className = 'status';
     if (!cssApplied) { notes.push('테마 CSS가 아직 적용되지 않았어. Stylus 적용 주소를 확인해줘.'); status.classList.add('warn'); }
-    else if (enabled && cssVersion !== '0.5.2') { notes.push('E-Book v0.5.2 CSS가 필요해. 같은 채널의 Stylus 스타일을 확인해줘.'); status.classList.add('warn'); }
+    else if (enabled && cssVersion !== '0.5.3') { notes.push('E-Book v0.5.3 CSS가 필요해. 같은 채널의 Stylus 스타일을 확인해줘.'); status.classList.add('warn'); }
     if (dirty) notes.push('화면 확인 중… 이전에 읽은 항목이 잠시 표시될 수 있어.');
     else if (lastError) { notes.push('화면을 다시 읽지 못했어. 표시 설정에서 다시 읽기를 눌러줘.'); status.classList.add('warn'); }
     else if (panelFilter === 'today' && !todayKnown) notes.push('현재 화면에서 오늘 날짜를 확인하지 못했어. 기본 캘린더를 오늘로 이동한 뒤 다시 읽어줘.');
