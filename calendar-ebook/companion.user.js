@@ -238,7 +238,7 @@
   const CONFIG = Object.freeze({ timeZone: 'Asia/Seoul', futureDays: 7, maxPins: 3, maxEvents: 1200, recoveryMs: 5000, minScanGapMs: 60 });
   const EVENT = '[data-eventid]';
   const EXCLUDE = '[role="dialog"],[role="menu"],[role="listbox"],[hidden],[inert],[aria-hidden="true"]';
-  const MARKERS = ['data-jaroo-cal-event','data-jaroo-cal-event-ready','data-jaroo-cal-color','data-jaroo-cal-title','data-jaroo-cal-date-label','data-jaroo-cal-today','data-jaroo-cal-selected','data-jaroo-cal-grid','data-jaroo-cal-month-grid','data-jaroo-cal-month-title','data-jaroo-cal-today-label','data-jaroo-cal-month-frame','data-jaroo-cal-month-vertical','data-jaroo-cal-month-column-layer','data-jaroo-cal-month-horizontal','data-jaroo-cal-month-row-rule','data-jaroo-cal-week-gutter','data-jaroo-cal-week-number','data-jaroo-cal-month-today-cell','data-jaroo-cal-month-today-layer','data-jaroo-cal-today-ring','data-jaroo-cal-today-ring-part','data-jaroo-cal-month-weekend','data-jaroo-cal-date-tone','data-jaroo-cal-day-header','data-jaroo-cal-more-label','data-jaroo-cal-event-time','data-jaroo-cal-time-display','data-jaroo-cal-brand','data-jaroo-cal-section','data-jaroo-cal-mini','data-jaroo-cal-mini-title','data-jaroo-cal-mini-day','data-jaroo-cal-mini-number','data-jaroo-cal-calendar-label','data-jaroo-cal-create-label','data-jaroo-cal-create-paint','data-jaroo-cal-create-shell','data-jaroo-cal-people-search-shell','data-jaroo-cal-people-search-paint','data-jaroo-cal-people-search-width','data-jaroo-cal-people-search-offset','data-jaroo-cal-people-search-group','data-jaroo-cal-people-search-caption','data-jaroo-cal-people-search-input','data-jaroo-cal-event-decor','data-jaroo-cal-event-layer','data-jaroo-cal-event-row','data-jaroo-cal-time-wrap','data-jaroo-cal-event-clean','data-jaroo-cal-completion-paint','data-jaroo-cal-native-completed','data-jaroo-cal-date-control','data-jaroo-cal-month-selection-layer','data-jaroo-cal-mini-week-rail','data-jaroo-cal-mini-week-clear','data-jaroo-cal-mini-week-label','data-jaroo-cal-mini-week-paper','data-jaroo-cal-mini-week-x','data-jaroo-cal-mini-week-y','data-jaroo-cal-mini-week-w','data-jaroo-cal-mini-week-h','data-jaroo-cal-mini-week-segment','data-jaroo-cal-control','data-jaroo-cal-header-switch','data-jaroo-cal-switch-part','data-jaroo-cal-sidebar-panel','data-jaroo-cal-surface','data-jaroo-cal-deadline','data-jaroo-cal-priority','data-jaroo-cal-semantic','data-jaroo-cal-category','data-jaroo-cal-status'];
+  const MARKERS = ['data-jaroo-cal-event','data-jaroo-cal-event-ready','data-jaroo-cal-color','data-jaroo-cal-title','data-jaroo-cal-date-label','data-jaroo-cal-today','data-jaroo-cal-selected','data-jaroo-cal-grid','data-jaroo-cal-month-grid','data-jaroo-cal-month-title','data-jaroo-cal-today-label','data-jaroo-cal-month-frame','data-jaroo-cal-month-vertical','data-jaroo-cal-month-column-layer','data-jaroo-cal-month-horizontal','data-jaroo-cal-month-row-rule','data-jaroo-cal-week-gutter','data-jaroo-cal-week-number','data-jaroo-cal-month-today-cell','data-jaroo-cal-month-today-layer','data-jaroo-cal-today-ring','data-jaroo-cal-today-ring-part','data-jaroo-cal-month-weekend','data-jaroo-cal-date-tone','data-jaroo-cal-day-header','data-jaroo-cal-more-label','data-jaroo-cal-event-time','data-jaroo-cal-time-display','data-jaroo-cal-brand','data-jaroo-cal-section','data-jaroo-cal-mini','data-jaroo-cal-mini-title','data-jaroo-cal-mini-day','data-jaroo-cal-mini-number','data-jaroo-cal-calendar-label','data-jaroo-cal-create-label','data-jaroo-cal-create-paint','data-jaroo-cal-create-shell','data-jaroo-cal-people-search-shell','data-jaroo-cal-people-search-paint','data-jaroo-cal-people-search-width','data-jaroo-cal-people-search-offset','data-jaroo-cal-people-search-group','data-jaroo-cal-people-search-caption','data-jaroo-cal-people-search-input','data-jaroo-cal-people-search-control','data-jaroo-cal-event-decor','data-jaroo-cal-event-layer','data-jaroo-cal-event-row','data-jaroo-cal-time-wrap','data-jaroo-cal-event-clean','data-jaroo-cal-completion-paint','data-jaroo-cal-native-completed','data-jaroo-cal-date-control','data-jaroo-cal-month-selection-layer','data-jaroo-cal-mini-week-rail','data-jaroo-cal-mini-week-clear','data-jaroo-cal-mini-week-label','data-jaroo-cal-mini-week-paper','data-jaroo-cal-mini-week-x','data-jaroo-cal-mini-week-y','data-jaroo-cal-mini-week-w','data-jaroo-cal-mini-week-h','data-jaroo-cal-mini-week-segment','data-jaroo-cal-control','data-jaroo-cal-header-switch','data-jaroo-cal-switch-part','data-jaroo-cal-sidebar-panel','data-jaroo-cal-surface','data-jaroo-cal-deadline','data-jaroo-cal-priority','data-jaroo-cal-semantic','data-jaroo-cal-category','data-jaroo-cal-status'];
   const eventStyles = new Map(), marked = new Set(), ownedMarkers=new WeakMap(), dateCache = new WeakMap(), textRenderCache = new WeakMap();
   let markerPlan = null, layoutSnapshot=null, layoutDirty=true;
   let moreRequestUntil=0, moreOpenLastScan=false;
@@ -1268,7 +1268,7 @@
       if([...p.querySelectorAll('button,[role="button"],input,[role="combobox"],[role="searchbox"]')].some(n=>n!==control&&!control.contains(n)&&!n.contains(control)))break;
       shell=p;
     }
-    const plan=[[shell,'data-jaroo-cal-people-search-shell','true']];
+    const plan=[[shell,'data-jaroo-cal-people-search-shell','true'],[control,'data-jaroo-cal-people-search-control','true']];
     if(shell!==control)plan.push([control,'data-jaroo-cal-people-search-paint','true']);
     const sr=box(shell);
     for(const n of [...shell.querySelectorAll('div,span,input,[role="combobox"],[role="searchbox"]')].slice(0,60)){
@@ -1330,14 +1330,16 @@
     }
     return out;
   }
-  function createBoldLabels(control,plan){
+  function createBoldLabels(control,plan,box){
     const shell=plan.find(([,k])=>k==='data-jaroo-cal-create-shell')?.[0]||control;
     const exact=v=>/^(?:만들기|일정 만들기|새 일정 만들기|Create(?: event)?)$/iu.test(text(v));
     // Direct text-node wrappers also qualify; Google may not expose a
     // standalone leaf span. Do not apply weight/stroke to icon nodes.
     const nodes=[control,...shell.querySelectorAll('span,div,label,button,[role="button"]')].slice(0,100);
     const labels=nodes.filter(n=>{
-      if(n.closest('svg,[aria-hidden="true"]'))return false;
+      // aria-hidden is not visual hiding: Google may mark visible captions
+      // as redundant for accessibility. Exact visible text still qualifies.
+      if(n.closest('svg')||!box(n))return false;
       return exact(n.textContent)||[...n.childNodes].some(child=>child.nodeType===3&&exact(child.textContent));
     });
     return labels.filter(n=>!labels.some(other=>other!==n&&n.contains(other)));
@@ -1466,7 +1468,7 @@
         if(rail.contains(control))markRailAncestors(control);
         const createPlan=createSurfacePlan(control,rail,box);
         for(const [node,key,value] of createPlan)add(node,key,value);
-        for(const label of createBoldLabels(control,createPlan))add(label,'data-jaroo-cal-create-label');
+        for(const label of createBoldLabels(control,createPlan,box))add(label,'data-jaroo-cal-create-label');
       }
       const searchPlan=peopleSearchPlan(rail,box);
       for(const [node,key,value] of searchPlan)add(node,key,value);
