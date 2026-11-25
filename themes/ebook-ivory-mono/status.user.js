@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo · Status & Command Center
 // @namespace    jaroo-company.local
-// @version      6.9.3
+// @version      6.9.4
 // @description  E-book RUN/DONE and ALL/ONLY; first-paint quiet controls, verified native-state detection and cross-tab synchronization.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -15,7 +15,7 @@
   const RUNTIME = '__jarooCommandCenterRuntimeV4';
   window[RUNTIME]?.dispose?.();
   window.__jarooNativeCapture?.stop?.();
-  const VERSION = '6.9.3';
+  const VERSION = '6.9.4';
   const HOVER_MS = 400;
   const ROOTS = '#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]';
   const ARCHIVE = '[data-sidebar-archive-chatgpt-id]';
@@ -937,41 +937,33 @@
   const dockCSS = `
     .jaroo-center,.jaroo-focus-list{--widget-main:var(--eb-chat-corrected-size,15.333px);--widget-meta:13px;box-sizing:border-box;color:#292D30;font:400 var(--widget-main)/1.3 var(--eb-font,"IBM Plex Mono","Pretendard Variable","Pretendard",sans-serif);min-width:0}
     .jaroo-center *, .jaroo-focus-list *{box-sizing:border-box}
-    .jaroo-center{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 44px;gap:6px;margin:0;padding:10.5px 0 8px;border-top:1px solid var(--eb-accent-ink,#303438);align-items:stretch}
+    .jaroo-center{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:0;padding:10.5px 0 4px;border-top:1px solid var(--eb-accent-ink,#303438);align-items:stretch}
     .jaroo-center button{display:flex;align-items:center;justify-content:center;width:100%;min-width:0;height:100%;min-height:52px;padding:0;margin:0;background:none;border:0;border-radius:3px;cursor:pointer;color:inherit;font-family:inherit}
     .jaroo-center button:focus-visible,.jaroo-focus-row:focus-visible{outline:1px solid #879398;outline-offset:1px}
-    .jaroo-center .jaroo-top-badge{display:flex;flex-direction:column;justify-content:center;align-items:stretch;gap:4px;width:100%;min-width:0;height:100%;min-height:52px;padding:6px;background:#DFE3E5;border:0;border-radius:3px}
-    .jaroo-center .jaroo-top-line{display:flex;flex-wrap:wrap;align-items:center;gap:4px;min-width:0;white-space:nowrap;line-height:1.15}
+    .jaroo-center .jaroo-top-badge{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:3px;width:100%;min-width:0;height:100%;min-height:52px;padding:6px;background:#DFE3E5;border:0;border-radius:3px;text-align:left}
+    .jaroo-top-copy{display:flex;flex-direction:column;gap:2px;min-width:0}
     .jaroo-center button{--status-ink:#9099A2}
     .jaroo-center .run[data-active="true"]{--status-ink:#A57900}
     .jaroo-center .done[data-active="true"]{--status-ink:#218C77}
-    .jaroo-top-word,.jaroo-top-mark{color:var(--status-ink);font-size:var(--widget-main);font-weight:600;line-height:1.15;font-family:inherit}
-    .jaroo-center .run .jaroo-top-mark{font-size:0;flex:0 0 7px;width:7px;height:7px;border-radius:50%;background:var(--status-ink)}
-    .jaroo-center .count{font-family:var(--eb-mono,"IBM Plex Mono",monospace);font-size:22px;font-weight:600;letter-spacing:-.04em;margin-left:auto;color:#292D30;font-variant-numeric:tabular-nums;line-height:1}
+    .jaroo-top-word{display:block;color:var(--status-ink);font-size:clamp(10px,5.6cqi,13px);font-weight:600;line-height:1.12;letter-spacing:-.035em;overflow-wrap:anywhere}
+    .jaroo-center .count{font-family:var(--eb-mono,"IBM Plex Mono",monospace);font-size:22px;font-weight:600;letter-spacing:-.04em;margin-left:auto;color:#292D30;font-variant-numeric:tabular-nums;line-height:1;white-space:nowrap}
     .jaroo-center button[data-active="false"] .count{color:#9099A2;font-weight:500}
-    .jaroo-center .jaroo-mini-label{display:block;font:450 var(--widget-meta)/1.3 "Pretendard Variable","Pretendard",sans-serif;color:#535B60;text-align:left;white-space:normal;letter-spacing:-.03em}
-    .jaroo-mode-frame{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#737D83}
-    .jaroo-mode-track{position:relative;width:28px;height:14px;border:0;border-radius:8px;background:#C9D0D3}
+    .jaroo-center .jaroo-mini-label{display:block;font-size:clamp(10px,5.6cqi,13px);font-weight:450;line-height:1.12;color:#535B60;text-align:left;letter-spacing:-.035em;overflow-wrap:anywhere}
+    .jaroo-center .jaroo-mode-switch{grid-column:1/-1;min-height:24px;height:auto;justify-content:flex-start;padding:3px 0}
+    .jaroo-mode-frame{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:6px;width:100%;min-width:0;color:#737D83;text-align:left}
+    .jaroo-mode-track{position:relative;flex:0 0 28px;width:28px;height:14px;border:0;border-radius:8px;background:#C9D0D3}
     .jaroo-mode-thumb{position:absolute;width:10px;height:10px;left:2px;top:2px;border-radius:50%;background:#F5F6F6}
     .jaroo-mode-switch[aria-pressed="true"] .jaroo-mode-track{background:#879398}
     .jaroo-mode-switch[aria-pressed="true"] .jaroo-mode-thumb{left:16px}
     .jaroo-mode-switch:disabled{opacity:.45;cursor:not-allowed}
-    .jaroo-mode-caption{font-size:var(--widget-main);font-weight:600}
-    @container jaroo-dashboard (max-width: 299px){
-      .jaroo-center{grid-template-columns:repeat(2,minmax(0,1fr))}
-      .jaroo-mode-switch{grid-column:1/-1;min-height:28px}
-      .jaroo-mode-frame{flex-direction:row;justify-content:flex-end;width:100%;gap:6px}
-    }
-    @container jaroo-dashboard (max-width: 184px){
-      .jaroo-center{grid-template-columns:minmax(0,1fr)}
-      .jaroo-center button,.jaroo-center .jaroo-top-badge{min-height:32px}
-      .jaroo-center .jaroo-mini-label,.jaroo-focus-help{display:none}
-      .jaroo-mode-switch{min-height:28px}
-    }
-    .jaroo-focus-list{display:flex;flex-direction:column;gap:6px;border-top:1px solid #C5CDD0;margin:0;padding:8px 0;background:transparent}
+    .jaroo-mode-caption{min-width:0;font-size:clamp(10px,5.5cqi,13px);font-weight:500;line-height:1.2;white-space:normal;overflow-wrap:anywhere}
+    @container jaroo-dashboard (max-width:219px){.jaroo-center .jaroo-top-badge{padding-inline:4px}}
+    @container jaroo-dashboard (max-width:184px){.jaroo-center{grid-template-columns:minmax(0,1fr)}.jaroo-center button,.jaroo-center .jaroo-top-badge{min-height:32px}}
+    .jaroo-focus-list{display:flex;flex-direction:column;gap:4px;border-top:1px solid #C5CDD0;margin:0;padding:6px 0 8px;background:transparent}
     .jaroo-focus-list[hidden]{display:none!important}
     .jaroo-focus-header{display:flex;align-items:center;justify-content:space-between;gap:4px}
-    .jaroo-focus-header strong,.jaroo-focus-header em,.jaroo-focus-help,.jaroo-focus-empty{color:#535B60;font-size:12px;line-height:1.3;font-style:normal}
+    .jaroo-focus-header strong,.jaroo-focus-header em,.jaroo-focus-empty{color:#535B60;font-size:12px;line-height:1.3;font-style:normal}
+    .jaroo-focus-header strong{min-width:0;overflow-wrap:anywhere}.jaroo-focus-total{white-space:nowrap;flex:none}
     .jaroo-focus-entries{display:flex;flex-direction:column;gap:4px;max-height:min(340px,42vh);overflow:auto}
     .jaroo-focus-row{display:flex;align-items:center;gap:5px;min-width:0;padding:5px 2px;color:#292D30;text-decoration:none;border-radius:3px;cursor:pointer}
     .jaroo-focus-row:hover,.jaroo-focus-row:focus-visible{background:#DFE3E5}
@@ -1007,20 +999,19 @@
     dockStyle=document.createElement('style');dockStyle.id='jaroo-command-v4-style';dockStyle.textContent=dockCSS;
     dock=document.createElement('div');dock.className='jaroo-center';dock.setAttribute('data-ebook-status-ready','true');dock.setAttribute('aria-label','작업 현황');
     dock.innerHTML='<button type="button" class="run" data-jstatus="working" data-active="false" data-digits="1" aria-label="진행 중인 작업 목록">'+
-      '<span class="jaroo-top-badge" aria-hidden="true"><span class="jaroo-top-line"><span class="jaroo-top-mark">»</span><span class="jaroo-top-word">RUN</span><span class="count">0</span></span><span class="jaroo-mini-label">진행 중인 작업</span></span></button>'+
+      '<span class="jaroo-top-badge" aria-hidden="true"><span class="jaroo-top-copy"><span class="jaroo-top-word">Running</span><span class="jaroo-mini-label">Prompts</span></span><span class="count">0</span></span></button>'+
       '<button type="button" class="done" data-jstatus="done" data-active="false" data-digits="1" aria-label="확인하지 않은 완료 목록">'+
-      '<span class="jaroo-top-badge" aria-hidden="true"><span class="jaroo-top-line"><span class="jaroo-top-mark">✓</span><span class="jaroo-top-word">DONE</span><span class="count">0</span></span><span class="jaroo-mini-label">확인할 완료</span></span></button>'+
-      '<button type="button" class="jaroo-mode-switch" data-jaroo-filter-toggle="true" aria-pressed="false" aria-label="RUN·DONE만 보기" title="전체 보기 / RUN·DONE만 보기">'+
-      '<span class="jaroo-mode-frame" aria-hidden="true"><span class="jaroo-mode-track"><span class="jaroo-mode-thumb"></span></span><span class="jaroo-mode-caption">ALL</span></span></button>';
+      '<span class="jaroo-top-badge" aria-hidden="true"><span class="jaroo-top-copy"><span class="jaroo-top-word">Completed</span><span class="jaroo-mini-label">Prompts</span></span><span class="count">0</span></span></button>'+
+      '<button type="button" class="jaroo-mode-switch" data-jaroo-filter-toggle="true" aria-pressed="false" aria-label="확인할 작업만 표시" title="확인할 작업만 표시">'+
+      '<span class="jaroo-mode-frame" aria-hidden="true"><span class="jaroo-mode-track"><span class="jaroo-mode-thumb"></span></span><span class="jaroo-mode-caption">Only tasks to review</span></span></button>';
     shadow.append(dockStyle);shadow.querySelector('.clock').after(dock);
     // Place the live list inside the same responsive Shadow DOM as the clock.
     focusList=document.createElement('section');
     focusList.className='jaroo-focus-list';focusList.id='jaroo-focus-list';focusList.setAttribute('data-ebook-status-ready','true');
     focusList.hidden=true;focusList.setAttribute('role','region');
-    focusList.setAttribute('aria-label','RUN·DONE 전용 채팅 목록');
-    focusList.innerHTML='<div class="jaroo-focus-header"><strong>RUN · DONE</strong><em class="jaroo-focus-total">0건</em></div>'+ 
-      '<div class="jaroo-focus-entries" role="list"></div>'+
-      '<div class="jaroo-focus-help">DONE은 확인하면 목록에서 자동으로 사라져.</div>';
+    focusList.setAttribute('aria-label','진행 중이거나 확인할 완료 작업 목록');
+    focusList.innerHTML='<div class="jaroo-focus-header"><strong>Running · Completed</strong><em class="jaroo-focus-total">0건</em></div>'+ 
+      '<div class="jaroo-focus-entries" role="list"></div>';
     dock.after(focusList);
     focusEntries=focusList.querySelector('.jaroo-focus-entries');
     focusSignature='';
@@ -1077,13 +1068,13 @@
     panelSignature=signature;
     panel.replaceChildren();
     const head=document.createElement('div');head.className='head';
-    const title=document.createElement('span');title.textContent=(filter==='working'?'진행 중':'미확인 완료')+` · ${records.length}건`;
+    const title=document.createElement('span');title.textContent=(filter==='working'?'Running Prompts':'Completed Prompts')+` · ${records.length}건`;
     const close=document.createElement('button');close.className='dismiss';close.type='button';close.textContent='닫기';close.onclick=closePanel;
     head.append(title,close);panel.append(head);
     if (!records.length) {const empty=document.createElement('div');empty.className='empty';empty.textContent='표시할 상태가 없어.';panel.append(empty);}
     else records.forEach(r => {
       const link=document.createElement('a');link.href=r.href || '#';
-      const token=document.createElement('span');token.className='tag';token.dataset.jstatus=filter;token.textContent=filter==='working'?'RUN':'DONE';
+      const token=document.createElement('span');token.className='tag';token.dataset.jstatus=filter;token.textContent=filter==='working'?'Running':'Completed';
       const name=document.createElement('span');name.className='name';name.textContent=r.title || `채팅 ${r.id.slice(0,8)}`;
       link.append(token,name);
       if (!r.href) {link.style.opacity='.55';link.title='현재 사이드바에서 위치를 찾을 수 없음';link.setAttribute('aria-disabled','true');}
@@ -1091,7 +1082,7 @@
       panel.append(link);
     });
     const scope=document.createElement('div');scope.className='empty';
-    scope.textContent='같은 브라우저 프로필의 상태 · 채팅 본문·입력창 확인 시 DONE 해제';panel.append(scope);
+    scope.textContent='같은 브라우저 프로필의 상태 · 채팅 본문·입력창 확인 시 완료 표시 해제';panel.append(scope);
     if (filter === 'done' && records.length) {
       const clear = document.createElement('button'); clear.type = 'button'; clear.className = 'dismiss';
       clear.textContent = '이 목록의 완료 표시 지우기';
@@ -1154,7 +1145,7 @@
       row.setAttribute('role','listitem');row.href=href || '#';
       const tag=document.createElement('span');tag.className='jaroo-focus-tag';
       tag.dataset.jstatus=record.status;
-      tag.textContent=record.status==='working'?'RUN':'DONE';
+      tag.textContent=record.status==='working'?'Running':'Completed';
       const title=document.createElement('span');title.className='jaroo-focus-name';
       title.textContent=record.title || `채팅 ${record.id.slice(0,8)}`;
       row.title=title.textContent;
@@ -1187,10 +1178,8 @@
     if (modeButton) {
       modeButton.disabled=!ready;
       modeButton.setAttribute('aria-pressed',String(ready && focusWanted));
-      const caption=modeButton.querySelector('.jaroo-mode-caption');
-      if (caption) caption.textContent=ready && focusWanted ? 'ONLY' : 'ALL';
-      const label=ready && focusWanted ? 'RUN·DONE만 표시 중 · 누르면 전체 보기' :
-        ready ? '전체 표시 중 · 누르면 RUN·DONE만 보기' : '기본 목록 구조가 확인되지 않아 필터 사용 불가';
+      const label=ready && focusWanted ? '확인할 작업만 표시 중 · 누르면 전체 보기' :
+        ready ? '전체 표시 중 · 누르면 확인할 작업만 표시' : '기본 목록 구조가 확인되지 않아 필터 사용 불가';
       modeButton.setAttribute('aria-label',label);modeButton.title=label;
     }
     if (!ready || !focusWanted) {
