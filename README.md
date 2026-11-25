@@ -10,8 +10,8 @@ The user wants **only the left sidebar project names and chat-list names** about
 | Clock JS | 3.10.2 | unchanged |
 | Status JS | 6.8.2 | unchanged |
 | Mapper JS | 1.3.7 | shared hidden-tab optimization |
-| Calendar Companion | 1.3.8 | runtime optimization |
-| Calendar CSS | 1.2.2 | unchanged |
+| Calendar Companion (E-Book) | 0.5.11 | final runtime optimization |
+| Calendar CSS (E-Book) | 0.5.11 | design preserved |
 
 Typical numeric changes: chat normal 320→420, selected 420→550, standard/CEO projects 430→560, strategy projects 380→490. Other role-specific and archived names keep their relative treatment with a similar 1.3 multiplier.
 
@@ -40,12 +40,12 @@ E-book is an independent, opt-in theme. Disable Dracula / Flat Neon visual style
 - Legacy shared Clock/Status and Dracula CSS remain unchanged; the shared Mapper is now v1.3.7.
 - Source/algorithm checks completed; signed-in Chrome / Korean IME visual acceptance remains pending.
 
+## Google Calendar E-Book — active release v0.5.11 (2026-11-25)
 
+Calendar Dracula is retired. Use only the E-Book theme with Google's native Light appearance.
 
+- [Stylus CSS v0.5.11](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/calendar-ebook-v0.1/calendar-ebook/theme.user.css)
+- [Tampermonkey JS v0.5.11](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/calendar-ebook-v0.1/calendar-ebook/companion.user.js)
+- [Release notes](calendar-ebook/README.md) · [canonical release commit](https://github.com/jangjaru/Jaroo-UI-Release/commit/875e832412ba7f3fd2e599b79137fd16b3b2152b)
 
-## Google Calendar Dracula Gold — final runtime optimization (2026-11-25)
-
-- [Stylus CSS v1.2.2](calendar/theme.user.css) unchanged: scoped selectors, existing colors/priority/date/focus/forced-color rules, no animation or remote imports. CSS compatibility token remains 1.2.
-- [Companion JS v1.3.8](calendar/companion.user.js): date formatter and bounded label cache; single-pass agenda/statistics; short-circuit DOM mutation relevance, avoid repeated date invalidation and pending-panel signatures; remove unused marker set and native paint signature. Native More popup verification is unchanged in scope and conditions; cache shared candidate/overlay evaluations during one read phase and stop verification after two eligible rows. Suspend recovery and delayed popup scan timers while hidden; refresh and rearm on return. No new permissions, network requests, event writes, persistent personal data, or design changes.
-- Validation: old/new JS parsing; 4500 timezone dates, 400 model results, 500 agenda batches, 400 statistics batches, 500 mutation batches and visibility lifecycle mock. Mutation relevance checks in the deterministic synthetic batches: 24750 -> 1760; not a measured browser speedup. Shadow CSS unchanged; signed-in Chrome / native popup and visual/CPU/memory acceptance pending. Full live DOM regression was not run.
-- Rollback baseline: [88ef58878b65](https://github.com/jangjaru/Jaroo-UI-Release/commit/88ef58878b6562cd8e2f98bed1a08210464fdc45). Existing update/install URLs unchanged. ChatGPT files unchanged in this release.
+The existing calendar-ebook-v0.1 branch remains the canonical auto-update channel. Main mirrors the exact released blobs. Old Calendar Dracula active paths and manifest entries are removed; Git history remains intact. Remove previously installed Calendar Dracula CSS and JS from the browser. ChatGPT assets are not changed by this Calendar release.

@@ -1,0 +1,1020 @@
+/* ==UserStyle==
+@name         Jaroo Google Calendar E-Book
+@namespace    jaroo.calendar.ebook
+@version      0.5.11
+@description  Cool E-Ink Graph Paper · paired with Calendar E-Book Companion
+@author       Jaroo
+@license      UNLICENSED
+@updateURL    https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/calendar-ebook-v0.1/calendar-ebook/theme.user.css
+==/UserStyle== */
+
+@-moz-document domain("calendar.google.com") {
+  @font-face {
+    font-family:"Jaroo Cal Plex Latin";
+    src:local("IBM Plex Mono Regular"),local("IBMPlexMono-Regular"),local("IBM Plex Mono");
+    font-weight:400;
+    font-style:normal;
+    unicode-range:U+0021-007E,U+00A1-024F,U+1E00-1EFF,U+20AC;
+  }
+  @font-face {
+    font-family:"Jaroo Cal Plex Latin";
+    src:local("IBM Plex Mono Medium"),local("IBMPlexMono-Medium"),local("IBM Plex Mono");
+    font-weight:500;
+    font-style:normal;
+    unicode-range:U+0021-007E,U+00A1-024F,U+1E00-1EFF,U+20AC;
+  }
+  @font-face {
+    font-family:"Jaroo Cal Plex Latin";
+    src:local("IBM Plex Mono SemiBold"),local("IBMPlexMono-SemiBold"),local("IBM Plex Mono");
+    font-weight:600;
+    font-style:normal;
+    unicode-range:U+0021-007E,U+00A1-024F,U+1E00-1EFF,U+20AC;
+  }
+  @font-face {
+    font-family:"Jaroo Cal Plex Latin";
+    src:local("IBM Plex Mono Bold"),local("IBMPlexMono-Bold"),local("IBM Plex Mono");
+    font-weight:700;
+    font-style:normal;
+    unicode-range:U+0021-007E,U+00A1-024F,U+1E00-1EFF,U+20AC;
+  }
+
+
+/* Light appearance is selected in Google Calendar itself. No layout,
+   event text, native date/colour data, or click targets are rewritten. */
+html[data-jaroo-calendar-theme="ebook"] {
+  --jaroo-cal-style-version: 0.5.11;
+  --jaroo-cal-bg:#EFF1F2;
+  --jaroo-cal-sidebar:#E7EAEB;
+  --jaroo-cal-surface:#F5F6F6;
+  --jaroo-cal-soft:#E4E8EA;
+  --jaroo-cal-text:#292D30;
+  --jaroo-cal-active-ink:#16191B;
+  --jaroo-cal-time-ink:#25292C;
+  --jaroo-cal-muted:#535B60;
+  --jaroo-cal-grid-line:#C5CDD0;
+  --jaroo-cal-gold:#A27A27;
+  --jaroo-cal-focus:#517E89;
+  --jaroo-cal-deadline:#C45483;
+  --jaroo-cal-today:#D8EA8B;
+  --jaroo-cal-archive-ink:#535B60;
+  --jaroo-cal-completed-ink:#A2A8AC;
+  --jaroo-cal-stopped-ink:#A52D35;
+  --jaroo-cal-font:"Jaroo Cal Plex Latin","Pretendard Variable","Pretendard","Noto Sans KR",sans-serif;
+  --jaroo-cal-event-font-size:var(--jaroo-cal-event-time-size);
+  --jaroo-cal-date-font-size:var(--jaroo-cal-event-time-size);
+  --jaroo-cal-event-tint:22%;
+  --jaroo-cal-event-hover-tint:32%;
+  --jaroo-cal-accent-width:2px;
+  --jaroo-cal-paper-grid:rgba(85,97,105,.055);
+  --jaroo-cal-calendar-line:#B8C2C7;
+  --jaroo-cal-hatch:repeating-linear-gradient(135deg,transparent 0 10px,rgba(85,97,105,.055) 10px 11px,transparent 11px 14px);
+  --jaroo-cal-pink:#F3B9CB;
+  --jaroo-cal-marker:#F2D778;
+  --jaroo-cal-date-muted:#5C676D;
+  --jaroo-cal-weekend-paper:rgba(85,97,105,.035);
+  --jaroo-cal-month-ink:#303438;
+  --jaroo-cal-week-chip:#D0D5D7;
+  --jaroo-cal-event-time-size:13px;
+  color-scheme:light;
+  background-color:var(--jaroo-cal-bg)!important;
+}
+html[data-jaroo-calendar-theme="ebook"] body {
+  background-color:var(--jaroo-cal-bg)!important;
+  color:var(--jaroo-cal-text);
+  font-family:var(--jaroo-cal-font);
+}
+/* Supplement the native light Material theme only through surface tokens. */
+html[data-jaroo-calendar-theme="ebook"] body {
+  --gm3-sys-color-background:var(--jaroo-cal-bg);
+  --gm3-sys-color-surface:var(--jaroo-cal-surface);
+  --gm3-sys-color-surface-container-low:var(--jaroo-cal-bg);
+  --gm3-sys-color-surface-container:var(--jaroo-cal-sidebar);
+  --gm3-sys-color-surface-container-high:var(--jaroo-cal-soft);
+  --gm3-sys-color-on-surface:var(--jaroo-cal-text);
+  --gm3-sys-color-on-surface-variant:var(--jaroo-cal-muted);
+  --gm3-sys-color-outline-variant:var(--jaroo-cal-grid-line);
+}
+html[data-jaroo-calendar-theme="ebook"] :is([role="main"],[data-jaroo-cal-surface="main"]) {
+  background-color:var(--jaroo-cal-bg)!important;
+}
+html[data-jaroo-calendar-theme="ebook"] :is([role="banner"],[data-jaroo-cal-surface="header"],[data-jaroo-cal-surface="sidebar"],[role="complementary"]) {
+  background-color:var(--jaroo-cal-sidebar)!important;
+}
+html[data-jaroo-calendar-theme="ebook"] :is([role="banner"],[role="main"],[role="complementary"],[data-jaroo-cal-surface])
+  :is(button,[role="button"],[role="columnheader"],[role="heading"],input,textarea,select) {
+  font-family:var(--jaroo-cal-font)!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-title="true"]{
+  font-family:var(--jaroo-cal-font)!important;
+  font-weight:650!important;
+  color:var(--jaroo-cal-text)!important;
+  background-image:linear-gradient(transparent 50%,#D8EA8B 50% 94%,transparent 94%)!important;
+  background-repeat:no-repeat!important;
+  -webkit-box-decoration-break:clone;box-decoration-break:clone;
+  letter-spacing:-.025em;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-grid="true"]{
+  background-color:var(--jaroo-cal-bg)!important;
+  color:var(--jaroo-cal-text);
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-grid="true"] :is([role="gridcell"],[role="row"],[role="columnheader"]){
+  border-color:var(--jaroo-cal-calendar-line)!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"]{
+  background-image:linear-gradient(to right,var(--jaroo-cal-paper-grid) 1px,transparent 1px),linear-gradient(to bottom,var(--jaroo-cal-paper-grid) 1px,transparent 1px)!important;
+  background-size:22px 22px!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [role="gridcell"]:not([data-jaroo-cal-today="true"]){
+  background-color:transparent!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-grid="true"] [role="columnheader"]{
+  color:var(--jaroo-cal-muted)!important;
+  font-family:var(--jaroo-cal-font)!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-grid="true"] [data-jaroo-cal-selected="true"]:not([data-jaroo-cal-today="true"]){
+  box-shadow:inset 0 0 0 1px #89979E!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-grid="true"] [data-jaroo-cal-today="true"]{
+  background-color:color-mix(in srgb,var(--jaroo-cal-today) 5%,var(--jaroo-cal-bg))!important;
+  box-shadow:inset 0 0 0 1px #89979E!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-date-label="true"]{
+  font-family:var(--jaroo-cal-font)!important;
+  font-size:var(--jaroo-cal-date-font-size)!important;
+  font-variant-numeric:tabular-nums;
+}
+html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-today-label="true"],[data-jaroo-cal-today="true"] [data-jaroo-cal-date-label="true"],[data-jaroo-cal-date-label="true"][data-jaroo-cal-today="true"]){
+  color:var(--jaroo-cal-text)!important;
+  background-color:var(--jaroo-cal-today)!important;
+  font-weight:700!important;
+  text-shadow:none!important;
+}
+/* Keep native event geometry, continuity, handles and click targets.
+   Unknown categories retain a tint of the original native paint. */
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-color="true"]{
+  --jaroo-cal-left-accent:inset var(--jaroo-cal-accent-width) 0 0 var(--jaroo-cal-event-color);
+  background-color:color-mix(in srgb,var(--jaroo-cal-event-color) var(--jaroo-cal-event-tint),var(--jaroo-cal-bg))!important;
+  color:var(--jaroo-cal-event-ink,var(--jaroo-cal-active-ink))!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-color="true"]:hover{
+  background-color:color-mix(in srgb,var(--jaroo-cal-event-color) var(--jaroo-cal-event-hover-tint),var(--jaroo-cal-bg))!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-semantic="true"]{
+  --jaroo-cal-event-tint:56%;
+  --jaroo-cal-event-hover-tint:72%;
+  --jaroo-cal-event-ink:var(--jaroo-cal-active-ink);
+  --jaroo-cal-left-accent:inset var(--jaroo-cal-accent-width) 0 0 color-mix(in srgb,var(--jaroo-cal-event-color) 78%,#303438);
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-semantic="true"]:is([data-jaroo-cal-status="completed"],[data-jaroo-cal-status="cancelled"]){
+  --jaroo-cal-event-tint:19%;
+  --jaroo-cal-event-hover-tint:27%;
+  --jaroo-cal-event-ink:var(--jaroo-cal-archive-ink);
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-semantic="true"][data-jaroo-cal-status="completed"]{
+  --jaroo-cal-event-ink:var(--jaroo-cal-completed-ink);
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-semantic="true"][data-jaroo-cal-status="stopped"]{
+  --jaroo-cal-event-tint:10%;
+  --jaroo-cal-event-hover-tint:15%;
+  --jaroo-cal-event-ink:var(--jaroo-cal-stopped-ink);
+}
+html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-event="true"] [data-jaroo-cal-title="true"],[data-jaroo-cal-event="true"][data-jaroo-cal-title="true"]){
+  font-family:var(--jaroo-cal-font)!important;
+  font-size:var(--jaroo-cal-event-font-size)!important;
+  font-weight:500!important;
+  letter-spacing:-.025em;
+}
+html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-event="true"][data-jaroo-cal-color="true"] [data-jaroo-cal-title="true"],[data-jaroo-cal-event="true"][data-jaroo-cal-color="true"][data-jaroo-cal-title="true"]){
+  color:var(--jaroo-cal-event-ink,var(--jaroo-cal-active-ink))!important;
+  -webkit-text-fill-color:var(--jaroo-cal-event-ink,var(--jaroo-cal-active-ink))!important;
+}
+html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-event="true"][data-jaroo-cal-semantic="true"]:is([data-jaroo-cal-status="completed"],[data-jaroo-cal-status="cancelled"],[data-jaroo-cal-status="stopped"]) [data-jaroo-cal-title="true"],[data-jaroo-cal-event="true"][data-jaroo-cal-semantic="true"][data-jaroo-cal-title="true"]:is([data-jaroo-cal-status="completed"],[data-jaroo-cal-status="cancelled"],[data-jaroo-cal-status="stopped"])){
+  text-decoration-line:line-through!important;
+  text-decoration-color:currentColor!important;
+  text-decoration-thickness:1px!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-priority="true"]{
+  --jaroo-cal-priority-ring:inset 0 0 0 1px var(--jaroo-cal-gold);
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-deadline="true"]{
+  --jaroo-cal-deadline-edge:inset 0 -2px 0 var(--jaroo-cal-deadline);
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"]:is([data-jaroo-cal-color="true"],[data-jaroo-cal-priority="true"],[data-jaroo-cal-deadline="true"]){
+  box-shadow:var(--jaroo-cal-left-accent,inset 0 0 0 0 transparent),var(--jaroo-cal-deadline-edge,inset 0 0 0 0 transparent),var(--jaroo-cal-priority-ring,inset 0 0 0 0 transparent)!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"]:is(:focus-visible,:has(:focus-visible)){
+  outline:2px solid var(--jaroo-cal-focus)!important;outline-offset:-2px!important;
+}
+
+/* v0.2 — shared ChatGPT E-Book visual language.
+   Markers are supplied by the existing read-only scan. No native layout,
+   calendar data, time slots, hit targets or event controls are replaced. */
+html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-surface="header"],[data-jaroo-cal-surface="sidebar"],[data-jaroo-cal-surface="more"],[data-jaroo-cal-surface="detail"]) {
+  --gm3-sys-color-primary:#303438!important;
+  --gm3-sys-color-on-primary:#F5F6F6!important;
+  --gm3-sys-color-primary-container:#DCE2E4!important;
+  --gm3-sys-color-on-primary-container:#292D30!important;
+  --gm3-sys-color-secondary-container:#DCE2E4!important;
+  --gm3-sys-color-on-secondary-container:#292D30!important;
+  --gm3-sys-color-surface-container-lowest:#F5F6F6!important;
+  --gm3-sys-color-surface-container-highest:#DCE2E4!important;
+  --gm3-sys-color-outline:#89979E!important;
+  --gm3-sys-color-outline-variant:#C5CDD0!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="header"] {
+  background-color:var(--jaroo-cal-sidebar)!important;
+  box-shadow:inset 0 -1px 0 #B9C1C5!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="sidebar"] {
+  background-color:var(--jaroo-cal-sidebar)!important;
+  background-image:var(--jaroo-cal-hatch)!important;
+  box-shadow:inset -1px 0 0 #C5CDD0!important;
+  color:var(--jaroo-cal-text)!important;
+  font-family:var(--jaroo-cal-font)!important;
+}
+/* Visible sidebar sections: allow the paper to read through neutral panels,
+   while never overriding calendar swatches, checkboxes, or native color pickers. */
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-sidebar-panel="true"]{
+  background-color:transparent!important;
+  background-image:none!important;
+  box-shadow:none!important;
+}
+html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-brand="true"],[data-jaroo-cal-section="true"],[data-jaroo-cal-mini-title="true"],[data-jaroo-cal-create-label="true"]){
+  font-family:var(--jaroo-cal-font)!important;
+  color:var(--jaroo-cal-text)!important;
+  font-weight:650!important;
+  letter-spacing:-.025em;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-brand="true"]{
+  background-image:linear-gradient(transparent 52%,var(--jaroo-cal-pink) 52% 94%,transparent 94%)!important;
+  background-repeat:no-repeat!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-mini-title="true"]{font-variant-numeric:tabular-nums;}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-control]:not([aria-disabled="true"]):not(:disabled){
+  color:var(--jaroo-cal-text)!important;
+  font-family:var(--jaroo-cal-font)!important;
+  box-shadow:inset 0 0 0 1px #89979E!important;
+  background-color:var(--jaroo-cal-surface)!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-control="create"]:not([aria-disabled="true"]):not(:disabled){
+  border-radius:6px!important;
+  background-color:var(--jaroo-cal-bg)!important;
+  box-shadow:inset 0 0 0 1px #89979E!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-control="upgrade"]:not([aria-disabled="true"]):not(:disabled){
+  background-color:var(--jaroo-cal-soft)!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-control="segment"]:is([aria-selected="true"],[aria-pressed="true"]){
+  background-color:#D5DBDE!important;
+  box-shadow:inset 0 0 0 1px #89979E!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-control]:not([aria-disabled="true"]):not(:disabled):hover{
+  background-color:#DDE3E5!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-control]:focus-visible{
+  outline:2px solid var(--jaroo-cal-focus)!important;
+  outline-offset:-2px!important;
+}
+/* Mini calendar uses the same numerals and subtle today marker, independently
+   of month/week content. Preserve native grid sizes and selection semantics. */
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-mini="true"]{
+  background-color:transparent!important;
+  color:var(--jaroo-cal-text)!important;
+  font-family:var(--jaroo-cal-font)!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-mini="true"] :is([role="columnheader"],[role="gridcell"],button,[role="button"]){
+  font-family:var(--jaroo-cal-font)!important;
+  font-variant-numeric:tabular-nums;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-mini-number="true"]{
+  font-family:var(--jaroo-cal-font)!important;
+  font-size:13px!important;
+  font-variant-numeric:tabular-nums;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-calendar-label="true"]{
+  font-family:var(--jaroo-cal-font)!important;
+  font-size:14px!important;
+  font-weight:450!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-mini-day] [data-jaroo-cal-mini-number="true"]{
+  color:inherit!important;background-color:transparent!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-mini-day="today"]{
+  background-color:var(--jaroo-cal-today)!important;
+  color:var(--jaroo-cal-text)!important;
+  box-shadow:inset 0 0 0 1px #89979E!important;
+  font-weight:700!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-mini-day="selected"]{
+  background-color:#DCE2E4!important;
+  color:var(--jaroo-cal-text)!important;
+  box-shadow:inset 0 0 0 1px #89979E!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-mini-day] :is(span,div):not([aria-hidden="true"]){
+  color:inherit!important;
+}
+/* Today is a date-label emphasis, not a large colored block. A neutral
+   inset cell border continues to distinguish it at any zoom level. */
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [role="gridcell"][data-jaroo-cal-today="true"]{
+  background-color:color-mix(in srgb,#DCE2E4 30%,var(--jaroo-cal-bg))!important;
+  box-shadow:inset 0 0 0 1px #89979E!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-today-label="true"]{
+  color:var(--jaroo-cal-text)!important;
+  background-color:var(--jaroo-cal-today)!important;
+  font-weight:700!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="more"]{
+  background-color:var(--jaroo-cal-surface)!important;
+  color:var(--jaroo-cal-text)!important;
+  box-shadow:inset 0 0 0 1px #B9C1C5,0 5px 16px #27303822!important;
+  font-family:var(--jaroo-cal-font)!important;
+}
+/* Bounded native detail surfaces: retain Google controls, colors and actions.
+   The surface itself is toned only when the adapter found an opaque dialog. */
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="detail"]{
+  background-color:var(--jaroo-cal-surface)!important;
+  color:var(--jaroo-cal-text)!important;
+  font-family:var(--jaroo-cal-font)!important;
+}
+@media(forced-colors:active){
+  html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-surface="header"],[data-jaroo-cal-surface="sidebar"],[data-jaroo-cal-surface="more"],[data-jaroo-cal-surface="detail"]){
+    --gm3-sys-color-primary:Highlight!important;--gm3-sys-color-on-primary:HighlightText!important;
+    --gm3-sys-color-primary-container:Canvas!important;--gm3-sys-color-on-primary-container:CanvasText!important;
+    --gm3-sys-color-secondary-container:Canvas!important;--gm3-sys-color-on-secondary-container:CanvasText!important;
+    --gm3-sys-color-surface-container-lowest:Canvas!important;--gm3-sys-color-surface-container-highest:Canvas!important;
+    --gm3-sys-color-outline:GrayText!important;--gm3-sys-color-outline-variant:GrayText!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-surface="sidebar"],[data-jaroo-cal-brand],[data-jaroo-cal-section],[data-jaroo-cal-create-label]){background-image:none!important}
+  html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-control],[data-jaroo-cal-mini-day],[data-jaroo-cal-today-label]){background-color:Canvas!important;color:CanvasText!important;box-shadow:none!important}
+  html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-mini-day],[data-jaroo-cal-today-label]){outline:1px solid Highlight!important;outline-offset:-1px!important}
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-control]:not([aria-disabled="true"]):not(:disabled),
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-control]:not([aria-disabled="true"]):not(:disabled):hover{
+    background-color:Canvas!important;color:CanvasText!important;box-shadow:none!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [role="gridcell"][data-jaroo-cal-today="true"]{
+    background-color:Canvas!important;box-shadow:none!important;outline:1px solid Highlight!important;outline-offset:-1px!important;
+  }
+}
+
+
+/* v0.3 — verified month/date and event information hierarchy.
+   Calendar slots and native geometry remain unchanged. */
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [data-jaroo-cal-day-header]{
+  font-size:var(--jaroo-cal-event-time-size)!important;
+  font-family:var(--jaroo-cal-font)!important;
+  font-weight:600!important;color:var(--jaroo-cal-text)!important;letter-spacing:.01em;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [data-jaroo-cal-day-header="weekend"]{
+  color:var(--jaroo-cal-muted)!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [role="gridcell"][data-jaroo-cal-month-weekend="true"]:not([data-jaroo-cal-today="true"]):not([data-jaroo-cal-selected="true"]):not(:hover){
+  background-color:var(--jaroo-cal-weekend-paper)!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [data-jaroo-cal-date-label="true"]{
+  font-weight:600!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [data-jaroo-cal-date-tone="outside"]:not([data-jaroo-cal-today-label]):not([data-jaroo-cal-today="true"]):not([data-jaroo-cal-selected="true"]){
+  color:var(--jaroo-cal-date-muted)!important;font-weight:400!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [data-jaroo-cal-today-label="true"]{
+  font-weight:700!important;
+}
+/* Time metadata is recognized only as a distinct text leaf. Keep existing
+   event ink (including terminal red/gray) and native glyphs. */
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"] [data-jaroo-cal-event-time="true"]{
+  font-family:var(--jaroo-cal-font)!important;
+  font-size:var(--jaroo-cal-event-time-size)!important;
+  font-weight:400!important;font-variant-numeric:tabular-nums;letter-spacing:0;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-more-label="true"]{
+  font-family:var(--jaroo-cal-font)!important;font-weight:550!important;font-size:var(--jaroo-cal-event-time-size)!important;
+  color:var(--jaroo-cal-muted)!important;text-decoration-line:underline;
+  text-decoration-color:#B9C1C5;text-underline-offset:2px;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-more-label="true"]:hover{
+  color:var(--jaroo-cal-text)!important;text-decoration-color:currentColor;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="more"] :is(h1,h2,h3,[role="heading"]):not([data-jaroo-cal-title]):not([data-jaroo-cal-event] *){
+  font-family:var(--jaroo-cal-font)!important;font-weight:650!important;color:var(--jaroo-cal-text)!important;
+}
+@media(forced-colors:active){
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [role="gridcell"][data-jaroo-cal-month-weekend="true"]:not([data-jaroo-cal-today="true"]):not([data-jaroo-cal-selected="true"]):not(:hover){background-color:Canvas!important}
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [data-jaroo-cal-date-tone="outside"]{color:CanvasText!important}
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-more-label="true"]{color:LinkText!important;text-decoration-color:LinkText}
+}
+
+
+/* v0.4.1 — slightly uneven highlighter, without bracket-shaped ends.
+   CSS paints only the existing, verified event-color markers. No changes
+   to event geometry, title text, duration, continuation, or hit targets.
+   Month and More rows show the paper through the stroke. Other views keep
+   a very light duration wash. High contrast retains the v0.3 fallback. */
+@media (forced-colors: none) {
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-color="true"] {
+    --jaroo-cal-stroke-alpha:20%;
+    --jaroo-cal-stroke-hover:28%;
+    --jaroo-cal-stroke-strength:var(--jaroo-cal-stroke-alpha);
+    --jaroo-cal-stroke:color-mix(in srgb,var(--jaroo-cal-event-color) var(--jaroo-cal-stroke-strength),transparent);
+    --jaroo-cal-stroke-edge:color-mix(in srgb,var(--jaroo-cal-stroke) 55%,transparent);
+    --jaroo-cal-duration-wash:color-mix(in srgb,var(--jaroo-cal-event-color) 5%,var(--jaroo-cal-bg));
+    --jaroo-cal-left-accent:inset 0 0 0 0 transparent;
+    border-inline-color:transparent!important;
+    background-color:var(--jaroo-cal-duration-wash)!important;
+    background-image:var(--jaroo-cal-event-brush,linear-gradient(to bottom,transparent 0 46%,var(--jaroo-cal-stroke) 46% 90%,transparent 90%))!important;
+    background-size:100% min(100%,22px)!important;
+    background-position:left top!important;
+    background-repeat:no-repeat!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-color="true"]:hover {
+    --jaroo-cal-stroke-strength:var(--jaroo-cal-stroke-hover);
+    background-color:var(--jaroo-cal-duration-wash)!important;
+    background-image:var(--jaroo-cal-event-brush-hover,var(--jaroo-cal-event-brush,linear-gradient(to bottom,transparent 0 46%,var(--jaroo-cal-stroke) 46% 90%,transparent 90%)))!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-color="true"][data-jaroo-cal-semantic="true"] {
+    --jaroo-cal-stroke-alpha:48%;
+    --jaroo-cal-stroke-hover:62%;
+    --jaroo-cal-duration-wash:color-mix(in srgb,var(--jaroo-cal-event-color) 7%,var(--jaroo-cal-bg));
+    --jaroo-cal-left-accent:inset 0 0 0 0 transparent;
+  }
+  html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-month-grid="true"],[data-jaroo-cal-surface="more"]) [data-jaroo-cal-event="true"][data-jaroo-cal-color="true"] {
+    --jaroo-cal-duration-wash:transparent;
+  }
+  html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-month-grid="true"],[data-jaroo-cal-surface="more"]) [data-jaroo-cal-event="true"][data-jaroo-cal-color="true"]:hover {
+    --jaroo-cal-duration-wash:rgba(85,97,105,.045);
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-color="true"][data-jaroo-cal-semantic="true"][data-jaroo-cal-status] {
+    --jaroo-cal-stroke-alpha:0%;
+    --jaroo-cal-stroke-hover:0%;
+    --jaroo-cal-left-accent:inset 0 0 0 0 transparent;
+    background-image:none!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-color="true"][data-jaroo-cal-semantic="true"]:not([data-jaroo-cal-status]) [data-jaroo-cal-event-time="true"] {
+    color:var(--jaroo-cal-time-ink)!important;-webkit-text-fill-color:var(--jaroo-cal-time-ink)!important;
+  }
+  /* Priority retains a top rule, rather than a ring with vertical end caps. */
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-color="true"][data-jaroo-cal-priority="true"]{
+    --jaroo-cal-priority-ring:inset 0 1px 0 var(--jaroo-cal-gold);
+  }
+  /* A shared marker edge for the four native labels and today's numeral.
+     Keep today's native cell/selection outline and mini-grid geometry. */
+  html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-brand="true"],[data-jaroo-cal-month-title="true"]) {
+    --jaroo-cal-label-brush:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%2024%22%20preserveAspectRatio%3D%22none%22%3E%3Cpath%20d%3D%22M1%2011.4%20L12%2011.1%2024%2011.8%2037%2011.3%2052%2010.9%2065%2011.4%2078%2010.8%2091%2011.5%20106%2011.1%20120%2011.7%20136%2011.0%20149%2011.5%20164%2010.8%20179%2011.4%20193%2011.0%20208%2011.7%20222%2011.2%20239%2011.5%20L238.5%2021.1%20225%2021.4%20210%2020.7%20196%2021.2%20181%2020.8%20167%2021.5%20151%2021.0%20137%2021.4%20123%2020.8%20108%2021.3%2093%2020.9%2078%2021.5%2063%2021.1%2048%2020.7%2034%2021.4%2020%2020.9%207%2021.3%201.5%2021%20Z%22%20fill%3D%22%23D6DDE0%22%20fill-opacity%3D%221%22%2F%3E%3C%2Fsvg%3E");
+    background-image:var(--jaroo-cal-label-brush)!important;
+    background-size:100% 100%!important;
+    background-repeat:no-repeat!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-brand="true"]{--jaroo-cal-label-brush:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%2024%22%20preserveAspectRatio%3D%22none%22%3E%3Cpath%20d%3D%22M1%2011.4%20L12%2011.1%2024%2011.8%2037%2011.3%2052%2010.9%2065%2011.4%2078%2010.8%2091%2011.5%20106%2011.1%20120%2011.7%20136%2011.0%20149%2011.5%20164%2010.8%20179%2011.4%20193%2011.0%20208%2011.7%20222%2011.2%20239%2011.5%20L238.5%2021.1%20225%2021.4%20210%2020.7%20196%2021.2%20181%2020.8%20167%2021.5%20151%2021.0%20137%2021.4%20123%2020.8%20108%2021.3%2093%2020.9%2078%2021.5%2063%2021.1%2048%2020.7%2034%2021.4%2020%2020.9%207%2021.3%201.5%2021%20Z%22%20fill%3D%22%23F3B9CB%22%20fill-opacity%3D%221%22%2F%3E%3C%2Fsvg%3E")}
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-title="true"]{--jaroo-cal-label-brush:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%2024%22%20preserveAspectRatio%3D%22none%22%3E%3Cpath%20d%3D%22M1%2011.4%20L12%2011.1%2024%2011.8%2037%2011.3%2052%2010.9%2065%2011.4%2078%2010.8%2091%2011.5%20106%2011.1%20120%2011.7%20136%2011.0%20149%2011.5%20164%2010.8%20179%2011.4%20193%2011.0%20208%2011.7%20222%2011.2%20239%2011.5%20L238.5%2021.1%20225%2021.4%20210%2020.7%20196%2021.2%20181%2020.8%20167%2021.5%20151%2021.0%20137%2021.4%20123%2020.8%20108%2021.3%2093%2020.9%2078%2021.5%2063%2021.1%2048%2020.7%2034%2021.4%2020%2020.9%207%2021.3%201.5%2021%20Z%22%20fill%3D%22%23D8EA8B%22%20fill-opacity%3D%221%22%2F%3E%3C%2Fsvg%3E")}
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [data-jaroo-cal-today-label="true"],
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-mini-day="today"]{
+    background-color:transparent!important;
+    background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%2024%22%20preserveAspectRatio%3D%22none%22%3E%3Cpath%20d%3D%22M1%2011.4%20L12%2011.1%2024%2011.8%2037%2011.3%2052%2010.9%2065%2011.4%2078%2010.8%2091%2011.5%20106%2011.1%20120%2011.7%20136%2011.0%20149%2011.5%20164%2010.8%20179%2011.4%20193%2011.0%20208%2011.7%20222%2011.2%20239%2011.5%20L238.5%2021.1%20225%2021.4%20210%2020.7%20196%2021.2%20181%2020.8%20167%2021.5%20151%2021.0%20137%2021.4%20123%2020.8%20108%2021.3%2093%2020.9%2078%2021.5%2063%2021.1%2048%2020.7%2034%2021.4%2020%2020.9%207%2021.3%201.5%2021%20Z%22%20fill%3D%22%23D8EA8B%22%20fill-opacity%3D%221%22%2F%3E%3C%2Fsvg%3E")!important;
+    background-size:100% 100%!important;
+    background-repeat:no-repeat!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-control="segment"]:is([aria-selected="true"],[aria-pressed="true"]):hover:not([aria-disabled="true"]):not(:disabled){
+    background-color:#D5DBDE!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-more-label="true"]{
+    text-decoration-color:#89979E;text-underline-offset:3px;
+  }
+}
+
+
+/* v0.4.3 — monthly paper: strong dates, quiet week-number rail,
+   horizontal ink rules, and a transparent outlined today. Keep the fine
+   graph-paper background. Do not affect any native event or time slot. */
+@media (forced-colors: none) {
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [data-jaroo-cal-date-label="true"],
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [data-jaroo-cal-date-tone="outside"]:not([data-jaroo-cal-today-label]):not([data-jaroo-cal-today="true"]):not([data-jaroo-cal-selected="true"]),
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [data-jaroo-cal-today-label="true"]{
+    font-weight:700!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] :is([role="row"],[role="gridcell"],[role="rowheader"],[role="columnheader"]):not([data-eventid]):not([data-eventid] *):not([data-jaroo-cal-event]):not([data-jaroo-cal-event] *):not([role="dialog"] *),
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-frame="true"]{
+    border-inline-color:transparent!important;
+    border-block-color:var(--jaroo-cal-month-ink)!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-vertical="true"]{
+    background-color:transparent!important;background-image:none!important;
+    border-color:transparent!important;box-shadow:none!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-horizontal="true"]{
+    background-color:var(--jaroo-cal-month-ink)!important;
+    border-block-color:var(--jaroo-cal-month-ink)!important;
+    border-inline-color:transparent!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-row-rule="true"]{
+    box-shadow:inset 0 -1px 0 var(--jaroo-cal-month-ink)!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-week-gutter="true"]{
+    background-color:transparent!important;background-image:none!important;
+    border-inline-color:transparent!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-week-number="true"]{
+    background-color:transparent!important;
+    background-image:radial-gradient(circle closest-side,var(--jaroo-cal-week-chip) 95%,transparent 100%)!important;
+    background-size:18px 18px!important;background-position:center!important;background-repeat:no-repeat!important;
+    color:var(--jaroo-cal-month-ink)!important;
+    font-family:var(--jaroo-cal-font)!important;font-size:11px!important;font-weight:600!important;
+    font-variant-numeric:tabular-nums!important;text-align:center!important;
+    box-shadow:none!important;
+  }
+  /* Only a noninteractive numeric text leaf is given a circular text box.
+     A native week link/button retains its original hit-target geometry. */
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-week-number="true"]:not(:is(button,[role="button"],a,[role="link"],[tabindex])){
+    display:inline-grid!important;place-items:center!important;
+    min-inline-size:18px!important;min-block-size:18px!important;
+    line-height:1!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [role="gridcell"][data-jaroo-cal-today="true"],
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-today-cell="true"]{
+    background-color:transparent!important;background-image:none!important;
+    box-shadow:inset 0 0 0 1px var(--jaroo-cal-month-ink)!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [data-jaroo-cal-today-label="true"],
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [data-jaroo-cal-today="true"][data-jaroo-cal-date-label="true"],
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-today-ring-part="true"]{
+    background-color:transparent!important;background-image:none!important;
+    color:var(--jaroo-cal-month-ink)!important;font-weight:700!important;
+    border-color:transparent!important;box-shadow:none!important;text-shadow:none!important;
+  }
+  /* Inset ring changes paint only. Native date target and focus outline stay. */
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [data-jaroo-cal-today-ring="true"]:is([data-jaroo-cal-today-ring],[data-jaroo-cal-today-label]){
+    background-color:transparent!important;background-image:none!important;
+    border-color:transparent!important;border-radius:50%!important;
+    box-shadow:inset 0 0 0 2px var(--jaroo-cal-month-ink)!important;
+    color:var(--jaroo-cal-month-ink)!important;font-weight:700!important;
+  }
+}
+@media(forced-colors:active){
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-today-ring="true"]{outline:2px solid Highlight!important;outline-offset:-2px!important}
+}
+
+@media(max-width:900px){
+  html[data-jaroo-calendar-theme="ebook"]{--jaroo-cal-event-time-size:12px;}
+}
+@media(forced-colors:active){
+  html[data-jaroo-calendar-theme="ebook"]{--jaroo-cal-bg:Canvas;--jaroo-cal-sidebar:Canvas;--jaroo-cal-surface:Canvas;--jaroo-cal-soft:Canvas;--jaroo-cal-text:CanvasText;--jaroo-cal-muted:CanvasText;--jaroo-cal-grid-line:GrayText;--jaroo-cal-calendar-line:GrayText;--jaroo-cal-focus:Highlight;--jaroo-cal-today:Canvas;--jaroo-cal-gold:Highlight;--jaroo-cal-deadline:Highlight;}
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"],html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-title="true"]{background-image:none!important}
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"]{--jaroo-cal-event-color:CanvasText!important;--jaroo-cal-event-ink:CanvasText!important}
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-color="true"]{background-color:Canvas!important;color:CanvasText!important;box-shadow:none!important}
+  html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-today="true"],[data-jaroo-cal-event="true"][data-jaroo-cal-priority="true"],[data-jaroo-cal-event="true"][data-jaroo-cal-deadline="true"]){outline:1px solid Highlight!important;outline-offset:-1px!important}
+}
+
+/* v0.4.4 — direct date ring fallback and separately layered month rail.
+   Scope to verified native month/date markers only. The fine grid survives. */
+@media (forced-colors: none) {
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [data-jaroo-cal-date-label="true"],
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [data-jaroo-cal-date-tone="outside"]:not([data-jaroo-cal-today-label]):not([data-jaroo-cal-today="true"]):not([data-jaroo-cal-selected="true"]){
+    font-weight:700!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-week-gutter="true"]{
+    background-color:transparent!important;background-image:none!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-week-gutter="true"]::before,
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-week-gutter="true"]::after{
+    background-color:transparent!important;background-image:none!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-week-number="true"]{
+    min-inline-size:18px!important;min-block-size:18px!important;
+    background-color:transparent!important;
+    background-image:radial-gradient(circle at center,#D0D5D7 0 8.5px,transparent 9px)!important;
+    background-size:18px 18px!important;background-position:center!important;background-repeat:no-repeat!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-today-layer="true"],
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-today-cell="true"],
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [data-jaroo-cal-today="true"]:not([data-jaroo-cal-date-label]):not([data-jaroo-cal-today-ring]):not([data-jaroo-cal-today-ring-part]){
+    background-color:transparent!important;background-image:none!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-today-layer="true"]:not([data-jaroo-cal-month-today-cell]){
+    box-shadow:none!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [role="gridcell"][data-jaroo-cal-today="true"],
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-today-cell="true"]{
+    background-color:transparent!important;background-image:none!important;
+    box-shadow:inset 0 0 0 1px #303438!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [data-jaroo-cal-today-ring-part="true"]:not([data-jaroo-cal-today-ring]),
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [data-jaroo-cal-today-ring] [data-jaroo-cal-date-label="true"]:not([data-jaroo-cal-today-ring]){
+    background-color:transparent!important;background-image:none!important;
+    border-color:transparent!important;box-shadow:none!important;color:#303438!important;
+  }
+  /* Even if the compact native date control cannot be discovered, the
+     existing verified today text marker must still draw the circle. */
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] :is(
+    [data-jaroo-cal-today-ring="true"],
+    [data-jaroo-cal-today-label="true"]:not([data-jaroo-cal-today-ring] *):not(:has([data-jaroo-cal-today-ring]))
+  ):not([data-jaroo-cal-month-today-cell]){
+    background-color:transparent!important;
+    background-image:radial-gradient(circle at center,transparent 0 8.8px,#303438 9px 10.8px,transparent 11px)!important;
+    background-size:22px 22px!important;background-repeat:no-repeat!important;background-position:center!important;
+    min-inline-size:22px!important;min-block-size:22px!important;
+    border-color:transparent!important;box-shadow:none!important;
+    color:#303438!important;font-weight:700!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] :is(
+    [data-jaroo-cal-today-ring="true"],
+    [data-jaroo-cal-today-label="true"]:not([data-jaroo-cal-today-ring] *):not(:has([data-jaroo-cal-today-ring]))
+  ):not([data-jaroo-cal-month-today-cell]):not(:is(button,[role="button"],a,[role="link"],[tabindex])){
+    display:inline-grid!important;place-items:center!important;line-height:1!important;
+  }
+}
+
+
+/* v0.4.5 — calm paper, no event ornaments, filled today and 24h clock.
+   The old source text stays in the native DOM for accessibility and data. */
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"] [data-jaroo-cal-event-time="true"][data-jaroo-cal-time-display]{
+  display:inline-block!important;position:relative!important;box-sizing:border-box!important;
+  inline-size:5ch!important;min-inline-size:5ch!important;max-inline-size:5ch!important;flex:0 0 5ch!important;
+  overflow:hidden!important;white-space:nowrap!important;vertical-align:baseline!important;align-self:center!important;
+  margin:0!important;padding:0!important;font-size:var(--jaroo-cal-event-time-size)!important;
+  letter-spacing:0!important;word-spacing:0!important;line-height:1.3!important;
+  color:transparent!important;-webkit-text-fill-color:transparent!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"] [data-jaroo-cal-event-time="true"][data-jaroo-cal-time-display]::after{
+  content:attr(data-jaroo-cal-time-display);
+  content:attr(data-jaroo-cal-time-display) / "";
+  position:absolute!important;inset-inline-start:0!important;top:0!important;
+  font-family:var(--jaroo-cal-font)!important;font-size:var(--jaroo-cal-event-time-size)!important;
+  font-weight:400!important;font-variant-numeric:tabular-nums;letter-spacing:0;line-height:inherit!important;
+  color:var(--jaroo-cal-event-ink,var(--jaroo-cal-time-ink))!important;-webkit-text-fill-color:currentColor!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-status="completed"] [data-jaroo-cal-time-display]::after{
+  text-decoration-line:line-through!important;text-decoration-color:currentColor!important;text-decoration-thickness:1px!important;
+}
+@media (forced-colors: none) {
+  /* Deadline/priority words and native event semantics remain. No boxes,
+     pink underlines, or top/side strokes around the highlighter. */
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"]:is([data-jaroo-cal-color="true"],[data-jaroo-cal-priority="true"],[data-jaroo-cal-deadline="true"]),
+  html[data-jaroo-calendar-theme="ebook"] [data-eventid]:not([data-jaroo-cal-event]):has(> [data-jaroo-cal-event="true"][data-jaroo-cal-color="true"]){
+    border-color:transparent!important;box-shadow:none!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-column-layer="true"],
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-column-layer="true"]::before,
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-column-layer="true"]::after{
+    border-inline-color:transparent!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-column-layer="true"]:not([data-jaroo-cal-month-row-rule]){
+    box-shadow:none!important;
+  }
+  /* Today's cell uses the same paper as the other days. Remove only its
+     own outline, including independent background/paint layers. */
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [role="gridcell"][data-jaroo-cal-today="true"],
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-today-cell="true"],
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-today-layer="true"],
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [data-jaroo-cal-today="true"]:not([data-jaroo-cal-date-label]):not([data-jaroo-cal-today-ring]):not([data-jaroo-cal-today-ring-part]){
+    background-color:transparent!important;background-image:none!important;
+    border-color:transparent!important;box-shadow:none!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-today-cell="true"]:not(:focus-visible):not(:has(:focus-visible)),
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-today-layer="true"]:not(:focus-visible):not(:has(:focus-visible)),
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [role="gridcell"][data-jaroo-cal-today="true"]:not(:focus-visible):not(:has(:focus-visible)){
+    outline-color:transparent!important;
+  }
+  /* Same 22px circular geometry already verified by the previous preview;
+     dark fill and white bold date, no ring/green highlight. */
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] :is(
+    [data-jaroo-cal-today-ring="true"],
+    [data-jaroo-cal-today-label="true"]:not([data-jaroo-cal-today-ring] *):not(:has([data-jaroo-cal-today-ring]))
+  ):not([data-jaroo-cal-month-today-cell]){
+    background-color:transparent!important;
+    background-image:radial-gradient(circle at center,#303438 0 10.5px,transparent 11px)!important;
+    background-size:22px 22px!important;background-repeat:no-repeat!important;background-position:center!important;
+    border-color:transparent!important;box-shadow:none!important;
+    color:#FFFFFF!important;-webkit-text-fill-color:#FFFFFF!important;font-weight:700!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [data-jaroo-cal-today-ring] :is([data-jaroo-cal-date-label="true"],[data-jaroo-cal-today-ring-part="true"]):not([data-jaroo-cal-today-ring]){
+    background-color:transparent!important;background-image:none!important;
+    color:#FFFFFF!important;-webkit-text-fill-color:#FFFFFF!important;font-weight:700!important;
+  }
+}
+
+
+/* v0.5: during a pending read, newly mounted native event buttons use
+   a readable paper-neutral appearance. Already classified events are not
+   touched. No display/visibility/opacity/layout changes and no guessed
+   category. The JS removes this state after a full read or on failure. */
+@media (forced-colors: none) {
+  html[data-jaroo-calendar-theme="ebook"][data-jaroo-cal-fast-paint="on"]
+    :is(main,[role="main"]) [data-eventid]:not([data-jaroo-cal-event-ready]):not([data-jaroo-cal-event]):not(:is([role="dialog"] *,[role="menu"] *,[role="listbox"] *,[hidden] *,[inert] *))
+    :is(button,[role="button"]):not([aria-haspopup]):not([aria-checked]):not([aria-pressed]):not([disabled]):not([aria-disabled="true"]):not([data-jaroo-cal-event]),
+  html[data-jaroo-calendar-theme="ebook"][data-jaroo-cal-fast-paint="on"]
+    :is(main,[role="main"]) [data-eventid]:not([data-jaroo-cal-event-ready]):not([data-jaroo-cal-event]):not(:is([role="dialog"] *,[role="menu"] *,[role="listbox"] *,[hidden] *,[inert] *)):is(button,[role="button"],:has(:is(button,[role="button"]):not([aria-haspopup]):not([aria-checked]):not([aria-pressed]))):not([aria-haspopup]):not([aria-checked]):not([aria-pressed]):not([disabled]):not([aria-disabled="true"]){
+    background-color:transparent!important;background-image:none!important;
+    border-color:transparent!important;box-shadow:none!important;
+    color:var(--jaroo-cal-active-ink)!important;-webkit-text-fill-color:currentColor!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"][data-jaroo-cal-fast-paint="on"]
+    :is(main,[role="main"]) [data-eventid]:not([data-jaroo-cal-event-ready]):not([data-jaroo-cal-event]):not(:is([role="dialog"] *,[role="menu"] *,[role="listbox"] *,[hidden] *,[inert] *))
+    :is(span,div):not(:is([aria-hidden="true"],[aria-hidden="true"] *,button[aria-checked] *,[role="checkbox"] *,[role="menu"] *,svg *)){
+    color:var(--jaroo-cal-active-ink)!important;-webkit-text-fill-color:currentColor!important;
+  }
+}
+
+
+/* v0.5.2 — header only. Transparent control surfaces and one accent
+   hairline. Preserve native geometry, focus and state. */
+@media(forced-colors:none){
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="header"] :is([data-jaroo-cal-control="today"],[data-jaroo-cal-control="view"],[data-jaroo-cal-control="upgrade"],[data-jaroo-cal-control="segment"]):not([aria-disabled="true"]):not(:disabled),
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="header"] :is([data-jaroo-cal-control="today"],[data-jaroo-cal-control="view"],[data-jaroo-cal-control="upgrade"],[data-jaroo-cal-control="segment"]):not([aria-disabled="true"]):not(:disabled):hover,
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="header"] [data-jaroo-cal-control="segment"]:is([aria-selected="true"],[aria-pressed="true"]):not([aria-disabled="true"]):not(:disabled):hover{
+    --gm3-sys-color-outline:#303438!important;
+    background-color:transparent!important;background-image:none!important;
+    border-color:transparent!important;box-shadow:inset 0 0 0 1px #303438!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="header"] [data-jaroo-cal-control="segment"]:is([aria-selected="false"],[aria-pressed="false"]):not([aria-selected="true"]):not([aria-pressed="true"]){
+    color:#626D73!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="header"] [data-jaroo-cal-header-switch="true"]{
+    background-color:transparent!important;background-image:none!important;
+    border-color:transparent!important;border-radius:999px!important;
+    box-shadow:inset 0 0 0 1px #303438!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="header"] [data-jaroo-cal-header-switch="true"] [data-jaroo-cal-control="segment"][data-jaroo-cal-switch-part]:not([aria-disabled="true"]):not(:disabled), html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="header"] [data-jaroo-cal-header-switch="true"] [data-jaroo-cal-control="segment"][data-jaroo-cal-switch-part]:not([aria-disabled="true"]):not(:disabled):hover,
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="header"] [data-jaroo-cal-header-switch="true"] [data-jaroo-cal-control="segment"][data-jaroo-cal-switch-part]:not([aria-disabled="true"]):not(:disabled):is([aria-selected="true"],[aria-pressed="true"]):hover{
+    background-color:transparent!important;background-image:none!important;
+    border-color:transparent!important;box-shadow:none!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="header"] [data-jaroo-cal-header-switch="true"] [data-jaroo-cal-control="segment"][data-jaroo-cal-switch-part="first"]:not([aria-disabled="true"]):not(:disabled), html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="header"] [data-jaroo-cal-header-switch="true"] [data-jaroo-cal-control="segment"][data-jaroo-cal-switch-part="first"]:not([aria-disabled="true"]):not(:disabled):hover,
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="header"] [data-jaroo-cal-header-switch="true"] [data-jaroo-cal-control="segment"][data-jaroo-cal-switch-part="first"]:not([aria-disabled="true"]):not(:disabled):is([aria-selected="true"],[aria-pressed="true"]):hover{
+    box-shadow:inset -1px 0 0 #303438!important;
+  }
+}
+
+
+/* v0.5.3 — left sidebar only. Keep the existing diagonal paper and native
+   button hit areas. The week-number strip is one neutral gray capsule. */
+@media(forced-colors:none){
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-control="create"]:not([aria-disabled="true"]):not(:disabled),html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-control="create"]:not([aria-disabled="true"]):not(:disabled):hover,
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-create-paint="true"],html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-create-shell="true"],html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="sidebar"] :is(button,[role="button"]):is([aria-label="만들기"],[aria-label="Create"],[title="만들기"],[title="Create"]):not([data-jaroo-cal-control]):not([aria-disabled="true"]):not(:disabled){
+    background-color:transparent!important;background-image:none!important;
+    border-color:transparent!important;border-radius:999px!important;box-shadow:none!important;
+    color:var(--jaroo-cal-text)!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-create-shell="true"]:not(:focus-visible):not(:has(:focus-visible)),html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="sidebar"] :is(button,[role="button"]):is([aria-label="만들기"],[aria-label="Create"],[title="만들기"],[title="Create"]):not([data-jaroo-cal-control]):not([aria-disabled="true"]):not(:disabled):not(:focus-visible){
+    outline:2px solid #303438!important;outline-offset:-2px!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-create-shell="true"]:has(:focus-visible){outline:2px solid #303438!important;outline-offset:-2px!important}
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-control="create"]:not([aria-disabled="true"]):not(:disabled)::before,html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-control="create"]:not([aria-disabled="true"]):not(:disabled)::after,
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-create-paint="true"]::before,html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-create-paint="true"]::after,
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-create-shell="true"]::before,html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-create-shell="true"]::after,html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="sidebar"] :is(button,[role="button"]):is([aria-label="만들기"],[aria-label="Create"],[title="만들기"],[title="Create"]):not([data-jaroo-cal-control]):not([aria-disabled="true"]):not(:disabled)::before,html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="sidebar"] :is(button,[role="button"]):is([aria-label="만들기"],[aria-label="Create"],[title="만들기"],[title="Create"]):not([data-jaroo-cal-control]):not([aria-disabled="true"]):not(:disabled)::after{
+    background-color:transparent!important;background-image:none!important;border-color:transparent!important;box-shadow:none!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="sidebar"] :is([data-jaroo-cal-section="true"],[data-jaroo-cal-create-label="true"]){
+    background-color:transparent!important;background-image:none!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="sidebar"] [data-jaroo-cal-mini-week-clear="true"]:not([data-jaroo-cal-mini-week-rail]):not([data-jaroo-cal-mini-week-segment]),
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="sidebar"] [data-jaroo-cal-mini-week-label="true"]:not([data-jaroo-cal-mini-week-rail]):not([data-jaroo-cal-mini-week-segment]){
+    background-color:transparent!important;background-image:none!important;border-color:transparent!important;box-shadow:none!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="sidebar"] [data-jaroo-cal-mini-week-clear="true"]:not(:focus-visible):not(:has(:focus-visible)){
+    outline-color:transparent!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="sidebar"] [data-jaroo-cal-mini-week-rail="true"],
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="sidebar"] [data-jaroo-cal-mini-week-segment]{
+    background-color:#D5DBDE!important;background-image:none!important;
+    border-color:transparent!important;box-shadow:none!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="sidebar"] [data-jaroo-cal-mini-week-rail="true"]{border-radius:999px!important}
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="sidebar"] [data-jaroo-cal-mini-week-rail="true"]:not(:focus-visible):not(:has(:focus-visible)){outline-color:transparent!important}
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="sidebar"] [data-jaroo-cal-mini-week-segment="first"]{border-radius:999px 999px 0 0!important}
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="sidebar"] [data-jaroo-cal-mini-week-segment="middle"]{border-radius:0!important}
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="sidebar"] [data-jaroo-cal-mini-week-segment="last"]{border-radius:0 0 999px 999px!important}
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="sidebar"] [data-jaroo-cal-mini-week-label="true"]{
+    color:#303438!important;-webkit-text-fill-color:#303438!important;
+    font-family:var(--jaroo-cal-font)!important;font-weight:600!important;
+    font-variant-numeric:tabular-nums!important;
+  }
+  @supports(width:attr(data-jaroo-cal-mini-week-w type(<length>), 0px)){
+    html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="sidebar"] [data-jaroo-cal-mini-week-paper="true"]{
+      --week-x:attr(data-jaroo-cal-mini-week-x type(<length>),0px);
+      --week-y:attr(data-jaroo-cal-mini-week-y type(<length>),0px);
+      --week-w:attr(data-jaroo-cal-mini-week-w type(<length>),0px);
+      --week-h:attr(data-jaroo-cal-mini-week-h type(<length>),0px);
+      background-color:transparent!important;
+      background-image:radial-gradient(circle closest-side,#D5DBDE 98%,transparent 100%),linear-gradient(#D5DBDE,#D5DBDE),radial-gradient(circle closest-side,#D5DBDE 98%,transparent 100%)!important;
+      background-size:var(--week-w) var(--week-w),var(--week-w) calc(var(--week-h) - var(--week-w)),var(--week-w) var(--week-w)!important;
+      background-position:var(--week-x) var(--week-y),var(--week-x) calc(var(--week-y) + var(--week-w)/2),var(--week-x) calc(var(--week-y) + var(--week-h) - var(--week-w))!important;
+      background-origin:border-box!important;background-repeat:no-repeat!important;
+    }
+  }
+}
+
+
+/* v0.5.4 — remove only verified monthly event ornaments and align the
+   24-hour time with its actual title. */
+@media(forced-colors:none){
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event-clean="true"] [data-jaroo-cal-event-decor="true"]{display:none!important}
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event-layer="true"]:not([data-jaroo-cal-event="true"]){
+    background-color:transparent!important;background-image:none!important;border-color:transparent!important;box-shadow:none!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-event-clean="true"],[data-jaroo-cal-event-layer="true"])::before,
+  html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-event-clean="true"],[data-jaroo-cal-event-layer="true"])::after{
+    background-color:transparent!important;background-image:none!important;border-color:transparent!important;box-shadow:none!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event-clean="true"] [data-jaroo-cal-event-row="true"],
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event-clean="true"][data-jaroo-cal-event-row="true"]{
+    align-items:center!important;column-gap:4px!important;line-height:1.3!important;margin-inline-start:0!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event-clean="true"] [data-jaroo-cal-event-row="true"]{
+    padding-inline-start:0!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event-clean="true"] [data-jaroo-cal-time-wrap="true"]{
+    display:inline-flex!important;align-items:center!important;flex:0 0 auto!important;
+    inline-size:auto!important;min-inline-size:0!important;max-inline-size:none!important;
+    margin:0!important;padding:0!important;line-height:1.3!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event-clean="true"] [data-jaroo-cal-event-time="true"]{
+    align-self:center!important;vertical-align:baseline!important;line-height:1.3!important;margin-block:0!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event-clean="true"] [data-jaroo-cal-event-row="true"] [data-jaroo-cal-title="true"],
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event-clean="true"][data-jaroo-cal-event-row="true"] [data-jaroo-cal-title="true"]{
+    line-height:1.3!important;
+  }
+}
+/* The original clock string occupies its normal-height box but is not
+   drawn; the generated 24-hour text owns the ink and baseline. */
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-color="true"][data-jaroo-cal-semantic="true"]:not([data-jaroo-cal-status]) [data-jaroo-cal-event-time="true"][data-jaroo-cal-time-display],
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-color="true"] [data-jaroo-cal-event-time="true"][data-jaroo-cal-time-display]{
+  color:transparent!important;-webkit-text-fill-color:transparent!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-color="true"][data-jaroo-cal-semantic="true"]:not([data-jaroo-cal-status]) [data-jaroo-cal-time-display]::after{
+  color:var(--jaroo-cal-time-ink)!important;-webkit-text-fill-color:currentColor!important;
+}
+
+
+/* v0.5.5 — sidebar finishing: bold Create caption, transparent people search.
+   The original native input and click targets are unchanged. */
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-create-label="true"]{
+  font-family:"Pretendard Variable","Pretendard","Noto Sans KR",sans-serif!important;
+  font-weight:800!important;font-synthesis:weight!important;
+  color:var(--jaroo-cal-active-ink)!important;
+  -webkit-text-fill-color:var(--jaroo-cal-active-ink)!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-control="create"]{
+  font-weight:800!important;
+}
+@media(forced-colors:none){
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-create-label="true"]:not(:has(svg,[aria-hidden="true"])){
+    -webkit-text-stroke:.18px currentColor;
+  }
+}
+
+/* v0.5.6: completed events are unmarked paper, not colored highlights.
+   Preserve native task state, title, geometry, and the keyboard indicator. */
+@media(forced-colors:none){
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-completion-paint="true"],html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-completion-paint="true"]:hover,
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-completion-paint="true"]:not([data-jaroo-cal-event="true"]){
+    --jaroo-cal-event-brush:none!important;--jaroo-cal-event-brush-hover:none!important;
+    --jaroo-cal-duration-wash:transparent!important;
+    background-color:transparent!important;background-image:none!important;
+    border-color:transparent!important;box-shadow:none!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-completion-paint="true"] [data-jaroo-cal-event-layer="true"],
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-completion-paint="true"] [data-jaroo-cal-title="true"]{
+    background-color:transparent!important;background-image:none!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-completion-paint="true"]::before,html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-completion-paint="true"]::after,
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-completion-paint="true"]:not([data-jaroo-cal-event="true"])::before,
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-completion-paint="true"]:not([data-jaroo-cal-event="true"])::after{
+    background-color:transparent!important;background-image:none!important;box-shadow:none!important;border-color:transparent!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-completion-paint="true"][data-jaroo-cal-native-completed="true"]{
+    --jaroo-cal-event-ink:var(--jaroo-cal-completed-ink)!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-completion-paint="true"][data-jaroo-cal-native-completed="true"] :is([data-jaroo-cal-title="true"],[data-jaroo-cal-event-time="true"]):not([data-jaroo-cal-time-display]){
+    color:var(--jaroo-cal-completed-ink)!important;-webkit-text-fill-color:var(--jaroo-cal-completed-ink)!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-completion-paint="true"][data-jaroo-cal-native-completed="true"] [data-jaroo-cal-time-display]::after{
+    color:var(--jaroo-cal-completed-ink)!important;-webkit-text-fill-color:currentColor!important;
+  }
+  /* No rectangular mouse-selection border. The normal week separators
+     and the filled today numeral remain unchanged. */
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] :is([data-jaroo-cal-selected="true"],[role="gridcell"][aria-selected="true"]),
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-selection-layer="true"]{
+    outline:none!important;box-shadow:none!important;border-inline-color:transparent!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-selection-layer="true"]:not([data-jaroo-cal-month-row-rule]):not([data-jaroo-cal-month-horizontal]):not([role="row"]){
+    border-block-color:transparent!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] :is([data-jaroo-cal-selected="true"],[role="gridcell"][aria-selected="true"]):not([data-jaroo-cal-today="true"]){
+    background-color:transparent!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] :is([data-jaroo-cal-date-control="true"],[data-jaroo-cal-date-label="true"]){
+    outline:none!important;box-shadow:none!important;border-color:transparent!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] :is([data-jaroo-cal-date-control="true"],[data-jaroo-cal-date-label="true"]):not([data-jaroo-cal-today-label]):not([data-jaroo-cal-today-ring]):not([data-jaroo-cal-today-ring] *):not([data-jaroo-cal-today-ring-part]){
+    background-color:transparent!important;background-image:none!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] :is([role="gridcell"],[data-jaroo-cal-month-frame],[data-jaroo-cal-month-column-layer]):not([data-jaroo-cal-event]):not([data-jaroo-cal-event] *):not([data-jaroo-cal-month-row-rule]){
+    outline:none!important;box-shadow:none!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] :is([data-jaroo-cal-date-control="true"],[data-jaroo-cal-date-label="true"]):focus-visible,
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] :is([role="gridcell"]:focus-visible,[data-jaroo-cal-date-control]:focus-visible) [data-jaroo-cal-date-label="true"]{
+    text-decoration:underline!important;text-decoration-thickness:2px!important;text-underline-offset:3px!important;
+  }
+}
+
+
+
+/* v0.5.8 — DevTools-confirmed native Create caption container.
+   The native .x5FT4e explicitly sets Google Sans and weight 500.
+   Scope the override exclusively to the already verified Create control. */
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-control="create"] .x5FT4e,
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-control="create"] .x5FT4e .bjMtic,
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-control="create"] [data-jaroo-cal-create-label="true"]{
+  font-family:"Pretendard Variable","Pretendard","Noto Sans KR",sans-serif!important;
+  font-weight:800!important;font-synthesis:weight!important;
+  color:var(--jaroo-cal-active-ink)!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-control="create"] .x5FT4e .bjMtic :is(span,div):not(:has(svg)):not([aria-hidden="true"]):not([role="img"]){
+  font-weight:800!important;
+}
+@media(forced-colors:none){
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-control="create"] [data-jaroo-cal-create-label="true"]:not(:has(svg)){
+    -webkit-text-stroke:.24px currentColor;
+  }
+}
+/* Use a real narrow native search shell, even if size measurement fails.
+   Default 20px per side; measured date table edges win when available. */
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"]{
+  box-sizing:border-box!important;
+  width:calc(100% - 40px)!important;inline-size:calc(100% - 40px)!important;
+  max-inline-size:100%!important;min-inline-size:0!important;
+  flex:0 0 auto!important;margin-inline:auto!important;align-self:center!important;
+}
+@supports(width:attr(data-jaroo-cal-people-search-width type(<length>), 0px)){
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"][data-jaroo-cal-people-search-width]{
+    width:attr(data-jaroo-cal-people-search-width type(<length>))!important;
+    inline-size:attr(data-jaroo-cal-people-search-width type(<length>))!important;
+    translate:attr(data-jaroo-cal-people-search-offset type(<length>), 0px) 0!important;
+  }
+}
+/* Center only the idle native input's existing icon + caption row.
+   A blank native placeholder is still :placeholder-shown; the visible
+   caption can be a separate overlay, so do not use field-sizing:content. */
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"]:not(:focus-within):has([data-jaroo-cal-people-search-input="true"]:placeholder-shown) [data-jaroo-cal-people-search-group="true"],
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"]:not(:focus-within):has([data-jaroo-cal-people-search-caption="true"]):not(:has(input)) [data-jaroo-cal-people-search-group="true"]{
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  width:fit-content!important;inline-size:fit-content!important;max-inline-size:100%!important;
+  flex:0 0 auto!important;margin-inline:auto!important;padding-inline:0!important;column-gap:8px!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"]:not(:focus-within):has([data-jaroo-cal-people-search-input="true"]:placeholder-shown) [data-jaroo-cal-people-search-field="true"]{
+  flex:0 0 6.5em!important;width:6.5em!important;inline-size:6.5em!important;
+  min-inline-size:0!important;max-inline-size:100%!important;margin-inline:0!important;padding-inline:0!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-input="true"]:placeholder-shown:not(:focus){
+  field-sizing:fixed!important;width:100%!important;inline-size:100%!important;min-inline-size:0!important;
+  box-sizing:border-box!important;margin-inline:0!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"]:not(:focus-within):has([data-jaroo-cal-people-search-input="true"]:placeholder-shown) [data-jaroo-cal-people-search-icon="true"]{
+  flex:0 0 auto!important;margin-inline:0!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-caption="true"]{
+  flex:0 0 auto!important;width:auto!important;min-inline-size:0!important;margin-inline:0!important;
+}
+
+
+/* v0.5.10 — People search: ink only, no capsule.
+   DevTools shows the native filled field reads
+   --gm3-text-field-filled-container-color. Reset that source token on the
+   verified shell and field surfaces, not the sidebar or other inputs. */
+@media(forced-colors:none){
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"],
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"] :is([data-jaroo-cal-people-search-paint="true"],[data-jaroo-cal-people-search-control="true"],[data-jaroo-cal-people-search-group="true"],[data-jaroo-cal-people-search-field="true"],[data-jaroo-cal-people-search-caption="true"],input:is([data-jaroo-cal-people-search-input="true"],[aria-label="사용자 검색"],[aria-label="사용자 찾기"],[aria-label="Search for people"],[aria-label="Search people"],[aria-label="Find people"])):not(:is([role="listbox"],[role="listbox"] *,[role="option"],[role="option"] *,[role="dialog"],[role="dialog"] *,[role="menu"],[role="menu"] *)):not(:is([data-jaroo-cal-people-search-icon],[data-jaroo-cal-people-search-icon] *,svg,svg *,img,i,[role="img"],[role="img"] *)),
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"] :is(div,span,label):has(input:is([data-jaroo-cal-people-search-input="true"],[aria-label="사용자 검색"],[aria-label="사용자 찾기"],[aria-label="Search for people"],[aria-label="Search people"],[aria-label="Find people"])):not(:is([role="listbox"],[role="listbox"] *,[role="option"],[role="option"] *,[role="dialog"],[role="dialog"] *,[role="menu"],[role="menu"] *)):not(:is([data-jaroo-cal-people-search-icon],[data-jaroo-cal-people-search-icon] *,svg,svg *,img,i,[role="img"],[role="img"] *)),
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"] [data-jaroo-cal-people-search-group="true"] :is(div,span,label,input):not(:is([role="listbox"],[role="listbox"] *,[role="option"],[role="option"] *,[role="dialog"],[role="dialog"] *,[role="menu"],[role="menu"] *)):not(:is([data-jaroo-cal-people-search-icon],[data-jaroo-cal-people-search-icon] *,svg,svg *,img,i,[role="img"],[role="img"] *)){
+    --gm3-text-field-filled-container-color:transparent!important;
+    --gm3-text-field-filled-active-indicator-color:transparent!important;
+    --gm3-text-field-filled-hover-active-indicator-color:transparent!important;
+    --gm3-text-field-filled-focus-active-indicator-color:transparent!important;
+    background:transparent!important;
+    border-color:transparent!important;
+    outline:none!important;
+    box-shadow:none!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"]::before,
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"] :is([data-jaroo-cal-people-search-paint="true"],[data-jaroo-cal-people-search-control="true"],[data-jaroo-cal-people-search-group="true"],[data-jaroo-cal-people-search-field="true"],[data-jaroo-cal-people-search-caption="true"],input:is([data-jaroo-cal-people-search-input="true"],[aria-label="사용자 검색"],[aria-label="사용자 찾기"],[aria-label="Search for people"],[aria-label="Search people"],[aria-label="Find people"])):not(:is([role="listbox"],[role="listbox"] *,[role="option"],[role="option"] *,[role="dialog"],[role="dialog"] *,[role="menu"],[role="menu"] *)):not(:is([data-jaroo-cal-people-search-icon],[data-jaroo-cal-people-search-icon] *,svg,svg *,img,i,[role="img"],[role="img"] *))::before,
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"] :is(div,span,label):has(input:is([data-jaroo-cal-people-search-input="true"],[aria-label="사용자 검색"],[aria-label="사용자 찾기"],[aria-label="Search for people"],[aria-label="Search people"],[aria-label="Find people"])):not(:is([role="listbox"],[role="listbox"] *,[role="option"],[role="option"] *,[role="dialog"],[role="dialog"] *,[role="menu"],[role="menu"] *)):not(:is([data-jaroo-cal-people-search-icon],[data-jaroo-cal-people-search-icon] *,svg,svg *,img,i,[role="img"],[role="img"] *))::before,
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"] [data-jaroo-cal-people-search-group="true"] :is(div,span,label,input):not(:is([role="listbox"],[role="listbox"] *,[role="option"],[role="option"] *,[role="dialog"],[role="dialog"] *,[role="menu"],[role="menu"] *)):not(:is([data-jaroo-cal-people-search-icon],[data-jaroo-cal-people-search-icon] *,svg,svg *,img,i,[role="img"],[role="img"] *))::before,
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"]::after,
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"] :is([data-jaroo-cal-people-search-paint="true"],[data-jaroo-cal-people-search-control="true"],[data-jaroo-cal-people-search-group="true"],[data-jaroo-cal-people-search-field="true"],[data-jaroo-cal-people-search-caption="true"],input:is([data-jaroo-cal-people-search-input="true"],[aria-label="사용자 검색"],[aria-label="사용자 찾기"],[aria-label="Search for people"],[aria-label="Search people"],[aria-label="Find people"])):not(:is([role="listbox"],[role="listbox"] *,[role="option"],[role="option"] *,[role="dialog"],[role="dialog"] *,[role="menu"],[role="menu"] *)):not(:is([data-jaroo-cal-people-search-icon],[data-jaroo-cal-people-search-icon] *,svg,svg *,img,i,[role="img"],[role="img"] *))::after,
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"] :is(div,span,label):has(input:is([data-jaroo-cal-people-search-input="true"],[aria-label="사용자 검색"],[aria-label="사용자 찾기"],[aria-label="Search for people"],[aria-label="Search people"],[aria-label="Find people"])):not(:is([role="listbox"],[role="listbox"] *,[role="option"],[role="option"] *,[role="dialog"],[role="dialog"] *,[role="menu"],[role="menu"] *)):not(:is([data-jaroo-cal-people-search-icon],[data-jaroo-cal-people-search-icon] *,svg,svg *,img,i,[role="img"],[role="img"] *))::after,
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"] [data-jaroo-cal-people-search-group="true"] :is(div,span,label,input):not(:is([role="listbox"],[role="listbox"] *,[role="option"],[role="option"] *,[role="dialog"],[role="dialog"] *,[role="menu"],[role="menu"] *)):not(:is([data-jaroo-cal-people-search-icon],[data-jaroo-cal-people-search-icon] *,svg,svg *,img,i,[role="img"],[role="img"] *))::after{
+    background-color:transparent!important;
+    border-color:transparent!important;
+    outline:none!important;
+    box-shadow:none!important;
+  }
+  /* Preserve keyboard access without drawing a rectangle around the
+     search field. Neither pointer focus nor keyboard focus restores fill. */
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"]:focus-visible,
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"]:has(:focus-visible) :is([data-jaroo-cal-people-search-caption="true"],[data-jaroo-cal-people-search-input="true"]){
+    text-decoration:underline!important;
+    text-underline-offset:3px!important;
+  }
+}
+
+}
