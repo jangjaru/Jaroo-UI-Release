@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo · Google Calendar E-Book Companion
 // @namespace    jaroo.calendar.ebook
-// @version      0.3.0
+// @version      0.4.0
 // @description  Cool E-Ink Graph Paper · native Calendar event labels, More popup and local agenda.
 // @match        https://calendar.google.com/calendar/*
 // @run-at       document-idle
@@ -12,7 +12,7 @@
 // ==/UserScript==
 
 /*
- * Jaroo Calendar E-Book v0.3.0 · 2026-11-25
+ * Jaroo Calendar E-Book v0.4.0 · 2026-11-25
  * Requires the paired E-Book Stylus CSS and native Light appearance.
  * Forked from the working Calendar Companion v1.3.7; history below is retained.
  * v1.3.1: preserve visually present month-grid/list colors when Calendar temporarily
@@ -223,7 +223,7 @@
   // BEGIN_JAROO_ADAPTER
   const RUNTIME = '__jarooCalendarCompanionV1';
   window[RUNTIME]?.dispose?.();
-  const VERSION = '0.3.0';
+  const VERSION = '0.4.0';
   const CONFIG = Object.freeze({ timeZone: 'Asia/Seoul', futureDays: 7, maxPins: 3, maxEvents: 1200, settleMs: 180, recoveryMs: 5000 });
   const EVENT = '[data-eventid]';
   const EXCLUDE = '[role="dialog"],[role="menu"],[role="listbox"],[hidden],[inert],[aria-hidden="true"]';
@@ -1204,21 +1204,26 @@
     .day-heading{font-size:13px;font-weight:600;color:#535B60;margin:17px 0 8px;padding-bottom:4px;border-bottom:1px solid #D4DADC}
     .day-heading:first-child{margin-top:0}
     .event{--accent:#737D83;display:grid;grid-template-columns:minmax(0,1fr) 36px;
-      gap:7px;align-items:start;padding:10px 0 10px 10px;border-left:2px solid var(--accent);
-      margin:0 0 9px;background:#F5F6F6;border-radius:0 4px 4px 0}
+      gap:7px;align-items:start;padding:10px 0 11px 10px;border-left:1px solid var(--accent);
+      margin:0 0 9px;background:transparent;border-radius:0}
     .event-open{display:block;width:100%;text-align:left;background:none;border:0;padding:0;
       min-width:0;white-space:normal;overflow-wrap:anywhere;line-height:1.65}
-    .event[data-semantic=true]{background:color-mix(in srgb,var(--accent) 28%,#EFF1F2);border-left-color:color-mix(in srgb,var(--accent) 78%,#303438)}
-    .event[data-status="completed"],.event[data-status="cancelled"]{background:color-mix(in srgb,var(--accent) 19%,#EFF1F2)}
-    .event[data-status="stopped"]{background:color-mix(in srgb,var(--accent) 10%,#EFF1F2)}
+    .event[data-semantic=true]{background:transparent;border-left-color:color-mix(in srgb,var(--accent) 70%,#89979E)}
+    .event[data-status]{background:transparent;border-left-color:color-mix(in srgb,var(--accent) 40%,#C5CDD0)}
     .event[data-semantic=true] .event-open{color:var(--ink,#292D30)}
-    .event[data-status] .event-open{text-decoration:line-through;text-decoration-thickness:1px}
+    .event-open{font-size:14px;font-weight:500}
+    .event[data-semantic=true]:not([data-status]) .event-title-ink{
+      background-image:linear-gradient(to bottom,transparent 0 45%,color-mix(in srgb,var(--accent) 45%,transparent) 47%,color-mix(in srgb,var(--accent) 82%,transparent) 51% 88%,color-mix(in srgb,var(--accent) 45%,transparent) 92%,transparent 96%);
+      -webkit-box-decoration-break:clone;box-decoration-break:clone;
+    }
+    .event[data-status] .event-open{text-decoration:line-through;text-decoration-thickness:1px;font-weight:400}
     .event-open:hover{text-decoration:underline}
+    .event[data-status] .event-open:hover{text-decoration-line:line-through underline}
     .event-tags{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 5px}
     .tag{font-size:13px;line-height:1.45;color:#98375C;padding:1px 5px;background:#F8E1E9;border-radius:4px}
     .tag.priority{color:#303438;background:#F9EDC5}
-    .tag.category{color:var(--ink,#292D30);background:color-mix(in srgb,var(--accent) 60%,#F5F6F6);font-weight:500}
-    .event[data-status] .tag.category{background:#F5F6F6}
+    .tag.category{color:#535B60;background:transparent;font-weight:500;padding-inline:0}
+    .event[data-status] .tag.category{background:transparent}
     .tag.state{color:var(--ink,#535B60);background:#F5F6F6}
     .pin{width:30px;min-height:30px;background:transparent;border:1px solid #C5CDD0;
       border-radius:6px;padding:0;font-size:17px;line-height:1.2;color:#737D83}
@@ -1248,6 +1253,7 @@
     @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
     @media(forced-colors:active){.panel,.launch{border-color:ButtonText}.event{border-color:CanvasText}
       .event[data-semantic=true]{background:Canvas}.event[data-semantic=true] .event-open,.tag.category,.tag.state{color:CanvasText}
+      .event[data-semantic=true]:not([data-status]) .event-title-ink{background-image:none}
       .swatch{border:1px solid CanvasText}}
   `;
   function uiElement(tag, className, value) {
@@ -1409,7 +1415,10 @@
       content.append(tags);
     }
     if (record.isRange && record.date && record.endDate) content.append(uiElement('div','small',`${uiDate(record.date)} ~ ${uiDate(record.endDate)} · 기간 일정`));
-    const open = uiButton('event-open', record.title); open.dataset.openKey = record.key;
+    const open = uiButton('event-open'); open.dataset.openKey = record.key;
+    // Inline text only: a wrapping highlighter, with the same native button
+    // target, accessible label, open key and delegated click behavior.
+    open.append(uiElement('span','event-title-ink',record.title));
     open.setAttribute('aria-label', `${record.title} · 기본 캘린더에서 열기`); content.append(open);
     const pin = uiButton('pin', pins.has(record.key) ? '★' : '☆'); pin.dataset.pinKey = record.key;
     pin.setAttribute('aria-pressed', String(pins.has(record.key)));
@@ -1446,7 +1455,7 @@
     const status = shadow.getElementById('jaroo-cal-ui-status'), notes = [];
     status.className = 'status';
     if (!cssApplied) { notes.push('테마 CSS가 아직 적용되지 않았어. Stylus 적용 주소를 확인해줘.'); status.classList.add('warn'); }
-    else if (enabled && cssVersion !== '0.3.0') { notes.push('E-Book v0.3.0 CSS가 필요해. 같은 채널의 Stylus 스타일을 확인해줘.'); status.classList.add('warn'); }
+    else if (enabled && cssVersion !== '0.4.0') { notes.push('E-Book v0.4.0 CSS가 필요해. 같은 채널의 Stylus 스타일을 확인해줘.'); status.classList.add('warn'); }
     if (dirty) notes.push('화면 확인 중… 이전에 읽은 항목이 잠시 표시될 수 있어.');
     else if (lastError) { notes.push('화면을 다시 읽지 못했어. 표시 설정에서 다시 읽기를 눌러줘.'); status.classList.add('warn'); }
     else if (panelFilter === 'today' && !todayKnown) notes.push('현재 화면에서 오늘 날짜를 확인하지 못했어. 기본 캘린더를 오늘로 이동한 뒤 다시 읽어줘.');
