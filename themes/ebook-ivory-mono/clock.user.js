@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.38
+// @version      3.11.39
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -150,7 +150,7 @@
       .ebook-time-toggle svg{width:13px;height:13px;display:block}
       :host([data-ebook-time-collapsed="true"]) .ebook-time-toggle svg{transform:rotate(-90deg)}
       :host([data-ebook-time-collapsed="true"]) :is(.life-clock,.clock){display:none}
-      .life-clock{--life-section-gap:21px;margin:0;padding:calc(var(--life-section-gap) / 2) 0 9px;background:transparent}
+      .life-clock{--life-section-gap:21px;--life-metric-row-gap:3px;margin:0;padding:calc(var(--life-section-gap) / 2) 0 9px;background:transparent}
       .life-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 0 2.5px;flex-wrap:nowrap}
       .life-title{font:650 calc(var(--widget-main) + 1px)/1.3 var(--font);letter-spacing:.025em;text-transform:uppercase;color:var(--ink);max-width:100%;overflow-wrap:normal;white-space:nowrap}
       /* Small-text legibility: one white text layer on a full-height, irregular accent marker. */
@@ -191,19 +191,21 @@
       :is(.life-bar-fill,.career-bar-fill){display:block;height:100%;border-radius:999px;background:#879398}
       .life-bar-fill{width:0}
       .life-bar-glow{display:none}
-      .life-progress-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin-top:7px}
-      .life-progress-stat{display:flex;flex-direction:column;gap:3px;min-width:0;align-items:flex-start}
-      .life-progress-stat.remaining{align-items:flex-end;text-align:right}
-      .life-progress-stat > span{font:450 var(--widget-meta)/1.35 var(--font);color:var(--muted);overflow-wrap:anywhere}
-      .life-progress-stat strong{font:500 var(--widget-main)/1.25 var(--mono);font-variant-numeric:tabular-nums;color:var(--muted);max-width:100%;white-space:normal;word-break:keep-all}
+      .life-progress-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:5px;margin-top:7px}
+      .life-progress-stat{display:flex;flex-direction:column;gap:var(--life-metric-row-gap,3px);min-width:0;align-items:flex-end;text-align:right}
+      .life-progress-stat.remaining{align-items:flex-start;text-align:left}
+      .life-progress-stat > span{font:450 var(--widget-meta)/1.02 var(--font);color:var(--muted);letter-spacing:-.035em;white-space:nowrap}
+      .life-progress-stat strong{display:block;font:500 var(--widget-main)/1.02 var(--mono);font-variant-numeric:tabular-nums;color:var(--muted);max-width:100%;white-space:nowrap;letter-spacing:-.035em}
       .life-progress-stat.remaining strong{font-weight:600;color:var(--ink)}
+      .life-progress-unit{font-size:85%}
+      .life-progress-stat strong[data-unavailable] .life-progress-unit{display:none}
+      @container jaroo-dashboard (max-width:219px){.life-progress-unit{font-size:70%}}
+      @container jaroo-dashboard (max-width:179px){.life-progress-meta{grid-template-columns:minmax(0,1fr);row-gap:8px}}
       /* Keep large hour digits; use a single compact, baseline-aligned colon suffix. */
-      .life-value,.life-progress-stat strong{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:flex-end;gap:2px 0}
-      .life-value,.life-progress-stat.remaining strong{--life-tail-weight:360}
-      .life-progress-stat:not(.remaining) strong{--life-tail-weight:300}
+      .life-value{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:flex-end;gap:2px 0}
+      .life-value{--life-tail-weight:360}
       .life-duration-hours{white-space:nowrap;font:inherit;color:inherit;letter-spacing:inherit}
       .life-duration-tail{white-space:pre;font:var(--life-tail-weight,360) 70%/1.2 var(--mono);color:var(--muted);letter-spacing:-.035em;word-spacing:-.5ch;font-variant-numeric:tabular-nums}
-      .life-progress-stat:not(.remaining) strong{justify-content:flex-start}
       .clock{margin:0;padding:0;border-top:1px solid var(--line);user-select:none}
       .clock-content{display:flex;flex-direction:column;min-width:0}
       .clock-line{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:53px;padding:7px 0}
@@ -231,27 +233,17 @@
       @container jaroo-dashboard (max-width: 269px){
         .life-sub{display:none}
       }
-      @container jaroo-dashboard (max-width: 229px){
-        .life-progress-meta{grid-template-columns:minmax(0,1fr);gap:7px}
-        .life-progress-stat{flex-direction:row;align-items:baseline;justify-content:space-between;gap:6px}
-        .life-progress-stat.remaining{text-align:left;align-items:baseline}
-        .life-progress-stat > span{flex:1;min-width:0}
-        .life-progress-stat strong{text-align:right;flex:0 1 auto}
-        .life-progress-stat:not(.remaining) strong{justify-content:flex-end}
-      }
       @container jaroo-dashboard (max-width: 184px){
         .life-meta,.life-sub,.life-progress-scale,.brand-subtitle{display:none}
         .life-title-full{display:none}
         .life-title-short{display:inline}
         .life-card{padding:5px 0}
         .life-grid>.life-card:first-child{padding-top:2.5px}
-        .life-progress-stat,.life-progress-stat.remaining{flex-direction:column;align-items:stretch;gap:2px}
-        .life-progress-stat strong{text-align:right}
         .life-head,.life-progress-head{gap:0}
       }
       /* All Life Clock metrics: compact width uses two shared baselines; wider width keeps the full duration inline. */
       .life-duration-tail::before{content:" : ";word-spacing:normal}
-      .life-card .life-card-main{grid-template-columns:minmax(0,1fr) auto auto;align-items:baseline;gap:3px 0}
+      .life-card .life-card-main{grid-template-columns:minmax(0,1fr) auto auto;align-items:baseline;gap:var(--life-metric-row-gap,3px) 0}
       .life-card .life-caption{display:contents}
       .life-card .life-label{grid-column:1/-1;grid-row:1;align-self:baseline}
       .life-card .life-meta{grid-column:1;grid-row:2;align-self:baseline;padding-inline-end:4px}
@@ -344,8 +336,8 @@
           <div class="life-bar-glow"></div>
         </div>
         <div class="life-progress-meta">
-          <div class="life-progress-stat"><span data-life="usedMeta">지나온 시간 · 0%</span><strong data-life="usedHours">0 : 00 : 00</strong></div>
-          <div class="life-progress-stat remaining"><span data-life="remainingMeta">남은 시간 · 0%</span><strong data-life="remainingHours">0 : 00 : 00</strong></div>
+          <div class="life-progress-stat remaining"><span>남은시간</span><strong data-unavailable><span data-life="remainingHours">—</span><span class="life-progress-unit">시간</span></strong><span data-life="remainingMeta">—</span></div>
+          <div class="life-progress-stat"><span>지나온시간</span><strong data-unavailable><span data-life="usedHours">—</span><span class="life-progress-unit">시간</span></strong><span data-life="usedMeta">—</span></div>
         </div>
       </div>
     </section>
@@ -435,8 +427,9 @@
       lifeBirthInput.value='';lifeSetupError.textContent='';
     }else{
       for(const k of ['retireValue','workValue','afterValue','usedHours','remainingHours'])lifeEls[k].textContent='—';
-      lifeEls.usedMeta.textContent='지나온 시간 · —';
-      lifeEls.remainingMeta.textContent='남은 시간 · —';
+      lifeEls.usedMeta.textContent='—';
+      lifeEls.remainingMeta.textContent='—';
+      for(const el of [lifeEls.usedHours,lifeEls.remainingHours]){el.parentElement.setAttribute('data-unavailable','');el.parentElement.removeAttribute('title');}
       lifeEls.progressPercent.textContent='—';
       lifeEls.progressBar.style.width='0%';
       updateCareerBar(null);
@@ -569,6 +562,15 @@
       if(nodes.percent.textContent!==label)nodes.percent.textContent=label;
     }
   }
+  // LIFE PROGRESS has a three-line summary; retain exact minute/second values in its tooltip.
+  function setProgressDuration(el,ms,elapsed=false) {
+    const [hours,tail]=durationParts(ms,elapsed);
+    if(el.textContent!==hours)el.textContent=hours;
+    const holder=el.parentElement;
+    const detail=hours+'시간 '+tail.replace(' : ','분 ')+'초';
+    if(holder.title!==detail)holder.title=detail;
+    if(holder.hasAttribute('data-unavailable'))holder.removeAttribute('data-unavailable');
+  }
   let lastLifeSecondKey = '';
   function updateLifeClock(now) {
     syncLifeProfile();
@@ -594,15 +596,15 @@
     const afterRemaining=remainingDurationPercent(remainingAfterMs,totalAfterMs);
     setLifeDuration(lifeEls.afterValue,remainingAfterMs,{careerRemaining:afterRemaining});
     updateCareerBar(afterRemaining,lifeEls.afterBar,lifeEls.afterBarFill,'은퇴일 ~ 80세 기준일 · 은퇴 이후 계획시간 중');
-    setLifeDuration(lifeEls.usedHours,Math.min(ms,age80Ms)-LIFE.birth.getTime(),{elapsed:true});
-    setLifeDuration(lifeEls.remainingHours,age80Ms-ms);
+    setProgressDuration(lifeEls.usedHours,Math.min(ms,age80Ms)-LIFE.birth.getTime(),true);
+    setProgressDuration(lifeEls.remainingHours,age80Ms-ms);
     const values=[
       ['retireMeta','65세 기준'],
       ['workMeta','평일 8시간 기준'],
       ['afterMeta',beforeRetirement?'65~80세까지':'80세까지'],
       ['progressPercent',`${used.toFixed(1)}%`],
-      ['usedMeta',`지나온 시간 · ${used.toFixed(1)}%`],
-      ['remainingMeta',`남은 시간 · ${(100-used).toFixed(1)}%`]
+      ['usedMeta',`${used.toFixed(1)}%`],
+      ['remainingMeta',`${(100-used).toFixed(1)}%`]
     ];
     for(const [key,val] of values){if(lifeEls[key]?.textContent!==val)lifeEls[key].textContent=val; if(key.endsWith('Meta') && ['retireMeta','workMeta','afterMeta'].includes(key) && lifeEls[key]?.title!==val)lifeEls[key].title=val;}
     const width=`${(100-used).toFixed(8)}%`;
@@ -1202,9 +1204,9 @@
     if (window[RUNTIME_KEY]?.dispose === dispose) delete window[RUNTIME_KEY];
   }
   window[RUNTIME_KEY] = {
-    version: '3.11.38', dispose,
+    version: '3.11.39', dispose,
     diagnostics: () => ({
-      version: '3.11.38', ...placementReport,
+      version: '3.11.39', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
