@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo · Google Calendar E-Book Companion
 // @namespace    jaroo.calendar.ebook
-// @version      0.5.0
+// @version      0.5.1
 // @description  Cool E-Ink Graph Paper · native Calendar event labels, More popup and local agenda.
 // @match        https://calendar.google.com/calendar/*
 // @run-at       document-start
@@ -12,7 +12,7 @@
 // ==/UserScript==
 
 /*
- * Jaroo Calendar E-Book v0.5.0 · 2026-11-25
+ * Jaroo Calendar E-Book v0.5.1 · 2026-11-25
  * Requires the paired E-Book Stylus CSS and native Light appearance.
  * Forked from the working Calendar Companion v1.3.7; history below is retained.
  * v1.3.1: preserve visually present month-grid/list colors when Calendar temporarily
@@ -109,12 +109,12 @@
       // Strip it only from this classification view, with a valid clock and an
       // immediate bracket next. It supplies no date, time, duration or status.
       const metadata = text.trimStart().replace(/^(?:(?:[01]?\d|2[0-3]):[0-5]\d|(?:오전|오후)\s*(?:1[0-2]|0?[1-9])(?:시(?:\s*[0-5]?\d분)?|:[0-5]\d)|종일)\s*(?=\[)/u, '');
-      // Only the initial uninterrupted bracket sequence is authored metadata.
-      // [A-03][완료] is valid; prose or a later [완료] does not change status.
+      // Category and other status tags retain the leading bracket contract.
+      // An exact [완료] anywhere in the title explicitly wins as completed.
       const prefix = metadata.match(/^\s*(?:\[[^\]\r\n]{1,48}\]\s*)+/u)?.[0] || '';
       const blocks = [...prefix.matchAll(/\[([^\]\r\n]{1,48})\]/gu)].map(match => match[1].trim());
       const statuses = new Set(blocks.map(block => Object.hasOwn(STATUS_TAGS, block) ? STATUS_TAGS[block] : null).filter(Boolean));
-      const status = statuses.size === 1 ? [...statuses][0] : null;
+      const status = metadata.includes('[완료]') ? 'completed' : statuses.size === 1 ? [...statuses][0] : null;
       const categories = new Set(blocks.map(block => Object.hasOwn(CATEGORY_TAGS, block) ? CATEGORY_TAGS[block] : null).filter(Boolean));
       const statusFields = { status, statusLabel: status ? STATUS_LABELS[status] : '' };
       if (categories.size > 1) return { ...empty, source: 'conflict', ...statusFields };
@@ -234,7 +234,7 @@
   // BEGIN_JAROO_ADAPTER
   const RUNTIME = '__jarooCalendarCompanionV1';
   window[RUNTIME]?.dispose?.();
-  const VERSION = '0.5.0';
+  const VERSION = '0.5.1';
   const CONFIG = Object.freeze({ timeZone: 'Asia/Seoul', futureDays: 7, maxPins: 3, maxEvents: 1200, recoveryMs: 5000, minScanGapMs: 60 });
   const EVENT = '[data-eventid]';
   const EXCLUDE = '[role="dialog"],[role="menu"],[role="listbox"],[hidden],[inert],[aria-hidden="true"]';
@@ -504,7 +504,7 @@
     return { active, color, semantic: isSemantic, category: semantic?.category || null,
       label: semantic?.label || '', source: semantic?.source || 'native', status,
       statusLabel: semantic?.statusLabel || '',
-      ink: status === 'stopped' ? '#A52D35' : status ? '#535B60' : isSemantic ? '#16191B' : null,
+      ink: status === 'completed' ? '#A2A8AC' : status === 'stopped' ? '#A52D35' : status ? '#535B60' : isSemantic ? '#16191B' : null,
       priority: Boolean(active && record.priority && !status),
       deadline: Boolean(active && record.deadline && !status) };
   }
@@ -648,7 +648,7 @@
       !el.closest('[role="grid"],[role="gridcell"]'));
     const tagged = [...node.querySelectorAll('button,[role="button"]')].filter(el =>
       popupRendered(el) && !el.closest('[role="grid"],[role="gridcell"]') &&
-      /^(?:(?:오전|오후)\s*\S+\s*)?\[[^\]\r\n]{1,48}\]/u.test(text(el.textContent)));
+      (/^(?:(?:오전|오후)\s*\S+\s*)?\[[^\]\r\n]{1,48}\]/u.test(text(el.textContent))||text(el.textContent).includes('[완료]')));
     // A quick-detail card can have one event, but a More popup contains a
     // cluster of independently clickable events. Never style a single detail.
     return chips.length >= 2 || tagged.length >= 2;
@@ -741,9 +741,10 @@
   // chips. This adapter deliberately requires a multi-event OVERLAY outside
   // the date grid; a single details card / calendar list is never targeted.
   const MORE_TAG_START = /^\s*(?:[•●]\s*)?(?:(?:오전|오후)\s*\d{1,2}(?:시|:\d{2})\s*|\d{1,2}:\d{2}\s*)?(?:\[[^\]\r\n]{1,48}\]\s*)+/u;
+  function hasMoreTitleTag(value){return MORE_TAG_START.test(value)||value.includes('[완료]');}
   function moreSemanticText(value) {
     const cleaned = text(value).replace(/^\s*[•●]\s*/u, '');
-    if (!cleaned || cleaned.length > 220 || !MORE_TAG_START.test(cleaned)) return null;
+    if (!cleaned || cleaned.length > 220 || !hasMoreTitleTag(cleaned)) return null;
     const semantic = Model.semantic(cleaned);
     return semantic.color || semantic.status ? { title:cleaned, semantic } : null;
   }
@@ -865,7 +866,7 @@
     let scanned=0;
     for(let t=walker.nextNode();t && scanned++<16000;t=walker.nextNode()){
       const str=String(t.nodeValue||'').trim();
-      if(str && str.length<=220 && MORE_TAG_START.test(str) && t.parentElement) leaves.add(t.parentElement);
+      if(str && str.length<=220 && hasMoreTitleTag(str) && t.parentElement) leaves.add(t.parentElement);
     }
     // Google sometimes separates the authored tag and title into neighboring
     // spans. The individual text nodes then do not start with a complete tag.
@@ -877,7 +878,7 @@
       if(el.closest('#jaroo-calendar-companion-v1,[hidden],[inert]')) continue;
       if(el.childElementCount>5 || !el.isConnected) continue;
       const val=text(el.textContent);
-      if(!val || val.length>220 || !MORE_TAG_START.test(val)) continue;
+      if(!val || val.length>220 || !hasMoreTitleTag(val)) continue;
       const rect=el.getBoundingClientRect();
       if(rect.width<24 || rect.width>440 || rect.height<10 || rect.height>52) continue;
       leaves.add(el);
@@ -1758,7 +1759,7 @@
     diagnostics.append(area, uiButton('action','진단 복사','copy-diagnostics'));
     settingsBody.append(check, semanticCheck, legend,
       uiElement('div','small','제목 단어로 색을 분류해. 제목 맨 앞의 [회의]·[제작]·[기획]·[실행]·[출장]·[개인] 표기가 우선이야. 애매한 일정은 기존 색 계열을 유지해.'),
-      uiElement('div','small','[중요]·[최우선]·[마감]은 제목의 태그와 요약 패널에서 확인해. [완료]·[취소]·[중단]은 제목에 직접 적힌 표기만 반영해. 실제 할 일의 완료 상태를 바꾸지는 않아.'),
+      uiElement('div','small','[중요]·[최우선]·[마감]은 제목의 태그와 요약 패널에서 확인해. [완료]는 제목 어디에 있든 연한 회색 취소선으로 표시해. [취소]·[중단]은 기존 앞부분 태그 규칙을 유지해. 실제 할 일의 완료 상태를 바꾸지는 않아.'),
       actions, uiElement('div','small','표시 설정과 고정은 이 탭에서만 유지돼. 새로고침하면 초기화돼. 고정은 최대 3개야. 마감의 D-day는 하루짜리 일정의 표시 날짜 기준이며 기간 일정에는 붙이지 않아.'), diagnostics);
     settings.append(settingsBody); panel.append(head, filters, scopeNote, status, pinned, separator, list, settings);
     const launch = uiButton('launch', '', 'toggle'); launch.id = 'jaroo-cal-launch'; launch.setAttribute('aria-controls', panel.id);
@@ -1900,7 +1901,7 @@
     const status = shadow.getElementById('jaroo-cal-ui-status'), notes = [];
     status.className = 'status';
     if (!cssApplied) { notes.push('테마 CSS가 아직 적용되지 않았어. Stylus 적용 주소를 확인해줘.'); status.classList.add('warn'); }
-    else if (enabled && cssVersion !== '0.5.0') { notes.push('E-Book v0.5.0 CSS가 필요해. 같은 채널의 Stylus 스타일을 확인해줘.'); status.classList.add('warn'); }
+    else if (enabled && cssVersion !== '0.5.1') { notes.push('E-Book v0.5.1 CSS가 필요해. 같은 채널의 Stylus 스타일을 확인해줘.'); status.classList.add('warn'); }
     if (dirty) notes.push('화면 확인 중… 이전에 읽은 항목이 잠시 표시될 수 있어.');
     else if (lastError) { notes.push('화면을 다시 읽지 못했어. 표시 설정에서 다시 읽기를 눌러줘.'); status.classList.add('warn'); }
     else if (panelFilter === 'today' && !todayKnown) notes.push('현재 화면에서 오늘 날짜를 확인하지 못했어. 기본 캘린더를 오늘로 이동한 뒤 다시 읽어줘.');

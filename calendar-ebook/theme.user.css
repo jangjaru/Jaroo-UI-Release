@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo Google Calendar E-Book
 @namespace    jaroo.calendar.ebook
-@version      0.5.0
+@version      0.5.1
 @description  Cool E-Ink Graph Paper · paired with Calendar E-Book Companion
 @author       Jaroo
 @license      UNLICENSED
@@ -42,7 +42,7 @@
 /* Light appearance is selected in Google Calendar itself. No layout,
    event text, native date/colour data, or click targets are rewritten. */
 html[data-jaroo-calendar-theme="ebook"] {
-  --jaroo-cal-style-version: 0.5.0;
+  --jaroo-cal-style-version: 0.5.1;
   --jaroo-cal-bg:#EFF1F2;
   --jaroo-cal-sidebar:#E7EAEB;
   --jaroo-cal-surface:#F5F6F6;
@@ -57,6 +57,7 @@ html[data-jaroo-calendar-theme="ebook"] {
   --jaroo-cal-deadline:#C45483;
   --jaroo-cal-today:#D8EA8B;
   --jaroo-cal-archive-ink:#535B60;
+  --jaroo-cal-completed-ink:#A2A8AC;
   --jaroo-cal-stopped-ink:#A52D35;
   --jaroo-cal-font:"Jaroo Cal Plex Latin","Pretendard Variable","Pretendard","Noto Sans KR",sans-serif;
   --jaroo-cal-event-font-size:var(--jaroo-cal-event-time-size);
@@ -168,6 +169,9 @@ html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo
   --jaroo-cal-event-tint:19%;
   --jaroo-cal-event-hover-tint:27%;
   --jaroo-cal-event-ink:var(--jaroo-cal-archive-ink);
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-semantic="true"][data-jaroo-cal-status="completed"]{
+  --jaroo-cal-event-ink:var(--jaroo-cal-completed-ink);
 }
 html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-semantic="true"][data-jaroo-cal-status="stopped"]{
   --jaroo-cal-event-tint:10%;
@@ -639,6 +643,9 @@ html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"] [data-jaro
   font-family:var(--jaroo-cal-font)!important;font-size:var(--jaroo-cal-event-time-size)!important;
   font-weight:400!important;font-variant-numeric:tabular-nums;letter-spacing:0;line-height:1.2;
   color:inherit!important;-webkit-text-fill-color:inherit!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-status="completed"] [data-jaroo-cal-time-display]::after{
+  text-decoration-line:line-through!important;text-decoration-color:currentColor!important;text-decoration-thickness:1px!important;
 }
 @media (forced-colors: none) {
   /* Deadline/priority words and native event semantics remain. No boxes,
