@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.20
+// @version      3.11.21
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -184,8 +184,8 @@
       .life-progress{margin:6px 0 0;padding:7px 0 0;border-top:1px solid #D4DADC}
       .life-progress-head{display:flex;flex-direction:column;gap:3px;align-items:flex-start;margin-bottom:6px}
       .life-progress-title{font:650 var(--widget-main)/1.3 var(--font);color:var(--ink);letter-spacing:.025em;text-transform:uppercase}
-      .life-bar{height:4px;border-radius:2px;background:#D0D5D7;overflow:hidden}
-      .life-bar-fill{height:100%;width:0;border-radius:2px;background:#879398}
+      .life-bar{height:5px;border-radius:999px;background:#D0D5D7;overflow:hidden}
+      .life-bar-fill{height:100%;width:0;border-radius:999px;background:#879398}
       .life-bar-glow{display:none}
       .life-progress-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin-top:7px}
       .life-progress-stat{display:flex;flex-direction:column;gap:3px;min-width:0;align-items:flex-start}
@@ -279,9 +279,9 @@
       }
       /* Career remaining time replaces only the retirement divider. */
       .life-card.retire:has(.career-bar:not([hidden])){border-bottom:0;padding-bottom:0}
-      .career-bar{height:4px;border-radius:2px;background:#D0D5D7;overflow:hidden;margin-top:8px}
+      .career-bar{height:5px;border-radius:999px;background:#D0D5D7;overflow:hidden;margin-top:8px}
       .career-bar[hidden]{display:none}
-      .career-bar-fill{height:100%;width:var(--career-remaining,0%);border-radius:2px;background:#879398}
+      .career-bar-fill{height:100%;width:var(--career-remaining,0%);border-radius:999px;background:#879398}
       .career-remaining-percent{font:400 11px/1.2 var(--font);letter-spacing:-.04em;color:var(--muted);white-space:nowrap;margin-inline-start:3px}
       .career-remaining-percent[hidden]{display:none}
       @container jaroo-dashboard (max-width:220px){.career-remaining-percent{font-size:10px;margin-inline-start:2px}}
@@ -1146,9 +1146,9 @@
     if (window[RUNTIME_KEY]?.dispose === dispose) delete window[RUNTIME_KEY];
   }
   window[RUNTIME_KEY] = {
-    version: '3.11.20', dispose,
+    version: '3.11.21', dispose,
     diagnostics: () => ({
-      version: '3.11.20', ...placementReport,
+      version: '3.11.21', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
