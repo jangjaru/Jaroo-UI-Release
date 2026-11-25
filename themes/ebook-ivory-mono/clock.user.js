@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.5
+// @version      3.11.6
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -173,11 +173,11 @@
       .life-meta{letter-spacing:-.035em}
       .life-value{min-width:0;max-width:100%;font:600 19px/1.25 var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.045em;text-align:right;white-space:normal;word-break:keep-all;overflow-wrap:normal;justify-self:end}
       /* Retirement metric: title on row one, metadata and value share a baseline. */
-      .life-card.retire .life-card-main{grid-template-columns:minmax(0,1fr) auto;align-items:last baseline;gap:3px 4px}
+      .life-card.retire .life-card-main{grid-template-columns:minmax(0,1fr) auto;align-items:last baseline;gap:0 4px}
       .life-card.retire .life-caption{display:contents}
-      .life-card.retire .life-label{grid-column:1/-1;grid-row:1;font-weight:550;color:#23272B}
-      .life-card.retire .life-meta{grid-column:1;grid-row:2;white-space:nowrap}
-      .life-card.retire .life-value{grid-column:2;grid-row:2;white-space:nowrap}
+      .life-card.retire .life-label{grid-column:1/-1;grid-row:1;font-weight:550;color:#23272B;line-height:1.12}
+      .life-card.retire .life-meta{grid-column:1;grid-row:2;white-space:nowrap;line-height:1.1}
+      .life-card.retire .life-value{grid-column:2;grid-row:2;white-space:nowrap;line-height:1.1}
       .life-progress{margin:6px 0 0;padding:7px 0 0;border-top:1px solid #D4DADC}
       .life-progress-head{display:flex;flex-direction:column;gap:3px;align-items:flex-start;margin-bottom:6px}
       .life-progress-title{font:650 var(--widget-main)/1.3 var(--font);color:var(--ink);letter-spacing:.025em;text-transform:uppercase}
@@ -1057,9 +1057,9 @@
     if (window[RUNTIME_KEY]?.dispose === dispose) delete window[RUNTIME_KEY];
   }
   window[RUNTIME_KEY] = {
-    version: '3.11.5', dispose,
+    version: '3.11.6', dispose,
     diagnostics: () => ({
-      version: '3.11.5', ...placementReport,
+      version: '3.11.6', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
