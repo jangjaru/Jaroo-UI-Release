@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo · Google Calendar E-Book Companion
 // @namespace    jaroo.calendar.ebook
-// @version      0.5.14
+// @version      0.5.15
 // @description  Cool E-Ink Graph Paper · native Calendar event labels, More popup and local agenda.
 // @match        https://calendar.google.com/calendar/*
 // @run-at       document-start
@@ -12,7 +12,7 @@
 // ==/UserScript==
 
 /*
- * Jaroo Calendar E-Book v0.5.14 · 2026-11-25
+ * Jaroo Calendar E-Book v0.5.15 · 2026-11-25
  * Requires the paired E-Book Stylus CSS and native Light appearance.
  * Forked from the working Calendar Companion v1.3.7; history below is retained.
  * v1.3.1: preserve visually present month-grid/list colors when Calendar temporarily
@@ -256,15 +256,15 @@
   // END_JAROO_MODEL
 
   // BEGIN_JAROO_ADAPTER
-  const VERSION = '0.5.14';
+  const VERSION = '0.5.15';
   const CONFIG = Object.freeze({ timeZone: 'Asia/Seoul', futureDays: 7, maxPins: 3, maxEvents: 1200, recoveryMs: 5000, minScanGapMs: 60 });
   const EVENT = '[data-eventid]';
   const EXCLUDE = '[role="dialog"],[role="menu"],[role="listbox"],[hidden],[inert],[aria-hidden="true"]';
   const MARKERS = ['data-jaroo-cal-event','data-jaroo-cal-event-ready','data-jaroo-cal-color','data-jaroo-cal-title','data-jaroo-cal-date-label','data-jaroo-cal-today','data-jaroo-cal-selected','data-jaroo-cal-grid','data-jaroo-cal-month-grid','data-jaroo-cal-month-title','data-jaroo-cal-today-label','data-jaroo-cal-month-frame','data-jaroo-cal-month-vertical','data-jaroo-cal-month-column-layer','data-jaroo-cal-month-horizontal','data-jaroo-cal-month-row-rule','data-jaroo-cal-week-gutter','data-jaroo-cal-week-number','data-jaroo-cal-month-today-cell','data-jaroo-cal-month-today-layer','data-jaroo-cal-today-ring','data-jaroo-cal-today-ring-part','data-jaroo-cal-month-weekend','data-jaroo-cal-date-tone','data-jaroo-cal-day-header','data-jaroo-cal-more-label','data-jaroo-cal-event-time','data-jaroo-cal-time-display','data-jaroo-cal-brand','data-jaroo-cal-section','data-jaroo-cal-mini','data-jaroo-cal-mini-title','data-jaroo-cal-mini-day','data-jaroo-cal-mini-number','data-jaroo-cal-calendar-label','data-jaroo-cal-create-label','data-jaroo-cal-create-paint','data-jaroo-cal-create-shell','data-jaroo-cal-people-search-shell','data-jaroo-cal-people-search-paint','data-jaroo-cal-people-search-width','data-jaroo-cal-people-search-offset','data-jaroo-cal-people-search-group','data-jaroo-cal-people-search-caption','data-jaroo-cal-people-search-input','data-jaroo-cal-people-search-control','data-jaroo-cal-people-search-field','data-jaroo-cal-people-search-icon','data-jaroo-cal-event-decor','data-jaroo-cal-event-layer','data-jaroo-cal-event-row','data-jaroo-cal-time-wrap','data-jaroo-cal-event-clean','data-jaroo-cal-completion-paint','data-jaroo-cal-native-completed','data-jaroo-cal-date-control','data-jaroo-cal-month-selection-layer','data-jaroo-cal-mini-week-rail','data-jaroo-cal-mini-week-clear','data-jaroo-cal-mini-week-label','data-jaroo-cal-mini-week-paper','data-jaroo-cal-mini-week-x','data-jaroo-cal-mini-week-y','data-jaroo-cal-mini-week-w','data-jaroo-cal-mini-week-h','data-jaroo-cal-mini-week-segment','data-jaroo-cal-control','data-jaroo-cal-header-switch','data-jaroo-cal-switch-part','data-jaroo-cal-sidebar-panel','data-jaroo-cal-surface','data-jaroo-cal-deadline','data-jaroo-cal-priority','data-jaroo-cal-semantic','data-jaroo-cal-category','data-jaroo-cal-status'];
   const eventStyles = new Map(), marked = new Set(), ownedMarkers=new WeakMap(), dateCache = new WeakMap(), textRenderCache = new WeakMap();
-  let markerPlan = null, layoutSnapshot=null, layoutDirty=true;
+  let markerPlan = null, layoutSnapshot=null, layoutDirty=true, layoutProbeNeeded=false;
   let moreRequestUntil=0, moreOpenLastScan=false;
-  const perfStats={scans:0,layoutScans:0,layoutReuses:0,morePasses:0,moreSkipped:0,lastMs:0,maxMs:0,lastQueueMs:0,coalesced:0};
+  const perfStats={scans:0,layoutScans:0,layoutReuses:0,morePasses:0,moreSkipped:0,lastMs:0,maxMs:0,lastQueueMs:0,coalesced:0,scrollDeferred:0,geometryReuses:0,geometryFallbacks:0};
   let moreProbe = { textCandidates:0, gridAnchoredCandidates:0, verifiedOverlays:0, rowCandidates:0 };
   let roots = [], grids = [], records = [], coverage = new Set(), stats = {}, selectedDay = null;
   let enabled = true, semanticEnabled = true, disposed = false, pending = 0, recoveryTimer = 0, scanNumber = 0, dirty = true;
@@ -1993,12 +1993,42 @@
     return a.length===b.length&&a.every((x,i)=>x.cell===b[i].cell&&x.date===b[i].date&&
       x.selected===b[i].selected&&sameNodes(x.labels,b[i].labels));
   }
+  // Event paint mutations can change a color/class without moving the date
+  // grid. Confirm actual month geometry before reusing structural markers.
+  // Translation of the whole grid during scrolling is not a size change.
+  function layoutGeometry(dates){
+    if(!isMonthCalendarView()||!grids.length||dates.length>192)return null;
+    const boxes=new Map(),seen=new Set(),out=[];
+    const push=(r,left,top)=>out.push(r.left-left,r.top-top,r.width,r.height);
+    for(const grid of grids){
+      if(!grid.isConnected)return null;
+      const r=grid.getBoundingClientRect();boxes.set(grid,r);out.push(r.width,r.height);
+    }
+    for(const info of dates){
+      const cell=info.cell,grid=cell.closest('[role="grid"]'),g=boxes.get(grid);
+      if(!g||!cell.isConnected)return null;
+      for(const n of [cell,...info.labels]){
+        if(seen.has(n))continue;
+        if(!n.isConnected||seen.size>=192)return null;
+        seen.add(n);push(n.getBoundingClientRect(),g.left,g.top);
+      }
+    }
+    return out.every(Number.isFinite)?out:null;
+  }
+  function geometryMatches(a,b){
+    return Boolean(a&&b&&a.length===b.length&&a.every((x,i)=>Math.abs(x-b[i])<=.5));
+  }
   function reusableLayout(dates){
-    return !layoutDirty&&layoutSnapshot&&sameNodes(layoutSnapshot.grids,grids)&&
+    const stable=!layoutDirty&&layoutSnapshot&&sameNodes(layoutSnapshot.grids,grids)&&
       sameDates(layoutSnapshot.dates,dates)&&layoutSnapshot.marks.every(([node])=>node.isConnected);
+    if(!stable)return false;
+    if(!layoutProbeNeeded)return true;
+    const same=geometryMatches(layoutSnapshot.geometry,layoutGeometry(dates));
+    if(same)perfStats.geometryReuses++;else perfStats.geometryFallbacks++;
+    return same;
   }
   function rememberLayout(dates){
-    return {grids:[...grids],dates,marks:[...markerPlan].map(([node,attrs])=>
+    return {grids:[...grids],dates,geometry:layoutGeometry(dates),marks:[...markerPlan].map(([node,attrs])=>
       [node,[...attrs].map(name=>[name,node.getAttribute(name)])])};
   }
   function replayLayout(snapshot){
@@ -2248,7 +2278,7 @@
       if (event.target.id === 'jaroo-cal-semantic-enabled') {
         semanticEnabled=event.target.checked;syncFastPaint(dirty);
         syncHeaderLegend(enabled && semanticEnabled && !document.hidden);
-        dirty = true; uiSignature = ''; scheduleScan(); renderUI();
+        dirty = true; uiSignature = ''; scheduleScan({immediate:true}); renderUI();
         announce(semanticEnabled ? 'GPT 업무 색상을 켰어.' : '일정의 기본 색으로 돌아갔어.');
         return;
       }
@@ -2257,7 +2287,7 @@
       if (enabled) document.documentElement.setAttribute('data-jaroo-calendar-theme', 'ebook');
       else {document.documentElement.setAttribute('data-jaroo-calendar-theme','off');firstPaint.dispose();}
       syncHeaderLegend(enabled && semanticEnabled && !document.hidden);
-      dirty = true; uiSignature = ''; scheduleScan(); renderUI(); announce(enabled ? '테마 표시를 켰어.' : '테마 표시를 껐어.');
+      dirty = true; uiSignature = ''; scheduleScan({immediate:true}); renderUI(); announce(enabled ? '테마 표시를 켰어.' : '테마 표시를 껐어.');
     });
     shadow.addEventListener('keydown', event => { if (event.key === 'Escape' && panelOpen) setPanelOpen(false); });
     uiSignature = '';
@@ -2301,7 +2331,7 @@
     switch (button.dataset.action) {
       case 'toggle': setPanelOpen(!panelOpen); break;
       case 'close': setPanelOpen(false); break;
-      case 'refresh': dirty = true; uiSignature = ''; scheduleScan(); renderUI(); announce('현재 화면을 다시 읽는 중이야.'); break;
+      case 'refresh': dirty = true; uiSignature = ''; scheduleScan({immediate:true}); renderUI(); announce('현재 화면을 다시 읽는 중이야.'); break;
       case 'clear-pins': pins.clear(); uiSignature = ''; renderUI(); announce('고정을 모두 해제했어.'); break;
       case 'diagnostics': showDiagnostics(); break;
       case 'copy-diagnostics': {
@@ -2397,7 +2427,7 @@
     const status = shadow.getElementById('jaroo-cal-ui-status'), notes = [];
     status.className = 'status';
     if (!cssApplied) { notes.push('테마 CSS가 아직 적용되지 않았어. Stylus 적용 주소를 확인해줘.'); status.classList.add('warn'); }
-    else if (enabled && cssVersion !== '0.5.14') { notes.push('E-Book v0.5.14 CSS가 필요해. 같은 채널의 Stylus 스타일을 확인해줘.'); status.classList.add('warn'); }
+    else if (enabled && cssVersion !== '0.5.15') { notes.push('E-Book v0.5.15 CSS가 필요해. 같은 채널의 Stylus 스타일을 확인해줘.'); status.classList.add('warn'); }
     if (dirty) notes.push('화면 확인 중… 이전에 읽은 항목이 잠시 표시될 수 있어.');
     else if (lastError) { notes.push('화면을 다시 읽지 못했어. 표시 설정에서 다시 읽기를 눌러줘.'); status.classList.add('warn'); }
     else if (panelFilter === 'today' && !todayKnown) notes.push('현재 화면에서 오늘 날짜를 확인하지 못했어. 기본 캘린더를 오늘로 이동한 뒤 다시 읽어줘.');
@@ -2747,7 +2777,7 @@
   // BEGIN_JAROO_LIFECYCLE
   // LIFECYCLE_BEGIN -- native events remain the only source of calendar data.
   const listeners = [];
-  let queuedAt=0, delayedScan=0, lastScanEnd=-Infinity;
+  let queuedAt=null, delayedScan=0, lastScanEnd=-Infinity, lastScrollAt=-Infinity, scanUrgent=false;
   const originalFastPaint=document.documentElement.getAttribute('data-jaroo-cal-fast-paint');
   function listen(target, name, handler, options) {
     target.addEventListener(name, handler, options);
@@ -2801,15 +2831,29 @@
     return Boolean(node&&inRoots(node)&&node.closest(EVENT)&&!node.closest('[role="dialog"],[role="listbox"]')&&
       (change.type==='characterData'||change.type==='attributes'&&['aria-label','aria-labelledby'].includes(change.attributeName)));
   }
+  // Only already verified native event controls in an established month
+  // qualify. Structural, date, popup or unknown changes keep the full pass.
+  function eventVisualOnly(change){
+    if(change.type!=='attributes'||!['class','style','aria-checked','checked'].includes(change.attributeName)||
+       !layoutSnapshot?.geometry||!isMonthCalendarView())return false;
+    const n=change.target;
+    if(!(n instanceof Element)||!inRoots(n)||n.closest('[role="dialog"],[role="listbox"],[role="menu"]'))return false;
+    const owner=n.closest(EVENT);
+    if(!owner||!(owner.hasAttribute('data-jaroo-cal-event-ready')||owner.hasAttribute('data-jaroo-cal-event')))return false;
+    const structure='[data-datekey],[role="grid"],[role="gridcell"],[role="row"],[role="columnheader"]';
+    return !n.matches(structure)&&!n.querySelector(structure);
+  }
   const observer=new MutationObserver(changes=>{
     if(disposed||document.hidden)return;
-    let relevant=false,layout=false;
+    let relevant=false,layout=false,geometry=false;
     for(const change of changes){
       if(!mutationRelevant(change))continue;
       relevant=true;
-      if(!eventTextOnly(change)){layout=true;break;}
+      if(eventTextOnly(change))continue;
+      if(eventVisualOnly(change)){geometry=true;continue;}
+      layout=true;break;
     }
-    if(relevant)scheduleScan({layout,immediate:route!==location.pathname+location.search||roots.some(root=>!root.isConnected)});
+    if(relevant)scheduleScan({layout,geometry,immediate:route!==location.pathname+location.search||roots.some(root=>!root.isConnected)});
   });
   function syncContext() {
     const nextScope = accountScope(), nextRoute = location.pathname + location.search;
@@ -2829,28 +2873,47 @@
       if(root.getAttribute('data-jaroo-cal-fast-paint')!=='on')root.setAttribute('data-jaroo-cal-fast-paint','on');
     }else if(root.hasAttribute('data-jaroo-cal-fast-paint'))root.removeAttribute('data-jaroo-cal-fast-paint');
   }
+  // Coalesce nonurgent decoration scans during active scrolling. Keep the
+  // existing 60ms minimum gap and a 220ms intentional wait bound.
+  function scanDelay(now,scrollAt,queued,lastEnd,urgent){
+    if(urgent)return 0;
+    const scrollWait=queued===null?0:Math.max(0,Math.min(110-(now-scrollAt),220-(now-queued)));
+    return Math.max(0,CONFIG.minScanGapMs-(now-lastEnd),scrollWait);
+  }
+  function queueScanFrame(){
+    if(pending||disposed||document.hidden)return;
+    pending=requestAnimationFrame(()=>{
+      pending=0;
+      if(disposed||document.hidden)return;
+      const wait=scanDelay(performance.now(),lastScrollAt,queuedAt,lastScanEnd,scanUrgent);
+      if(wait>0){perfStats.scrollDeferred++;delayedScan=setTimeout(()=>{delayedScan=0;queueScanFrame();},Math.ceil(wait));return;}
+      runScan();
+    });
+  }
   function scheduleScan(options={}){
     if(disposed)return;
     const wasDirty=dirty;dirty=true;
     if(options.layout!==false)layoutDirty=true;
+    if(options.geometry)layoutProbeNeeded=true;
     if(document.hidden)return;
-    syncFastPaint(true);
-    // First/navigation work gets the next frame. Sustained event mutations
-    // cannot force a full layout scan at 60 Hz; the next nonurgent scan is
-    // bounded by a short, non-restarting gap from the last completed scan.
+    if(layoutDirty||options.immediate)syncFastPaint(true);
+    if(options.immediate)scanUrgent=true;
+    if(queuedAt===null)queuedAt=performance.now();
     if(pending){perfStats.coalesced++;return;}
     if(delayedScan){
       perfStats.coalesced++;
-      if(!options.immediate)return;
+      if(!scanUrgent)return;
       clearTimeout(delayedScan);delayedScan=0;
-    }else queuedAt=performance.now();
-    const wait=options.immediate?0:Math.max(0,CONFIG.minScanGapMs-(performance.now()-lastScanEnd));
-    if(wait>0)delayedScan=setTimeout(()=>{
-      delayedScan=0;
-      if(!disposed&&!document.hidden&&!pending)pending=requestAnimationFrame(runScan);
-    },wait);
-    else pending=requestAnimationFrame(runScan);
+    }
+    const wait=scanDelay(performance.now(),lastScrollAt,queuedAt,lastScanEnd,scanUrgent);
+    if(wait>0)delayedScan=setTimeout(()=>{delayedScan=0;queueScanFrame();},Math.ceil(wait));
+    else queueScanFrame();
     if(panelOpen&&!wasDirty&&document.body)renderUI();
+  }
+  function noteNativeScroll(event){
+    if(disposed||document.hidden)return;
+    if(event.target instanceof Element&&event.target.closest(OWN_UI))return;
+    lastScrollAt=performance.now();
   }
   function runScan(){
     if(pending)cancelAnimationFrame(pending);pending=0;
@@ -2858,7 +2921,7 @@
     if(disposed||document.hidden)return;
     firstPaint.check();
     const start=performance.now();
-    perfStats.lastQueueMs=queuedAt?Math.max(0,start-queuedAt):0;queuedAt=0;
+    perfStats.lastQueueMs=queuedAt===null?0:Math.max(0,start-queuedAt);queuedAt=null;scanUrgent=false;
     observer.disconnect();
     try{
       syncContext();
@@ -2873,6 +2936,7 @@
       moreOpenLastScan=false;lastError='달력 화면 구조를 읽지 못했어. 기본 일정은 그대로 사용할 수 있어.';dirty=false;
       for(const node of [...marked])cleanupNode(node);
     }finally{
+      layoutProbeNeeded=false;
       lastScanEnd=performance.now();
       perfStats.lastMs=Math.round((lastScanEnd-start)*100)/100;
       perfStats.maxMs=Math.max(perfStats.maxMs,perfStats.lastMs);
@@ -2996,7 +3060,7 @@
   }
   listen(document,'visibilitychange',()=>{
     if(document.hidden){
-      observer.disconnect();if(pending)cancelAnimationFrame(pending);pending=0;queuedAt=0;
+      observer.disconnect();if(pending)cancelAnimationFrame(pending);pending=0;queuedAt=null;scanUrgent=false;lastScrollAt=-Infinity;layoutProbeNeeded=false;
       clearTimeout(delayedScan);delayedScan=0;
       clearTimeout(moreAfterClick);moreAfterClick=0;moreRequestUntil=0;
       dirty=true;layoutDirty=true;layoutSnapshot=null;syncFastPaint(false);
@@ -3010,6 +3074,8 @@
     if(route!==location.pathname+location.search)scheduleScan({immediate:true});
   });
   listen(window,'resize',()=>scheduleScan());
+  // Timestamp only: no new scan on scroll, no wheel interception.
+  listen(document,'scroll',noteNativeScroll,{capture:true,passive:true});
   listen(document,'click',nativeInputSignal,true);
   listen(document,'keydown',event=>{
     if(event.key==='Enter'||event.key===' '||event.key==='Escape')nativeInputSignal(event);
