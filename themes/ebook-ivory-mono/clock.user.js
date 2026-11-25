@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.48
+// @version      3.11.49
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -94,13 +94,42 @@
   function localBirthProfile(value) {
     return parseLifeProfile({birthDate:value,retirementDate:birthdayPlusYears(value,65),lifePlanEndDate:birthdayPlusYears(value,80)});
   }
-  let localLife=null,legacyLife=null,legacyKey=null,LIFE=null,lifeKey=null,lifeSource='missing';
-  try{localLife=localBirthProfile(localStorage.getItem(LIFE_LOCAL_PREF));}catch(_){}
+  // Explicit local settings override the legacy profile only after a save.
+  // Keep old birth-only data and previously calculated baselines until then.
+  const LIFE_SETTINGS_PREF='jaroo:ebook:life-settings:v2';
+  const lifeDateString=date=>new Date(date.getTime()+9*3600000).toISOString().slice(0,10);
+  function validCareerDate(value,profile) {
+    const date=validLifeDate(value);
+    return date&&profile&&date>=profile.birth&&date<profile.retirement?date:null;
+  }
+  function withCareerDate(profile,value,provisional=false) {
+    if(!profile)return null;
+    const careerStart=validCareerDate(value,profile);
+    return {...profile,careerStart,careerProvisional:!!careerStart&&provisional,
+      key:profile.key+'|'+(careerStart?value:'')+'|'+String(provisional)};
+  }
+  function parseLocalLifeSettings(raw) {
+    const profile=localBirthProfile(raw?.birthDate);
+    if(!validCareerDate(raw?.careerStartDate,profile))return null;
+    return withCareerDate(profile,raw.careerStartDate);
+  }
+  function readLifeSettings() {
+    try{return parseLocalLifeSettings(JSON.parse(localStorage.getItem(LIFE_SETTINGS_PREF)));}catch(_){return null;}
+  }
+  function readLegacyBirth() {
+    try{return localBirthProfile(localStorage.getItem(LIFE_LOCAL_PREF));}catch(_){return null;}
+  }
+  let explicitLife=readLifeSettings(),localLife=readLegacyBirth(),legacyLife=null,legacyKey=null,LIFE=null,lifeKey=null,lifeSource='missing';
   function resolveLifeProfile() {
+    if(explicitLife)return {profile:explicitLife,source:'local-settings'};
     const raw=PAGE.__jarooPrivateProfileV1;
-    const key=JSON.stringify([raw?.birthDate,raw?.retirementDate,raw?.lifePlanEndDate].map(v=>typeof v==='string'?v:null));
-    if(key!==legacyKey){legacyKey=key;legacyLife=parseLifeProfile(raw);}
-    return legacyLife?{profile:legacyLife,source:'legacy'}:localLife?{profile:localLife,source:'local'}:{profile:null,source:'missing'};
+    const key=JSON.stringify([raw?.birthDate,raw?.retirementDate,raw?.lifePlanEndDate,raw?.careerStartDate].map(v=>typeof v==='string'?v:null));
+    if(key!==legacyKey){
+      legacyKey=key;
+      const profile=parseLifeProfile(raw);
+      legacyLife=withCareerDate(profile,validCareerDate(raw?.careerStartDate,profile)?raw.careerStartDate:'2007-08-01',!validCareerDate(raw?.careerStartDate,profile));
+    }
+    return legacyLife?{profile:legacyLife,source:'legacy'}:localLife?{profile:withCareerDate(localLife,'2007-08-01',true),source:'local'}:{profile:null,source:'missing'};
   }
 
   // Remove clocks and spacing left by older versions.
@@ -174,12 +203,16 @@
       .life-title .ico,.life-title-short,.life-progress-percent{display:none}
       .life-sub,.life-meta,.life-progress-scale{font:450 var(--widget-meta)/1.35 var(--font);color:var(--muted);max-width:100%;overflow-wrap:normal}
       .life-sub{flex:0 0 auto;margin-inline-start:auto;text-align:right;white-space:nowrap}
+      .life-setup-toggle{flex:0 0 auto;align-self:center;margin-inline-start:auto;min-height:18px;padding:1px 5px;border:1px solid var(--line);border-radius:3px;background:transparent;color:var(--muted);font:450 var(--widget-meta)/1.02 var(--font);letter-spacing:-.035em;white-space:nowrap;cursor:pointer}
+      .life-setup-toggle:hover,.life-setup-toggle[aria-expanded="true"]{background:#F5F6F6;border-color:#879398;color:var(--ink)}
+      .life-setup-toggle:focus-visible{outline:1px solid #879398;outline-offset:1px}
       .life-setup[hidden],.life-setup form[hidden]{display:none}
       .life-setup{margin:5px 0;padding:6px 0;border-bottom:1px solid #D4DADC;font:400 var(--widget-meta)/1.4 var(--font);color:var(--muted)}
       .life-setup-line{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px}
       .life-setup button{padding:3px 6px;border:1px solid var(--line);border-radius:3px;background:transparent;color:var(--ink);font:500 var(--widget-meta)/1.3 var(--font);cursor:pointer}
       .life-setup form{display:grid;gap:5px;margin-top:6px}
-      .life-setup input{min-width:0;max-width:100%;padding:4px;border:1px solid var(--line);border-radius:3px;background:#F5F6F6;color:var(--ink);font:400 12px/1.3 var(--font)}
+      .life-setup-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:4px}
+      .life-setup input{width:100%;min-width:0;max-width:100%;padding:4px;border:1px solid var(--line);border-radius:3px;background:#F5F6F6;color:var(--ink);font:400 12px/1.3 var(--font)}
       .life-setup .life-setup-message{font-size:var(--widget-meta);color:var(--muted)}
       .life-setup .life-setup-error{color:#A33F46;min-height:0}
       .life-grid{display:flex;flex-direction:column}
@@ -263,6 +296,7 @@
         .life-grid>.life-card:first-child{padding-top:2.5px}
         .life-head,.life-progress-head{gap:0}
       }
+      @container jaroo-dashboard (max-width:159px){.life-head{gap:9px}.life-title{font-size:13px}.life-setup-toggle{padding-inline:3px}}
       /* All Life Clock metrics: compact width uses two shared baselines; wider width keeps the full duration inline. */
       .life-duration-tail::before{content:" : ";word-spacing:normal}
       .life-card .life-card-main{grid-template-columns:minmax(0,1fr) auto auto;align-items:baseline;gap:var(--life-metric-row-gap,3px) 0}
@@ -317,15 +351,16 @@
     <section class="life-clock" aria-label="Life Clock">
       <div class="life-head">
         <div class="life-title"><span class="ico" aria-hidden="true">◔</span><span class="life-title-full"><span class="life-marker">Life Clock</span></span><span class="life-title-short" aria-hidden="true"><span class="life-marker">Life Clock</span></span></div>
-        <div class="life-sub">남은 인생 시간</div>
+        <button class="life-setup-toggle" type="button" aria-controls="ebook-life-setup" aria-expanded="false" aria-label="LIFE CLOCK 설정">설정</button>
       </div>
-      <div class="life-setup" hidden>
-        <div class="life-setup-line"><span>인생시간 계산 설정 필요</span><button class="life-setup-toggle" type="button" aria-expanded="false">설정</button></div>
-        <form class="life-setup-form" hidden>
-          <label for="ebook-life-birth">생년월일 · 은퇴 65세 / 계획 80세</label>
+      <div class="life-setup" id="ebook-life-setup" hidden>
+        <form class="life-setup-form">
+          <label for="ebook-life-birth">생년월일</label>
           <input id="ebook-life-birth" type="date" required autocomplete="off"/>
-          <div class="life-setup-message">입력한 날짜는 이 브라우저의 chatgpt.com 로컬 저장소에만 저장됩니다.</div>
-          <button type="submit">저장 및 계산</button>
+          <label for="ebook-life-career">사회생활 시작일</label>
+          <input id="ebook-life-career" type="date" required autocomplete="off"/>
+          <div class="life-setup-message">은퇴 65세 · 계획 80세 · 평일 8시간 기준. 날짜는 이 브라우저에만 저장됩니다.</div>
+          <div class="life-setup-actions"><button class="life-setup-cancel" type="button">닫기</button><button type="submit">저장 및 계산</button></div>
           <div class="life-setup-error" role="status"></div>
         </form>
       </div>
@@ -430,33 +465,44 @@
   };
 
   const lifeCard = shadow.querySelector('.life-clock');
-  const lifeSetup=shadow.querySelector('.life-setup'),lifeSetupToggle=shadow.querySelector('.life-setup-toggle'),lifeSetupForm=shadow.querySelector('.life-setup-form'),lifeBirthInput=shadow.querySelector('#ebook-life-birth'),lifeSetupError=shadow.querySelector('.life-setup-error');
-  lifeSetupToggle.addEventListener('click',()=>{
-    lifeSetupForm.hidden=!lifeSetupForm.hidden;
-    lifeSetupToggle.setAttribute('aria-expanded',String(!lifeSetupForm.hidden));
-    if(!lifeSetupForm.hidden)lifeBirthInput.focus();
+  const lifeSetup=shadow.querySelector('.life-setup'),lifeSetupToggle=shadow.querySelector('.life-setup-toggle'),lifeSetupForm=shadow.querySelector('.life-setup-form'),lifeBirthInput=shadow.querySelector('#ebook-life-birth'),lifeCareerInput=shadow.querySelector('#ebook-life-career'),lifeSetupError=shadow.querySelector('.life-setup-error');
+  function showLifeSetup(open,focus=true) {
+    lifeSetup.hidden=!open;
+    lifeSetupToggle.setAttribute('aria-expanded',String(open));
+    lifeSetupError.textContent='';
+    if(open){
+      const {profile}=resolveLifeProfile();
+      lifeBirthInput.value=profile?lifeDateString(profile.birth):'';
+      lifeCareerInput.value=profile?.careerStart?lifeDateString(profile.careerStart):'';
+      lifeBirthInput.max=lifeDateString(new Date());
+      if(focus)lifeBirthInput.focus();
+    }else if(focus)lifeSetupToggle.focus();
     schedulePlacement();
+  }
+  lifeSetupToggle.addEventListener('click',()=>showLifeSetup(lifeSetup.hidden));
+  shadow.querySelector('.life-setup-cancel').addEventListener('click',()=>showLifeSetup(false));
+  lifeSetupForm.addEventListener('keydown',event=>{
+    if(event.key==='Escape'){event.preventDefault();event.stopPropagation();showLifeSetup(false);}
   });
   lifeSetupForm.addEventListener('submit',event=>{
     event.preventDefault();
-    const value=lifeBirthInput.value,next=localBirthProfile(value);
-    if(!next){lifeSetupError.textContent='유효한 생년월일을 입력해 주세요.';return;}
-    try{localStorage.setItem(LIFE_LOCAL_PREF,value);}catch(_){
-      lifeSetupError.textContent='브라우저 저장소를 사용할 수 없습니다. 기존 개인 설정 스크립트를 확인해 주세요.';return;
+    const raw={birthDate:lifeBirthInput.value,careerStartDate:lifeCareerInput.value};
+    if(!localBirthProfile(raw.birthDate)){lifeSetupError.textContent='유효한 생년월일을 입력해 주세요.';return;}
+    const next=parseLocalLifeSettings(raw);
+    if(!next){lifeSetupError.textContent='사회생활 시작일은 생년월일 이후, 은퇴일 이전이어야 합니다.';return;}
+    try{localStorage.setItem(LIFE_SETTINGS_PREF,JSON.stringify(raw));}catch(_){
+      lifeSetupError.textContent='브라우저 저장소를 사용할 수 없습니다.';return;
     }
-    localLife=next;lifeSetupError.textContent='';lifeBirthInput.value='';
+    explicitLife=next;showLifeSetup(false);
     updateLifeClock(new Date());schedulePlacement();
   });
   function syncLifeProfile() {
     const {profile,source}=resolveLifeProfile(),key=profile?.key||'';
     if(key===lifeKey&&source===lifeSource)return;
     LIFE=profile;lifeKey=key;lifeSource=source;lastLifeSecondKey='';
-    // Never hide the whole calculator on missing settings.
-    lifeSetup.hidden=!!LIFE;
-    if(LIFE){
-      lifeSetupForm.hidden=true;lifeSetupToggle.setAttribute('aria-expanded','false');
-      lifeBirthInput.value='';lifeSetupError.textContent='';
-    }else{
+    // The settings button stays accessible whether or not a profile exists.
+    // Do not close or overwrite an open draft on a background profile update.
+    if(!LIFE){
       for(const k of ['retireValue','workValue','afterValue','usedHours','remainingHours'])lifeEls[k].textContent='—';
       lifeEls.usedMeta.textContent='—';
       lifeEls.remainingMeta.textContent='—';
@@ -470,8 +516,8 @@
     if(started)schedulePlacement();
   }
   function onLifeSettingsStorage(event) {
-    if(event.key!==LIFE_LOCAL_PREF&&event.key!==null)return;
-    try{localLife=localBirthProfile(localStorage.getItem(LIFE_LOCAL_PREF));}catch(_){localLife=null;}
+    if(event.key!==LIFE_LOCAL_PREF&&event.key!==LIFE_SETTINGS_PREF&&event.key!==null)return;
+    explicitLife=readLifeSettings();localLife=readLegacyBirth();
     if(!disposed)updateLifeClock(new Date());
   }
   let lifeMountState = 'overlay-reserved-space';
@@ -557,9 +603,7 @@
     const seconds=(elapsed?Math.floor:Math.ceil)(Math.max(0,ms)/1000);
     return [TIME_FORMAT.format(Math.floor(seconds/3600)),String(Math.floor(seconds/60)%60).padStart(2,'0')+' : '+String(seconds%60).padStart(2,'0')];
   }
-  // The first day of the supplied start month is a provisional baseline (KST).
-  const CAREER_START_MS = Date.parse('2007-08-01T00:00:00+09:00');
-  function careerRemainingPercent(nowMs,retirementMs,startMs=CAREER_START_MS) {
+  function careerRemainingPercent(nowMs,retirementMs,startMs) {
     if(![nowMs,retirementMs,startMs].every(Number.isFinite)||retirementMs<=startMs)return null;
     return Math.max(0,Math.min(100,(retirementMs-nowMs)/(retirementMs-startMs)*100));
   }
@@ -568,7 +612,7 @@
     return Math.max(0,Math.min(100,remainingMs/totalMs*100));
   }
   function updateCareerBar(percent,bar=lifeEls.careerBar,fill=lifeEls.careerBarFill,
-      description='2007.08.01 시작(월 기준 가정) ~ 은퇴일 · 전체 사회생활 기간 중') {
+      description='사회생활 시작일 ~ 은퇴일 · 전체 사회생활 기간 중') {
     const valid=percent!==null&&Number.isFinite(percent);
     if(bar.hidden===valid)bar.hidden=!valid;
     if(!valid){bar.removeAttribute('aria-valuenow');bar.removeAttribute('aria-valuetext');bar.removeAttribute('title');return;}
@@ -577,8 +621,9 @@
     if(bar.getAttribute('aria-valuenow')!==label){
       bar.setAttribute('aria-valuenow',label);
       bar.setAttribute('aria-valuetext',label+'% 남음');
-      bar.title=description+' '+label+'% 남음';
     }
+    const title=description+' '+label+'% 남음';
+    if(bar.title!==title)bar.title=title;
   }
   const durationNodes=new WeakMap();
   function setLifeDuration(el,ms,{elapsed=false,careerRemaining=undefined}={}) {
@@ -624,14 +669,16 @@
     const beforeRetirement=ms<retirementMs;
     const lifeMs=age80Ms-LIFE.birth.getTime();
     const used=Math.min(1,Math.max(0,(ms-LIFE.birth.getTime())/lifeMs))*100;
-    const careerRemaining=careerRemainingPercent(ms,retirementMs);
+    const startMs=LIFE.careerStart?.getTime()??NaN;
+    const careerRemaining=careerRemainingPercent(ms,retirementMs,startMs);
+    const careerDescription=LIFE.careerStart?lifeDateString(LIFE.careerStart).replaceAll('-','.')+' 시작'+(LIFE.careerProvisional?'(월 기준 가정)':'')+' ~ 은퇴일':'사회생활 시작일 ~ 은퇴일';
     setLifeDuration(lifeEls.retireValue,retirementMs-ms,{careerRemaining});
-    updateCareerBar(careerRemaining);
-    const totalWorkMs=calculateWorkDurationMs(CAREER_START_MS,retirementMs);
-    const remainingWorkMs=calculateWorkDurationMs(Math.max(ms,CAREER_START_MS),retirementMs);
+    updateCareerBar(careerRemaining,lifeEls.careerBar,lifeEls.careerBarFill,careerDescription+' · 전체 사회생활 기간 중');
+    const totalWorkMs=Number.isFinite(startMs)?calculateWorkDurationMs(startMs,retirementMs):NaN;
+    const remainingWorkMs=calculateWorkDurationMs(Number.isFinite(startMs)?Math.max(ms,startMs):ms,retirementMs);
     const workRemaining=remainingDurationPercent(remainingWorkMs,totalWorkMs);
     setLifeDuration(lifeEls.workValue,remainingWorkMs,{careerRemaining:workRemaining});
-    updateCareerBar(workRemaining,lifeEls.workBar,lifeEls.workBarFill,'2007.08.01 시작(월 기준 가정) ~ 은퇴일 · 평일 8시간 기준 전체 예정 근무시간 중');
+    updateCareerBar(workRemaining,lifeEls.workBar,lifeEls.workBarFill,careerDescription+' · 평일 8시간 기준 전체 예정 근무시간 중');
     const totalAfterMs=age80Ms-retirementMs;
     const remainingAfterMs=Math.max(0,age80Ms-Math.max(ms,retirementMs));
     const afterRemaining=remainingDurationPercent(remainingAfterMs,totalAfterMs);
@@ -1389,9 +1436,9 @@
     if (PAGE[RUNTIME_KEY]?.dispose === dispose) delete PAGE[RUNTIME_KEY];
   }
   PAGE[RUNTIME_KEY] = {
-    version: '3.11.48', dispose,
+    version: '3.11.49', dispose,
     diagnostics: () => ({
-      version: '3.11.48', ...placementReport,
+      version: '3.11.49', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
