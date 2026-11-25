@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo · Status & Command Center
 // @namespace    jaroo-company.local
-// @version      6.9.9
+// @version      6.9.10
 // @description  E-book RUN/DONE and ALL/ONLY; first-paint quiet controls, verified native-state detection and cross-tab synchronization.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -15,7 +15,7 @@
   const RUNTIME = '__jarooCommandCenterRuntimeV4';
   window[RUNTIME]?.dispose?.();
   window.__jarooNativeCapture?.stop?.();
-  const VERSION = '6.9.9';
+  const VERSION = '6.9.10';
   const HOVER_MS = 400;
   const ROOTS = '#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]';
   const ARCHIVE = '[data-sidebar-archive-chatgpt-id]';
@@ -974,7 +974,7 @@
     .jaroo-focus-row{display:flex;align-items:center;gap:5px;min-width:0;padding:5px 2px;color:#292D30;text-decoration:none;border-radius:3px;cursor:pointer}
     .jaroo-focus-row:hover,.jaroo-focus-row:focus-visible{background:#DFE3E5}
     .jaroo-focus-row[aria-disabled="true"]{opacity:.55;cursor:default}
-    .jaroo-focus-name{flex:1 1 auto;min-width:0;font-size:var(--widget-meta);line-height:1.3;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+    .jaroo-focus-name{display:block;flex:1 1 auto;min-width:0;font-size:var(--widget-meta);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .jaroo-focus-tag{order:2;flex:0 0 16px;width:16px;height:16px;display:grid;place-items:center;margin-left:auto;color:var(--eb-accent-ink,#303438)}
     .jaroo-focus-tag svg{display:block;width:15px;height:15px;transform-origin:center}
     @keyframes jaroo-focus-spin{to{transform:rotate(360deg)}}
