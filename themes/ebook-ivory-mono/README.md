@@ -1,3 +1,8 @@
+# Clock v3.11.35 — LIFE PROGRESS 상단 구분선 복원
+
+- LIFE PROGRESS 바로 위에 회사명과 LIFE CLOCK 사이의 구분선과 동일한 1px #C5CDD0(var(--line)) 가로선을 복원. 기존 마진·패딩, 제목 상하 여백, 그래프 및 모든 기능 유지.
+- JS 구문, 변경 범위 역검사, 이전/신규 SHA-256 및 배포본 대조. 실제 로그인 Chrome 시각 검수 및 개발 저장소 동기화는 미실시. Clock만 업데이트.
+
 # Clock v3.11.34 — LIFE CLOCK 제목 상하 여백 절반으로 축소
 
 - LIFE CLOCK 제목 바로 위 여백 21px → 10.5px. 제목 아래는 헤더 하단 여백 5px → 2.5px, 첫 카드의 상단 패딩 8px → 4px(좁은 폭 5px → 2.5px)로 합산 간격을 절반으로 축소. 다른 카드의 행간 및 간격, LIFE PROGRESS 단락 앞 여백 21px, 형광펜, 글꼴 및 모든 기능 유지.

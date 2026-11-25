@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.34
+// @version      3.11.35
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -182,7 +182,7 @@
       .life-card .life-label{font-weight:550;color:#23272B;line-height:1.02}
       .life-card .life-meta{white-space:nowrap;line-height:1.02}
       .life-card .life-value{white-space:nowrap;line-height:.95}
-      .life-progress{margin:calc(var(--life-section-gap,21px) - 7px) 0 0;padding:7px 0 0;border-top:1px solid #D4DADC}
+      .life-progress{margin:calc(var(--life-section-gap,21px) - 7px) 0 0;padding:7px 0 0;border-top:1px solid var(--line)}
       .life-progress-head{display:flex;flex-direction:row;align-items:baseline;justify-content:space-between;flex-wrap:nowrap;gap:10px;margin-bottom:11px}
       .life-progress-title{font:650 calc(var(--widget-main) + 1px)/1.3 var(--font);color:var(--ink);letter-spacing:.025em;text-transform:uppercase;white-space:nowrap;flex:0 0 auto}
       .life-progress-scale{white-space:nowrap;flex:0 0 auto;margin-inline-start:auto;text-align:right;letter-spacing:-.035em;line-height:1.02}
@@ -278,7 +278,7 @@
       }
       /* All three metrics share the rounded progress track. */
       .life-card:not(.retire){border-bottom:0;padding-bottom:0}
-      .life-grid+.life-progress{border-top:0}
+      .life-grid+.life-progress{border-top:1px solid var(--line)}
       @container jaroo-dashboard (min-width:180px) and (max-width:249px){
         .life-card.work .life-label{overflow-wrap:anywhere;word-break:normal}
       }
@@ -1201,9 +1201,9 @@
     if (window[RUNTIME_KEY]?.dispose === dispose) delete window[RUNTIME_KEY];
   }
   window[RUNTIME_KEY] = {
-    version: '3.11.34', dispose,
+    version: '3.11.35', dispose,
     diagnostics: () => ({
-      version: '3.11.34', ...placementReport,
+      version: '3.11.35', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
