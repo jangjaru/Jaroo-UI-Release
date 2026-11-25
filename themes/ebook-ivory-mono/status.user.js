@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo · Status & Command Center
 // @namespace    jaroo-company.local
-// @version      6.9.15
+// @version      6.9.16
 // @description  E-book RUN/DONE and ALL/ONLY; first-paint quiet controls, verified native-state detection and cross-tab synchronization.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -15,7 +15,7 @@
   const RUNTIME = '__jarooCommandCenterRuntimeV4';
   window[RUNTIME]?.dispose?.();
   window.__jarooNativeCapture?.stop?.();
-  const VERSION = '6.9.15';
+  const VERSION = '6.9.16';
   const HOVER_MS = 400;
   const ROOTS = '#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]';
   const ARCHIVE = '[data-sidebar-archive-chatgpt-id]';
@@ -1109,7 +1109,7 @@
     const css=document.createElement('style');css.id='jaroo-v4-panel-style';
     css.textContent=`
       #jaroo-v4-quick-panel{position:fixed;z-index:2147483400;min-width:240px;max-width:min(350px,calc(100vw - 20px));max-height:min(360px,65vh);overflow:auto;padding:10px;border:1px solid #C5CDD0;border-radius:5px;background:#F5F6F6;color:#292D30;font:14px/1.4 "Pretendard Variable","Pretendard",sans-serif;display:none;box-sizing:border-box}
-      #jaroo-v4-quick-panel .head{display:flex;justify-content:flex-start;gap:20px;align-items:center;margin-bottom:7px;font-weight:550}
+      #jaroo-v4-quick-panel .head{display:flex;justify-content:space-between;gap:20px;align-items:center;margin-bottom:7px;font-weight:550}
       #jaroo-v4-quick-panel .dismiss{border:1px solid #C5CDD0;background:#E7EAEB;color:#535B60;border-radius:3px;cursor:pointer;padding:3px 7px;font:inherit}
       #jaroo-v4-quick-panel a{display:flex;align-items:center;gap:4px;padding:8px 5px;color:#535B60;text-decoration:none;border-radius:3px;cursor:pointer}
       #jaroo-v4-quick-panel a:hover,#jaroo-v4-quick-panel a:focus-visible{background:#E7EAEB;outline:1px solid #879398}
