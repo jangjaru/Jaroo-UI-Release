@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.42
+// @version      3.11.43
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -230,7 +230,7 @@
       .digital-time{display:flex;align-items:center;justify-content:flex-end;min-width:0;height:var(--clock-digit-height);color:#41494D;white-space:nowrap}
       .pair{display:inline-flex;align-items:center;gap:0;flex:0 0 auto}
       .digit{display:inline-block;position:relative;flex:0 0 var(--clock-digit-width);width:var(--clock-digit-width);height:var(--clock-digit-height)}
-      .digit .seg{position:absolute;display:block;pointer-events:none;background:#CACFD1}
+      .digit .seg{position:absolute;display:block;pointer-events:none;background:#D5DADC}
       .digit .seg.on{background:#41494D}
       .seg-a,.seg-g,.seg-d{left:calc(var(--clock-segment-thickness)*.65 + .5px);right:calc(var(--clock-segment-thickness)*.65 + .5px);height:var(--clock-segment-thickness);clip-path:polygon(13% 0,87% 0,100% 50%,87% 100%,13% 100%,0 50%)}
       .seg-a{top:0}.seg-g{top:calc(50% - var(--clock-segment-thickness)/2)}.seg-d{bottom:0}
@@ -1379,9 +1379,9 @@
     if (PAGE[RUNTIME_KEY]?.dispose === dispose) delete PAGE[RUNTIME_KEY];
   }
   PAGE[RUNTIME_KEY] = {
-    version: '3.11.42', dispose,
+    version: '3.11.43', dispose,
     diagnostics: () => ({
-      version: '3.11.42', ...placementReport,
+      version: '3.11.43', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
