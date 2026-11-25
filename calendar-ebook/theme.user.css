@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo Google Calendar E-Book
 @namespace    jaroo.calendar.ebook
-@version      0.5.11
+@version      0.5.12
 @description  Cool E-Ink Graph Paper · paired with Calendar E-Book Companion
 @author       Jaroo
 @license      UNLICENSED
@@ -42,7 +42,7 @@
 /* Light appearance is selected in Google Calendar itself. No layout,
    event text, native date/colour data, or click targets are rewritten. */
 html[data-jaroo-calendar-theme="ebook"] {
-  --jaroo-cal-style-version: 0.5.11;
+  --jaroo-cal-style-version: 0.5.12;
   --jaroo-cal-bg:#EFF1F2;
   --jaroo-cal-sidebar:#E7EAEB;
   --jaroo-cal-surface:#F5F6F6;
@@ -1014,6 +1014,29 @@ html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-caption="t
   html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"]:has(:focus-visible) :is([data-jaroo-cal-people-search-caption="true"],[data-jaroo-cal-people-search-input="true"]){
     text-decoration:underline!important;
     text-underline-offset:3px!important;
+  }
+}
+
+/* v0.5.12 — Native month viewport edge paper, not a layout change.
+   The visible right/bottom strips are #F8FAFD; the approved paper is #EFF1F2.
+   Use the same paper on verified empty gutters and scroll tracks/corner.
+   Never remove scrollbars, resize the grid, or recolor native event controls. */
+@media(forced-colors:none){
+  html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-month-edge-host="true"],[data-jaroo-cal-month-grid="true"]){
+    --gm3-sys-color-surface-container-lowest:var(--jaroo-cal-bg)!important;
+    --gm3-sys-color-surface-container-low:var(--jaroo-cal-bg)!important;
+    scrollbar-color:var(--jaroo-cal-calendar-line) var(--jaroo-cal-bg)!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-edge-paper="true"]{
+    background-color:var(--jaroo-cal-bg)!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-month-edge-host="true"],[data-jaroo-cal-month-grid="true"])::-webkit-scrollbar-track,
+  html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-month-edge-host="true"],[data-jaroo-cal-month-grid="true"])::-webkit-scrollbar-track-piece,
+  html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-month-edge-host="true"],[data-jaroo-cal-month-grid="true"])::-webkit-scrollbar-corner,
+  html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-month-edge-host="true"],[data-jaroo-cal-month-grid="true"]) :where(*)::-webkit-scrollbar-track,
+  html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-month-edge-host="true"],[data-jaroo-cal-month-grid="true"]) :where(*)::-webkit-scrollbar-track-piece,
+  html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-month-edge-host="true"],[data-jaroo-cal-month-grid="true"]) :where(*)::-webkit-scrollbar-corner{
+    background-color:var(--jaroo-cal-bg)!important;
   }
 }
 
