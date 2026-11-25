@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.52
+// @version      3.11.53
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -187,6 +187,10 @@
       .brand-word{display:flex;flex:1 1 auto;flex-direction:column;align-items:flex-start;min-width:0;max-width:100%;gap:6px}
       .brand-title{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 .38em;font:700 24px/1.02 var(--font);font-synthesis:weight;letter-spacing:-.045em;text-align:left;min-width:0;max-width:100%}
       .brand-title span{max-width:100%;overflow-wrap:anywhere}
+      /* Approved A: pink felt-tip highlight, behind the lower half of Jaroo's only.
+         Paint-only layer; no line-height, wrapping, hit-area or layout changes. */
+      .brand-jaroo{position:relative;isolation:isolate}
+      .brand-jaroo::before{content:"";position:absolute;pointer-events:none;z-index:-1;inset-inline:-.075em;inset-block:48% 3%;background:var(--eb-project-mark-exec,#F3B9CB);opacity:.90;clip-path:polygon(1% 12%,8% 4%,24% 8%,40% 3%,58% 6%,79% 0%,96% 8%,98% 18%,97% 28%,100% 38%,98% 51%,100% 63%,96% 77%,98% 87%,85% 94%,69% 91%,53% 98%,34% 95%,17% 100%,3% 92%,1% 74%,3% 58%,0% 39%,2% 25%)}
       .brand-subtitle{font:450 12px/1.3 var(--font);letter-spacing:.075em;color:var(--muted);max-width:100%;overflow-wrap:normal}
       .brand-arrow{display:none}
       .ebook-time-toggle{position:absolute;inset-block-start:0;inset-inline-end:0;width:25px;height:25px;display:grid;place-items:center;z-index:2;border:0;border-radius:3px;background:transparent;color:var(--muted);cursor:pointer;padding:0}
@@ -1426,9 +1430,9 @@
     if (PAGE[RUNTIME_KEY]?.dispose === dispose) delete PAGE[RUNTIME_KEY];
   }
   PAGE[RUNTIME_KEY] = {
-    version: '3.11.52', dispose,
+    version: '3.11.53', dispose,
     diagnostics: () => ({
-      version: '3.11.52', ...placementReport,
+      version: '3.11.53', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
