@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.44
+// @version      3.11.45
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -152,7 +152,7 @@
       }
       *,*::before,*::after{box-sizing:border-box}
       button{font-family:var(--font);color:inherit}
-      .fallback-brand{display:flex;align-items:center;width:100%;padding:7px 29px 9px 0;margin:0;border:0;border-bottom:1px solid var(--line);background:none;cursor:pointer;text-align:left;color:var(--ink)}
+      .fallback-brand{display:flex;align-items:center;width:100%;padding:0 29px 9px 0;margin:0;border:0;border-bottom:1px solid var(--line);background:none;cursor:pointer;text-align:left;color:var(--ink)}
       .fallback-brand[aria-disabled="true"]{cursor:default}
       .fallback-brand:focus-visible,.ebook-time-toggle:focus-visible{outline:1px solid #879398;outline-offset:1px}
       .brand-word{display:flex;flex:1 1 auto;flex-direction:column;align-items:flex-start;min-width:0;max-width:100%;gap:6px}
@@ -160,7 +160,7 @@
       .brand-title span{max-width:100%;overflow-wrap:anywhere}
       .brand-subtitle{font:450 12px/1.3 var(--font);letter-spacing:.075em;color:var(--muted);max-width:100%;overflow-wrap:normal}
       .brand-arrow{display:none}
-      .ebook-time-toggle{position:absolute;inset-block-start:6px;inset-inline-end:0;width:25px;height:25px;display:grid;place-items:center;z-index:2;border:0;border-radius:3px;background:transparent;color:var(--muted);cursor:pointer;padding:0}
+      .ebook-time-toggle{position:absolute;inset-block-start:0;inset-inline-end:0;width:25px;height:25px;display:grid;place-items:center;z-index:2;border:0;border-radius:3px;background:transparent;color:var(--muted);cursor:pointer;padding:0}
       .ebook-time-toggle:hover{background:#DFE3E5}
       .ebook-time-toggle svg{width:13px;height:13px;display:block}
       :host([data-ebook-time-collapsed="true"]) .ebook-time-toggle svg{transform:rotate(-90deg)}
@@ -211,7 +211,7 @@
       .life-progress-stat.remaining{align-items:flex-start;text-align:left}
       .life-progress-stat > span{font:450 var(--widget-meta)/1.02 var(--font);color:var(--muted);letter-spacing:-.035em;white-space:nowrap}
       .life-progress-stat strong{display:block;font:650 var(--widget-main)/1.02 var(--mono);font-variant-numeric:tabular-nums;color:var(--ink);max-width:100%;white-space:nowrap;letter-spacing:-.035em}
-      .life-progress-unit{font-size:85%}
+      .life-progress-unit{font-size:85%;margin-inline-start:.16em}
       .life-progress-stat strong[data-unavailable] .life-progress-unit{display:none}
       @container jaroo-dashboard (max-width:219px){.life-progress-unit{font-size:70%}}
       @container jaroo-dashboard (max-width:179px){.life-progress-meta{grid-template-columns:minmax(0,1fr);row-gap:8px}}
@@ -1104,7 +1104,7 @@
     style('left','auto');style('top','auto');style('right','auto');
     style('width',`${Math.floor(maxWidth)}px`);
     style('margin-left',`${left}px`);
-    style('margin-top','5px');style('margin-bottom','11px');
+    style('margin-top','0px');style('margin-bottom','11px');
     style('padding','0');style('border','0');
     style('max-width',`calc(100% - ${left+3}px)`);
     style('clip-path','none');style('overflow','visible');
@@ -1389,9 +1389,9 @@
     if (PAGE[RUNTIME_KEY]?.dispose === dispose) delete PAGE[RUNTIME_KEY];
   }
   PAGE[RUNTIME_KEY] = {
-    version: '3.11.44', dispose,
+    version: '3.11.45', dispose,
     diagnostics: () => ({
-      version: '3.11.44', ...placementReport,
+      version: '3.11.45', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
