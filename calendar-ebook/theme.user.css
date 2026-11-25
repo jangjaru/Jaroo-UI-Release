@@ -818,6 +818,9 @@ html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo
   html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event-clean="true"][data-jaroo-cal-event-row="true"]{
     align-items:center!important;column-gap:4px!important;line-height:1.3!important;margin-inline-start:0!important;
   }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event-clean="true"] [data-jaroo-cal-event-row="true"]{
+    padding-inline-start:0!important;
+  }
   html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event-clean="true"] [data-jaroo-cal-time-wrap="true"]{
     display:inline-flex!important;align-items:center!important;flex:0 0 auto!important;
     inline-size:auto!important;min-inline-size:0!important;max-inline-size:none!important;

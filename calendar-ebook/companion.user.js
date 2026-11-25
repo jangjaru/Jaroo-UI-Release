@@ -557,9 +557,8 @@
     if(!labels.length)return [];
     const rr=root.getBoundingClientRect(),first=labels[0],fr=first.getBoundingClientRect();
     if(rr.width<24||rr.height<9||fr.height<3)return [];
-    const plan=[],set=new Set(),add=(n,key)=>{
-      if(!n||set.has(key+'@'+(n===root?'root':n===owner?'owner':'other'))&&n===root)return;
-      if(!plan.some(([x,k])=>x===n&&k===key))plan.push([n,key,'true']);
+    const plan=[],add=(n,key)=>{
+      if(n&&!plan.some(([x,k])=>x===n&&k===key))plan.push([n,key,'true']);
     };
     add(root,'data-jaroo-cal-event-clean');
     const closeLayer=n=>{
