@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo · Google Calendar E-Book Companion
 // @namespace    jaroo.calendar.ebook
-// @version      0.1.0
+// @version      0.2.0
 // @description  Cool E-Ink Graph Paper · native Calendar event labels, More popup and local agenda.
 // @match        https://calendar.google.com/calendar/*
 // @run-at       document-idle
@@ -12,7 +12,7 @@
 // ==/UserScript==
 
 /*
- * Jaroo Calendar E-Book v0.1.0 · 2026-11-25
+ * Jaroo Calendar E-Book v0.2.0 · 2026-11-25
  * Requires the paired E-Book Stylus CSS and native Light appearance.
  * Forked from the working Calendar Companion v1.3.7; history below is retained.
  * v1.3.1: preserve visually present month-grid/list colors when Calendar temporarily
@@ -223,11 +223,11 @@
   // BEGIN_JAROO_ADAPTER
   const RUNTIME = '__jarooCalendarCompanionV1';
   window[RUNTIME]?.dispose?.();
-  const VERSION = '0.1.0';
+  const VERSION = '0.2.0';
   const CONFIG = Object.freeze({ timeZone: 'Asia/Seoul', futureDays: 7, maxPins: 3, maxEvents: 1200, settleMs: 180, recoveryMs: 5000 });
   const EVENT = '[data-eventid]';
   const EXCLUDE = '[role="dialog"],[role="menu"],[role="listbox"],[hidden],[inert],[aria-hidden="true"]';
-  const MARKERS = ['data-jaroo-cal-event','data-jaroo-cal-color','data-jaroo-cal-title','data-jaroo-cal-date-label','data-jaroo-cal-today','data-jaroo-cal-selected','data-jaroo-cal-grid','data-jaroo-cal-month-grid','data-jaroo-cal-month-title','data-jaroo-cal-surface','data-jaroo-cal-deadline','data-jaroo-cal-priority','data-jaroo-cal-semantic','data-jaroo-cal-category','data-jaroo-cal-status'];
+  const MARKERS = ['data-jaroo-cal-event','data-jaroo-cal-color','data-jaroo-cal-title','data-jaroo-cal-date-label','data-jaroo-cal-today','data-jaroo-cal-selected','data-jaroo-cal-grid','data-jaroo-cal-month-grid','data-jaroo-cal-month-title','data-jaroo-cal-today-label','data-jaroo-cal-brand','data-jaroo-cal-section','data-jaroo-cal-mini','data-jaroo-cal-mini-title','data-jaroo-cal-mini-day','data-jaroo-cal-create-label','data-jaroo-cal-control','data-jaroo-cal-sidebar-panel','data-jaroo-cal-surface','data-jaroo-cal-deadline','data-jaroo-cal-priority','data-jaroo-cal-semantic','data-jaroo-cal-category','data-jaroo-cal-status'];
   const eventStyles = new Map(), marked = new Set(), dateCache = new WeakMap(), textRenderCache = new WeakMap();
   let markerPlan = null;
   let moreProbe = { textCandidates:0, gridAnchoredCandidates:0, verifiedOverlays:0, rowCandidates:0 };
@@ -518,7 +518,10 @@
       touched.add(info.cell);
       if (info.date === currentDay) mark(info.cell, 'data-jaroo-cal-today');
       if (info.selected) mark(info.cell, 'data-jaroo-cal-selected');
-      for (const label of info.labels) { mark(label, 'data-jaroo-cal-date-label'); touched.add(label); }
+      for(const label of info.labels){
+        mark(label,'data-jaroo-cal-date-label');touched.add(label);
+        if(info.date===currentDay)mark(label,'data-jaroo-cal-today-label');
+      }
     }
   }
   function reconcileMarkers() {
@@ -615,6 +618,7 @@
   function paintMorePopup(touched) {
     let count = 0;
     for (const popup of morePopupRoots()) {
+      mark(popup,'data-jaroo-cal-surface','more');touched.add(popup);
       const seen = new Set();
       for (const owner of popup.querySelectorAll(EVENT)) {
         if (owner.closest('[role="grid"],[role="gridcell"]')) continue;
@@ -736,6 +740,7 @@
       }
       discoveredRows += rows.length;
       if (rows.length < 2) continue;
+      mark(dialog,'data-jaroo-cal-surface','more');touched.add(dialog);
       popups++;
       for (const { button, info } of rows) {
         const titleNodes = [...button.querySelectorAll('span,div')].filter(node =>
@@ -801,6 +806,7 @@
     let painted=0;
     for (const [popup,groups] of seen) {
       if (groups.size<2) continue;
+      mark(popup,'data-jaroo-cal-surface','more');touched.add(popup);
       moreProbe.rowCandidates+=groups.size;
       for(const [node,info] of groups) {
         const titleNodes=[...node.querySelectorAll('span,div')].filter(x=>
@@ -815,14 +821,188 @@
     }
     return painted;
   }
+
+  // v0.2: discover only the calendar's presentation chrome. The existing
+  // calendar scan owns scheduling/cleanup. This never creates event records,
+  // relocates DOM nodes, clicks native controls, or rewrites text.
+  const CHROME_CONTROL='button,[role="button"],[role="tab"]';
+  const CHROME_LABEL='span,div,h1,h2,h3,[role="heading"],button,[role="button"],a';
+  const CHROME_EXCLUDED='[hidden],[inert],[role="dialog"],[role="menu"],[role="listbox"],[data-eventid]';
+  function chromeControlKind(values,area,isSegment=false,hasPopup=false){
+    const labels=values.map(text).filter(Boolean);
+    if(area==='sidebar'){
+      return labels.some(v=>/^(?:만들기|일정 만들기|새 일정 만들기|Create(?: event)?)$/iu.test(v))?'create':null;
+    }
+    if(labels.some(v=>/^(?:오늘|Today)(?:\s*\([^)]*\))?$/iu.test(v)))return 'today';
+    if(labels.some(v=>/^(?:업그레이드|Upgrade)$/iu.test(v)))return 'upgrade';
+    if(isSegment&&labels.some(v=>/^(?:Calendar|Google Calendar|Tasks|Google Tasks|캘린더|할 일|일정)$/iu.test(v)))return 'segment';
+    if(hasPopup&&labels.some(v=>/^(?:월|월간|주|주간|일|일간|연도|일정|4일|Month|Week|Day|Year|Schedule|4 days)(?:\s*보기)?$/iu.test(v)))return 'view';
+    return null;
+  }
+  function chromeBox(node,cache){
+    if(cache.has(node))return cache.get(node);
+    let result=null;
+    if(node instanceof Element&&node.isConnected&&!node.closest(CHROME_EXCLUDED)){
+      const r=node.getBoundingClientRect(),s=getComputedStyle(node);
+      if(r.width>2&&r.height>2&&r.right>0&&r.bottom>0&&r.left<innerWidth&&r.top<innerHeight&&
+         s.display!=='none'&&!['hidden','collapse'].includes(s.visibility)&&s.opacity!=='0'&&
+         !/inset\(\s*50%/i.test(s.clipPath||'')&&!/^rect\(0(?:px)?[, ]+0(?:px)?[, ]+0(?:px)?[, ]+0(?:px)?\)$/i.test(s.clip||''))result=r;
+    }
+    cache.set(node,result);return result;
+  }
+  function exactChromeLabels(root,match,cache,limit=700){
+    const found=[];
+    let n=0;
+    for(const node of root.querySelectorAll(CHROME_LABEL)){
+      if(++n>limit)break;
+      if(node.closest(CHROME_EXCLUDED))continue;
+      const value=text(node.textContent);
+      if(value.length>80||!match(value)||!chromeBox(node,cache))continue;
+      found.push(node);
+    }
+    return found.filter(node=>!found.some(other=>node!==other&&node.contains(other)));
+  }
+  function inspectCalendarChrome(){
+    const cache=new WeakMap(),box=node=>chromeBox(node,cache),plan=[];
+    const add=(node,name,value='true')=>{if(node)plan.push([node,name,value]);};
+    const mainBoxes=roots.map(box).filter(Boolean);
+    const mainLeft=mainBoxes.length?Math.min(...mainBoxes.map(r=>r.left)):innerWidth;
+    const headers=[...document.querySelectorAll('[role="banner"],header')].filter(node=>{
+      const r=box(node);return r&&r.top<100&&r.height>=26&&r.height<=160&&r.width>=Math.min(280,innerWidth*.6)&&!node.closest(EVENT);
+    }).slice(0,12);
+    let header=null,month=null;
+    for(const node of headers){
+      const labels=exactChromeLabels(node,hdrIsMonthLabel,cache,500);
+      if(labels.length===1){header=node;month=labels[0];break;}
+    }
+    header=header||headers.find(n=>n.matches('[role="banner"]'))||headers[0]||null;
+    const names=node=>[node.getAttribute('aria-label'),node.getAttribute('title'),node.textContent];
+    const roleControl=(node,area)=>chromeControlKind(names(node),area,
+      node.hasAttribute('aria-pressed')||node.hasAttribute('aria-selected')||node.getAttribute('role')==='tab',
+      node.hasAttribute('aria-haspopup')||node.hasAttribute('aria-expanded'));
+    if(header){
+      add(header,'data-jaroo-cal-surface','header');add(month,'data-jaroo-cal-month-title');
+      const brands=exactChromeLabels(header,v=>/^(?:Calendar|Google Calendar|캘린더)$/iu.test(v),cache,500)
+        .filter(node=>!node.closest('[aria-pressed],[aria-selected],[role="tab"]'));
+      if(brands.length===1)add(brands[0],'data-jaroo-cal-brand');
+      for(const control of header.querySelectorAll(CHROME_CONTROL)){
+        const kind=roleControl(control,'header');
+        if(kind&&box(control))add(control,'data-jaroo-cal-control',kind);
+      }
+    }
+    // Find the real left rail using its own calendar labels and bounded
+    // geometry. In particular, never mark main or a right-side add-on rail.
+    const sectionMatch=v=>/^(?:내 캘린더|다른 캘린더|예약 페이지|My calendars|Other calendars|Booking pages)$/iu.test(v);
+    const railCandidates=new Set(document.querySelectorAll('aside,[role="complementary"],[role="navigation"]'));
+    const railBox=node=>{
+      if(!node||node===document.body||node===document.documentElement||roots.some(root=>root===node||root.contains(node)||node.contains(root))||header?.contains(node)||(header&&node.contains(header)))return null;
+      const r=box(node);
+      return r&&r.width>=115&&r.width<=430&&r.height>=160&&r.left>=-6&&r.left<=100&&r.right<=mainLeft+16?r:null;
+    };
+    for(const root of roots){
+      for(let p=root,depth=0;p&&depth<5&&p!==document.body;p=p.parentElement,depth++){
+        for(const sibling of p.parentElement?.children||[]){
+          if(sibling!==p&&railBox(sibling))railCandidates.add(sibling);
+        }
+      }
+    }
+    // Fallback for Calendar builds without semantic aside/complementary.
+    // Only the explicitly named create control is used as an anchor.
+    let controlsSeen=0;
+    for(const control of document.querySelectorAll(CHROME_CONTROL)){
+      if(inRoots(control)||header?.contains(control)||control.closest(CHROME_EXCLUDED))continue;
+      if(++controlsSeen>180)break;
+      if(roleControl(control,'sidebar')!=='create'||!box(control))continue;
+      for(let p=control.parentElement,depth=0;p&&depth<10&&p!==document.body;p=p.parentElement,depth++)
+        if(railBox(p))railCandidates.add(p);
+    }
+    const rails=[];
+    for(const node of railCandidates){
+      const r=railBox(node);if(!r)continue;
+      const label=text(node.textContent);
+      const hasSection=/(?:내 캘린더|다른 캘린더|예약 페이지|My calendars|Other calendars|Booking pages)/iu.test(label);
+      const hasMini=Boolean(node.querySelector('[role="grid"],table'));
+      const hasCreate=[...node.querySelectorAll(CHROME_CONTROL)].slice(0,100).some(c=>roleControl(c,'sidebar')==='create');
+      if((hasSection&&(hasMini||hasCreate))||(hasMini&&hasCreate))rails.push({node,r});
+    }
+    rails.sort((a,b)=>b.r.width*b.r.height-a.r.width*a.r.height);
+    const rail=rails[0]?.node||null;
+    if(rail){
+      add(rail,'data-jaroo-cal-surface','sidebar');
+      const railRect=box(rail);
+      for(const label of exactChromeLabels(rail,sectionMatch,cache)){
+        add(label,'data-jaroo-cal-section');
+        // Only quiet, neutral enclosing section panels; exclude buttons and
+        // preserve background-color checkboxes / user-selected swatches.
+        for(let p=label.parentElement,depth=0;p&&p!==rail&&depth<5;p=p.parentElement,depth++){
+          if(p.matches(CHROME_CONTROL)||p.closest('[role="grid"],table'))continue;
+          const r=box(p);if(!r||r.width<railRect.width*.70||r.height>railRect.height*.78)continue;
+          if(p.querySelector('[role="checkbox"],input[type="checkbox"]')){add(p,'data-jaroo-cal-sidebar-panel');break;}
+          if(r.height>=20&&r.height<=60){add(p,'data-jaroo-cal-sidebar-panel');break;}
+        }
+      }
+      for(const control of rail.querySelectorAll(CHROME_CONTROL)){
+        if(roleControl(control,'sidebar')==='create'&&box(control)){
+          add(control,'data-jaroo-cal-control','create');
+          const labels=exactChromeLabels(control,v=>/^(?:만들기|Create)$/iu.test(v),cache,40);
+          if(labels.length===1)add(labels[0],'data-jaroo-cal-create-label');
+        }
+      }
+      const miniGrids=[...rail.querySelectorAll('[role="grid"],table')].filter(node=>{
+        const r=box(node);
+        return r&&r.width>=75&&r.width<=370&&r.height>=75&&r.height<=350&&node.querySelectorAll('[role="gridcell"],td,button,[role="button"]').length>=20&&!node.querySelector(EVENT);
+      });
+      const mini=miniGrids.find(node=>!miniGrids.some(other=>other!==node&&other.contains(node)));
+      if(mini){
+        add(mini,'data-jaroo-cal-mini');
+        const candidates=[...mini.querySelectorAll('[aria-current="date"],[aria-selected="true"]')];
+        for(const node of candidates){
+          if(!box(node))continue;
+          const numeric=v=>/^(?:[1-9]|[12]\d|3[01])$/u.test(v);
+          const today=node.getAttribute('aria-current')==='date';
+          let target=null;
+          if(node.matches(CHROME_CONTROL)&&numeric(text(node.textContent)))target=node;
+          else {
+            const buttons=[...node.querySelectorAll(CHROME_CONTROL)].filter(n=>numeric(text(n.textContent))&&box(n));
+            if(buttons.length===1)target=buttons[0];
+            else if(numeric(text(node.textContent)))target=node;
+          }
+          if(target)add(target,'data-jaroo-cal-mini-day',today||target.getAttribute('aria-current')==='date'?'today':'selected');
+        }
+        // Some builds expose the current mini day only as a date label. Do
+        // not guess from the day number: require an explicit full date.
+        for(const node of mini.querySelectorAll('[aria-label],[data-datekey]')){
+          if(!box(node)||!node.matches(CHROME_CONTROL)||!/^\d{1,2}$/.test(text(node.textContent)))continue;
+          const labelDate=dateFromCellLabel(node.getAttribute('aria-label'));
+          const rawKey=node.getAttribute('data-datekey');const key=rawKey===null?null:Model.decodeDateKey(rawKey);
+          if((labelDate||key)===currentDay&&(!labelDate||!key||labelDate===key))add(node,'data-jaroo-cal-mini-day','today');
+        }
+        const miniTitles=exactChromeLabels(rail,hdrIsMonthLabel,cache);
+        if(miniTitles.length===1)add(miniTitles[0],'data-jaroo-cal-mini-title');
+      }
+    }
+    // Native event detail/editor dialogs are not event-classification sources.
+    // Only paint their own bounded, opaque surface, not transparent overlays,
+    // color-picker contents, or full-viewport modal wrappers.
+    for(const dialog of document.querySelectorAll('[role="dialog"]')){
+      if(!popupRendered(dialog)||dialog.closest('#jaroo-calendar-companion-v1'))continue;
+      const r=dialog.getBoundingClientRect(),s=getComputedStyle(dialog);
+      if(r.width<180||r.width>Math.min(innerWidth*.94,880)||r.height<70||r.height>innerHeight*.95)continue;
+      if(s.backgroundColor==='transparent'||/^rgba\([^)]*,\s*0(?:\.0+)?\s*\)$/i.test(s.backgroundColor))continue;
+      if(dialog.querySelector('[role="gridcell"],[role="listbox"],[role="menu"]'))continue;
+      add(dialog,'data-jaroo-cal-surface','detail');
+    }
+    return plan;
+  }
+
   function collect() {
     scanNumber++;
     // Finish all layout/style reads before applying any of our markers/styles.
     grids = [...new Set(roots.flatMap(root => [...root.querySelectorAll('[role="grid"]')]))]
       .filter(grid => visible(grid) && (grid.querySelector('[data-datekey],[aria-current="date"]') || grid.querySelector(EVENT)));
     const dates = readDates();
-    const header = document.querySelector('[role="banner"]');
-    const paintHeader = header && visible(header);
+    let chromePlan=[];
+    try{chromePlan=inspectCalendarChrome();}catch(_){/* Chrome decoration must never block schedule processing. */}
     const { buttons, total } = eventButtons();
     const collected = buttons.map(recordFor).filter(Boolean);
     const touched = new Set();
@@ -830,15 +1010,7 @@
     markerPlan = new Map();
     try {
       for (const root of roots) { mark(root, 'data-jaroo-cal-surface', 'main'); touched.add(root); }
-      if (paintHeader) {
-        mark(header, 'data-jaroo-cal-surface', 'header'); touched.add(header);
-        // Only a unique, visible, literal month heading gets a marker.
-        const matchesMonth = node => visible(node) && !node.closest('[role="grid"],[data-eventid],[role="dialog"],[role="menu"]') && hdrIsMonthLabel(node.textContent);
-        let titles = [...header.querySelectorAll('h1,h2,[role="heading"]')].filter(matchesMonth);
-        titles = titles.filter(node => !titles.some(other => other !== node && node.contains(other)));
-        if (!titles.length) titles = [...header.querySelectorAll('span,div')].slice(0,240).filter(node => !node.childElementCount && matchesMonth(node));
-        if (titles.length === 1) { mark(titles[0], 'data-jaroo-cal-month-title'); touched.add(titles[0]); }
-      }
+      for(const [node,attr,value] of chromePlan){mark(node,attr,value);touched.add(node);}
       paintDates(dates, touched);
       // Month cells are paper; do not lay a decorative grid over hour slots.
       if (isMonthCalendarView()) for (const grid of grids) {
@@ -880,15 +1052,15 @@
       outline:2px solid #517E89;outline-offset:2px}
     .wrap{display:flex;flex-direction:column;align-items:flex-end;gap:10px}
     .launch{pointer-events:auto;display:flex;align-items:center;gap:9px;min-height:38px;
-      padding:8px 14px;background:#EFF1F2;border:1px solid #AAB5BA;border-radius:11px;
-      box-shadow:0 5px 18px #27303822;color:#303438;font-weight:600}
+      padding:8px 14px;background:#EFF1F2;border:1px solid #89979E;border-radius:6px;
+      box-shadow:0 2px 6px #27303818;color:#303438;font-weight:600}
     .launch:hover{background:#E4E8EA}
     .launch-dot{width:6px;height:6px;background:#F3B9CB;border-radius:50%;flex:none}
     .panel{pointer-events:auto;width:390px;max-width:calc(100vw - 24px);
       max-height:calc(100vh - 100px);max-height:calc(100dvh - 100px);overflow:auto;
-      background:#F5F6F6;border:1px solid #B9C1C5;border-radius:10px;
-      box-shadow:0 12px 36px #27303830;overscroll-behavior:contain;scrollbar-width:thin}
-    .head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 16px 12px}
+      background:#F5F6F6;border:1px solid #B9C1C5;border-radius:6px;
+      box-shadow:0 5px 16px #27303822;overscroll-behavior:contain;scrollbar-width:thin}
+    .head{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:16px 16px 12px;border-bottom:1px solid #C5CDD0;margin-bottom:10px}
     .brand{font-size:16px;font-weight:650;letter-spacing:-.3px;background:linear-gradient(transparent 54%,#F3B9CB 54% 93%,transparent 93%);width:max-content;max-width:100%}
     .date{font-size:13px;color:#303438;margin-top:2px;font-variant-numeric:tabular-nums}
     .close{min-width:32px;min-height:32px;padding:0;border:1px solid #C5CDD0;
@@ -904,7 +1076,7 @@
     .status.warn{color:#303438}
     .section{padding:0 16px 12px}
     .section-heading{display:flex;gap:9px;justify-content:space-between;align-items:baseline;
-      margin:0 0 7px;font-size:13px;font-weight:600}
+      margin:0 0 9px;padding-bottom:6px;border-bottom:1px solid #C5CDD0;font-size:14px;font-weight:600}
     .meta,.small{font-size:13px;font-weight:400;color:#737D83}
     .small{margin:5px 0 8px;overflow-wrap:anywhere}
     .day-heading{font-size:13px;font-weight:500;color:#535B60;margin:14px 0 7px}
@@ -914,7 +1086,9 @@
       margin:0 0 8px;background:#F5F6F6;border-radius:0 5px 5px 0}
     .event-open{display:block;width:100%;text-align:left;background:none;border:0;padding:0;
       min-width:0;white-space:normal;overflow-wrap:anywhere;line-height:1.65}
-    .event[data-semantic=true]{background:color-mix(in srgb,var(--accent) 48%,#EFF1F2)}
+    .event[data-semantic=true]{background:color-mix(in srgb,var(--accent) 38%,#EFF1F2)}
+    .event[data-status="completed"],.event[data-status="cancelled"]{background:color-mix(in srgb,var(--accent) 19%,#EFF1F2)}
+    .event[data-status="stopped"]{background:color-mix(in srgb,var(--accent) 10%,#EFF1F2)}
     .event[data-semantic=true] .event-open{color:var(--ink,#292D30)}
     .event[data-status] .event-open{text-decoration:line-through;text-decoration-thickness:1px}
     .event-open:hover{text-decoration:underline}
@@ -1149,7 +1323,7 @@
     const status = shadow.getElementById('jaroo-cal-ui-status'), notes = [];
     status.className = 'status';
     if (!cssApplied) { notes.push('테마 CSS가 아직 적용되지 않았어. Stylus 적용 주소를 확인해줘.'); status.classList.add('warn'); }
-    else if (enabled && cssVersion !== '0.1.0') { notes.push('E-Book v0.1.0 CSS가 필요해. 같은 채널의 Stylus 스타일을 확인해줘.'); status.classList.add('warn'); }
+    else if (enabled && cssVersion !== '0.2.0') { notes.push('E-Book v0.2.0 CSS가 필요해. 같은 채널의 Stylus 스타일을 확인해줘.'); status.classList.add('warn'); }
     if (dirty) notes.push('화면 확인 중… 이전에 읽은 항목이 잠시 표시될 수 있어.');
     else if (lastError) { notes.push('화면을 다시 읽지 못했어. 표시 설정에서 다시 읽기를 눌러줘.'); status.classList.add('warn'); }
     else if (panelFilter === 'today' && !todayKnown) notes.push('현재 화면에서 오늘 날짜를 확인하지 못했어. 기본 캘린더를 오늘로 이동한 뒤 다시 읽어줘.');
@@ -1326,15 +1500,15 @@
         .row{display:flex;align-items:center;gap:12px;list-style:none;padding:0;margin:0;
           height:32px;white-space:nowrap;width:max-content}.row.short{gap:10px}
         .item{display:inline-flex;align-items:center;gap:6px;color:#292D30}
-        .swatch{width:8px;height:8px;border-radius:2px;background:var(--tone);box-shadow:inset 0 0 0 1px #30343822;flex:none}
+        .swatch{width:8px;height:8px;border-radius:50%;background:var(--tone);box-shadow:inset 0 0 0 1px #30343822;flex:none}
         button{font:inherit;color:inherit;cursor:pointer;pointer-events:auto}
         .trigger{height:32px;white-space:nowrap;padding:4px 10px;background:#EFF1F2;
           border:1px solid #B9C1C5;border-radius:7px}
         button:focus-visible{outline:2px solid #517E89;outline-offset:2px}
-        .popup{position:fixed;pointer-events:auto;background:#EFF1F2;border:1px solid #B9C1C5;
-          border-radius:9px;padding:12px;box-shadow:0 5px 16px #27303822;overflow:auto}
+        .popup{position:fixed;pointer-events:auto;background:#F5F6F6;border:1px solid #B9C1C5;
+          border-radius:5px;padding:12px;box-shadow:0 5px 16px #27303822;overflow:auto}
         .popup .row{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;height:auto}
-        .popup-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 10px}
+        .popup-head{display:flex;align-items:center;justify-content:space-between;gap:20px;margin:0 0 10px;padding-bottom:8px;border-bottom:1px solid #C5CDD0}
         .popup-title{color:#535B60;font-size:12px;margin:0}
         .close{padding:3px 7px;background:transparent;border:1px solid #B9C1C5;border-radius:5px;font-size:12px}
         @media(forced-colors:active){.item{color:CanvasText}.swatch{background:CanvasText}
@@ -1529,6 +1703,8 @@
     for (const node of marked) {
       removeMarker(node, 'data-jaroo-cal-today');
       removeMarker(node, 'data-jaroo-cal-selected');
+      removeMarker(node, 'data-jaroo-cal-today-label');
+      removeMarker(node, 'data-jaroo-cal-mini-day');
     }
   }
   function syncContext() {
@@ -1617,6 +1793,13 @@
       cssVersion: getComputedStyle(document.documentElement).getPropertyValue('--jaroo-cal-style-version').trim() || null,
       documentVisible: !document.hidden, pendingScreenRead: dirty, mainRoots: roots.length,
       calendarGrids: stats.grids || 0, identifiableDateCells: stats.dateCells || 0,
+      ebookChrome:{headers:document.querySelectorAll('[data-jaroo-cal-surface="header"]').length,
+        sidebars:document.querySelectorAll('[data-jaroo-cal-surface="sidebar"]').length,
+        monthTitles:document.querySelectorAll('[data-jaroo-cal-month-title]').length,
+        miniCalendars:document.querySelectorAll('[data-jaroo-cal-mini]').length,
+        miniToday:document.querySelectorAll('[data-jaroo-cal-mini-day="today"]').length,
+        controls:document.querySelectorAll('[data-jaroo-cal-control]').length,
+        moreSurfaces:document.querySelectorAll('[data-jaroo-cal-surface="more"]').length},
       renderedEventElements: stats.eventElements || 0, datedItems: stats.datedRecords || 0,
       undatedItems: stats.undatedRecords || 0, nativeDescriptionDateItems: stats.nativeLabelDatedRecords || 0, dateRangeItems: stats.rangeRecords || 0, unknownTitleItems: stats.unknownTitles || 0, recoloredElements: stats.coloredElements || 0,
       semanticColorItems: stats.semanticItems || 0, titleKeywordCategoryItems: stats.inferredCategoryItems || 0, authoredStatusItems: stats.explicitStatusItems || 0,
