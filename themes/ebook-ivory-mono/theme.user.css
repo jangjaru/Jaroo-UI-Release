@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.3.6
+@version      0.3.7
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -109,7 +109,7 @@
     --link: var(--eb-ink) !important;
     --link-hover: var(--eb-secondary) !important;
     --jaroo-status-css-version: "6.9.1";
-    --ebook-theme-version: "0.3.5";
+    --ebook-theme-version: "0.3.7";
   }
 
   /* 02. LIGHT-PAPER BASE — do not modify Chrome frame or extension UIs. */
@@ -1448,7 +1448,7 @@
     --eb-composer-single-stroke:2.5px solid #303438!important;
     --eb-quick-nav-size:var(--eb-project-optical-size,16px)!important;
     --eb-marker-yellow:#F2D778!important;
-    --ebook-theme-version:"0.3.5";
+    --ebook-theme-version:"0.3.7";
   }
   /* Preserve the existing procedural paper-grain SVG and only refine grid pitch. */
   html body :is(#thread,[data-testid="conversation-panel"],
@@ -2182,6 +2182,29 @@
     font-family:var(--eb-font)!important;
     font-size:var(--eb-prompt-optical-size,16px)!important;
     line-height:1.56!important;
+  }
+
+  /* v0.3.7 — readable assistant fenced/plain-text block contents.
+     Keep inline code, language headers, toolbar buttons, and native
+     code-block wrapping/scroll behavior unchanged. */
+  :root {--eb-code-block-reading-size:16px;}
+  html body [data-message-author-role="assistant"] :is(
+    pre,
+    :is([data-d-component="code-block"],[data-testid="code-block"])
+      :is(code,[data-d-component="code"],[data-testid="code-block-content"],.cm-content),
+    [data-testid="code-block-content"]
+  ):not(:is(button *,[role="button"] *,[role="toolbar"] *,[contenteditable="true"],[contenteditable="true"] *)),
+  html body [data-message-author-role="assistant"] :is(
+    pre,
+    :is([data-d-component="code-block"],[data-testid="code-block"])
+      :is(code,[data-d-component="code"],[data-testid="code-block-content"],.cm-content),
+    [data-testid="code-block-content"]
+  ) :is(code,span,div,p,[data-d-text-flow],[data-d-component="text"]):not(:is(
+    button,button *,[role="button"],[role="button"] *,[role="toolbar"],[role="toolbar"] *,
+    svg *,[aria-hidden="true"],[aria-hidden="true"] *,[contenteditable="true"],[contenteditable="true"] *
+  )) {
+    font-size:var(--eb-code-block-reading-size)!important;
+    line-height:1.55!important;
   }
 
 }
