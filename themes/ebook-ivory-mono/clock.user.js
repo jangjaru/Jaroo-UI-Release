@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.23
+// @version      3.11.24
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -198,7 +198,7 @@
       .life-value,.life-progress-stat.remaining strong{--life-tail-weight:360}
       .life-progress-stat:not(.remaining) strong{--life-tail-weight:300}
       .life-duration-hours{white-space:nowrap;font:inherit;color:inherit;letter-spacing:inherit}
-      .life-duration-tail{white-space:pre;font:var(--life-tail-weight,360) 70%/1.2 var(--mono);color:var(--muted);letter-spacing:-.035em;font-variant-numeric:tabular-nums}
+      .life-duration-tail{white-space:pre;font:var(--life-tail-weight,360) 70%/1.2 var(--mono);color:var(--muted);letter-spacing:-.035em;word-spacing:-.5ch;font-variant-numeric:tabular-nums}
       .life-progress-stat:not(.remaining) strong{justify-content:flex-start}
       .clock{margin:0;padding:0;border-top:1px solid var(--line);user-select:none}
       .clock-content{display:flex;flex-direction:column;min-width:0}
@@ -251,7 +251,7 @@
         .life-head,.life-progress-head{gap:0}
       }
       /* Retirement: compact width uses two shared baselines; wider width keeps the full duration inline. */
-      .life-duration-tail::before{content:" : "}
+      .life-duration-tail::before{content:" : ";word-spacing:normal}
       .life-card.retire .life-card-main{grid-template-columns:minmax(0,1fr) auto auto;align-items:baseline;gap:1px 0}
       .life-card.retire .life-caption{display:contents}
       .life-card.retire .life-label{grid-column:1/-1;grid-row:1}
@@ -282,7 +282,7 @@
       .career-bar{height:5px;border-radius:999px;background:#D0D5D7;overflow:hidden;margin-top:8px}
       .career-bar[hidden]{display:none}
       .career-bar-fill{height:100%;width:var(--career-remaining,0%);border-radius:999px;background:#879398}
-      .career-remaining-percent{font:450 15px/1.2 var(--font);letter-spacing:-.04em;color:var(--muted);white-space:nowrap;margin-inline-start:3px}
+      .career-remaining-percent{font:450 15px/1.2 var(--font);letter-spacing:-.04em;word-spacing:normal;color:var(--muted);white-space:nowrap;margin-inline-start:3px}
       .career-remaining-percent[hidden]{display:none}
       @container jaroo-dashboard (max-width:220px){.career-remaining-percent{font-size:14px;margin-inline-start:2px}}
       /* Below the six-digit physical width, show HH:MM at the same glyph
@@ -1146,9 +1146,9 @@
     if (window[RUNTIME_KEY]?.dispose === dispose) delete window[RUNTIME_KEY];
   }
   window[RUNTIME_KEY] = {
-    version: '3.11.23', dispose,
+    version: '3.11.24', dispose,
     diagnostics: () => ({
-      version: '3.11.23', ...placementReport,
+      version: '3.11.24', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
