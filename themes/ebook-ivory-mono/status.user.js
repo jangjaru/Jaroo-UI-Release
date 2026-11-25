@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo · Status & Command Center
 // @namespace    jaroo-company.local
-// @version      6.9.8
+// @version      6.9.9
 // @description  E-book RUN/DONE and ALL/ONLY; first-paint quiet controls, verified native-state detection and cross-tab synchronization.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -15,7 +15,7 @@
   const RUNTIME = '__jarooCommandCenterRuntimeV4';
   window[RUNTIME]?.dispose?.();
   window.__jarooNativeCapture?.stop?.();
-  const VERSION = '6.9.8';
+  const VERSION = '6.9.9';
   const HOVER_MS = 400;
   const ROOTS = '#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]';
   const ARCHIVE = '[data-sidebar-archive-chatgpt-id]';
@@ -944,8 +944,8 @@
     .jaroo-top-copy{display:flex;flex-direction:column;gap:2px;min-width:0}
     .jaroo-top-word{display:block;color:#41494D;font-size:clamp(11px,6cqi,14px);font-weight:650;line-height:1.12;letter-spacing:-.055em;overflow-wrap:anywhere}
     @keyframes jaroo-running-pulse{0%,24%,100%{opacity:1}46%,58%{opacity:.08}}
-    .jaroo-center .run[data-active="true"] .jaroo-top-word,.jaroo-focus-tag[data-jstatus="working"]{animation:jaroo-running-pulse 1.2s ease-in-out infinite}
-    @media(prefers-reduced-motion:reduce){.jaroo-center .run[data-active="true"] .jaroo-top-word,.jaroo-focus-tag[data-jstatus="working"]{animation:none;-webkit-text-stroke:.2px currentColor}}
+    .jaroo-center .run[data-active="true"] .jaroo-top-word{animation:jaroo-running-pulse 1.2s ease-in-out infinite}
+    @media(prefers-reduced-motion:reduce){.jaroo-center .run[data-active="true"] .jaroo-top-word{animation:none;-webkit-text-stroke:.2px currentColor}}
     .jaroo-center .done[data-active="true"] .jaroo-top-badge{box-shadow:inset 0 0 0 1px var(--eb-accent-ink,#303438)}
     .jaroo-center .done[data-active="true"] .jaroo-top-word{color:var(--eb-accent-ink,#303438);-webkit-text-stroke:.18px currentColor}
     .jaroo-center .count{position:relative;flex:none;font-family:var(--eb-mono,"IBM Plex Mono",monospace);font-size:22px;font-weight:600;letter-spacing:-.04em;margin-left:auto;color:#292D30;font-variant-numeric:tabular-nums;line-height:1;white-space:nowrap}
@@ -974,13 +974,12 @@
     .jaroo-focus-row{display:flex;align-items:center;gap:5px;min-width:0;padding:5px 2px;color:#292D30;text-decoration:none;border-radius:3px;cursor:pointer}
     .jaroo-focus-row:hover,.jaroo-focus-row:focus-visible{background:#DFE3E5}
     .jaroo-focus-row[aria-disabled="true"]{opacity:.55;cursor:default}
-    .jaroo-focus-name{flex:1 1 auto;min-width:0;font-size:var(--widget-main);line-height:1.35;overflow-wrap:anywhere}
-    /* Only the explicitly filtered list needs a plain state label. */
-    .jaroo-focus-tag{order:2;flex:0 0 auto;margin-left:auto;font:600 var(--widget-meta)/1.3 var(--eb-font,"IBM Plex Mono",monospace);color:#41494D}
-    @container jaroo-dashboard (max-width: 184px){
-      .jaroo-focus-row{flex-wrap:wrap}
-      .jaroo-focus-name{flex-basis:100%}
-    }
+    .jaroo-focus-name{flex:1 1 auto;min-width:0;font-size:var(--widget-meta);line-height:1.3;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+    .jaroo-focus-tag{order:2;flex:0 0 16px;width:16px;height:16px;display:grid;place-items:center;margin-left:auto;color:var(--eb-accent-ink,#303438)}
+    .jaroo-focus-tag svg{display:block;width:15px;height:15px;transform-origin:center}
+    @keyframes jaroo-focus-spin{to{transform:rotate(360deg)}}
+    .jaroo-focus-tag[data-jstatus="working"] svg{animation:jaroo-focus-spin 1s linear infinite}
+    @media(prefers-reduced-motion:reduce){.jaroo-focus-tag[data-jstatus="working"] svg{animation:none}}
   `;
   function alignDockToClock() {
     if(!dock?.isConnected || !lastDockHost?.isConnected) return;
@@ -1132,6 +1131,33 @@
     for(const sidebar of watchedSidebars)
       sidebar.removeAttribute('data-jaroo-focus-fallback');
   }
+  function createFocusStatusIcon(status) {
+    const running=status==='working';
+    const tag=document.createElement('span');
+    tag.className='jaroo-focus-tag';
+    tag.dataset.jstatus=status;
+    tag.setAttribute('role','img');
+    tag.setAttribute('aria-label',running?'Running':'Completed');
+    tag.title=running?'Running':'Completed';
+    const ns='http://www.w3.org/2000/svg';
+    const svg=document.createElementNS(ns,'svg');
+    svg.setAttribute('viewBox','0 0 24 24');
+    svg.setAttribute('aria-hidden','true');
+    svg.setAttribute('focusable','false');
+    svg.setAttribute('fill','none');
+    svg.setAttribute('stroke','currentColor');
+    svg.setAttribute('stroke-width','2.5');
+    svg.setAttribute('stroke-linecap','round');
+    svg.setAttribute('stroke-linejoin','round');
+    if (running) {
+      const track=document.createElementNS(ns,'circle');
+      track.setAttribute('cx','12');track.setAttribute('cy','12');track.setAttribute('r','8.5');track.setAttribute('opacity','.23');
+      svg.append(track);
+    }
+    const path=document.createElementNS(ns,'path');
+    path.setAttribute('d',running?'M12 3.5 A8.5 8.5 0 0 1 20.5 12':'M5 12.5 L9.5 17 L19 7.5');
+    svg.append(path);tag.append(svg);return tag;
+  }
   function renderFocusEntries(records) {
     if (!focusEntries?.isConnected) return;
     const signature=JSON.stringify(records.map(r=>[r.id,r.status,r.title,r.href,r.run.clock]));
@@ -1148,9 +1174,7 @@
       const href=safePath(record.href || `/c/${record.id}`,record.id);
       const row=document.createElement('a');row.className='jaroo-focus-row';
       row.setAttribute('role','listitem');row.href=href || '#';
-      const tag=document.createElement('span');tag.className='jaroo-focus-tag';
-      tag.dataset.jstatus=record.status;
-      tag.textContent=record.status==='working'?'Running':'Completed';
+      const tag=createFocusStatusIcon(record.status);
       const title=document.createElement('span');title.className='jaroo-focus-name';
       title.textContent=record.title || `채팅 ${record.id.slice(0,8)}`;
       row.title=title.textContent;
