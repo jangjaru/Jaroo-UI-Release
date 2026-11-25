@@ -10,8 +10,8 @@ The user wants **only the left sidebar project names and chat-list names** about
 | Clock JS | 3.10.2 | unchanged |
 | Status JS | 6.8.2 | unchanged |
 | Mapper JS | 1.3.6 | unchanged |
-| Calendar Companion | 1.3.7 | unchanged |
-| Calendar CSS | 1.2.2 | unchanged |
+| Calendar Companion (E-Book) | 0.5.11 | final runtime optimization |
+| Calendar CSS (E-Book) | 0.5.11 | design unchanged |
 
 Typical numeric changes: chat normal 320→420, selected 420→550, standard/CEO projects 430→560, strategy projects 380→490. Other role-specific and archived names keep their relative treatment with a similar 1.3 multiplier.
 
@@ -42,3 +42,7 @@ E-book is an independent, opt-in theme. Disable Dracula / Flat Neon visual style
 
 
 
+
+## Google Calendar E-Book — active release
+
+Calendar Dracula is retired. Install the paired [E-Book CSS](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/calendar-ebook-v0.1/calendar-ebook/theme.user.css) and [E-Book JS](https://raw.githubusercontent.com/jangjaru/Jaroo-UI-Release/calendar-ebook-v0.1/calendar-ebook/companion.user.js). Native Light appearance; remove any installed Calendar Dracula copies. [Change history](calendar-ebook/README.md). Historical commits are retained.
