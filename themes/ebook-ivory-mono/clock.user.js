@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.21
+// @version      3.11.22
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -282,9 +282,9 @@
       .career-bar{height:5px;border-radius:999px;background:#D0D5D7;overflow:hidden;margin-top:8px}
       .career-bar[hidden]{display:none}
       .career-bar-fill{height:100%;width:var(--career-remaining,0%);border-radius:999px;background:#879398}
-      .career-remaining-percent{font:400 11px/1.2 var(--font);letter-spacing:-.04em;color:var(--muted);white-space:nowrap;margin-inline-start:3px}
+      .career-remaining-percent{font:450 12px/1.2 var(--font);letter-spacing:-.04em;color:var(--muted);white-space:nowrap;margin-inline-start:3px}
       .career-remaining-percent[hidden]{display:none}
-      @container jaroo-dashboard (max-width:220px){.career-remaining-percent{font-size:10px;margin-inline-start:2px}}
+      @container jaroo-dashboard (max-width:220px){.career-remaining-percent{font-size:11px;margin-inline-start:2px}}
       /* Below the six-digit physical width, show HH:MM at the same glyph
          size. The actual seconds still tick and remain in the accessible label. */
       @container jaroo-dashboard (max-width: 159px){
@@ -546,7 +546,7 @@
     if(nodes.percent){
       const valid=careerRemaining!==null&&Number.isFinite(careerRemaining);
       if(nodes.percent.hidden===valid)nodes.percent.hidden=!valid;
-      const label=valid?'('+careerRemaining.toFixed(1)+'% 남음)':'';
+      const label=valid?'('+careerRemaining.toFixed(1)+'%)':'';
       if(nodes.percent.textContent!==label)nodes.percent.textContent=label;
     }
   }
@@ -1146,9 +1146,9 @@
     if (window[RUNTIME_KEY]?.dispose === dispose) delete window[RUNTIME_KEY];
   }
   window[RUNTIME_KEY] = {
-    version: '3.11.21', dispose,
+    version: '3.11.22', dispose,
     diagnostics: () => ({
-      version: '3.11.21', ...placementReport,
+      version: '3.11.22', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
