@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo · Status & Command Center
 // @namespace    jaroo-company.local
-// @version      6.9.13
+// @version      6.9.14
 // @description  E-book RUN/DONE and ALL/ONLY; first-paint quiet controls, verified native-state detection and cross-tab synchronization.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -15,7 +15,7 @@
   const RUNTIME = '__jarooCommandCenterRuntimeV4';
   window[RUNTIME]?.dispose?.();
   window.__jarooNativeCapture?.stop?.();
-  const VERSION = '6.9.13';
+  const VERSION = '6.9.14';
   const HOVER_MS = 400;
   const ROOTS = '#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]';
   const ARCHIVE = '[data-sidebar-archive-chatgpt-id]';
@@ -1013,6 +1013,10 @@
     @container jaroo-dashboard (max-width:184px){.jaroo-center{grid-template-columns:minmax(0,1fr)}.jaroo-center button,.jaroo-center .jaroo-top-badge{min-height:32px}}
     .jaroo-focus-list{display:flex;flex-direction:column;gap:4px;min-width:0;max-width:100%;border-top:1px solid #C5CDD0;margin:0;padding:6px 0 8px;background:transparent;overflow-x:clip}
     .jaroo-focus-list[hidden]{display:none!important}
+    /* One accent closing rule: below the switch in All mode, below the
+       final review entry in Review mode. Keep the inner separator quiet. */
+    .jaroo-center:has(+.jaroo-focus-list[hidden]){padding-bottom:10.5px;border-bottom:1px solid var(--eb-accent-ink,#303438)}
+    .jaroo-focus-list:not([hidden]){margin-top:4px;padding-bottom:10.5px;border-bottom:1px solid var(--eb-accent-ink,#303438)}
     .jaroo-focus-header{display:flex;align-items:center;justify-content:space-between;gap:4px}
     .jaroo-focus-header strong,.jaroo-focus-header em,.jaroo-focus-empty{color:#535B60;font-size:12px;line-height:1.3;font-style:normal}
     .jaroo-focus-header strong{min-width:0;overflow-wrap:anywhere}.jaroo-focus-total{white-space:nowrap;flex:none}
