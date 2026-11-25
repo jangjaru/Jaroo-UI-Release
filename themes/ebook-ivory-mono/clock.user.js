@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.25
+// @version      3.11.26
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -175,12 +175,12 @@
       .life-label{font:500 var(--widget-main)/1.35 var(--font);letter-spacing:-.025em;max-width:100%;overflow-wrap:normal;word-break:keep-all}
       .life-meta{letter-spacing:-.035em}
       .life-value{min-width:0;max-width:100%;font:600 19px/1.25 var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.045em;text-align:right;white-space:normal;word-break:keep-all;overflow-wrap:normal;justify-self:end}
-      /* Retirement metric: title on row one, metadata and value share a baseline. */
-      .life-card.retire .life-card-main{grid-template-columns:minmax(0,1fr) auto;align-items:last baseline;gap:0 4px}
-      .life-card.retire .life-caption{display:flex;gap:1px}
-      .life-card.retire .life-label{font-weight:550;color:#23272B;line-height:1.02}
-      .life-card.retire .life-meta{white-space:nowrap;line-height:1.02}
-      .life-card.retire .life-value{white-space:nowrap;line-height:1.1}
+      /* Life metrics: consistent typography and shared baselines. */
+      .life-card .life-card-main{grid-template-columns:minmax(0,1fr) auto;align-items:last baseline;gap:0 4px}
+      .life-card .life-caption{display:flex;gap:1px}
+      .life-card .life-label{font-weight:550;color:#23272B;line-height:1.02}
+      .life-card .life-meta{white-space:nowrap;line-height:1.02}
+      .life-card .life-value{white-space:nowrap;line-height:1.1}
       .life-progress{margin:6px 0 0;padding:7px 0 0;border-top:1px solid #D4DADC}
       .life-progress-head{display:flex;flex-direction:column;gap:3px;align-items:flex-start;margin-bottom:6px}
       .life-progress-title{font:650 var(--widget-main)/1.3 var(--font);color:var(--ink);letter-spacing:.025em;text-transform:uppercase}
@@ -250,32 +250,39 @@
         .life-progress-stat strong{text-align:right}
         .life-head,.life-progress-head{gap:0}
       }
-      /* Retirement: compact width uses two shared baselines; wider width keeps the full duration inline. */
+      /* All Life Clock metrics: compact width uses two shared baselines; wider width keeps the full duration inline. */
       .life-duration-tail::before{content:" : ";word-spacing:normal}
-      .life-card.retire .life-card-main{grid-template-columns:minmax(0,1fr) auto auto;align-items:baseline;gap:1px 0}
-      .life-card.retire .life-caption{display:contents}
-      .life-card.retire .life-label{grid-column:1/-1;grid-row:1}
-      .life-card.retire .life-meta{grid-column:1;grid-row:2;align-self:baseline;padding-inline-end:4px}
-      .life-card.retire .life-value{grid-column:2/-1;grid-row:2;align-self:baseline}
-      .life-card.retire .life-value:has(>.life-duration-hours){display:contents}
-      .life-card.retire .life-duration-hours{grid-column:2;grid-row:2;justify-self:end;align-self:baseline}
-      .life-card.retire .life-duration-tail{grid-column:3;grid-row:2;justify-self:end;align-self:baseline}
-      .life-card.retire .life-duration-hours::after{content:" 시간";font:inherit;letter-spacing:inherit}
+      .life-card .life-card-main{grid-template-columns:minmax(0,1fr) auto auto;align-items:baseline;gap:1px 0}
+      .life-card .life-caption{display:contents}
+      .life-card .life-label{grid-column:1/-1;grid-row:1}
+      .life-card .life-meta{grid-column:1;grid-row:2;align-self:baseline;padding-inline-end:4px}
+      .life-card .life-value{grid-column:2/-1;grid-row:2;align-self:baseline}
+      .life-card .life-value:has(>.life-duration-hours){display:contents}
+      .life-card .life-duration-hours{grid-column:2;grid-row:2;justify-self:end;align-self:baseline}
+      .life-card .life-duration-tail{grid-column:3;grid-row:2;justify-self:end;align-self:baseline}
+      .life-card .life-duration-hours::after{content:" 시간";font:inherit;letter-spacing:inherit}
       @container jaroo-dashboard (max-width:379px){
-        .life-card.retire .life-card-main{grid-template-columns:minmax(0,1fr) auto;column-gap:4px}
-        .life-card.retire .life-label{grid-column:1;grid-row:1}
-        .life-card.retire .life-value{grid-column:2;grid-row:1}
-        .life-card.retire .life-duration-hours{grid-column:2;grid-row:1}
-        .life-card.retire .life-duration-tail{grid-column:2;grid-row:2}
-        .life-card.retire .life-duration-tail::before{content:none}
+        .life-card .life-card-main{grid-template-columns:minmax(0,1fr) auto;column-gap:4px}
+        .life-card .life-label{grid-column:1;grid-row:1}
+        .life-card .life-value{grid-column:2;grid-row:1}
+        .life-card .life-duration-hours{grid-column:2;grid-row:1}
+        .life-card .life-duration-tail{grid-column:2;grid-row:2}
+        .life-card .life-duration-tail::before{content:none}
       }
       @container jaroo-dashboard (max-width:199px){
-        .life-card.retire .life-duration-hours::after{font-size:70%}
+        .life-card .life-duration-hours::after{font-size:70%}
       }
       @container jaroo-dashboard (max-width:179px){
-        .life-card.retire .life-label{grid-column:1/-1}
-        .life-card.retire .life-value,.life-card.retire .life-duration-hours{grid-column:2;grid-row:2}
-        .life-card.retire .life-duration-tail{grid-row:3}
+        .life-card .life-label{grid-column:1/-1}
+        .life-card .life-value,.life-card .life-duration-hours{grid-column:2;grid-row:2}
+        .life-card .life-duration-tail{grid-row:3}
+      }
+      /* Unmeasured metrics use a neutral rounded divider, not a fabricated progress fill. */
+      .life-card:not(.retire){border-bottom:0;padding-bottom:0}
+      .life-card .life-neutral-bar{height:5px;border-radius:999px;background:#D0D5D7;margin-top:8px}
+      .life-grid+.life-progress{border-top:0}
+      @container jaroo-dashboard (min-width:180px) and (max-width:249px){
+        .life-card.work .life-label{overflow-wrap:anywhere;word-break:normal}
       }
       /* Career remaining time replaces only the retirement divider. */
       .life-card.retire:has(.career-bar:not([hidden])){border-bottom:0;padding-bottom:0}
@@ -321,9 +328,11 @@
         </article>
         <article class="life-card work">
           <div class="life-card-main"><div class="life-caption"><div class="life-label">남은 근무시간</div><div class="life-meta" data-life="workMeta" title="평일 8시간 기준">평일 8시간 기준</div></div><div class="life-value" data-life="workValue">0 : 00 : 00</div></div>
+          <div class="life-neutral-bar" aria-hidden="true"></div>
         </article>
         <article class="life-card after">
-          <div class="life-card-main"><div class="life-caption"><div class="life-label">은퇴 이후</div><div class="life-meta" data-life="afterMeta" title="65~80세 계획기간">65~80세 계획기간</div></div><div class="life-value" data-life="afterValue">0 : 00 : 00</div></div>
+          <div class="life-card-main"><div class="life-caption"><div class="life-label">은퇴 이후</div><div class="life-meta" data-life="afterMeta" title="65~80세까지">65~80세까지</div></div><div class="life-value" data-life="afterValue">0 : 00 : 00</div></div>
+          <div class="life-neutral-bar" aria-hidden="true"></div>
         </article>
       </div>
       <div class="life-progress">
@@ -572,7 +581,7 @@
     const values=[
       ['retireMeta','65세 기준'],
       ['workMeta','평일 8시간 기준'],
-      ['afterMeta',beforeRetirement?'65~80세 계획기간':'80세까지 잔여기간'],
+      ['afterMeta',beforeRetirement?'65~80세까지':'80세까지'],
       ['progressPercent',`${used.toFixed(1)}%`],
       ['usedMeta',`지나온 시간 · ${used.toFixed(1)}%`],
       ['remainingMeta',`남은 시간 · ${(100-used).toFixed(1)}%`]
@@ -1146,9 +1155,9 @@
     if (window[RUNTIME_KEY]?.dispose === dispose) delete window[RUNTIME_KEY];
   }
   window[RUNTIME_KEY] = {
-    version: '3.11.25', dispose,
+    version: '3.11.26', dispose,
     diagnostics: () => ({
-      version: '3.11.25', ...placementReport,
+      version: '3.11.26', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
