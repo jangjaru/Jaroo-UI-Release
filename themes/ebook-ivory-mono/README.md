@@ -1,3 +1,9 @@
+# Clock v3.11.47 / Indicators v0.3.11 — Conversation Search 명칭 및 LIFE CLOCK 구분선
+
+- 기존 대화 목차 버튼을 Search, 패널 제목을 Conversation Search로 변경. 질문·답변·제목의 현재 로드된 발췌문 검색 및 원문 이동 기능에 맞춰 입력 안내, 접근성 명칭, 오류/진단 문구를 정리. 검색 알고리즘·표시 범위·버튼의 3선 아이콘, 파스텔 노란색, 굵기, 그림자 및 기타 UI 유지. 전체 대화 원문 또는 전체 채팅 검색으로 확장하지 않음.
+- 회사명과 LIFE CLOCK 사이의 1px 구분선에 기존 액센트 토큰 --eb-accent-ink(#303438) 적용. 해당 구분선의 두께·길이·여백과 LIFE PROGRESS 등 나머지 구분선·디자인·기능 유지.
+- 두 JS 구문, 변경 범위 역검사, 기존 검색 필터 동작 4개 조건, 기존/신규 SHA-256 및 배포본 대조 완료. 실제 Chrome 화면 및 개발 저장소 동기화 미실시. Clock과 Indicators만 업데이트.
+
 # Clock v3.11.46 / Indicators v0.3.10 / Stylus CSS v0.3.4 — ALL 아래 네이티브 목록 밀도 통일
 
 - ALL/ONLY 아래 불필요한 여백을 줄이기 위해 시계 호스트 하단 마진 11px→3px, 작업 현황 하단 패딩 8px→2px. 좁은 폭 ALL/ONLY 단독 행은 36px 높이, 하단 3px 패딩으로 조정하며 RUN/DONE 카드 자체는 유지. LIFE CLOCK, LIFE PROGRESS, 회사명, 날짜·날씨·시계, 기존 계산 및 색상은 유지.

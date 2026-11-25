@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.3.10
+// @version      0.3.11
 // @description  E-book role markers, sidebar presentation, outline and safe composer attachment layout. No editable text mutation; Clock owns its first paint.
 // @match        https://chatgpt.com/*
 // @run-at       document-start
@@ -2331,22 +2331,22 @@
     const menuPath=document.createElementNS('http://www.w3.org/2000/svg','path');
     menuPath.setAttribute('d','M4 6H20 M4 12H20 M4 18H20');
     menuIcon.append(menuPath);
-    toggle.append(menuIcon,node('span','toggle-label','목차'));
+    toggle.append(menuIcon,node('span','toggle-label','Search'));
     toggle.type='button';toggle.setAttribute('aria-expanded','false');
-    toggle.setAttribute('aria-controls','jaroo-outline-panel');toggle.setAttribute('aria-label','대화 목차 열기');
+    toggle.setAttribute('aria-controls','jaroo-outline-panel');toggle.setAttribute('aria-label','대화 검색 열기');
     const panel=node('section','panel');panel.id='jaroo-outline-panel';panel.hidden=true;
-    panel.setAttribute('aria-label','대화 목차');
-    const head=node('div','head'),title=node('strong','title','대화 목차');
+    panel.setAttribute('aria-label','Conversation Search');
+    const head=node('div','head'),title=node('strong','title','Conversation Search');
     const meta=node('span','meta',''),search=node('input','search');
-    search.type='search';search.placeholder='질문·제목 검색';search.setAttribute('aria-label','목차 검색');search.autocomplete='off';
+    search.type='search';search.placeholder='질문·답변·제목 검색';search.setAttribute('aria-label','현재 대화 항목 검색');search.autocomplete='off';
     const list=node('div','list');list.setAttribute('role','group');list.setAttribute('aria-label','대화 항목');
     const foot=node('div','foot');
     const footText=node('span',null,'현재 불러온 대화만 표시 · 원문으로 이동');
     const rescan=node('button','rescan','다시 읽기');rescan.type='button';
-    rescan.setAttribute('aria-label','현재 대화 목차 다시 읽기');
+    rescan.setAttribute('aria-label','현재 대화 검색 항목 다시 읽기');
     const diag=node('button','rescan','진단');diag.type='button';
-    diag.setAttribute('aria-label','목차 인식 상태 진단');
-    const report=node('pre','diagnostic');report.hidden=true;report.setAttribute('aria-label','목차 진단 결과');
+    diag.setAttribute('aria-label','대화 검색 인식 상태 진단');
+    const report=node('pre','diagnostic');report.hidden=true;report.setAttribute('aria-label','대화 검색 진단 결과');
     diag.addEventListener('click',()=>{
       report.hidden=!report.hidden;
       if(!report.hidden)report.textContent=JSON.stringify(outlineDiagnostic(root),null,2);
@@ -2419,14 +2419,14 @@
         render();
         if(!report.hidden)report.textContent=JSON.stringify(outlineDiagnostic(root),null,2);
       }catch(e){
-        entries=[];rendered=[];meta.textContent='목차 인식 오류';
+        entries=[];rendered=[];meta.textContent='검색 항목 인식 오류';
         list.replaceChildren(node('div','empty','인식 중 오류가 발생했습니다. 하단 진단을 확인해 주세요.'));
         report.hidden=false;report.textContent=JSON.stringify({...outlineDiagnostic(root),error:e?.name||'Error'},null,2);
       }
     }
     function setOpen(value,focus=true) {
       open=value;panel.hidden=!open;toggle.setAttribute('aria-expanded',String(open));
-      toggle.setAttribute('aria-label',open?'대화 목차 닫기':'대화 목차 열기');
+      toggle.setAttribute('aria-label',open?'대화 검색 닫기':'대화 검색 열기');
       if(open){rendered=[];list.replaceChildren(node('div','empty','대화를 읽는 중…'));refresh();if(focus)search.focus({preventScroll:true});}
       else{observer.disconnect();clearTimeout(timer);timer=0;root=null;entries=[];rendered=[];active=null;search.value='';list.replaceChildren();report.hidden=true;report.textContent='';if(focus)toggle.focus({preventScroll:true});}
     }
@@ -2676,7 +2676,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.3.10',dispose,refresh:schedule,outlineDiagnostic,
+    version:'0.3.11',dispose,refresh:schedule,outlineDiagnostic,
     diagnostics:() => ({...errors,sorting:{...sidebarSortDiagnostics,styledRows:sidebarSortSaved.size},roots:observedRoots.length,clockSkinned:document.getElementById(CLOCK_HOST)?.getAttribute('data-ebook-clock-ready')==='true',dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),firstPaintNav:getComputedStyle(document.documentElement).getPropertyValue('--eb-first-paint-nav').trim()==='1',opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-project-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:'css-only',mutedComposerFrames:0,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state'),overflow:n.getAttribute('data-ebook-count-overflow')==='true',confirmed:n.getAttribute('data-ebook-count-confirmed')===''?null:Number(n.getAttribute('data-ebook-count-confirmed'))})),lastPassMs:{...timings},performance:{events:{...perfEvents},passes:Object.fromEntries(Object.entries(perfPasses).map(([k,v])=>[k,{runs:v.runs,averageMs:Math.round(v.totalMs/v.runs*100)/100,peakMs:Math.round(v.peakMs*100)/100}]))},fixedSidebarTop:[...topBands.values()].map(n=>({height:n.height,visible:getComputedStyle(n.strip).visibility==='visible',pattern:getComputedStyle(n.strip).backgroundImage})),projectCountBorders:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({border:getComputedStyle(n).borderTopWidth,style:getComputedStyle(n).borderTopStyle,outline:getComputedStyle(n).outlineStyle})),projectCountLayers:countLayers.size,positionResizeTargets:navResizeTargets.size,visibleProjectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].filter(n=>getComputedStyle(n).visibility!=='hidden').length,projectCountAxis:findDotCountReference()?.circle.getBoundingClientRect().left??null,fontAudit:fontAudit()})
   };
 })();
