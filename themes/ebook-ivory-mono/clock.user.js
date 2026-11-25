@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.37
+// @version      3.11.38
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -605,7 +605,7 @@
       ['remainingMeta',`남은 시간 · ${(100-used).toFixed(1)}%`]
     ];
     for(const [key,val] of values){if(lifeEls[key]?.textContent!==val)lifeEls[key].textContent=val; if(key.endsWith('Meta') && ['retireMeta','workMeta','afterMeta'].includes(key) && lifeEls[key]?.title!==val)lifeEls[key].title=val;}
-    const width=`${used.toFixed(1)}%`;
+    const width=`${(100-used).toFixed(8)}%`;
     if(lifeEls.progressBar.style.width!==width)lifeEls.progressBar.style.width=width;
   }
 
@@ -1202,9 +1202,9 @@
     if (window[RUNTIME_KEY]?.dispose === dispose) delete window[RUNTIME_KEY];
   }
   window[RUNTIME_KEY] = {
-    version: '3.11.37', dispose,
+    version: '3.11.38', dispose,
     diagnostics: () => ({
-      version: '3.11.37', ...placementReport,
+      version: '3.11.38', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
