@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo · Google Calendar Companion
 // @namespace    jaroo.calendar.dracula-gold
-// @version      1.3.7
+// @version      1.3.8
 // @description  Jaroo Google Calendar dark event labels and More-popup colors.
 // @match        https://calendar.google.com/calendar/*
 // @run-at       document-idle
@@ -163,8 +163,15 @@
       if (!endDate || endDate < date) return null;
       return { date, endDate, isRange: true, evidence: 'native-label-range-suffix' };
     }
+    const todayFormatters = new Map();
     function today(timeZone, now = new Date()) {
-      const parts = new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(now);
+      let formatter = todayFormatters.get(timeZone);
+      if (!formatter) {
+        formatter = new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' });
+        if (todayFormatters.size >= 4) todayFormatters.clear();
+        todayFormatters.set(timeZone, formatter);
+      }
+      const parts = formatter.formatToParts(now);
       const get = type => parts.find(part => part.type === type)?.value;
       return `${get('year')}-${get('month')}-${get('day')}`;
     }
@@ -222,7 +229,7 @@
   // BEGIN_JAROO_ADAPTER
   const RUNTIME = '__jarooCalendarCompanionV1';
   window[RUNTIME]?.dispose?.();
-  const VERSION = '1.3.7';
+  const VERSION = '1.3.8';
   const CONFIG = Object.freeze({ timeZone: 'Asia/Seoul', futureDays: 7, maxPins: 3, maxEvents: 1200, settleMs: 180, recoveryMs: 5000 });
   const EVENT = '[data-eventid]';
   const EXCLUDE = '[role="dialog"],[role="menu"],[role="listbox"],[hidden],[inert],[aria-hidden="true"]';
@@ -270,9 +277,6 @@
     return style.display !== 'none' && style.visibility !== 'hidden' && style.visibility !== 'collapse' && style.opacity !== '0';
   }
   function inRoots(node) { return roots.some(root => root === node || root.contains(node)); }
-  function nativePaintSignature(node) {
-    return [node.style.backgroundColor, node.style.borderColor, node.style.color, node.parentElement?.style.borderColor || ''].join('|');
-  }
   function usableColor(value) {
     if (!value || value === 'transparent' || value === 'currentcolor' || /^(?:var|url)\(/i.test(value)) return null;
     if (!CSS.supports('color', value)) return null;
@@ -289,10 +293,9 @@
   function rememberStyle(node, color) {
     let saved = eventStyles.get(node);
     if (!saved) {
-      saved = { value: node.style.getPropertyValue('--jaroo-cal-event-color'), priority: node.style.getPropertyPriority('--jaroo-cal-event-color'), native: '' };
+      saved = { value: node.style.getPropertyValue('--jaroo-cal-event-color'), priority: node.style.getPropertyPriority('--jaroo-cal-event-color') };
       eventStyles.set(node, saved);
     }
-    saved.native = nativePaintSignature(node);
     if (color && node.style.getPropertyValue('--jaroo-cal-event-color') !== color) node.style.setProperty('--jaroo-cal-event-color', color);
     if (!color) restoreStyle(node);
   }
@@ -393,9 +396,11 @@
           } else if (nativeDescription(value) && Model.parseNativeDateSuffix(value)) labels.push(value);
         } else if (child instanceof Element) {
           if (child.closest('[role="menu"],[role="listbox"],svg,button[aria-haspopup]')) continue;
-          const combined = text(child.textContent);
-          if (!textIsRendered(child) && nativeDescription(combined) && Model.parseNativeDateSuffix(combined)) labels.push(combined);
-          else visit(child);
+          if (!textIsRendered(child)) {
+            const combined = text(child.textContent);
+            if (nativeDescription(combined) && Model.parseNativeDateSuffix(combined)) { labels.push(combined); continue; }
+          }
+          visit(child);
         }
       }
     }
@@ -435,9 +440,9 @@
     }
     return { buttons: [...found], total };
   }
-  function recordFor(button) {
+  function recordFor(button, visibleInThisScan = false) {
     const owner = button.closest(EVENT), id = owner?.getAttribute('data-eventid');
-    if (!id || !eligibleEventButton(button) || !inRoots(button) || !visible(button)) return null;
+    if (!id || !eligibleEventButton(button) || !inRoots(button) || (!visibleInThisScan && !visible(button))) return null;
     const parts = titleParts(button, owner); if (!parts.title) return null;
     const info = dateInfo(button), nativeDate = parts.nativeDate;
     const cellEvidence = dateCache.get(button.closest('[role="gridcell"]'));
@@ -470,10 +475,10 @@
       deadline: Boolean(active && record.deadline && !status) };
   }
 
-  function paintRecord(record, touched) {
+  function paintRecord(record) {
     const node = record.node, presentation = eventPresentation(record);
-    mark(node, 'data-jaroo-cal-event'); touched.add(node);
-    for (const titleNode of record.titleNodes) { mark(titleNode, 'data-jaroo-cal-title'); touched.add(titleNode); }
+    mark(node, 'data-jaroo-cal-event');
+    for (const titleNode of record.titleNodes) mark(titleNode, 'data-jaroo-cal-title');
     const paint = presentation.active && presentation.color && record.titleNodes.length;
     if (paint) { rememberStyle(node, presentation.color); mark(node, 'data-jaroo-cal-color'); }
     else { removeMarker(node, 'data-jaroo-cal-color'); restoreStyle(node); }
@@ -493,8 +498,9 @@
         if (seen.has(cell) || cell.closest('[role="dialog"],[role="menu"],[hidden],[inert]') || !textIsRendered(cell)) continue;
         seen.add(cell);
         const info = dateInfo(cell); if (!info) continue;
+        const dayLabel = String(Number(info.date.slice(-2)));
         const labels = [...cell.querySelectorAll('button,[role="button"],span,div')].filter(label =>
-          !label.closest(EVENT) && !label.childElementCount && text(label.textContent) === String(Number(info.date.slice(-2))));
+          !label.childElementCount && text(label.textContent) === dayLabel && !label.closest(EVENT));
         result.push({ ...info, labels, selected: cell.getAttribute('aria-selected') === 'true' || info.date === selectedDay });
       }
       // Some Calendar views put date metadata on the date label, outside a gridcell.
@@ -510,14 +516,13 @@
     }
     return result;
   }
-  function paintDates(dates, touched) {
+  function paintDates(dates) {
     coverage = new Set(dates.map(info => info.date));
-    for (const grid of grids) { mark(grid, 'data-jaroo-cal-grid'); touched.add(grid); }
+    for (const grid of grids) mark(grid, 'data-jaroo-cal-grid');
     for (const info of dates) {
-      touched.add(info.cell);
       if (info.date === currentDay) mark(info.cell, 'data-jaroo-cal-today');
       if (info.selected) mark(info.cell, 'data-jaroo-cal-selected');
-      for (const label of info.labels) { mark(label, 'data-jaroo-cal-date-label'); touched.add(label); }
+      for (const label of info.labels) mark(label, 'data-jaroo-cal-date-label');
     }
   }
   function reconcileMarkers() {
@@ -549,14 +554,17 @@
     const rect = node.getBoundingClientRect();
     if (rect.width < 100 || rect.width > Math.min(460, window.innerWidth * .9) ||
         rect.height < 45 || rect.height > Math.min(820, window.innerHeight)) return false;
-    const chips = [...node.querySelectorAll(EVENT)].filter(el => popupRendered(el) &&
-      !el.closest('[role="grid"],[role="gridcell"]'));
-    const tagged = [...node.querySelectorAll('button,[role="button"]')].filter(el =>
-      popupRendered(el) && !el.closest('[role="grid"],[role="gridcell"]') &&
-      /^(?:(?:오전|오후)\s*\S+\s*)?\[[^\]\r\n]{1,48}\]/u.test(text(el.textContent)));
     // A quick-detail card can have one event, but a More popup contains a
     // cluster of independently clickable events. Never style a single detail.
-    return chips.length >= 2 || tagged.length >= 2;
+    let chips = 0;
+    for (const el of node.querySelectorAll(EVENT))
+      if (!el.closest('[role="grid"],[role="gridcell"]') && popupRendered(el) && ++chips >= 2) return true;
+    let tagged = 0;
+    for (const el of node.querySelectorAll('button,[role="button"]'))
+      if (!el.closest('[role="grid"],[role="gridcell"]') &&
+          /^(?:(?:오전|오후)\s*\S+\s*)?\[[^\]\r\n]{1,48}\]/u.test(text(el.textContent)) &&
+          popupRendered(el) && ++tagged >= 2) return true;
+    return false;
   }
   // Google Calendar retains the chosen Month view even when the URL is its
   // account root (/calendar/u/N/r/). Older code only checked '/month', so
@@ -571,12 +579,16 @@
   }
   function morePopupRoots() {
     if (!isMonthCalendarView()) return [];
-    const result = new Set();
+    const result = new Set(), eligibility = new WeakMap();
+    const eligible = node => {
+      if (!eligibility.has(node)) eligibility.set(node, morePopupEligible(node));
+      return eligibility.get(node);
+    };
     const addAncestor = node => {
       for (let parent = node.parentElement; parent && parent !== document.body; parent = parent.parentElement) {
         if (parent.matches('main,[role="main"],[role="grid"],[role="gridcell"]') ||
             parent.querySelector('[role="grid"]')) break;
-        if (morePopupEligible(parent)) { result.add(parent); break; }
+        if (eligible(parent)) { result.add(parent); break; }
       }
     };
     for (const owner of document.querySelectorAll(EVENT)) {
@@ -586,11 +598,12 @@
     // Some Calendar popover variants expose event-title buttons but no
     // data-eventid. Only a multi-item native dialog/listbox can use this path.
     for (const dialog of document.querySelectorAll('[role="dialog"],[role="listbox"]')) {
-      if (morePopupEligible(dialog)) result.add(dialog);
+      if (eligible(dialog)) result.add(dialog);
     }
     // Prefer the outermost verified popover when both wrapper and inner list
     // were discovered; prevents duplicate coloring and keeps click native.
-    return [...result].filter(el => ![...result].some(other => other !== el && other.contains(el)));
+    const candidates = [...result];
+    return candidates.filter(el => !candidates.some(other => other !== el && other.contains(el)));
   }
   function popupRecord(button) {
     if (!popupRendered(button) || !eligibleEventButton(button)) return null;
@@ -611,7 +624,7 @@
       titleConfidence:parts?.titleConfidence || 2, semantic,
       nativeColor:originalColor(button), deadline:false, priority:false };
   }
-  function paintMorePopup(touched) {
+  function paintMorePopup() {
     let count = 0;
     for (const popup of morePopupRoots()) {
       const seen = new Set();
@@ -625,7 +638,7 @@
         if (!button || seen.has(button)) continue;
         const record = popupRecord(button);
         if (!record) continue;
-        seen.add(button); paintRecord(record, touched); count++;
+        seen.add(button); paintRecord(record); count++;
         if (count >= CONFIG.maxEvents) break;
       }
       // Fallback for a native More-list layout without event-id attributes.
@@ -633,7 +646,7 @@
         if (seen.has(button) || button.closest(EVENT) || !popupRendered(button)) continue;
         const record = popupRecord(button);
         if (!record?.semantic?.color && !record?.semantic?.status) continue;
-        seen.add(button); paintRecord(record, touched); count++;
+        seen.add(button); paintRecord(record); count++;
         if (count >= CONFIG.maxEvents) break;
       }
       if (count >= CONFIG.maxEvents) break;
@@ -651,7 +664,26 @@
     const semantic = Model.semantic(cleaned);
     return semantic.color || semantic.status ? { title:cleaned, semantic } : null;
   }
-  function moreChipForLeaf(leaf) {
+  function moreChipCandidate(node, cache) {
+    if (cache.has(node)) return cache.get(node);
+    let candidate = null;
+    if (popupRendered(node)) {
+      const rect = node.getBoundingClientRect();
+      if (rect.width >= 43 && rect.width <= 430 && rect.height >= 13 && rect.height <= 48) {
+        const info = moreSemanticText(node.textContent);
+        if (info) {
+          const bg = getComputedStyle(node).backgroundColor || '';
+          const coloredBg = bg && bg !== 'transparent' && !/^rgba?\(0,\s*0,\s*0,\s*0(?:\.0+)?\)$/.test(bg);
+          const interactive = node.matches('button,[role="button"],[data-eventid],[role="listitem"],[tabindex]');
+          candidate = { info, baseScore: (coloredBg ? 6 : 0) + (interactive ? 8 : 0) +
+            (rect.width > 100 ? 2 : 0) + (rect.height > 16 ? 1 : 0) };
+        }
+      }
+    }
+    cache.set(node, candidate);
+    return candidate;
+  }
+  function moreChipForLeaf(leaf, cache) {
     if (!leaf?.isConnected || !popupRendered(leaf)) return null;
     // A real floating More popover may live INSIDE a gridcell in Google Calendar.
     // Do not exclude that location until a specific overlay is verified.
@@ -659,18 +691,10 @@
     let best = null, bestScore = -999;
     for (let node = leaf, depth=0; node && node !== document.body && depth < 8; node=node.parentElement,depth++) {
       if (node.matches('[role="gridcell"],[role="grid"],main,[role="main"]')) break;
-      if (!popupRendered(node)) continue;
-      const rect = node.getBoundingClientRect();
-      if (rect.width < 43 || rect.width > 430 || rect.height < 13 || rect.height > 48) continue;
-      const info = moreSemanticText(node.textContent);
-      if (!info) continue;
-      const style = getComputedStyle(node);
-      const bg = style.backgroundColor || '';
-      const coloredBg = bg && bg !== 'transparent' && !/^rgba?\(0,\s*0,\s*0,\s*0(?:\.0+)?\)$/.test(bg);
-      const interactive = node.matches('button,[role="button"],[data-eventid],[role="listitem"],[tabindex]');
-      const score = (coloredBg ? 6 : 0) + (interactive ? 8 : 0) + (rect.width > 100 ? 2 : 0) +
-          (rect.height > 16 ? 1 : 0) + depth * .35;
-      if (score > bestScore) {best={node,info}; bestScore=score;}
+      const candidate = moreChipCandidate(node, cache);
+      if (!candidate) continue;
+      const score = candidate.baseScore + depth * .35;
+      if (score > bestScore) {best={node,info:candidate.info}; bestScore=score;}
     }
     return best;
   }
@@ -714,7 +738,7 @@
   // Previous fallback stopped at gridcell, so never verified the dialog.
   // Require TWO independent compact tagged event controls inside the same
   // visible dialog+gridcell. This avoids coloring a single event's detail card.
-  function paintNativeGridDialogMore(touched) {
+  function paintNativeGridDialogMore() {
     let painted = 0, popups = 0, discoveredRows = 0;
     for (const dialog of document.querySelectorAll('[role="dialog"]')) {
       if (!popupRendered(dialog) || dialog.closest('#jaroo-calendar-companion-v1')) continue;
@@ -745,25 +769,25 @@
           titleConfidence: 2, semantic: info.semantic,
           nativeColor: originalColor(button), deadline: false, priority: false
         };
-        paintRecord(record, touched);
+        paintRecord(record);
         if (++painted >= CONFIG.maxEvents) break;
       }
       if (painted >= CONFIG.maxEvents) break;
     }
     return { painted, popups, discoveredRows };
   }
-  function paintMorePlainRows(touched) {
+  function paintMorePlainRows() {
     if (!isMonthCalendarView()) return 0;
     // Prefer the verified live dialog/gridcell path. Keep the previous
     // portal/plain-row adapter only for Calendar variants without this layout.
-    const nested = paintNativeGridDialogMore(touched);
+    const nested = paintNativeGridDialogMore();
     if (nested.popups) {
       moreProbe = { textCandidates:nested.discoveredRows,
         gridAnchoredCandidates:nested.discoveredRows,
         verifiedOverlays:nested.popups, rowCandidates:nested.painted };
       return nested.painted;
     }
-    const leaves=new Set(), seen=new Map();
+    const leaves=new Set(), seen=new Map(), chipCache=new WeakMap(), overlayCache=new WeakMap();
     const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
     let scanned=0;
     for(let t=walker.nextNode();t && scanned++<16000;t=walker.nextNode()){
@@ -777,10 +801,10 @@
     let candidates=0;
     for(const el of document.querySelectorAll('button,[role="button"],[role="listitem"],span,div')){
       if(++candidates>14000) break;
-      if(el.closest('#jaroo-calendar-companion-v1,[hidden],[inert]')) continue;
       if(el.childElementCount>5 || !el.isConnected) continue;
       const val=text(el.textContent);
       if(!val || val.length>220 || !MORE_TAG_START.test(val)) continue;
+      if(el.closest('#jaroo-calendar-companion-v1,[hidden],[inert]')) continue;
       const rect=el.getBoundingClientRect();
       if(rect.width<24 || rect.width>440 || rect.height<10 || rect.height>52) continue;
       leaves.add(el);
@@ -789,9 +813,10 @@
     for(const leaf of leaves){
       if(!popupRendered(leaf)) continue;
       if(leaf.closest('[role="grid"],[role="gridcell"]')) moreProbe.gridAnchoredCandidates++;
-      const chip=moreChipForLeaf(leaf);
+      const chip=moreChipForLeaf(leaf,chipCache);
       if(!chip) continue;
-      const pop=overlayForMoreChip(chip.node);
+      if(!overlayCache.has(chip.node))overlayCache.set(chip.node,overlayForMoreChip(chip.node));
+      const pop=overlayCache.get(chip.node);
       if(!pop) continue;
       let group=seen.get(pop);if(!group){group=new Map();seen.set(pop,group);}
       group.set(chip.node,chip.info);
@@ -808,11 +833,31 @@
         const r={node,owner:node,title:info.title,titleNodes,
           titleConfidence:2,semantic:info.semantic,nativeColor:originalColor(node),
           deadline:false,priority:false};
-        paintRecord(r,touched);painted++;
+        paintRecord(r);painted++;
         if(painted>=CONFIG.maxEvents) return painted;
       }
     }
     return painted;
+  }
+  function summarizeRecords(records, collected) {
+    const result = { datedRecords:0, undatedRecords:0, nativeLabelDatedRecords:0,
+      rangeRecords:0, unknownTitles:0, coloredElements:0, semanticItems:0,
+      inferredCategoryItems:0, explicitStatusItems:0 };
+    for (const record of records) {
+      if (record.date) result.datedRecords++; else result.undatedRecords++;
+      if (record.dateEvidence?.startsWith('native-label-')) result.nativeLabelDatedRecords++;
+      if (record.isRange) result.rangeRecords++;
+      if (!record.titleConfidence) result.unknownTitles++;
+      const p = eventPresentation(record);
+      if (p.semantic) result.semanticItems++;
+      if (p.source === 'keyword') result.inferredCategoryItems++;
+      if (p.status) result.explicitStatusItems++;
+    }
+    for (const record of collected) {
+      const p = eventPresentation(record);
+      if (p.active && p.color && record.titleNodes.length) result.coloredElements++;
+    }
+    return result;
   }
   function collect() {
     scanNumber++;
@@ -823,28 +868,23 @@
     const header = document.querySelector('[role="banner"]');
     const paintHeader = header && visible(header);
     const { buttons, total } = eventButtons();
-    const collected = buttons.map(recordFor).filter(Boolean);
-    const touched = new Set();
+    const collected = buttons.map(button => recordFor(button, true)).filter(Boolean);
     let morePopupPainted = 0;
     markerPlan = new Map();
     try {
-      for (const root of roots) { mark(root, 'data-jaroo-cal-surface', 'main'); touched.add(root); }
-      if (paintHeader) { mark(header, 'data-jaroo-cal-surface', 'header'); touched.add(header); }
-      paintDates(dates, touched);
-      for (const record of collected) paintRecord(record, touched);
+      for (const root of roots) mark(root, 'data-jaroo-cal-surface', 'main');
+      if (paintHeader) mark(header, 'data-jaroo-cal-surface', 'header');
+      paintDates(dates);
+      for (const record of collected) paintRecord(record);
       // Popover chips may be outside roots; paint them in the same marker pass.
-      morePopupPainted = paintMorePopup(touched);
+      morePopupPainted = paintMorePopup();
       // v1.3.3: native More list can be DIV-only, unlike the old button mock.
-      morePopupPainted += paintMorePlainRows(touched);
+      morePopupPainted += paintMorePlainRows();
       reconcileMarkers();
     } finally { markerPlan = null; }
     records = Model.deduplicate(collected);
-    stats = { grids: grids.length, dateCells: coverage.size, eventElements: total, datedRecords: records.filter(record => record.date).length,
-      undatedRecords: records.filter(record => !record.date).length, nativeLabelDatedRecords: records.filter(record => record.dateEvidence?.startsWith('native-label-')).length, rangeRecords: records.filter(record => record.isRange).length, unknownTitles: records.filter(record => !record.titleConfidence).length,
-      coloredElements: collected.filter(record => { const p = eventPresentation(record); return p.active && p.color && record.titleNodes.length; }).length,
-      semanticItems: records.filter(record => eventPresentation(record).semantic).length,
-      inferredCategoryItems: records.filter(record => eventPresentation(record).source === 'keyword').length,
-      explicitStatusItems: records.filter(record => eventPresentation(record).status).length,
+    stats = { grids: grids.length, dateCells: coverage.size, eventElements: total,
+      ...summarizeRecords(records, collected),
       morePopupPainted, truncated: total > CONFIG.maxEvents, scannedAt: new Date().toISOString() };
   }
   // END_JAROO_ADAPTER
@@ -951,9 +991,14 @@
     if (action) button.dataset.action = action;
     return button;
   }
+  const uiDateLabels = new Map();
   function uiDate(date) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '')) return '날짜 미확인';
-    return uiDateFormatter.format(new Date(`${date}T12:00:00+09:00`));
+    if (uiDateLabels.has(date)) return uiDateLabels.get(date);
+    const label = uiDateFormatter.format(new Date(`${date}T12:00:00+09:00`));
+    if (uiDateLabels.size >= 128) uiDateLabels.clear();
+    uiDateLabels.set(date, label);
+    return label;
   }
   function setupUI() {
     if (disposed) return;
@@ -1107,13 +1152,36 @@
     pin.setAttribute('aria-label', `${record.title} · ${pins.has(record.key) ? '고정 해제' : '이 탭에 고정'}`);
     item.append(content, pin); return item;
   }
+  // One validated range pass, not a separate full-list range filter for each day.
+  function summarizeWindow(records, coverage, currentDay, futureDays) {
+    const first = Model.addDays(currentDay,1), last = Model.addDays(currentDay,futureDays);
+    const todayItems = [], nextItems = [];
+    const covered = new Set(coverage);
+    const days = Array.from({length:futureDays},(_,i)=>Model.addDays(first,i));
+    for (const record of Model.within(records,currentDay,last)) {
+      const end = record.isRange ? record.endDate : record.date;
+      if (record.date <= currentDay && end >= currentDay) {
+        todayItems.push(record);
+        covered.add(currentDay);
+      }
+      if (record.date <= last && end >= first) {
+        nextItems.push(record);
+        for (const date of days) if (record.date <= date && end >= date) covered.add(date);
+      }
+    }
+    return { todayItems, nextItems, todayKnown:covered.has(currentDay),
+      coveredDays:days.filter(date=>covered.has(date)).length };
+  }
   function renderUI() {
     if (disposed) return;
-    setupUI(); const panel = shadow.getElementById('jaroo-cal-panel'); panel.hidden = !panelOpen;
-    shadow.getElementById('jaroo-cal-launch').setAttribute('aria-expanded', String(panelOpen));
+    setupUI(); const panel = shadow.getElementById('jaroo-cal-panel');
+    if (panel.hidden === panelOpen) panel.hidden = !panelOpen;
+    const launch = shadow.getElementById('jaroo-cal-launch'), expanded = String(panelOpen);
+    if (launch.getAttribute('aria-expanded') !== expanded) launch.setAttribute('aria-expanded', expanded);
     if (!panelOpen) return;
-    const cssApplied = !enabled || Boolean(getComputedStyle(document.documentElement).getPropertyValue('--jaroo-cal-bg').trim());
-    const cssVersion = getComputedStyle(document.documentElement).getPropertyValue('--jaroo-cal-style-version').trim();
+    const css = getComputedStyle(document.documentElement);
+    const cssApplied = !enabled || Boolean(css.getPropertyValue('--jaroo-cal-bg').trim());
+    const cssVersion = css.getPropertyValue('--jaroo-cal-style-version').trim();
     const signature = JSON.stringify([panelFilter,currentDay,dirty,enabled,semanticEnabled,cssApplied,cssVersion,lastError,stats.truncated,
       [...coverage].sort(),[...pins],records.map(r=>[r.key,r.date,r.endDate,r.isRange,r.title,r.nativeColor,r.deadline,r.priority,r.semantic])]);
     if (signature === uiSignature) return; uiSignature = signature;
@@ -1126,13 +1194,10 @@
     shadow.getElementById('jaroo-cal-semantic-enabled').checked = semanticEnabled;
     shadow.querySelectorAll('[data-filter]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.filter === panelFilter)));
     const list = shadow.getElementById('jaroo-cal-list'); list.setAttribute('aria-busy', String(dirty)); list.replaceChildren();
-    const first = Model.addDays(currentDay,1), last = Model.addDays(currentDay,CONFIG.futureDays);
-    const items = (panelFilter === 'today' ? Model.within(records,currentDay,currentDay) :
-      panelFilter === 'next' ? Model.within(records,first,last) : [...records])
-      .sort((a,b)=>(a.date || '9999').localeCompare(b.date || '9999') || a.title.localeCompare(b.title,'ko'));
-    const undated = records.filter(record=>!record.date).length;
-    const todayKnown = coverage.has(currentDay) || Model.within(records,currentDay,currentDay).length > 0;
-    const coveredDays = Array.from({length:CONFIG.futureDays},(_,i)=>Model.addDays(first,i)).filter(date=>coverage.has(date) || Model.within(records,date,date).length > 0).length;
+    const { todayItems, nextItems, todayKnown, coveredDays } = summarizeWindow(records,coverage,currentDay,CONFIG.futureDays);
+    // collect() already sorts deduplicated records; subsets retain that order.
+    const items = panelFilter === 'today' ? todayItems : panelFilter === 'next' ? nextItems : records;
+    const undated = stats.undatedRecords ?? records.filter(record=>!record.date).length;
     const status = shadow.getElementById('jaroo-cal-ui-status'), notes = [];
     status.className = 'status';
     if (!cssApplied) { notes.push('테마 CSS가 아직 적용되지 않았어. Stylus 적용 주소를 확인해줘.'); status.classList.add('warn'); }
@@ -1471,7 +1536,7 @@
   // LIFECYCLE_BEGIN -- native events remain the only source of calendar data.
   const originalThemeAttribute = document.documentElement.getAttribute('data-jaroo-calendar-theme');
   const listeners = [];
-  let firstDirtyAt = 0;
+  let firstDirtyAt = 0, datePaintInvalidated = false;
   function listen(target, name, handler, options) {
     target.addEventListener(name, handler, options);
     listeners.push(() => target.removeEventListener(name, handler, options));
@@ -1499,20 +1564,32 @@
     }
     if (change.type === 'childList') {
       if (node.closest('[data-eventid],[data-datekey],[role="gridcell"]')) return true;
-      return [...change.addedNodes, ...change.removedNodes].some(child => child instanceof Element &&
-        (child.matches('[data-eventid],[data-datekey],[role="grid"],[role="gridcell"]') || child.querySelector('[data-eventid],[data-datekey],[role="grid"]')));
+      for (const nodes of [change.addedNodes, change.removedNodes])
+        for (const child of nodes) if (child instanceof Element &&
+          (child.matches('[data-eventid],[data-datekey],[role="grid"],[role="gridcell"]') || child.querySelector('[data-eventid],[data-datekey],[role="grid"]'))) return true;
+      return false;
     }
     return false;
   }
+  function classifyMutations(changes, relevant) {
+    let changed = false;
+    for (const change of changes) {
+      if (!relevant(change)) continue;
+      changed = true;
+      if (change.type === 'childList' ||
+          ['data-datekey','aria-selected','aria-current'].includes(change.attributeName))
+        return { changed:true, dateChanged:true };
+    }
+    return { changed, dateChanged:false };
+  }
   const observer = new MutationObserver(changes => {
-    if (disposed) return;
-    const relevant = changes.filter(mutationRelevant);
-    if (!relevant.length) return;
-    const dateChanged = relevant.some(change => change.type === 'childList' ||
-      ['data-datekey','aria-selected','aria-current'].includes(change.attributeName));
-    scheduleScan({ invalidateDates: dateChanged });
+    if (disposed || document.hidden) return;
+    const { changed, dateChanged } = classifyMutations(changes, mutationRelevant);
+    if (changed) scheduleScan({ invalidateDates: dateChanged });
   });
   function invalidateDatePaint() {
+    if (datePaintInvalidated) return;
+    datePaintInvalidated = true;
     for (const node of marked) {
       removeMarker(node, 'data-jaroo-cal-today');
       removeMarker(node, 'data-jaroo-cal-selected');
@@ -1531,15 +1608,16 @@
   }
   function scheduleScan(options = {}) {
     if (disposed) return;
+    const wasDirty = dirty;
     dirty = true;
-    if (options?.invalidateDates) invalidateDatePaint();
     if (document.hidden) return;
+    if (options?.invalidateDates) invalidateDatePaint();
     const now = performance.now();
     if (!firstDirtyAt) firstDirtyAt = now;
     if (pending) clearTimeout(pending);
     const delay = options?.immediate ? 0 : Math.min(CONFIG.settleMs, Math.max(0, 800 - (now - firstDirtyAt)));
     pending = setTimeout(runScan, delay);
-    if (panelOpen) renderUI();
+    if (panelOpen && (!wasDirty || options?.contextChanged || !host?.isConnected)) renderUI();
   }
   function runScan() {
     clearTimeout(pending);
@@ -1559,21 +1637,27 @@
       dirty = false;
       for (const node of [...marked]) cleanupNode(node);
     } finally {
+      datePaintInvalidated = false;
       observeRoots();
       if (!disposed) { syncHeaderLegend(enabled && semanticEnabled && !document.hidden); renderUI(); }
     }
   }
+  function armRecovery() {
+    if (!disposed && !document.hidden && !recoveryTimer)
+      recoveryTimer = setTimeout(recoveryTick, CONFIG.recoveryMs);
+  }
   function recoveryTick() {
     recoveryTimer = 0;
-    if (disposed) return;
-    if (!document.hidden) {
+    if (disposed || document.hidden) return;
+    try {
       const contextChanged = syncContext();
       const rootsChanged = bindRoots();
       syncHeaderLegend(enabled && semanticEnabled);
-      if (contextChanged || rootsChanged || dirty) scheduleScan({ invalidateDates: contextChanged || rootsChanged });
+      if (contextChanged || rootsChanged || dirty) scheduleScan({ invalidateDates: contextChanged || rootsChanged, contextChanged });
+    } finally {
+      // No timer or document/root/date checks while the tab is hidden.
+      armRecovery();
     }
-    // This only checks document/root/date identity; it does not re-scan all events.
-    recoveryTimer = setTimeout(recoveryTick, CONFIG.recoveryMs);
   }
   function openRecord(key) {
     if (disposed) return;
@@ -1634,21 +1718,28 @@
   window[RUNTIME] = runtime;
   document.documentElement.setAttribute('data-jaroo-calendar-theme', '1');
   setupUI();
-  listen(document, 'visibilitychange', () => {
+  let moreAfterClick = 0;
+  function onVisibility() {
+    if (disposed) return;
     if (document.hidden) {
       observer.disconnect(); clearTimeout(pending); pending = 0; firstDirtyAt = 0; dirty = true;
-    } else scheduleScan({ immediate: true, invalidateDates: true });
+      clearTimeout(recoveryTimer); recoveryTimer = 0;
+      clearTimeout(moreAfterClick); moreAfterClick = 0;
+    } else {
+      scheduleScan({ immediate: true, invalidateDates: true });
+      armRecovery();
+    }
     syncHeaderLegend(enabled && semanticEnabled && !document.hidden);
-  });
+  }
+  listen(document, 'visibilitychange', onVisibility);
   listen(window, 'focus', () => scheduleScan({ invalidateDates: true }));
   listen(window, 'pageshow', () => scheduleScan({ immediate: true, invalidateDates: true }));
   listen(window, 'popstate', () => scheduleScan({ invalidateDates: true }));
   listen(window, 'resize', () => scheduleScan({ invalidateDates: true }));
   // Native popup portals may be outside observed main. A user click (including
   // More/open/close) is the bounded rescan signal; no document-wide polling.
-  let moreAfterClick = 0;
   listen(document, 'click', () => {
-    if (isMonthCalendarView()) {
+    if (!document.hidden && isMonthCalendarView()) {
       scheduleScan();
       clearTimeout(moreAfterClick);
       moreAfterClick=setTimeout(()=>{moreAfterClick=0;scheduleScan()}, 550);
@@ -1665,7 +1756,7 @@
     if (info) { selectedDay = info.date; scheduleScan(); }
   }, true);
   runScan();
-  recoveryTimer = setTimeout(recoveryTick, CONFIG.recoveryMs);
+  armRecovery();
   // LIFECYCLE_END
   // END_JAROO_LIFECYCLE
 })();
