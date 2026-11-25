@@ -1388,9 +1388,11 @@
       const left=Math.min(...rows.map(r=>r.left)),top=rows[0].cy,bottom=gr.bottom;
       const weekNodes=new Set();
       for(const n of scan){
-        if(n.childElementCount||!box(n)||!textIsRendered(n))continue;
-        const value=text(n.textContent),nr=box(n);
-        if(!weekAtHeader(value,nr,rows))continue;
+        if(n.childElementCount)continue;
+        const value=text(n.textContent);
+        if(!/^(?:[1-9]|[1-4]\d|5[0-3])$/.test(value))continue;
+        const nr=box(n);
+        if(!nr||!weekAtHeader(value,nr,rows)||!textIsRendered(n))continue;
         if(entries.some(e=>e.label===n||e.label.contains(n)||n.contains(e.label)))continue;
         weekNodes.add(n);mark(n,'data-jaroo-cal-week-number');
         for(let p=n.parentElement,d=0;p&&p!==root&&d<10;p=p.parentElement,d++){
@@ -1401,8 +1403,9 @@
       }
       // A separate narrow background rail need not contain the week labels.
       if(weekNodes.size>=3)for(const n of scan){
-        if(n.matches(interactive)||entries.some(e=>e.label===n||n.contains(e.label))||n.querySelector('[data-eventid]'))continue;
+        if(n.matches(interactive))continue;
         const r=box(n);if(!r||r.width<7||r.width>90||r.left<left-95||r.right>left+12)continue;
+        if(entries.some(e=>e.label===n||n.contains(e.label))||n.querySelector('[data-eventid]'))continue;
         const full=r.top<=top+8&&r.bottom>=bottom-12;
         const rowStrip=r.height>30&&rows.some(row=>r.top<=row.cy+5&&r.bottom>=row.cy+25);
         if(full||rowStrip)mark(n,'data-jaroo-cal-week-gutter');

@@ -614,7 +614,7 @@ html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="more"] :is(h1,h
     background-image:radial-gradient(circle at center,transparent 0 8.8px,#303438 9px 10.8px,transparent 11px)!important;
     background-size:22px 22px!important;background-repeat:no-repeat!important;background-position:center!important;
     min-inline-size:22px!important;min-block-size:22px!important;
-    border-color:transparent!important;box-shadow:none!important;outline-color:transparent;
+    border-color:transparent!important;box-shadow:none!important;
     color:#303438!important;font-weight:700!important;
   }
   html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] :is(
