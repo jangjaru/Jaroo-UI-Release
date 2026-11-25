@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo Google Calendar E-Book
 @namespace    jaroo.calendar.ebook
-@version      0.4.4
+@version      0.4.5
 @description  Cool E-Ink Graph Paper · paired with Calendar E-Book Companion
 @author       Jaroo
 @license      UNLICENSED
@@ -42,7 +42,7 @@
 /* Light appearance is selected in Google Calendar itself. No layout,
    event text, native date/colour data, or click targets are rewritten. */
 html[data-jaroo-calendar-theme="ebook"] {
-  --jaroo-cal-style-version: 0.4.4;
+  --jaroo-cal-style-version: 0.4.5;
   --jaroo-cal-bg:#EFF1F2;
   --jaroo-cal-sidebar:#E7EAEB;
   --jaroo-cal-surface:#F5F6F6;
@@ -414,8 +414,8 @@ html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="more"] :is(h1,h
    a very light duration wash. High contrast retains the v0.3 fallback. */
 @media (forced-colors: none) {
   html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-color="true"] {
-    --jaroo-cal-stroke-alpha:28%;
-    --jaroo-cal-stroke-hover:32%;
+    --jaroo-cal-stroke-alpha:20%;
+    --jaroo-cal-stroke-hover:28%;
     --jaroo-cal-stroke-strength:var(--jaroo-cal-stroke-alpha);
     --jaroo-cal-stroke:color-mix(in srgb,var(--jaroo-cal-event-color) var(--jaroo-cal-stroke-strength),transparent);
     --jaroo-cal-stroke-edge:color-mix(in srgb,var(--jaroo-cal-stroke) 55%,transparent);
@@ -434,8 +434,8 @@ html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="more"] :is(h1,h
     background-image:var(--jaroo-cal-event-brush-hover,var(--jaroo-cal-event-brush,linear-gradient(to bottom,transparent 0 46%,var(--jaroo-cal-stroke) 46% 90%,transparent 90%)))!important;
   }
   html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-color="true"][data-jaroo-cal-semantic="true"] {
-    --jaroo-cal-stroke-alpha:82%;
-    --jaroo-cal-stroke-hover:92%;
+    --jaroo-cal-stroke-alpha:48%;
+    --jaroo-cal-stroke-hover:62%;
     --jaroo-cal-duration-wash:color-mix(in srgb,var(--jaroo-cal-event-color) 7%,var(--jaroo-cal-bg));
     --jaroo-cal-left-accent:inset 0 0 0 0 transparent;
   }
@@ -622,6 +622,65 @@ html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="more"] :is(h1,h
     [data-jaroo-cal-today-label="true"]:not([data-jaroo-cal-today-ring] *):not(:has([data-jaroo-cal-today-ring]))
   ):not([data-jaroo-cal-month-today-cell]):not(:is(button,[role="button"],a,[role="link"],[tabindex])){
     display:inline-grid!important;place-items:center!important;line-height:1!important;
+  }
+}
+
+
+/* v0.4.5 — calm paper, no event ornaments, filled today and 24h clock.
+   The old source text stays in the native DOM for accessibility and data. */
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"] [data-jaroo-cal-event-time="true"][data-jaroo-cal-time-display]{
+  font-size:0!important;letter-spacing:0!important;word-spacing:0!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"] [data-jaroo-cal-event-time="true"][data-jaroo-cal-time-display]::after{
+  content:attr(data-jaroo-cal-time-display);
+  content:attr(data-jaroo-cal-time-display) / "";
+  font-family:var(--jaroo-cal-font)!important;font-size:var(--jaroo-cal-event-time-size)!important;
+  font-weight:400!important;font-variant-numeric:tabular-nums;letter-spacing:0;line-height:1.2;
+}
+@media (forced-colors: none) {
+  /* Deadline/priority words and native event semantics remain. No boxes,
+     pink underlines, or top/side strokes around the highlighter. */
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"]:is([data-jaroo-cal-color="true"],[data-jaroo-cal-priority="true"],[data-jaroo-cal-deadline="true"]),
+  html[data-jaroo-calendar-theme="ebook"] [data-eventid]:not([data-jaroo-cal-event]):has(> [data-jaroo-cal-event="true"][data-jaroo-cal-color="true"]){
+    border-color:transparent!important;box-shadow:none!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-column-layer="true"],
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-column-layer="true"]::before,
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-column-layer="true"]::after{
+    border-inline-color:transparent!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-column-layer="true"]:not([data-jaroo-cal-month-row-rule]){
+    box-shadow:none!important;
+  }
+  /* Today's cell uses the same paper as the other days. Remove only its
+     own outline, including independent background/paint layers. */
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [role="gridcell"][data-jaroo-cal-today="true"],
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-today-cell="true"],
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-today-layer="true"],
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [data-jaroo-cal-today="true"]:not([data-jaroo-cal-date-label]):not([data-jaroo-cal-today-ring]):not([data-jaroo-cal-today-ring-part]){
+    background-color:transparent!important;background-image:none!important;
+    border-color:transparent!important;box-shadow:none!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-today-cell="true"]:not(:focus-visible):not(:has(:focus-visible)),
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-today-layer="true"]:not(:focus-visible):not(:has(:focus-visible)),
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [role="gridcell"][data-jaroo-cal-today="true"]:not(:focus-visible):not(:has(:focus-visible)){
+    outline-color:transparent!important;
+  }
+  /* Same 22px circular geometry already verified by the previous preview;
+     dark fill and white bold date, no ring/green highlight. */
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] :is(
+    [data-jaroo-cal-today-ring="true"],
+    [data-jaroo-cal-today-label="true"]:not([data-jaroo-cal-today-ring] *):not(:has([data-jaroo-cal-today-ring]))
+  ):not([data-jaroo-cal-month-today-cell]){
+    background-color:transparent!important;
+    background-image:radial-gradient(circle at center,#303438 0 10.5px,transparent 11px)!important;
+    background-size:22px 22px!important;background-repeat:no-repeat!important;background-position:center!important;
+    border-color:transparent!important;box-shadow:none!important;
+    color:#FFFFFF!important;-webkit-text-fill-color:#FFFFFF!important;font-weight:700!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [data-jaroo-cal-today-ring] :is([data-jaroo-cal-date-label="true"],[data-jaroo-cal-today-ring-part="true"]):not([data-jaroo-cal-today-ring]){
+    background-color:transparent!important;background-image:none!important;
+    color:#FFFFFF!important;-webkit-text-fill-color:#FFFFFF!important;font-weight:700!important;
   }
 }
 

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo · Google Calendar E-Book Companion
 // @namespace    jaroo.calendar.ebook
-// @version      0.4.4
+// @version      0.4.5
 // @description  Cool E-Ink Graph Paper · native Calendar event labels, More popup and local agenda.
 // @match        https://calendar.google.com/calendar/*
 // @run-at       document-idle
@@ -12,7 +12,7 @@
 // ==/UserScript==
 
 /*
- * Jaroo Calendar E-Book v0.4.4 · 2026-11-25
+ * Jaroo Calendar E-Book v0.4.5 · 2026-11-25
  * Requires the paired E-Book Stylus CSS and native Light appearance.
  * Forked from the working Calendar Companion v1.3.7; history below is retained.
  * v1.3.1: preserve visually present month-grid/list colors when Calendar temporarily
@@ -223,11 +223,11 @@
   // BEGIN_JAROO_ADAPTER
   const RUNTIME = '__jarooCalendarCompanionV1';
   window[RUNTIME]?.dispose?.();
-  const VERSION = '0.4.4';
+  const VERSION = '0.4.5';
   const CONFIG = Object.freeze({ timeZone: 'Asia/Seoul', futureDays: 7, maxPins: 3, maxEvents: 1200, settleMs: 180, recoveryMs: 5000 });
   const EVENT = '[data-eventid]';
   const EXCLUDE = '[role="dialog"],[role="menu"],[role="listbox"],[hidden],[inert],[aria-hidden="true"]';
-  const MARKERS = ['data-jaroo-cal-event','data-jaroo-cal-color','data-jaroo-cal-title','data-jaroo-cal-date-label','data-jaroo-cal-today','data-jaroo-cal-selected','data-jaroo-cal-grid','data-jaroo-cal-month-grid','data-jaroo-cal-month-title','data-jaroo-cal-today-label','data-jaroo-cal-month-frame','data-jaroo-cal-month-vertical','data-jaroo-cal-month-horizontal','data-jaroo-cal-month-row-rule','data-jaroo-cal-week-gutter','data-jaroo-cal-week-number','data-jaroo-cal-month-today-cell','data-jaroo-cal-month-today-layer','data-jaroo-cal-today-ring','data-jaroo-cal-today-ring-part','data-jaroo-cal-month-weekend','data-jaroo-cal-date-tone','data-jaroo-cal-day-header','data-jaroo-cal-more-label','data-jaroo-cal-event-time','data-jaroo-cal-brand','data-jaroo-cal-section','data-jaroo-cal-mini','data-jaroo-cal-mini-title','data-jaroo-cal-mini-day','data-jaroo-cal-mini-number','data-jaroo-cal-calendar-label','data-jaroo-cal-create-label','data-jaroo-cal-control','data-jaroo-cal-sidebar-panel','data-jaroo-cal-surface','data-jaroo-cal-deadline','data-jaroo-cal-priority','data-jaroo-cal-semantic','data-jaroo-cal-category','data-jaroo-cal-status'];
+  const MARKERS = ['data-jaroo-cal-event','data-jaroo-cal-color','data-jaroo-cal-title','data-jaroo-cal-date-label','data-jaroo-cal-today','data-jaroo-cal-selected','data-jaroo-cal-grid','data-jaroo-cal-month-grid','data-jaroo-cal-month-title','data-jaroo-cal-today-label','data-jaroo-cal-month-frame','data-jaroo-cal-month-vertical','data-jaroo-cal-month-column-layer','data-jaroo-cal-month-horizontal','data-jaroo-cal-month-row-rule','data-jaroo-cal-week-gutter','data-jaroo-cal-week-number','data-jaroo-cal-month-today-cell','data-jaroo-cal-month-today-layer','data-jaroo-cal-today-ring','data-jaroo-cal-today-ring-part','data-jaroo-cal-month-weekend','data-jaroo-cal-date-tone','data-jaroo-cal-day-header','data-jaroo-cal-more-label','data-jaroo-cal-event-time','data-jaroo-cal-time-display','data-jaroo-cal-brand','data-jaroo-cal-section','data-jaroo-cal-mini','data-jaroo-cal-mini-title','data-jaroo-cal-mini-day','data-jaroo-cal-mini-number','data-jaroo-cal-calendar-label','data-jaroo-cal-create-label','data-jaroo-cal-control','data-jaroo-cal-sidebar-panel','data-jaroo-cal-surface','data-jaroo-cal-deadline','data-jaroo-cal-priority','data-jaroo-cal-semantic','data-jaroo-cal-category','data-jaroo-cal-status'];
   const eventStyles = new Map(), marked = new Set(), dateCache = new WeakMap(), textRenderCache = new WeakMap();
   let markerPlan = null;
   let moreProbe = { textCandidates:0, gridAnchoredCandidates:0, verifiedOverlays:0, rowCandidates:0 };
@@ -310,7 +310,7 @@
       eventStyles.set(node,saved);
     }
     saved.native=nativePaintSignature(node);
-    const strength=semantic?.82:.28,hover=semantic?.92:.32;
+    const strength=semantic?.48:.20,hover=semantic?.62:.28;
     const values=[color,status?'none':brushImage(color,strength),status?'none':brushImage(color,hover)];
     for(let i=0;i<BRUSH_PROPS.length;i++){
       if(node.style.getPropertyValue(BRUSH_PROPS[i])!==values[i])node.style.setProperty(BRUSH_PROPS[i],values[i]);
@@ -495,9 +495,34 @@
 
   // Presentation-only: require a separate native time leaf and a different
   // non-time title leaf. Never strip text or change the event record.
+
+  // Display conversion only. The source Text node and accessible/native
+  // label, event identity, dates and title used for decisions never change.
+  function clock24(value){
+    const v=text(value);let h,m,meridiem;
+    let hit=v.match(/^(오전|오후)\s*(1[0-2]|0?[1-9])(?:\s*:\s*([0-5]\d)|\s*시(?:\s*([0-5]?\d)\s*분)?)?$/u);
+    if(hit){meridiem=hit[1]==='오후'?'PM':'AM';h=Number(hit[2]);m=Number(hit[3]??hit[4]??0);}
+    else if((hit=v.match(/^(1[0-2]|0?[1-9])(?:\s*:\s*([0-5]\d))?\s*(AM|PM)$/iu))){
+      h=Number(hit[1]);m=Number(hit[2]??0);meridiem=hit[3].toUpperCase();
+    }else if((hit=v.match(/^([01]?\d|2[0-3]):([0-5]\d)$/u))){
+      h=Number(hit[1]);m=Number(hit[2]);
+    }else return null;
+    if(meridiem)h=h%12+(meridiem==='PM'?12:0);
+    return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
+  }
+  function leadingTimeDisplay(record,timeLeaves){
+    // Only a separated, first rendered time label followed by a real
+    // title. Never substitute dates, authored title text, or all-day labels.
+    if(record.titleConfidence!==2||!timeLeaves.length||!Array.isArray(record.titleNodes))return null;
+    const first=record.titleNodes.find(n=>text(n.textContent));
+    if(!first||!timeLeaves.includes(first))return null;
+    const before=text(first.textContent),after=clock24(before),title=text(record.title);
+    if(!after||!title.startsWith(before)||!/\s/u.test(title.charAt(before.length)))return null;
+    return {leaf:first,before,after};
+  }
+
   function isStandaloneEventTime(value){
-    const v=text(value);
-    return /^(?:(?:[01]?\d|2[0-3]):[0-5]\d|(?:1[0-2]|0?[1-9])(?::[0-5]\d)?\s*(?:AM|PM)|(?:오전|오후)\s*(?:1[0-2]|0?[1-9])(?::[0-5]\d|시(?:\s*[0-5]?\d분)?)?|종일|All day)$/iu.test(v);
+    return clock24(value)!==null||/^(?:종일|All day)$/iu.test(text(value));
   }
   function eventTimeLeaves(record){
     if(record.titleConfidence<=0||record.titleNodes.length<2)return [];
@@ -512,7 +537,17 @@
     const node = record.node, presentation = eventPresentation(record);
     mark(node, 'data-jaroo-cal-event'); touched.add(node);
     for (const titleNode of record.titleNodes) { mark(titleNode, 'data-jaroo-cal-title'); touched.add(titleNode); }
-    try{for(const leaf of eventTimeLeaves(record))mark(leaf,'data-jaroo-cal-event-time');}catch(_){/* Optional time paint cannot block normal event rendering. */}
+    try{
+      const timeLeaves=eventTimeLeaves(record);
+      for(const leaf of timeLeaves)mark(leaf,'data-jaroo-cal-event-time');
+      const display=leadingTimeDisplay(record,timeLeaves);
+      if(display&&display.before!==display.after){
+        // A native generated icon may occupy ::after; do not replace it.
+        const leaf=display.leaf,content=getComputedStyle(leaf,'::after').content;
+        if(leaf.hasAttribute('data-jaroo-cal-time-display')||!content||content==='none'||content==='normal'||content==='""')
+          mark(leaf,'data-jaroo-cal-time-display',display.after);
+      }
+    }catch(_){/* Optional time paint cannot block normal event rendering. */}
     const paint = presentation.active && presentation.color && record.titleNodes.length;
     if (paint) { rememberStyle(node,presentation.color,presentation.semantic,presentation.status); mark(node, 'data-jaroo-cal-color'); }
     else { removeMarker(node, 'data-jaroo-cal-color'); restoreStyle(node); }
@@ -1325,6 +1360,27 @@
       cx>=row.left-78&&cx<=row.left+Math.min(8,row.pitch*.10)&&
       Math.abs(cy-row.cy)<=Math.min(28,Math.max(12,row.pitch*.25)))||null;
   }
+
+  // Recover separate grid decorations by the measured date-header columns.
+  // Do not remove the graph-paper grid, week-row rule, event/drag handle,
+  // or outside rails. Use the same bounded scan and rectangle cache.
+  function monthColumnPaint(node,r,rows,gridBottom,entries){
+    if(!r||!rows.length)return null;
+    const first=rows[0],left=first.left,right=first.right,pitch=first.pitch,top=first.cy-45;
+    if(r.top<top||r.bottom>gridBottom+6||r.left<left-5||r.right>right+5)return null;
+    if(r.width<=4&&r.height>=12){
+      if(node.childElementCount||text(node.textContent))return null;
+      for(let i=1;i<7;i++)if(Math.abs((r.left+r.right)/2-(left+i*pitch))<=4)return 'vertical';
+      return null;
+    }
+    if(r.width<pitch*.82||r.width>pitch*1.16||r.height<20)return null;
+    const col=Math.round((r.left-left)/pitch);
+    if(col<0||col>6||Math.abs(r.left-(left+col*pitch))>Math.max(8,pitch*.12)||Math.abs(r.right-(left+(col+1)*pitch))>Math.max(8,pitch*.12))return null;
+    const hasDate=entries.some(e=>node.contains(e.label));
+    if(!hasDate&&(text(node.textContent)||node.querySelector('[data-eventid]')))return null;
+    return 'column';
+  }
+
   function paintMonthCorrections(dates){
     if(!isMonthCalendarView())return;
     const rects=new WeakMap(),box=n=>{
@@ -1332,7 +1388,7 @@
       if(!rects.has(n))rects.set(n,monthRect(n));
       return rects.get(n);
     };
-    const cssTag='span,div,button,[role="button"],a,[role="link"],[role="rowheader"],[role="gridcell"],time';
+    const cssTag='span,div,button,[role="button"],a,[role="link"],[role="rowheader"],[role="gridcell"],time,hr,[role="separator"]';
     const interactive='button,a,[role="button"],[role="link"],input,[tabindex]';
     const center=r=>({cx:(r.left+r.right)/2,cy:(r.top+r.bottom)/2});
     const dayLabel=(node,date)=>node&&dateCaptionMatches(node.textContent,date)&&!node.childElementCount&&box(node)&&textIsRendered(node);
@@ -1386,6 +1442,13 @@
       if(rows.length<4||rows.length>6)continue;
       const scan=[...root.querySelectorAll(cssTag)].slice(0,12000);
       const left=Math.min(...rows.map(r=>r.left)),top=rows[0].cy,bottom=gr.bottom;
+      // Grid decorations can be siblings of the date grid.
+      for(const n of scan){
+        if(n.matches(interactive))continue;
+        const kind=monthColumnPaint(n,box(n),rows,bottom,entries);
+        if(kind==='vertical')mark(n,'data-jaroo-cal-month-vertical');
+        else if(kind==='column')mark(n,'data-jaroo-cal-month-column-layer');
+      }
       const weekNodes=new Set();
       for(const n of scan){
         if(n.childElementCount)continue;
@@ -1717,7 +1780,7 @@
     const item = uiElement('div','event'), presentation = eventPresentation(record);
     if (presentation.color) item.style.setProperty('--accent', presentation.color);
     if (presentation.semantic) { item.dataset.semantic = 'true'; item.style.setProperty('--ink', presentation.ink);
-      if(presentation.color&&!presentation.status)item.style.setProperty('--event-title-brush',brushImage(presentation.color,.82)); }
+      if(presentation.color&&!presentation.status)item.style.setProperty('--event-title-brush',brushImage(presentation.color,.48)); }
     if (presentation.status) item.dataset.status = presentation.status;
     const content = uiElement('div');
     if (presentation.deadline || presentation.priority || presentation.category || presentation.status) {
@@ -1778,7 +1841,7 @@
     const status = shadow.getElementById('jaroo-cal-ui-status'), notes = [];
     status.className = 'status';
     if (!cssApplied) { notes.push('테마 CSS가 아직 적용되지 않았어. Stylus 적용 주소를 확인해줘.'); status.classList.add('warn'); }
-    else if (enabled && cssVersion !== '0.4.4') { notes.push('E-Book v0.4.4 CSS가 필요해. 같은 채널의 Stylus 스타일을 확인해줘.'); status.classList.add('warn'); }
+    else if (enabled && cssVersion !== '0.4.5') { notes.push('E-Book v0.4.5 CSS가 필요해. 같은 채널의 Stylus 스타일을 확인해줘.'); status.classList.add('warn'); }
     if (dirty) notes.push('화면 확인 중… 이전에 읽은 항목이 잠시 표시될 수 있어.');
     else if (lastError) { notes.push('화면을 다시 읽지 못했어. 표시 설정에서 다시 읽기를 눌러줘.'); status.classList.add('warn'); }
     else if (panelFilter === 'today' && !todayKnown) notes.push('현재 화면에서 오늘 날짜를 확인하지 못했어. 기본 캘린더를 오늘로 이동한 뒤 다시 읽어줘.');
@@ -2166,6 +2229,7 @@
       removeMarker(node, 'data-jaroo-cal-more-label');
       removeMarker(node,'data-jaroo-cal-month-frame');
       removeMarker(node,'data-jaroo-cal-month-vertical');
+      removeMarker(node,'data-jaroo-cal-month-column-layer');
       removeMarker(node,'data-jaroo-cal-month-horizontal');
       removeMarker(node,'data-jaroo-cal-month-row-rule');
       removeMarker(node,'data-jaroo-cal-week-gutter');
