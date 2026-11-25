@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.3.19
+// @version      0.3.20
 // @description  E-book role markers, sidebar presentation, outline and safe composer attachment layout. No editable text mutation; Clock owns its first paint.
 // @match        https://chatgpt.com/*
 // @run-at       document-start
@@ -124,13 +124,35 @@
     }
   }
 
+  function syncRolePresentation(title, info) {
+    if(title.getAttribute('data-ebook-role')!==info.role)title.setAttribute('data-ebook-role',info.role);
+    const state=info.lifecycle==='완료'?'done':info.lifecycle==='중단'?'stopped':info.lifecycle==='보류'?'paused':null;
+    if(state) {
+      if(title.getAttribute('data-ebook-life-cycle')!==state)title.setAttribute('data-ebook-life-cycle',state);
+    } else if(title.hasAttribute('data-ebook-life-cycle'))title.removeAttribute('data-ebook-life-cycle');
+    touched.add(title);
+  }
+
   function decorate(anchor) {
     if (!anchor?.isConnected || !anchor.matches('a[href*="/c/"]')) return;
     const title = titleNode(anchor);
     if (!title) { errors.missingTitle++; return; }
-    if (title.hasAttribute('data-ebook-role') && title.querySelector(CLEANUP_GLYPH)) return;
+    if (title.hasAttribute('data-ebook-role') && title.querySelector(CLEANUP_GLYPH)) {
+      // A native rename can reuse the decorated DOM. Re-read the aggregate
+      // title on every observed change instead of retaining its old lifecycle.
+      const current=roleIn(title.textContent||'');
+      if(current) { syncRolePresentation(title,current); return; }
+    }
     const match = firstValidText(title);
-    if (!match) { errors.missingPrefix++; return; }
+    if (!match) {
+      // Native text replacement may remove the old glyph but keep its element.
+      if(!title.querySelector(CLEANUP_GLYPH)){
+        title.removeAttribute('data-ebook-role');
+        title.removeAttribute('data-ebook-life-cycle');
+        touched.delete(title);
+      }
+      errors.missingPrefix++; return;
+    }
     const {node, match: info} = match;
     if (!node.parentNode || !node.nodeValue) return;
     // Use Text.splitText: aggregate textContent and native href/data remain identical.
@@ -144,9 +166,7 @@
     hidden.setAttribute('data-ebook-glyph', 'true');
     hidden.textContent = markerPart.nodeValue;
     markerPart.replaceWith(hidden);
-    title.setAttribute('data-ebook-role', info.role);
-    if (info.lifecycle) title.setAttribute('data-ebook-life-cycle', info.lifecycle === '완료' ? 'done' : info.lifecycle === '중단' ? 'stopped' : 'paused');
-    touched.add(title);
+    syncRolePresentation(title, info);
     errors.wrapped++;
     // Aggregate DOM text remains identical; React source data and attributes are untouched.
   }
@@ -2591,7 +2611,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.3.19',dispose,refresh:schedule,outlineDiagnostic,
+    version:'0.3.20',dispose,refresh:schedule,outlineDiagnostic,
     diagnostics:() => ({...errors,sorting:{...sidebarSortDiagnostics,styledRows:sidebarSortSaved.size},roots:observedRoots.length,clockSkinned:document.getElementById(CLOCK_HOST)?.getAttribute('data-ebook-clock-ready')==='true',dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),firstPaintNav:getComputedStyle(document.documentElement).getPropertyValue('--eb-first-paint-nav').trim()==='1',opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-project-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:'css-only',mutedComposerFrames:0,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state'),overflow:n.getAttribute('data-ebook-count-overflow')==='true',confirmed:n.getAttribute('data-ebook-count-confirmed')===''?null:Number(n.getAttribute('data-ebook-count-confirmed'))})),lastPassMs:{...timings},performance:{events:{...perfEvents},passes:Object.fromEntries(Object.entries(perfPasses).map(([k,v])=>[k,{runs:v.runs,averageMs:Math.round(v.totalMs/v.runs*100)/100,peakMs:Math.round(v.peakMs*100)/100}]))},fixedSidebarTop:[...topBands.values()].map(n=>({height:n.height,visible:getComputedStyle(n.strip).visibility==='visible',pattern:getComputedStyle(n.strip).backgroundImage})),projectCountBorders:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({border:getComputedStyle(n).borderTopWidth,style:getComputedStyle(n).borderTopStyle,outline:getComputedStyle(n).outlineStyle})),projectCountLayers:countLayers.size,positionResizeTargets:navResizeTargets.size,visibleProjectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].filter(n=>getComputedStyle(n).visibility!=='hidden').length,projectCountAxis:findDotCountReference()?.circle.getBoundingClientRect().left??null,fontAudit:fontAudit()})
   };
 })();

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.50
+// @version      3.11.51
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -307,7 +307,8 @@
       .life-card .life-value:has(>.life-duration-hours){display:contents}
       .life-card .life-duration-hours{grid-column:2;grid-row:2;justify-self:end;align-self:baseline}
       .life-card .life-duration-tail{grid-column:3;grid-row:2;justify-self:end;align-self:baseline;line-height:1.02}
-      .life-card .life-duration-hours::after{content:" 시간";font:inherit;letter-spacing:inherit}
+      /* Unit only: 60% of the hour digits; .8333ch at that size is about half the old full-size space. */
+      .life-card .life-duration-hours::after{content:"시간";font:inherit;font-size:60%;letter-spacing:inherit;margin-inline-start:.8333ch}
       @container jaroo-dashboard (max-width:379px){
         .life-card .life-card-main{grid-template-columns:minmax(0,1fr) auto;column-gap:4px}
         .life-card .life-label{grid-column:1;grid-row:1}
@@ -315,9 +316,6 @@
         .life-card .life-duration-hours{grid-column:2;grid-row:1}
         .life-card .life-duration-tail{grid-column:2;grid-row:2}
         .life-card .life-duration-tail::before{content:none}
-      }
-      @container jaroo-dashboard (max-width:199px){
-        .life-card .life-duration-hours::after{font-size:70%}
       }
       @container jaroo-dashboard (max-width:179px){
         .life-card .life-label{grid-column:1/-1}
@@ -1436,9 +1434,9 @@
     if (PAGE[RUNTIME_KEY]?.dispose === dispose) delete PAGE[RUNTIME_KEY];
   }
   PAGE[RUNTIME_KEY] = {
-    version: '3.11.50', dispose,
+    version: '3.11.51', dispose,
     diagnostics: () => ({
-      version: '3.11.50', ...placementReport,
+      version: '3.11.51', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),

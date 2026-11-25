@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo E-book · Ivory Mono
 @namespace    jaroo.theme.ebook.ivory-mono
-@version      0.3.5
+@version      0.3.6
 @description  E-book Editorial Notebook with Pretendard Variable reading text, IBM Plex Mono metadata and paper grid.
 @author       Jaroo Design Team
 @license      UNLICENSED
@@ -224,7 +224,7 @@
   [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row]:hover
     [data-marquee-content="true"] { background: var(--eb-soft) !important; }
   [data-sidebar-project-kind="local"] [data-app-action-sidebar-project-row][aria-current="page"]
-    [data-marquee-content="true"] { border: 1px solid var(--eb-line-strong) !important; }
+    [data-marquee-content="true"] { border: 0 !important; outline: none !important; box-shadow: none !important; }
 
   /* 05. CHAT LIST — JS marks only visual prefix, never rewrites chat names. */
   :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],aside)
@@ -2096,6 +2096,44 @@
     font-weight:450!important;
     color:var(--eb-secondary,#535B60)!important;
     -webkit-text-fill-color:var(--eb-secondary,#535B60)!important;
+  }
+
+  /* v0.3.6 — completed title only: remove the role-dot flex item, not
+     the independent native running/completed/status icon. Keep all title
+     text (including [완료]) contiguous and use the existing lifecycle ink. */
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-ebook-count-rail="true"],[data-app-action-sidebar-section-heading],aside,[role="complementary"]) a[href*="/c/"] [data-ebook-role][data-ebook-life-cycle="done"]::before,
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-ebook-count-rail="true"],[data-app-action-sidebar-section-heading],aside,[role="complementary"]) a[href*="/c/"][data-ebook-role][data-ebook-life-cycle="done"]::before,
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-ebook-count-rail="true"],[data-app-action-sidebar-section-heading],aside,[role="complementary"]) a[href*="/c/"][data-ebook-chat-lifecycle="done"] [data-ebook-role]::before,
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-ebook-count-rail="true"],[data-app-action-sidebar-section-heading],aside,[role="complementary"]) a[href*="/c/"]:has([data-ebook-chat-lifecycle="done"]) [data-ebook-role]::before,
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-ebook-count-rail="true"],[data-app-action-sidebar-section-heading],aside,[role="complementary"]) a[href*="/c/"][data-ebook-role]:is([data-ebook-chat-lifecycle="done"],:has([data-ebook-chat-lifecycle="done"]))::before {
+    content:none!important;
+    display:none!important;
+    width:0!important;
+    min-width:0!important;
+    flex:0 0 0!important;
+    margin:0!important;
+    padding:0!important;
+    background:none!important;
+    --eb-role-pixel-snap:0;
+  }
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-ebook-count-rail="true"],[data-app-action-sidebar-section-heading],aside,[role="complementary"]) a[href*="/c/"] [data-ebook-role][data-ebook-life-cycle="done"],
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-ebook-count-rail="true"],[data-app-action-sidebar-section-heading],aside,[role="complementary"]) a[href*="/c/"][data-ebook-role][data-ebook-life-cycle="done"],
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-ebook-count-rail="true"],[data-app-action-sidebar-section-heading],aside,[role="complementary"]) a[href*="/c/"][data-ebook-chat-lifecycle="done"] [data-ebook-role],
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-ebook-count-rail="true"],[data-app-action-sidebar-section-heading],aside,[role="complementary"]) a[href*="/c/"]:has([data-ebook-chat-lifecycle="done"]) [data-ebook-role],
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-ebook-count-rail="true"],[data-app-action-sidebar-section-heading],aside,[role="complementary"]) a[href*="/c/"][data-ebook-role]:is([data-ebook-chat-lifecycle="done"],:has([data-ebook-chat-lifecycle="done"])) {
+    gap:0!important;
+  }
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-ebook-count-rail="true"],[data-app-action-sidebar-section-heading],aside,[role="complementary"]) a[href*="/c/"] [data-ebook-role][data-ebook-life-cycle="done"],
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-ebook-count-rail="true"],[data-app-action-sidebar-section-heading],aside,[role="complementary"]) a[href*="/c/"][data-ebook-chat-lifecycle="done"] [data-ebook-role],
+  html body :is(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"],[data-ebook-count-rail="true"],[data-app-action-sidebar-section-heading],aside,[role="complementary"]) a[href*="/c/"]:has([data-ebook-chat-lifecycle="done"]) [data-ebook-role] {
+    display:inline-block!important;
+  }
+  /* Selected project text is not a focus frame. Leave the native row,
+     controls, marker color and keyboard navigation itself unchanged. */
+  html body [data-app-action-sidebar-project-row] :is([data-marquee-content="true"],[data-marquee-text="true"],[data-ebook-project-marker]) {
+    border:0!important;
+    outline:0!important;
+    box-shadow:none!important;
   }
 
   /* v0.2.52 — one typography standard for Dot and project counters.
