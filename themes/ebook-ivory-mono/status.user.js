@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo · Status & Command Center
 // @namespace    jaroo-company.local
-// @version      6.9.10
+// @version      6.9.11
 // @description  E-book RUN/DONE and ALL/ONLY; first-paint quiet controls, verified native-state detection and cross-tab synchronization.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -15,7 +15,7 @@
   const RUNTIME = '__jarooCommandCenterRuntimeV4';
   window[RUNTIME]?.dispose?.();
   window.__jarooNativeCapture?.stop?.();
-  const VERSION = '6.9.10';
+  const VERSION = '6.9.11';
   const HOVER_MS = 400;
   const ROOTS = '#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]';
   const ARCHIVE = '[data-sidebar-archive-chatgpt-id]';
@@ -963,23 +963,23 @@
     .jaroo-mode-caption{min-width:0;font-size:clamp(10px,5.5cqi,13px);font-weight:500;line-height:1.2;white-space:normal;overflow-wrap:anywhere}
     @container jaroo-dashboard (max-width:219px){.jaroo-center .jaroo-top-badge{padding-inline:8px 6px}}
     @container jaroo-dashboard (max-width:184px){.jaroo-center{grid-template-columns:minmax(0,1fr)}.jaroo-center button,.jaroo-center .jaroo-top-badge{min-height:32px}}
-    .jaroo-focus-list{display:flex;flex-direction:column;gap:4px;border-top:1px solid #C5CDD0;margin:0;padding:6px 0 8px;background:transparent}
+    .jaroo-focus-list{display:flex;flex-direction:column;gap:4px;min-width:0;max-width:100%;border-top:1px solid #C5CDD0;margin:0;padding:6px 0 8px;background:transparent;overflow-x:clip}
     .jaroo-focus-list[hidden]{display:none!important}
     .jaroo-focus-header{display:flex;align-items:center;justify-content:space-between;gap:4px}
     .jaroo-focus-header strong,.jaroo-focus-header em,.jaroo-focus-empty{color:#535B60;font-size:12px;line-height:1.3;font-style:normal}
     .jaroo-focus-header strong{min-width:0;overflow-wrap:anywhere}.jaroo-focus-total{white-space:nowrap;flex:none}
     .jaroo-focus-total .jaroo-focus-count{color:var(--eb-accent-ink,#303438);font-variant-numeric:tabular-nums}
     .jaroo-focus-total .jaroo-focus-unit{margin-inline-start:.18em}
-    .jaroo-focus-entries{display:flex;flex-direction:column;gap:4px;max-height:min(340px,42vh);overflow:auto}
-    .jaroo-focus-row{display:flex;align-items:center;gap:5px;min-width:0;padding:5px 2px;color:#292D30;text-decoration:none;border-radius:3px;cursor:pointer}
+    .jaroo-focus-entries{display:flex;flex-direction:column;gap:4px;width:100%;min-width:0;max-width:100%;max-height:min(340px,42vh);overflow-x:hidden;overflow-y:auto;overscroll-behavior-x:none;scrollbar-width:thin}
+    .jaroo-focus-row{display:grid;grid-template-columns:minmax(0,1fr) 16px;align-items:center;gap:5px;width:100%;max-width:100%;min-width:0;padding:5px 2px;color:#292D30;text-decoration:none;border-radius:3px;cursor:pointer;overflow:hidden}
     .jaroo-focus-row:hover,.jaroo-focus-row:focus-visible{background:#DFE3E5}
     .jaroo-focus-row[aria-disabled="true"]{opacity:.55;cursor:default}
-    .jaroo-focus-name{display:block;flex:1 1 auto;min-width:0;font-size:var(--widget-meta);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .jaroo-focus-tag{order:2;flex:0 0 16px;width:16px;height:16px;display:grid;place-items:center;margin-left:auto;color:var(--eb-accent-ink,#303438)}
-    .jaroo-focus-tag svg{display:block;width:15px;height:15px;transform-origin:center}
-    @keyframes jaroo-focus-spin{to{transform:rotate(360deg)}}
-    .jaroo-focus-tag[data-jstatus="working"] svg{animation:jaroo-focus-spin 1s linear infinite}
-    @media(prefers-reduced-motion:reduce){.jaroo-focus-tag[data-jstatus="working"] svg{animation:none}}
+    .jaroo-focus-name{display:block;min-width:0;max-width:100%;font-size:var(--widget-meta);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .jaroo-focus-tag{order:2;display:grid;place-items:center;width:16px;height:16px;min-width:0;overflow:hidden;contain:layout paint;color:var(--eb-accent-ink,#303438)}
+    .jaroo-focus-tag svg{display:block;width:15px;height:15px}
+    .jaroo-focus-spinner{display:block;width:14px;height:14px;border:1.8px solid rgba(48,52,56,.20);border-top-color:currentColor;border-right-color:currentColor;border-radius:50%;transform:translate3d(0,0,0) rotate(0deg);will-change:transform;animation:jaroo-focus-spin .9s linear infinite}
+    @keyframes jaroo-focus-spin{from{transform:translate3d(0,0,0) rotate(0deg)}to{transform:translate3d(0,0,0) rotate(360deg)}}
+    @media(prefers-reduced-motion:reduce){.jaroo-focus-spinner{animation:none;will-change:auto}}
   `;
   function alignDockToClock() {
     if(!dock?.isConnected || !lastDockHost?.isConnected) return;
@@ -1139,6 +1139,9 @@
     tag.setAttribute('role','img');
     tag.setAttribute('aria-label',running?'Running':'Completed');
     tag.title=running?'Running':'Completed';
+    if (running) {
+      const ring=document.createElement('span');ring.className='jaroo-focus-spinner';ring.setAttribute('aria-hidden','true');tag.append(ring);return tag;
+    }
     const ns='http://www.w3.org/2000/svg';
     const svg=document.createElementNS(ns,'svg');
     svg.setAttribute('viewBox','0 0 24 24');
@@ -1149,28 +1152,29 @@
     svg.setAttribute('stroke-width','2.5');
     svg.setAttribute('stroke-linecap','round');
     svg.setAttribute('stroke-linejoin','round');
-    if (running) {
-      const track=document.createElementNS(ns,'circle');
-      track.setAttribute('cx','12');track.setAttribute('cy','12');track.setAttribute('r','8.5');track.setAttribute('opacity','.23');
-      svg.append(track);
-    }
     const path=document.createElementNS(ns,'path');
-    path.setAttribute('d',running?'M12 3.5 A8.5 8.5 0 0 1 20.5 12':'M5 12.5 L9.5 17 L19 7.5');
+    path.setAttribute('d','M5 12.5 L9.5 17 L19 7.5');
     svg.append(path);tag.append(svg);return tag;
   }
+  const focusRowKeys=new WeakMap();
+  function focusRowKey(r) {return JSON.stringify([r.id,r.status,r.title,r.href,r.run.clock,r.run.origin,r.run.owner]);}
   function renderFocusEntries(records) {
     if (!focusEntries?.isConnected) return;
-    const signature=JSON.stringify(records.map(r=>[r.id,r.status,r.title,r.href,r.run.clock]));
+    const signature=JSON.stringify(records.map(focusRowKey));
     if (signature === focusSignature) return;
     focusSignature=signature;
     const previousScroll=focusEntries.scrollTop;
-    focusEntries.replaceChildren();
+    const existing=new Map([...focusEntries.children].map(row=>[focusRowKeys.get(row),row]));
+    const wanted=[];
     if (!records.length) {
       const empty=document.createElement('div');empty.className='jaroo-focus-empty';
       empty.textContent='No running or completed tasks.';
-      focusEntries.append(empty);
+      wanted.push(empty);
     }
     for (const record of records) {
+      const key=focusRowKey(record);
+      const cached=existing.get(key);
+      if(cached){wanted.push(cached);continue;}
       const href=safePath(record.href || `/c/${record.id}`,record.id);
       const row=document.createElement('a');row.className='jaroo-focus-row';
       row.setAttribute('role','listitem');row.href=href || '#';
@@ -1193,8 +1197,13 @@
           }
         });
       }
-      focusEntries.append(row);
+      focusRowKeys.set(row,key);wanted.push(row);
     }
+    const keep=new Set(wanted);
+    for(const row of [...focusEntries.children])if(!keep.has(row))row.remove();
+    let cursor=focusEntries.firstElementChild;
+    for(const row of wanted){if(row===cursor)cursor=cursor.nextElementSibling;else focusEntries.insertBefore(row,cursor);}
+    focusEntries.scrollLeft=0;
     focusEntries.scrollTop=previousScroll;
     const badge=focusList?.querySelector('.jaroo-focus-count');
     if (badge) badge.textContent=String(records.length);
