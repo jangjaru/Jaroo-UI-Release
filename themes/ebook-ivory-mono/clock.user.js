@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.30
+// @version      3.11.31
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -181,13 +181,14 @@
       .life-card .life-label{font-weight:550;color:#23272B;line-height:1.02}
       .life-card .life-meta{white-space:nowrap;line-height:1.02}
       .life-card .life-value{white-space:nowrap;line-height:.95}
-      .life-progress{margin:6px 0 0;padding:7px 0 0;border-top:1px solid #D4DADC}
+      .life-progress{margin:14px 0 0;padding:7px 0 0;border-top:1px solid #D4DADC}
       .life-progress-head{display:flex;flex-direction:row;align-items:baseline;justify-content:space-between;flex-wrap:nowrap;gap:10px;margin-bottom:11px}
       .life-progress-title{font:650 calc(var(--widget-main) + 1px)/1.3 var(--font);color:var(--ink);letter-spacing:.025em;text-transform:uppercase;white-space:nowrap;flex:0 0 auto}
       .life-progress-scale{white-space:nowrap;flex:0 0 auto;margin-inline-start:auto;text-align:right;letter-spacing:-.035em;line-height:1.02}
       @container jaroo-dashboard (min-width:185px) and (max-width:209px){.life-progress-title{font-size:var(--widget-main)}.life-progress-head{gap:8px}}
-      .life-bar{height:5px;border-radius:999px;background:#D0D5D7;overflow:hidden}
-      .life-bar-fill{height:100%;width:0;border-radius:999px;background:#879398}
+      :is(.life-bar,.career-bar){height:var(--life-progress-bar-height,5px);min-height:var(--life-progress-bar-height,5px);max-height:var(--life-progress-bar-height,5px);border-radius:999px;background:#D0D5D7;overflow:hidden;position:relative;top:var(--life-progress-bar-offset,0px);box-sizing:border-box}
+      :is(.life-bar-fill,.career-bar-fill){display:block;height:100%;border-radius:999px;background:#879398}
+      .life-bar-fill{width:0}
       .life-bar-glow{display:none}
       .life-progress-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin-top:7px}
       .life-progress-stat{display:flex;flex-direction:column;gap:3px;min-width:0;align-items:flex-start}
@@ -281,9 +282,9 @@
       }
       /* Remaining-time progress uses the same colors, thickness and caps for all three metrics. */
       .life-card.retire:has(.career-bar:not([hidden])){border-bottom:0;padding-bottom:0}
-      .career-bar{height:5px;border-radius:999px;background:#D0D5D7;overflow:hidden;margin-top:8px}
+      .career-bar{margin-top:8px}
       .career-bar[hidden]{display:none}
-      .career-bar-fill{height:100%;width:var(--career-remaining,0%);border-radius:999px;background:#879398}
+      .career-bar-fill{width:var(--career-remaining,0%)}
       .career-remaining-percent{font:450 100%/1.2 var(--font);letter-spacing:-.04em;word-spacing:normal;color:var(--muted);white-space:nowrap;margin-inline-start:3px}
       .life-card .career-remaining-percent{line-height:1.02}
       .career-remaining-percent[hidden]{display:none}
@@ -1023,6 +1024,34 @@
     return lastFolderAlignX ?? (bounds.left+EDGE_GUTTER);
   }
 
+  // All four progress bars share an integer physical-pixel thickness.
+  // Measure only on placement/resize, not during the one-second countdown.
+  const progressTracks = [...shadow.querySelectorAll('.career-bar,.life-bar')];
+  function progressPixelHeight(dpr) {
+    return Math.max(1,Math.floor(5*dpr+1e-6))/dpr;
+  }
+  function progressPixelOffset(top,dpr) {
+    return Math.round(top*dpr)/dpr-top;
+  }
+  function snapProgressTracks() {
+    const dpr=Number(window.devicePixelRatio);
+    if(!Number.isFinite(dpr)||dpr<=0)return;
+    const height=progressPixelHeight(dpr).toFixed(6)+'px';
+    if(host.style.getPropertyValue('--life-progress-bar-height')!==height)
+      host.style.setProperty('--life-progress-bar-height',height);
+    // Reset offsets in a batch, read the original positions, then write once.
+    const visible=progressTracks.filter(track=>!track.hidden);
+    for(const track of visible)track.style.removeProperty('--life-progress-bar-offset');
+    const offsets=visible.map(track=>{
+      const r=track.getBoundingClientRect();
+      return r.height>0?progressPixelOffset(r.top,dpr):0;
+    });
+    visible.forEach((track,i)=>{
+      if(Math.abs(offsets[i])>0.000001)
+        track.style.setProperty('--life-progress-bar-offset',offsets[i].toFixed(6)+'px');
+    });
+  }
+
   function place() {
     const found = visibleLogo();
     if(!found){hideWidget('header-anchor-not-found');return;}
@@ -1046,6 +1075,7 @@
     bindSidebarObserver(sidebar);
     const menuItem=findMenuAnchor(sidebar,r.bottom);
     const menuTop=menuItem?.node.getBoundingClientRect().top ?? 0;
+    snapProgressTracks();
     const widgetBottom=host.getBoundingClientRect().bottom;
     if(menuTop && widgetBottom>menuTop+1){
       hideWidget('overlap-guard', {...measurements,menuTop,widgetBottom});return;
@@ -1169,9 +1199,9 @@
     if (window[RUNTIME_KEY]?.dispose === dispose) delete window[RUNTIME_KEY];
   }
   window[RUNTIME_KEY] = {
-    version: '3.11.30', dispose,
+    version: '3.11.31', dispose,
     diagnostics: () => ({
-      version: '3.11.30', ...placementReport,
+      version: '3.11.31', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),

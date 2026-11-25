@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.3.5
+// @version      0.3.6
 // @description  E-book role markers, sidebar presentation, outline and safe composer attachment layout. No editable text mutation; Clock owns its first paint.
 // @match        https://chatgpt.com/*
 // @run-at       document-start
@@ -2221,9 +2221,9 @@
     style.textContent=
       ':host{all:initial;position:fixed!important;right:16px!important;top:94px!important;z-index:40!important;display:block!important;font-family:var(--eb-font,"IBM Plex Mono","Pretendard Variable","Pretendard",sans-serif);color:var(--eb-ink,#292D30);font-size:13px;line-height:1.5;}' +
       '*{box-sizing:border-box}button,input{font:inherit;color:inherit}button{cursor:pointer}' +
-      '.toggle{display:flex;align-items:center;gap:7px;margin-left:auto;background:var(--eb-panel,#F5F6F6);border:2px solid #2B2F32;padding:5px 9px;border-radius:6px;color:var(--eb-ink,#292D30);font-weight:500;box-shadow:0 2px 5px rgba(39,47,54,.13),0 1px 1px rgba(39,47,54,.08);white-space:nowrap}' +
-      '.toggle .outline-book-icon{display:block;width:15px;height:15px;flex:0 0 15px;pointer-events:none}' +
-      '.toggle:hover{background:#FAF0CE}.toggle[aria-expanded="true"]{background:#F7E7AC;color:#292D30;border-color:#2B2F32}' +
+      '.toggle{display:flex;align-items:center;gap:7px;margin-left:auto;background:#FFF4BE;border:3px solid #2B2F32;padding:4px 8px;border-radius:6px;color:var(--eb-ink,#292D30);font-weight:500;box-shadow:0 3px 8px rgba(39,47,54,.16),0 1px 2px rgba(39,47,54,.10);white-space:nowrap}' +
+      '.toggle .outline-menu-icon{display:block;width:15px;height:15px;flex:0 0 15px;pointer-events:none}' +
+      '.toggle:hover{background:#FFF8D5}.toggle[aria-expanded="true"]{background:#FFF4BE;color:#292D30;border-color:#2B2F32}' +
       '.panel{width:min(340px,calc(100vw - 32px));max-height:min(72vh,calc(100vh - 145px));margin-top:8px;background:var(--eb-panel,#F5F6F6);border:1px solid var(--eb-line,#C5CDD0);border-radius:10px;display:flex;flex-direction:column;box-shadow:0 8px 24px rgba(39,47,54,.12);overflow:hidden}' +
       '[hidden]{display:none!important}.head{padding:14px 14px 11px;border-bottom:1px solid var(--eb-line,#C5CDD0)}' +
       '.title{display:block;font-size:16px;font-weight:650;letter-spacing:-.025em}.meta{display:block;color:var(--eb-secondary,#535B60);font-size:11px;margin-top:4px}' +
@@ -2231,11 +2231,11 @@
       '.search:focus,button:focus-visible{outline:2px solid var(--eb-quiet-focus,#7B898F);outline-offset:1px}' +
       '.list{overflow:auto;overscroll-behavior:contain;min-height:0;padding:7px 8px;scrollbar-width:thin}' +
       '.entry{width:100%;display:flex;align-items:baseline;gap:8px;text-align:left;border:0;background:transparent;border-radius:4px;padding:6px 7px;line-height:1.45;overflow-wrap:anywhere}' +
-      '.entry:hover,.entry:focus-visible{background:#FAF0CE}.entry[aria-current="location"]{background:#F7E7AC;color:#2B2F32;box-shadow:inset 0 0 0 1px #D8C88E}' +
+      '.entry:hover,.entry:focus-visible{background:#FFF8D5}.entry[aria-current="location"]{background:#FFF4BE;color:#2B2F32;box-shadow:inset 0 0 0 1px #E6D68E}' +
       '.question{font-weight:600;margin-top:5px;border-top:1px solid var(--eb-line,#C5CDD0);border-radius:0 0 4px 4px;padding-top:9px}.question:first-child{border-top:0;margin-top:0}' +
       '.answer{color:var(--eb-secondary,#535B60);padding-left:17px}.heading{padding-left:26px;color:var(--eb-secondary,#535B60);font-size:12px}' +
       '.index{color:var(--eb-muted,#737D83);flex:none;font-size:10px;font-family:var(--eb-mono,"IBM Plex Mono",monospace);font-weight:500}.label{min-width:0}.empty{padding:14px 8px;color:var(--eb-muted,#737D83)}' +
-      " .foot{border-top:1px solid var(--eb-line,#C5CDD0);padding:9px 14px;font-size:10px;color:var(--eb-secondary,#535B60);display:flex;align-items:center;gap:6px;justify-content:space-between}.rescan{border:0;background:transparent;padding:3px 4px;white-space:nowrap;text-decoration:underline;text-underline-offset:2px}.rescan:hover{color:#292D30;background:#FAF0CE}.foot-actions{display:flex;gap:4px}.diagnostic{margin:0;padding:10px 12px;border-top:1px solid var(--eb-line,#C5CDD0);max-height:200px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;font-size:10px;background:var(--eb-paper,#EFF1F2)}" +
+      " .foot{border-top:1px solid var(--eb-line,#C5CDD0);padding:9px 14px;font-size:10px;color:var(--eb-secondary,#535B60);display:flex;align-items:center;gap:6px;justify-content:space-between}.rescan{border:0;background:transparent;padding:3px 4px;white-space:nowrap;text-decoration:underline;text-underline-offset:2px}.rescan:hover{color:#292D30;background:#FFF8D5}.foot-actions{display:flex;gap:4px}.diagnostic{margin:0;padding:10px 12px;border-top:1px solid var(--eb-line,#C5CDD0);max-height:200px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;font-size:10px;background:var(--eb-paper,#EFF1F2)}" +
       '@media(max-width:600px){:host{right:8px!important;top:90px!important}.panel{width:min(320px,calc(100vw - 16px));max-height:65vh}}';
     function node(tag,cls,value) {
       const n=document.createElement(tag);
@@ -2243,12 +2243,12 @@
       return n;
     }
     const toggle=node('button','toggle');
-    const bookIcon=document.createElementNS('http://www.w3.org/2000/svg','svg');
-    for(const [key,value] of Object.entries({class:'outline-book-icon',viewBox:'0 0 24 24',fill:'none',stroke:'currentColor','stroke-width':'1.8','stroke-linecap':'round','stroke-linejoin':'round','aria-hidden':'true',focusable:'false'}))bookIcon.setAttribute(key,value);
-    const bookPath=document.createElementNS('http://www.w3.org/2000/svg','path');
-    bookPath.setAttribute('d','M12 6.5C9.5 4.4 6.4 3.9 3 5v14c3.4-1.1 6.5-.6 9 1.5 2.5-2.1 5.6-2.6 9-1.5V5c-3.4-1.1-6.5-.6-9 1.5v14M6 9l3 .7M6 13l3 .7M15 9.7l3-.7M15 13.7l3-.7');
-    bookIcon.append(bookPath);
-    toggle.append(bookIcon,node('span','toggle-label','목차'));
+    const menuIcon=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    for(const [key,value] of Object.entries({class:'outline-menu-icon',viewBox:'0 0 24 24',fill:'none',stroke:'currentColor','stroke-width':'2.8','stroke-linecap':'round','aria-hidden':'true',focusable:'false'}))menuIcon.setAttribute(key,value);
+    const menuPath=document.createElementNS('http://www.w3.org/2000/svg','path');
+    menuPath.setAttribute('d','M4 6H20 M4 12H20 M4 18H20');
+    menuIcon.append(menuPath);
+    toggle.append(menuIcon,node('span','toggle-label','목차'));
     toggle.type='button';toggle.setAttribute('aria-expanded','false');
     toggle.setAttribute('aria-controls','jaroo-outline-panel');toggle.setAttribute('aria-label','대화 목차 열기');
     const panel=node('section','panel');panel.id='jaroo-outline-panel';panel.hidden=true;
@@ -2590,7 +2590,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.3.5',dispose,refresh:schedule,outlineDiagnostic,
+    version:'0.3.6',dispose,refresh:schedule,outlineDiagnostic,
     diagnostics:() => ({...errors,sorting:{...sidebarSortDiagnostics,styledRows:sidebarSortSaved.size},roots:observedRoots.length,clockSkinned:document.getElementById(CLOCK_HOST)?.getAttribute('data-ebook-clock-ready')==='true',dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),firstPaintNav:getComputedStyle(document.documentElement).getPropertyValue('--eb-first-paint-nav').trim()==='1',opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-project-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:'css-only',mutedComposerFrames:0,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state'),overflow:n.getAttribute('data-ebook-count-overflow')==='true',confirmed:n.getAttribute('data-ebook-count-confirmed')===''?null:Number(n.getAttribute('data-ebook-count-confirmed'))})),lastPassMs:{...timings},performance:{events:{...perfEvents},passes:Object.fromEntries(Object.entries(perfPasses).map(([k,v])=>[k,{runs:v.runs,averageMs:Math.round(v.totalMs/v.runs*100)/100,peakMs:Math.round(v.peakMs*100)/100}]))},fixedSidebarTop:[...topBands.values()].map(n=>({height:n.height,visible:getComputedStyle(n.strip).visibility==='visible',pattern:getComputedStyle(n.strip).backgroundImage})),projectCountBorders:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({border:getComputedStyle(n).borderTopWidth,style:getComputedStyle(n).borderTopStyle,outline:getComputedStyle(n).outlineStyle})),projectCountLayers:countLayers.size,positionResizeTargets:navResizeTargets.size,visibleProjectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].filter(n=>getComputedStyle(n).visibility!=='hidden').length,projectCountAxis:findDotCountReference()?.circle.getBoundingClientRect().left??null,fontAudit:fontAudit()})
   };
 })();
