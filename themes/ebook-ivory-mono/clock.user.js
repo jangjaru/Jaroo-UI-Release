@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.18
+// @version      3.11.19
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -261,7 +261,7 @@
       .life-card.retire .life-duration-hours{grid-column:2;grid-row:2;justify-self:end;align-self:baseline}
       .life-card.retire .life-duration-tail{grid-column:3;grid-row:2;justify-self:end;align-self:baseline}
       .life-card.retire .life-duration-hours::after{content:" 시간";font:inherit;letter-spacing:inherit}
-      @container jaroo-dashboard (max-width:279px){
+      @container jaroo-dashboard (max-width:379px){
         .life-card.retire .life-card-main{grid-template-columns:minmax(0,1fr) auto;column-gap:4px}
         .life-card.retire .life-label{grid-column:1;grid-row:1}
         .life-card.retire .life-value{grid-column:2;grid-row:1}
@@ -277,6 +277,14 @@
         .life-card.retire .life-value,.life-card.retire .life-duration-hours{grid-column:2;grid-row:2}
         .life-card.retire .life-duration-tail{grid-row:3}
       }
+      /* Career remaining time replaces only the retirement divider. */
+      .life-card.retire:has(.career-bar:not([hidden])){border-bottom:0;padding-bottom:0}
+      .career-bar{height:4px;border-radius:2px;background:#D0D5D7;overflow:hidden;margin-top:8px}
+      .career-bar[hidden]{display:none}
+      .career-bar-fill{height:100%;width:var(--career-remaining,0%);border-radius:2px;background:#8FB7AE}
+      .career-remaining-percent{font:400 11px/1.2 var(--font);letter-spacing:-.04em;color:var(--muted);white-space:nowrap;margin-inline-start:3px}
+      .career-remaining-percent[hidden]{display:none}
+      @container jaroo-dashboard (max-width:220px){.career-remaining-percent{font-size:10px;margin-inline-start:2px}}
       /* Below the six-digit physical width, show HH:MM at the same glyph
          size. The actual seconds still tick and remain in the accessible label. */
       @container jaroo-dashboard (max-width: 159px){
@@ -309,6 +317,7 @@
       <div class="life-grid">
         <article class="life-card retire">
           <div class="life-card-main"><div class="life-caption"><div class="life-label">은퇴까지</div><div class="life-meta" data-life="retireMeta" title="65세 기준">65세 기준</div></div><div class="life-value" data-life="retireValue">0 : 00 : 00</div></div>
+          <div class="career-bar" data-life="careerBar" role="progressbar" aria-label="사회생활 남은 기간" aria-valuemin="0" aria-valuemax="100" hidden><div class="career-bar-fill" data-life="careerBarFill"></div></div>
         </article>
         <article class="life-card work">
           <div class="life-card-main"><div class="life-caption"><div class="life-label">남은 근무시간</div><div class="life-meta" data-life="workMeta" title="평일 8시간 기준">평일 8시간 기준</div></div><div class="life-value" data-life="workValue">0 : 00 : 00</div></div>
@@ -371,6 +380,8 @@
   const lifeEls = {
     retireValue: shadow.querySelector('[data-life="retireValue"]'),
     retireMeta: shadow.querySelector('[data-life="retireMeta"]'),
+    careerBar: shadow.querySelector('[data-life="careerBar"]'),
+    careerBarFill: shadow.querySelector('[data-life="careerBarFill"]'),
     workValue: shadow.querySelector('[data-life="workValue"]'),
     workMeta: shadow.querySelector('[data-life="workMeta"]'),
     afterValue: shadow.querySelector('[data-life="afterValue"]'),
@@ -416,6 +427,7 @@
       lifeEls.remainingMeta.textContent='남은 시간 · —';
       lifeEls.progressPercent.textContent='—';
       lifeEls.progressBar.style.width='0%';
+      updateCareerBar(null);
     }
     if(started)schedulePlacement();
   }
@@ -497,17 +509,46 @@
     const seconds=(elapsed?Math.floor:Math.ceil)(Math.max(0,ms)/1000);
     return [TIME_FORMAT.format(Math.floor(seconds/3600)),String(Math.floor(seconds/60)%60).padStart(2,'0')+' : '+String(seconds%60).padStart(2,'0')];
   }
+  // The first day of the supplied start month is a provisional baseline (KST).
+  const CAREER_START_MS = Date.parse('2007-08-01T00:00:00+09:00');
+  function careerRemainingPercent(nowMs,retirementMs,startMs=CAREER_START_MS) {
+    if(![nowMs,retirementMs,startMs].every(Number.isFinite)||retirementMs<=startMs)return null;
+    return Math.max(0,Math.min(100,(retirementMs-nowMs)/(retirementMs-startMs)*100));
+  }
+  function updateCareerBar(percent) {
+    const bar=lifeEls.careerBar,fill=lifeEls.careerBarFill;
+    const valid=percent!==null&&Number.isFinite(percent);
+    if(bar.hidden===valid)bar.hidden=!valid;
+    if(!valid){bar.removeAttribute('aria-valuenow');bar.removeAttribute('aria-valuetext');return;}
+    const width=percent.toFixed(8)+'%',label=percent.toFixed(1);
+    if(fill.style.getPropertyValue('--career-remaining')!==width)fill.style.setProperty('--career-remaining',width);
+    if(bar.getAttribute('aria-valuenow')!==label){
+      bar.setAttribute('aria-valuenow',label);
+      bar.setAttribute('aria-valuetext',label+'% 남음');
+      bar.title='2007.08.01 시작(월 기준 가정) ~ 은퇴일 · 전체 사회생활 기간 중 '+label+'% 남음';
+    }
+  }
   const durationNodes=new WeakMap();
-  function setLifeDuration(el,ms,{elapsed=false}={}) {
+  function setLifeDuration(el,ms,{elapsed=false,careerRemaining=undefined}={}) {
     let nodes=durationNodes.get(el);
     if(!nodes||nodes.hours.parentNode!==el){
       const hours=document.createElement('span'),tail=document.createElement('span');
       hours.className='life-duration-hours';tail.className='life-duration-tail';
-      el.replaceChildren(hours,tail);nodes={hours,tail};durationNodes.set(el,nodes);
+      const tailText=document.createTextNode('');
+      tail.append(tailText);
+      const percent=careerRemaining!==undefined?document.createElement('span'):null;
+      if(percent){percent.className='career-remaining-percent';tail.append(percent);}
+      el.replaceChildren(hours,tail);nodes={hours,tail,tailText,percent};durationNodes.set(el,nodes);
     }
     const [hours,tail]=durationParts(ms,elapsed);
     if(nodes.hours.textContent!==hours)nodes.hours.textContent=hours;
-    if(nodes.tail.textContent!==tail)nodes.tail.textContent=tail;
+    if(nodes.tailText.data!==tail)nodes.tailText.data=tail;
+    if(nodes.percent){
+      const valid=careerRemaining!==null&&Number.isFinite(careerRemaining);
+      if(nodes.percent.hidden===valid)nodes.percent.hidden=!valid;
+      const label=valid?'('+careerRemaining.toFixed(1)+'% 남음)':'';
+      if(nodes.percent.textContent!==label)nodes.percent.textContent=label;
+    }
   }
   let lastLifeSecondKey = '';
   function updateLifeClock(now) {
@@ -521,7 +562,9 @@
     const beforeRetirement=ms<retirementMs;
     const lifeMs=age80Ms-LIFE.birth.getTime();
     const used=Math.min(1,Math.max(0,(ms-LIFE.birth.getTime())/lifeMs))*100;
-    setLifeDuration(lifeEls.retireValue,retirementMs-ms);
+    const careerRemaining=careerRemainingPercent(ms,retirementMs);
+    setLifeDuration(lifeEls.retireValue,retirementMs-ms,{careerRemaining});
+    updateCareerBar(careerRemaining);
     setLifeDuration(lifeEls.workValue,calculateWorkDurationMs(ms,retirementMs));
     setLifeDuration(lifeEls.afterValue,beforeRetirement?age80Ms-retirementMs:age80Ms-ms);
     setLifeDuration(lifeEls.usedHours,Math.min(ms,age80Ms)-LIFE.birth.getTime(),{elapsed:true});
@@ -1103,9 +1146,9 @@
     if (window[RUNTIME_KEY]?.dispose === dispose) delete window[RUNTIME_KEY];
   }
   window[RUNTIME_KEY] = {
-    version: '3.11.18', dispose,
+    version: '3.11.19', dispose,
     diagnostics: () => ({
-      version: '3.11.18', ...placementReport,
+      version: '3.11.19', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
