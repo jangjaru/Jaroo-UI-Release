@@ -1,3 +1,8 @@
+# Status v6.9.17 — 리뷰 목록 헤더 가독성 개선
+
+- Only tasks to review 아래 `Running · Completed` 및 우측 건수(숫자와 건 단위) 글자 크기를 12px에서 14px로 확대. 단위는 부모 em의 크기를 상속. 기존 글꼴·굵기·색·자간·줄높이 비율·정렬 및 간격 규칙 유지. 빈 목록 안내와 채팅 항목, Running/Completed 팝업 및 최적화 로직은 변경하지 않음.
+- JS 전체 구문 및 변경 범위 역검사, 헤더 DOM 구조와 크기 상속 정적 확인. 실제 사용자 Chrome 시각 검수 및 개발 저장소 동기화 미실시. Status만 업데이트.
+
 # Status v6.9.16 — 팝업 닫기 버튼 우측 정렬
 
 - Running / Completed 공통 헤더를 `justify-content:space-between`으로 변경하여 창 내부 우측 끝에 닫기 버튼을 정렬. 기존 20px 최소 간격, 글꼴·색상·버튼 크기·팝업 폭·기능 유지. 완료 목록 지우기 버튼에는 변경 없음.
