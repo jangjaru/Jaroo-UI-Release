@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.3.7
+// @version      0.3.8
 // @description  E-book role markers, sidebar presentation, outline and safe composer attachment layout. No editable text mutation; Clock owns its first paint.
 // @match        https://chatgpt.com/*
 // @run-at       document-start
@@ -2222,7 +2222,8 @@
       ':host{all:initial;position:fixed!important;right:16px!important;top:94px!important;z-index:40!important;display:block!important;font-family:var(--eb-font,"IBM Plex Mono","Pretendard Variable","Pretendard",sans-serif);color:var(--eb-ink,#292D30);font-size:13px;line-height:1.5;}' +
       '*{box-sizing:border-box}button,input{font:inherit;color:inherit}button{cursor:pointer}' +
       '.toggle{display:flex;align-items:center;gap:7px;margin-left:auto;background:rgba(255,255,204,.8);border:3px solid #2B2F32;padding:4px 8px;border-radius:6px;color:var(--eb-ink,#292D30);font-weight:500;box-shadow:0 3px 8px rgba(39,47,54,.16),0 1px 2px rgba(39,47,54,.10);white-space:nowrap}' +
-      '.toggle .outline-menu-icon{display:block;width:15px;height:15px;flex:0 0 15px;pointer-events:none}' +
+      '.toggle .outline-menu-icon{display:block;width:15px;height:15px;flex:0 0 15px;align-self:center;pointer-events:none}' +
+      '.toggle .toggle-label{display:flex;align-items:center;align-self:center;min-height:1.5em;line-height:1;font-weight:600;transform:translateY(1px)}' +
       '.toggle:hover{background:rgba(255,255,204,.8)}.toggle[aria-expanded="true"]{background:rgba(255,255,204,.8);color:#292D30;border-color:#2B2F32}' +
       '.panel{width:min(340px,calc(100vw - 32px));max-height:min(72vh,calc(100vh - 145px));margin-top:8px;background:var(--eb-panel,#F5F6F6);border:1px solid var(--eb-line,#C5CDD0);border-radius:10px;display:flex;flex-direction:column;box-shadow:0 8px 24px rgba(39,47,54,.12);overflow:hidden}' +
       '[hidden]{display:none!important}.head{padding:14px 14px 11px;border-bottom:1px solid var(--eb-line,#C5CDD0)}' +
@@ -2590,7 +2591,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.3.7',dispose,refresh:schedule,outlineDiagnostic,
+    version:'0.3.8',dispose,refresh:schedule,outlineDiagnostic,
     diagnostics:() => ({...errors,sorting:{...sidebarSortDiagnostics,styledRows:sidebarSortSaved.size},roots:observedRoots.length,clockSkinned:document.getElementById(CLOCK_HOST)?.getAttribute('data-ebook-clock-ready')==='true',dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),firstPaintNav:getComputedStyle(document.documentElement).getPropertyValue('--eb-first-paint-nav').trim()==='1',opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-project-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:'css-only',mutedComposerFrames:0,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state'),overflow:n.getAttribute('data-ebook-count-overflow')==='true',confirmed:n.getAttribute('data-ebook-count-confirmed')===''?null:Number(n.getAttribute('data-ebook-count-confirmed'))})),lastPassMs:{...timings},performance:{events:{...perfEvents},passes:Object.fromEntries(Object.entries(perfPasses).map(([k,v])=>[k,{runs:v.runs,averageMs:Math.round(v.totalMs/v.runs*100)/100,peakMs:Math.round(v.peakMs*100)/100}]))},fixedSidebarTop:[...topBands.values()].map(n=>({height:n.height,visible:getComputedStyle(n.strip).visibility==='visible',pattern:getComputedStyle(n.strip).backgroundImage})),projectCountBorders:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({border:getComputedStyle(n).borderTopWidth,style:getComputedStyle(n).borderTopStyle,outline:getComputedStyle(n).outlineStyle})),projectCountLayers:countLayers.size,positionResizeTargets:navResizeTargets.size,visibleProjectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].filter(n=>getComputedStyle(n).visibility!=='hidden').length,projectCountAxis:findDotCountReference()?.circle.getBoundingClientRect().left??null,fontAudit:fontAudit()})
   };
 })();
