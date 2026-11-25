@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.49
+// @version      3.11.50
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -255,7 +255,7 @@
       .life-duration-tail{white-space:pre;font:var(--life-tail-weight,360) 70%/1.2 var(--mono);color:var(--muted);letter-spacing:-.035em;word-spacing:-.5ch;font-variant-numeric:tabular-nums}
       .clock{margin:0;padding:0;border-top:1px solid var(--line);user-select:none}
       .clock-content{display:flex;flex-direction:column;min-width:0}
-      .clock-line{--clock-digit-height:clamp(30px,15cqi,38px);--clock-digit-width:clamp(12px,8cqi,21px);--clock-separator-width:clamp(5px,2.8cqi,10px);--clock-segment-thickness:calc(var(--clock-digit-height)*.1266);display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:6px;padding:7px 0;min-width:0}
+      .clock-line{--clock-digit-height:clamp(30px,15cqi,38px);--clock-digit-width:clamp(12px,8cqi,21px);--clock-separator-width:clamp(5px,2.8cqi,10px);--clock-segment-thickness:calc(var(--clock-digit-height)*.1266);display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:6px;padding:7px 0 10.5px;min-width:0}
       .date-chip{display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;min-width:0;height:var(--clock-digit-height);padding:0;gap:2px}
       .date-main{font:550 var(--widget-main)/1.08 var(--font);white-space:nowrap;word-break:keep-all}
       .weather-line{display:flex;align-items:center;gap:3px;max-width:100%;min-width:0;color:var(--muted);font:450 var(--widget-meta)/1.08 var(--font);padding:0;margin:0;border:0;background:transparent;text-align:left;cursor:pointer}
@@ -1436,9 +1436,9 @@
     if (PAGE[RUNTIME_KEY]?.dispose === dispose) delete PAGE[RUNTIME_KEY];
   }
   PAGE[RUNTIME_KEY] = {
-    version: '3.11.49', dispose,
+    version: '3.11.50', dispose,
     diagnostics: () => ({
-      version: '3.11.49', ...placementReport,
+      version: '3.11.50', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
