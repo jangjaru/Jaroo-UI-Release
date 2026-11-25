@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.14
+// @version      3.11.15
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -193,11 +193,12 @@
       .life-progress-stat > span{font:450 var(--widget-meta)/1.35 var(--font);color:var(--muted);overflow-wrap:anywhere}
       .life-progress-stat strong{font:500 var(--widget-main)/1.25 var(--mono);font-variant-numeric:tabular-nums;color:var(--muted);max-width:100%;white-space:normal;word-break:keep-all}
       .life-progress-stat.remaining strong{font-weight:600;color:var(--ink)}
-      /* Live durations use the existing large hours and a compact seconds suffix. */
-      .life-value,.life-progress-stat strong{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:flex-end;gap:2px 6px}
+      /* Keep large hour digits; use a single compact, baseline-aligned colon suffix. */
+      .life-value,.life-progress-stat strong{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:flex-end;gap:2px 0}
+      .life-value,.life-progress-stat.remaining strong{--life-tail-weight:360}
+      .life-progress-stat:not(.remaining) strong{--life-tail-weight:300}
       .life-duration-hours{white-space:nowrap;font:inherit;color:inherit;letter-spacing:inherit}
-      .life-duration-tail{white-space:nowrap;font:450 12px/1.2 var(--mono);color:var(--muted);letter-spacing:-.035em;font-variant-numeric:tabular-nums}
-      .life-duration-tail[hidden]{display:none}
+      .life-duration-tail{white-space:pre;font:var(--life-tail-weight,360) 70%/1.2 var(--mono);color:var(--muted);letter-spacing:-.035em;font-variant-numeric:tabular-nums}
       .life-progress-stat:not(.remaining) strong{justify-content:flex-start}
       .clock{margin:0;padding:0;border-top:1px solid var(--line);user-select:none}
       .clock-content{display:flex;flex-direction:column;min-width:0}
@@ -280,13 +281,13 @@
       </div>
       <div class="life-grid">
         <article class="life-card retire">
-          <div class="life-card-main"><div class="life-caption"><div class="life-label">은퇴까지</div><div class="life-meta" data-life="retireMeta" title="65세 기준">65세 기준</div></div><div class="life-value" data-life="retireValue">0 시간</div></div>
+          <div class="life-card-main"><div class="life-caption"><div class="life-label">은퇴까지</div><div class="life-meta" data-life="retireMeta" title="65세 기준">65세 기준</div></div><div class="life-value" data-life="retireValue">0 : 00 : 00</div></div>
         </article>
         <article class="life-card work">
-          <div class="life-card-main"><div class="life-caption"><div class="life-label">남은 근무시간</div><div class="life-meta" data-life="workMeta" title="평일 8시간 기준">평일 8시간 기준</div></div><div class="life-value" data-life="workValue">0 시간</div></div>
+          <div class="life-card-main"><div class="life-caption"><div class="life-label">남은 근무시간</div><div class="life-meta" data-life="workMeta" title="평일 8시간 기준">평일 8시간 기준</div></div><div class="life-value" data-life="workValue">0 : 00 : 00</div></div>
         </article>
         <article class="life-card after">
-          <div class="life-card-main"><div class="life-caption"><div class="life-label">은퇴 이후</div><div class="life-meta" data-life="afterMeta" title="65~80세 계획기간">65~80세 계획기간</div></div><div class="life-value" data-life="afterValue">0 시간</div></div>
+          <div class="life-card-main"><div class="life-caption"><div class="life-label">은퇴 이후</div><div class="life-meta" data-life="afterMeta" title="65~80세 계획기간">65~80세 계획기간</div></div><div class="life-value" data-life="afterValue">0 : 00 : 00</div></div>
         </article>
       </div>
       <div class="life-progress">
@@ -299,8 +300,8 @@
           <div class="life-bar-glow"></div>
         </div>
         <div class="life-progress-meta">
-          <div class="life-progress-stat"><span data-life="usedMeta">지나온 시간 · 0%</span><strong data-life="usedHours">0 h</strong></div>
-          <div class="life-progress-stat remaining"><span data-life="remainingMeta">남은 시간 · 0%</span><strong data-life="remainingHours">0 h</strong></div>
+          <div class="life-progress-stat"><span data-life="usedMeta">지나온 시간 · 0%</span><strong data-life="usedHours">0 : 00 : 00</strong></div>
+          <div class="life-progress-stat remaining"><span data-life="remainingMeta">남은 시간 · 0%</span><strong data-life="remainingHours">0 : 00 : 00</strong></div>
         </div>
       </div>
     </section>
@@ -467,10 +468,10 @@
   }
   function durationParts(ms,elapsed=false) {
     const seconds=(elapsed?Math.floor:Math.ceil)(Math.max(0,ms)/1000);
-    return [TIME_FORMAT.format(Math.floor(seconds/3600))+' 시간',String(Math.floor(seconds/60)%60).padStart(2,'0')+'분 '+String(seconds%60).padStart(2,'0')+'초'];
+    return [TIME_FORMAT.format(Math.floor(seconds/3600)),' : '+String(Math.floor(seconds/60)%60).padStart(2,'0')+' : '+String(seconds%60).padStart(2,'0')];
   }
   const durationNodes=new WeakMap();
-  function setLifeDuration(el,ms,{elapsed=false,fixed=false}={}) {
+  function setLifeDuration(el,ms,{elapsed=false}={}) {
     let nodes=durationNodes.get(el);
     if(!nodes||nodes.hours.parentNode!==el){
       const hours=document.createElement('span'),tail=document.createElement('span');
@@ -480,7 +481,6 @@
     const [hours,tail]=durationParts(ms,elapsed);
     if(nodes.hours.textContent!==hours)nodes.hours.textContent=hours;
     if(nodes.tail.textContent!==tail)nodes.tail.textContent=tail;
-    if(nodes.tail.hidden!==fixed)nodes.tail.hidden=fixed;
   }
   let lastLifeSecondKey = '';
   function updateLifeClock(now) {
@@ -496,7 +496,7 @@
     const used=Math.min(1,Math.max(0,(ms-LIFE.birth.getTime())/lifeMs))*100;
     setLifeDuration(lifeEls.retireValue,retirementMs-ms);
     setLifeDuration(lifeEls.workValue,calculateWorkDurationMs(ms,retirementMs));
-    setLifeDuration(lifeEls.afterValue,beforeRetirement?age80Ms-retirementMs:age80Ms-ms,{fixed:beforeRetirement});
+    setLifeDuration(lifeEls.afterValue,beforeRetirement?age80Ms-retirementMs:age80Ms-ms);
     setLifeDuration(lifeEls.usedHours,Math.min(ms,age80Ms)-LIFE.birth.getTime(),{elapsed:true});
     setLifeDuration(lifeEls.remainingHours,age80Ms-ms);
     const values=[
@@ -1076,9 +1076,9 @@
     if (window[RUNTIME_KEY]?.dispose === dispose) delete window[RUNTIME_KEY];
   }
   window[RUNTIME_KEY] = {
-    version: '3.11.14', dispose,
+    version: '3.11.15', dispose,
     diagnostics: () => ({
-      version: '3.11.14', ...placementReport,
+      version: '3.11.15', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
