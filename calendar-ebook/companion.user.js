@@ -227,7 +227,7 @@
   const CONFIG = Object.freeze({ timeZone: 'Asia/Seoul', futureDays: 7, maxPins: 3, maxEvents: 1200, settleMs: 180, recoveryMs: 5000 });
   const EVENT = '[data-eventid]';
   const EXCLUDE = '[role="dialog"],[role="menu"],[role="listbox"],[hidden],[inert],[aria-hidden="true"]';
-  const MARKERS = ['data-jaroo-cal-event','data-jaroo-cal-color','data-jaroo-cal-title','data-jaroo-cal-date-label','data-jaroo-cal-today','data-jaroo-cal-selected','data-jaroo-cal-grid','data-jaroo-cal-month-grid','data-jaroo-cal-month-title','data-jaroo-cal-today-label','data-jaroo-cal-brand','data-jaroo-cal-section','data-jaroo-cal-mini','data-jaroo-cal-mini-title','data-jaroo-cal-mini-day','data-jaroo-cal-create-label','data-jaroo-cal-control','data-jaroo-cal-sidebar-panel','data-jaroo-cal-surface','data-jaroo-cal-deadline','data-jaroo-cal-priority','data-jaroo-cal-semantic','data-jaroo-cal-category','data-jaroo-cal-status'];
+  const MARKERS = ['data-jaroo-cal-event','data-jaroo-cal-color','data-jaroo-cal-title','data-jaroo-cal-date-label','data-jaroo-cal-today','data-jaroo-cal-selected','data-jaroo-cal-grid','data-jaroo-cal-month-grid','data-jaroo-cal-month-title','data-jaroo-cal-today-label','data-jaroo-cal-brand','data-jaroo-cal-section','data-jaroo-cal-mini','data-jaroo-cal-mini-title','data-jaroo-cal-mini-day','data-jaroo-cal-mini-number','data-jaroo-cal-calendar-label','data-jaroo-cal-create-label','data-jaroo-cal-control','data-jaroo-cal-sidebar-panel','data-jaroo-cal-surface','data-jaroo-cal-deadline','data-jaroo-cal-priority','data-jaroo-cal-semantic','data-jaroo-cal-category','data-jaroo-cal-status'];
   const eventStyles = new Map(), marked = new Set(), dateCache = new WeakMap(), textRenderCache = new WeakMap();
   let markerPlan = null;
   let moreProbe = { textCandidates:0, gridAnchoredCandidates:0, verifiedOverlays:0, rowCandidates:0 };
@@ -864,7 +864,15 @@
   }
   function inspectCalendarChrome(){
     const cache=new WeakMap(),box=node=>chromeBox(node,cache),plan=[];
-    const add=(node,name,value='true')=>{if(node)plan.push([node,name,value]);};
+    const miniDayPriority=new Map();
+    const add=(node,name,value='true')=>{
+      if(!node)return;
+      if(name==='data-jaroo-cal-mini-day'){
+        if(miniDayPriority.get(node)==='today')return;
+        miniDayPriority.set(node,value);
+      }
+      plan.push([node,name,value]);
+    };
     const mainBoxes=roots.map(box).filter(Boolean);
     const mainLeft=mainBoxes.length?Math.min(...mainBoxes.map(r=>r.left)):innerWidth;
     const headers=[...document.querySelectorAll('[role="banner"],header')].filter(node=>{
@@ -877,9 +885,19 @@
     }
     header=header||headers.find(n=>n.matches('[role="banner"]'))||headers[0]||null;
     const names=node=>[node.getAttribute('aria-label'),node.getAttribute('title'),node.textContent];
-    const roleControl=(node,area)=>chromeControlKind(names(node),area,
-      node.hasAttribute('aria-pressed')||node.hasAttribute('aria-selected')||node.getAttribute('role')==='tab',
-      node.hasAttribute('aria-haspopup')||node.hasAttribute('aria-expanded'));
+    const roleControl=(node,area)=>{
+      const segment=node.hasAttribute('aria-pressed')||node.hasAttribute('aria-selected')||node.getAttribute('role')==='tab';
+      const popup=node.hasAttribute('aria-haspopup')||node.hasAttribute('aria-expanded');
+      const result=chromeControlKind(names(node),area,segment,popup);
+      if(result)return result;
+      // Material controls may include text glyphs (add / arrow_drop_down).
+      // Only small control descendants with an exact label are considered.
+      if(node.childElementCount>8)return null;
+      const leaves=[...node.querySelectorAll('span,div')].slice(0,24)
+        .filter(n=>!n.childElementCount&&n.getAttribute('aria-hidden')!=='true')
+        .map(n=>n.textContent);
+      return chromeControlKind(leaves,area,segment,popup);
+    };
     if(header){
       add(header,'data-jaroo-cal-surface','header');add(month,'data-jaroo-cal-month-title');
       const brands=exactChromeLabels(header,v=>/^(?:Calendar|Google Calendar|캘린더)$/iu.test(v),cache,500)
@@ -929,21 +947,34 @@
     const rail=rails[0]?.node||null;
     if(rail){
       add(rail,'data-jaroo-cal-surface','sidebar');
-      const railRect=box(rail);
-      for(const label of exactChromeLabels(rail,sectionMatch,cache)){
-        add(label,'data-jaroo-cal-section');
-        // Only quiet, neutral enclosing section panels; exclude buttons and
-        // preserve background-color checkboxes / user-selected swatches.
-        for(let p=label.parentElement,depth=0;p&&p!==rail&&depth<5;p=p.parentElement,depth++){
-          if(p.matches(CHROME_CONTROL)||p.closest('[role="grid"],table'))continue;
-          const r=box(p);if(!r||r.width<railRect.width*.70||r.height>railRect.height*.78)continue;
-          if(p.querySelector('[role="checkbox"],input[type="checkbox"]')){add(p,'data-jaroo-cal-sidebar-panel');break;}
-          if(r.height>=20&&r.height<=60){add(p,'data-jaroo-cal-sidebar-panel');break;}
+      const railRect=box(rail),panels=new Set();
+      const markRailAncestors=anchor=>{
+        for(let p=anchor.parentElement,depth=0;p&&p!==rail&&depth<8;p=p.parentElement,depth++){
+          if(p.matches(CHROME_CONTROL+',label,[role="checkbox"],[role="grid"],table')||p.closest('[role="grid"],table'))continue;
+          const r=box(p);if(!r||r.width<railRect.width*.70||r.height<20)continue;
+          const style=getComputedStyle(p),rgb=(style.backgroundColor||'').match(/[\d.]+/g)?.map(Number)||[];
+          // Only neutral, light, opaque native wrapper backgrounds. The
+          // original calendar swatches/checkboxes and nonneutral fills stay.
+          if(rgb.length<3||Math.min(...rgb.slice(0,3))<195||
+             Math.max(...rgb.slice(0,3))-Math.min(...rgb.slice(0,3))>18||
+             (rgb.length>3&&rgb[3]<.75)||style.backgroundImage&&style.backgroundImage!=='none')continue;
+          if(!panels.has(p)){panels.add(p);add(p,'data-jaroo-cal-sidebar-panel');}
         }
+      };
+      for(const label of exactChromeLabels(rail,sectionMatch,cache)){
+        add(label,'data-jaroo-cal-section');markRailAncestors(label);
+      }
+      for(const row of rail.querySelectorAll('[role="checkbox"],label')){
+        if(!box(row)||row.closest('[role="grid"],table'))continue;
+        if(row.matches('label')&&!row.querySelector('input[type="checkbox"]'))continue;
+        const leaves=[...row.querySelectorAll('span,div')].slice(0,25).filter(node=>
+          !node.childElementCount&&node.getAttribute('aria-hidden')!=='true'&&text(node.textContent).length>0&&
+          text(node.textContent).length<=80&&box(node)&&!/material|symbol|icon/i.test(getComputedStyle(node).fontFamily||''));
+        if(leaves.length===1)add(leaves[0],'data-jaroo-cal-calendar-label');
       }
       for(const control of rail.querySelectorAll(CHROME_CONTROL)){
         if(roleControl(control,'sidebar')==='create'&&box(control)){
-          add(control,'data-jaroo-cal-control','create');
+          add(control,'data-jaroo-cal-control','create');markRailAncestors(control);
           const labels=exactChromeLabels(control,v=>/^(?:만들기|Create)$/iu.test(v),cache,40);
           if(labels.length===1)add(labels[0],'data-jaroo-cal-create-label');
         }
@@ -954,7 +985,13 @@
       });
       const mini=miniGrids.find(node=>!miniGrids.some(other=>other!==node&&other.contains(node)));
       if(mini){
-        add(mini,'data-jaroo-cal-mini');
+        add(mini,'data-jaroo-cal-mini');markRailAncestors(mini);
+        const number=v=>/^(?:[1-9]|[12]\d|3[01])$/u.test(v);
+        for(const leaf of mini.querySelectorAll('span,div,button,[role="button"],[role="gridcell"],td')){
+          if(leaf.childElementCount||!number(text(leaf.textContent))||!box(leaf)||
+             /material|symbol|icon/i.test(getComputedStyle(leaf).fontFamily||''))continue;
+          add(leaf,'data-jaroo-cal-mini-number');
+        }
         const candidates=[...mini.querySelectorAll('[aria-current="date"],[aria-selected="true"]')];
         for(const node of candidates){
           if(!box(node))continue;

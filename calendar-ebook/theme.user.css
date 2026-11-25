@@ -197,7 +197,7 @@ html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"]:is(:focus-
 /* v0.2 — shared ChatGPT E-Book visual language.
    Markers are supplied by the existing read-only scan. No native layout,
    calendar data, time slots, hit targets or event controls are replaced. */
-html[data-jaroo-calendar-theme="ebook"] :is(body,[data-jaroo-cal-surface="header"],[data-jaroo-cal-surface="sidebar"],[data-jaroo-cal-surface="more"]) {
+html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-surface="header"],[data-jaroo-cal-surface="sidebar"],[data-jaroo-cal-surface="more"],[data-jaroo-cal-surface="detail"]) {
   --gm3-sys-color-primary:#303438!important;
   --gm3-sys-color-on-primary:#F5F6F6!important;
   --gm3-sys-color-primary-container:#DCE2E4!important;
@@ -282,6 +282,19 @@ html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-mini="true"] :is([role="
   font-family:var(--jaroo-cal-font)!important;
   font-variant-numeric:tabular-nums;
 }
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-mini-number="true"]{
+  font-family:var(--jaroo-cal-font)!important;
+  font-size:13px!important;
+  font-variant-numeric:tabular-nums;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-calendar-label="true"]{
+  font-family:var(--jaroo-cal-font)!important;
+  font-size:14px!important;
+  font-weight:450!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-mini-day] [data-jaroo-cal-mini-number="true"]{
+  color:inherit!important;background-color:transparent!important;
+}
 html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-mini-day="today"]{
   background-color:var(--jaroo-cal-today)!important;
   color:var(--jaroo-cal-text)!important;
@@ -321,6 +334,13 @@ html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="detail"]{
   font-family:var(--jaroo-cal-font)!important;
 }
 @media(forced-colors:active){
+  html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-surface="header"],[data-jaroo-cal-surface="sidebar"],[data-jaroo-cal-surface="more"],[data-jaroo-cal-surface="detail"]){
+    --gm3-sys-color-primary:Highlight!important;--gm3-sys-color-on-primary:HighlightText!important;
+    --gm3-sys-color-primary-container:Canvas!important;--gm3-sys-color-on-primary-container:CanvasText!important;
+    --gm3-sys-color-secondary-container:Canvas!important;--gm3-sys-color-on-secondary-container:CanvasText!important;
+    --gm3-sys-color-surface-container-lowest:Canvas!important;--gm3-sys-color-surface-container-highest:Canvas!important;
+    --gm3-sys-color-outline:GrayText!important;--gm3-sys-color-outline-variant:GrayText!important;
+  }
   html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-surface="sidebar"],[data-jaroo-cal-brand],[data-jaroo-cal-section],[data-jaroo-cal-create-label]){background-image:none!important}
   html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-control],[data-jaroo-cal-mini-day],[data-jaroo-cal-today-label]){background-color:Canvas!important;color:CanvasText!important;box-shadow:none!important}
   html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-mini-day],[data-jaroo-cal-today-label]){outline:1px solid Highlight!important;outline-offset:-1px!important}
