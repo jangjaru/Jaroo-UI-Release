@@ -1,3 +1,9 @@
+# Jaroo Calendar E-Book v0.5.13 — 실제 월간 외곽 프레임 배경 보정
+
+- 사용자 DevTools 캡처: 선택 요소 div.SGWAac, body[data-viewfamily="EVENT"][data-viewkey="MONTH"], 네이티브 position:relative, width:100%, height:calc(100% - 64px), display:flex. 해당 스타일 목록에 자체 background 지정이 보이지 않음. 사용자 캡처 실제 픽셀에서 본문 #EFF1F2, 우측/하단 잔여 띠 #F8FAFD 재확인.
+- v0.5.12 보정으로 잔여 띠가 해소되지 않았으므로 해당 범용 탐색/스크롤바 보정을 철회하고, v0.5.11 최적화 JS와 기존 디자인 CSS를 복원. 확인된 월간 div.SGWAac에 종이색 background-color 한 선언만 추가. JS는 호환 버전 표기만 변경. 기존 설치 URL, 네이티브 크기·스크롤·하위 배경·이벤트 및 검색 디자인 유지. 강제 색상 모드 제외.
+- 검증: v0.5.11 원본 SHA-256 확인, 버전/추가 CSS 역검사, JS 구문, 재구성 Chromium DOM에서 배경 적용·레이아웃/하위 배경 유지·주간뷰/테마 비활성/강제 색상 제외 확인. 실제 로그인 브라우저에서 최종 픽셀 확인은 필요. 선택한 요소의 배경이 최종 잔여 띠를 가리는지는 사용자 적용 후 확인.
+
 # Jaroo Calendar E-Book v0.5.12 — 오른쪽·하단 흰 여백 정리
 
 - 기준: v0.5.11, 875e832412ba7f3fd2e599b79137fd16b3b2152b. 사용자 캡처의 달력 우측/하단 띠 픽셀 #F8FAFD와 본문 #EFF1F2 확인. 정확한 실제 DOM 요소는 미확인으로, 기존 월간 구조 검증에서 확인한 grid 조상/빈 가장자리와 스크롤 트랙·코너를 함께 본문 종이색으로 통일.

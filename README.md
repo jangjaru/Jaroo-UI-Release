@@ -10,8 +10,8 @@ The user wants **only the left sidebar project names and chat-list names** about
 | Clock JS | 3.10.2 | unchanged |
 | Status JS | 6.8.2 | unchanged |
 | Mapper JS | 1.3.6 | unchanged |
-| Calendar Companion (E-Book) | 0.5.12 | month edge paper |
-| Calendar CSS (E-Book) | 0.5.12 | month edge paper |
+| Calendar Companion (E-Book) | 0.5.13 | optimized runtime, paired version |
+| Calendar CSS (E-Book) | 0.5.13 | native month frame paper |
 
 Typical numeric changes: chat normal 320→420, selected 420→550, standard/CEO projects 430→560, strategy projects 380→490. Other role-specific and archived names keep their relative treatment with a similar 1.3 multiplier.
 
