@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo Google Calendar E-Book
 @namespace    jaroo.calendar.ebook
-@version      0.5.6
+@version      0.5.7
 @description  Cool E-Ink Graph Paper · paired with Calendar E-Book Companion
 @author       Jaroo
 @license      UNLICENSED
@@ -42,7 +42,7 @@
 /* Light appearance is selected in Google Calendar itself. No layout,
    event text, native date/colour data, or click targets are rewritten. */
 html[data-jaroo-calendar-theme="ebook"] {
-  --jaroo-cal-style-version: 0.5.6;
+  --jaroo-cal-style-version: 0.5.7;
   --jaroo-cal-bg:#EFF1F2;
   --jaroo-cal-sidebar:#E7EAEB;
   --jaroo-cal-surface:#F5F6F6;
@@ -848,11 +848,18 @@ html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo
 /* v0.5.5 — sidebar finishing: bold Create caption, transparent people search.
    The original native input and click targets are unchanged. */
 html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-create-label="true"]{
-  font-weight:700!important;color:var(--jaroo-cal-active-ink)!important;
+  font-family:"Pretendard Variable","Pretendard","Noto Sans KR",sans-serif!important;
+  font-weight:800!important;font-synthesis:weight!important;
+  color:var(--jaroo-cal-active-ink)!important;
   -webkit-text-fill-color:var(--jaroo-cal-active-ink)!important;
 }
-html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-control="create"]:not(:has([data-jaroo-cal-create-label])){
-  font-weight:700!important;
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-control="create"]{
+  font-weight:800!important;
+}
+@media(forced-colors:none){
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-create-label="true"]:not(:has(svg,[aria-hidden="true"])){
+    -webkit-text-stroke:.18px currentColor;
+  }
 }
 @media(forced-colors:none){
   html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-people-search-shell="true"],[data-jaroo-cal-people-search-paint="true"]){
@@ -926,6 +933,36 @@ html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-control="create"]:not(:h
   html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] :is([role="gridcell"]:focus-visible,[data-jaroo-cal-date-control]:focus-visible) [data-jaroo-cal-date-label="true"]{
     text-decoration:underline!important;text-decoration-thickness:2px!important;text-underline-offset:3px!important;
   }
+}
+
+
+/* v0.5.7 — match search to the measured mini-calendar columns.
+   Keep the real native control and editing/focus behavior. */
+@supports(width:attr(data-jaroo-cal-people-search-width type(<length>), 0px)){
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-shell="true"][data-jaroo-cal-people-search-width]{
+    box-sizing:border-box!important;
+    width:attr(data-jaroo-cal-people-search-width type(<length>), 100%)!important;
+    inline-size:attr(data-jaroo-cal-people-search-width type(<length>), 100%)!important;
+    max-inline-size:100%!important;min-inline-size:0!important;
+    flex-shrink:0!important;margin-inline:auto!important;align-self:center!important;
+    translate:attr(data-jaroo-cal-people-search-offset type(<length>), 0px) 0!important;
+  }
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-group="true"]{
+  display:flex!important;justify-content:center!important;align-items:center!important;
+  column-gap:8px!important;max-inline-size:100%!important;
+  margin-inline:auto!important;padding-inline:0!important;
+}
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-caption="true"]{
+  flex:0 0 auto!important;width:auto!important;min-inline-size:0!important;
+  margin-inline:0!important;text-align:center!important;
+}
+/* Only the idle placeholder may size to its caption. An actual edit keeps
+   the native input available rather than restricting the typed value. */
+html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-people-search-input="true"]:placeholder-shown:not(:focus){
+  field-sizing:content;flex:0 1 auto!important;
+  width:auto!important;min-inline-size:0!important;margin-inline:0!important;
+  text-align:center!important;
 }
 
 }
