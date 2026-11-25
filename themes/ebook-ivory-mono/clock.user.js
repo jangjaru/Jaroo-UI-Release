@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.53
+// @version      3.11.54
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -120,6 +120,7 @@
     try{return localBirthProfile(localStorage.getItem(LIFE_LOCAL_PREF));}catch(_){return null;}
   }
   let explicitLife=readLifeSettings(),localLife=readLegacyBirth(),legacyLife=null,legacyKey=null,LIFE=null,lifeKey=null,lifeSource='missing';
+  let cachedLocalLifeSource=null,cachedLocalLife=null;
   function resolveLifeProfile() {
     if(explicitLife)return {profile:explicitLife,source:'local-settings'};
     const raw=PAGE.__jarooPrivateProfileV1;
@@ -129,7 +130,12 @@
       const profile=parseLifeProfile(raw);
       legacyLife=withCareerDate(profile,validCareerDate(raw?.careerStartDate,profile)?raw.careerStartDate:'2007-08-01',!validCareerDate(raw?.careerStartDate,profile));
     }
-    return legacyLife?{profile:legacyLife,source:'legacy'}:localLife?{profile:withCareerDate(localLife,'2007-08-01',true),source:'local'}:{profile:null,source:'missing'};
+    if(legacyLife)return {profile:legacyLife,source:'legacy'};
+    if(localLife!==cachedLocalLifeSource){
+      cachedLocalLifeSource=localLife;
+      cachedLocalLife=localLife?withCareerDate(localLife,'2007-08-01',true):null;
+    }
+    return localLife?{profile:cachedLocalLife,source:'local'}:{profile:null,source:'missing'};
   }
 
   // Remove clocks and spacing left by older versions.
@@ -593,9 +599,18 @@
     }
     return total;
   }
+  // Bounded cache of hour labels: unchanged for most countdown ticks.
+  const durationHourLabels=new Map();
   function durationParts(ms,elapsed=false) {
     const seconds=(elapsed?Math.floor:Math.ceil)(Math.max(0,ms)/1000);
-    return [TIME_FORMAT.format(Math.floor(seconds/3600)),String(Math.floor(seconds/60)%60).padStart(2,'0')+' : '+String(seconds%60).padStart(2,'0')];
+    const hours=Math.floor(seconds/3600);
+    let label=durationHourLabels.get(hours);
+    if(label===undefined){
+      label=TIME_FORMAT.format(hours);
+      if(durationHourLabels.size>=32)durationHourLabels.clear();
+      durationHourLabels.set(hours,label);
+    }
+    return [label,String(Math.floor(seconds/60)%60).padStart(2,'0')+' : '+String(seconds%60).padStart(2,'0')];
   }
   function careerRemainingPercent(nowMs,retirementMs,startMs) {
     if(![nowMs,retirementMs,startMs].every(Number.isFinite)||retirementMs<=startMs)return null;
@@ -651,6 +666,20 @@
     if(holder.title!==detail)holder.title=detail;
     if(holder.hasAttribute('data-unavailable'))holder.removeAttribute('data-unavailable');
   }
+  // Profile-invariant dates, work calendar totals and descriptions.
+  const lifeBaselineCache=new WeakMap();
+  function lifeBaseline(profile) {
+    const cached=lifeBaselineCache.get(profile);
+    if(cached)return cached;
+    const birthMs=profile.birth.getTime(),retirementMs=profile.retirement.getTime(),age80Ms=profile.age80.getTime();
+    const startMs=profile.careerStart?.getTime()??NaN;
+    const careerDescription=profile.careerStart?lifeDateString(profile.careerStart).replaceAll('-','.')+' 시작'+(profile.careerProvisional?'(월 기준 가정)':'')+' ~ 은퇴일':'사회생활 시작일 ~ 은퇴일';
+    const result={birthMs,retirementMs,age80Ms,startMs,careerDescription,
+      lifeMs:age80Ms-birthMs,totalWorkMs:Number.isFinite(startMs)?calculateWorkDurationMs(startMs,retirementMs):NaN,
+      totalAfterMs:age80Ms-retirementMs};
+    lifeBaselineCache.set(profile,result);
+    return result;
+  }
   let lastLifeSecondKey = '';
   function updateLifeClock(now) {
     syncLifeProfile();
@@ -659,26 +688,21 @@
     if(secondKey===lastLifeSecondKey)return;
     lastLifeSecondKey=secondKey;
 
-    const retirementMs=LIFE.retirement.getTime(),age80Ms=LIFE.age80.getTime();
+    const {birthMs,retirementMs,age80Ms,startMs,careerDescription,lifeMs,totalWorkMs,totalAfterMs}=lifeBaseline(LIFE);
     const beforeRetirement=ms<retirementMs;
-    const lifeMs=age80Ms-LIFE.birth.getTime();
-    const used=Math.min(1,Math.max(0,(ms-LIFE.birth.getTime())/lifeMs))*100;
-    const startMs=LIFE.careerStart?.getTime()??NaN;
+    const used=Math.min(1,Math.max(0,(ms-birthMs)/lifeMs))*100;
     const careerRemaining=careerRemainingPercent(ms,retirementMs,startMs);
-    const careerDescription=LIFE.careerStart?lifeDateString(LIFE.careerStart).replaceAll('-','.')+' 시작'+(LIFE.careerProvisional?'(월 기준 가정)':'')+' ~ 은퇴일':'사회생활 시작일 ~ 은퇴일';
     setLifeDuration(lifeEls.retireValue,retirementMs-ms,{careerRemaining});
     updateCareerBar(careerRemaining,lifeEls.careerBar,lifeEls.careerBarFill,careerDescription+' · 전체 사회생활 기간 중');
-    const totalWorkMs=Number.isFinite(startMs)?calculateWorkDurationMs(startMs,retirementMs):NaN;
     const remainingWorkMs=calculateWorkDurationMs(Number.isFinite(startMs)?Math.max(ms,startMs):ms,retirementMs);
     const workRemaining=remainingDurationPercent(remainingWorkMs,totalWorkMs);
     setLifeDuration(lifeEls.workValue,remainingWorkMs,{careerRemaining:workRemaining});
     updateCareerBar(workRemaining,lifeEls.workBar,lifeEls.workBarFill,careerDescription+' · 평일 8시간 기준 전체 예정 근무시간 중');
-    const totalAfterMs=age80Ms-retirementMs;
     const remainingAfterMs=Math.max(0,age80Ms-Math.max(ms,retirementMs));
     const afterRemaining=remainingDurationPercent(remainingAfterMs,totalAfterMs);
     setLifeDuration(lifeEls.afterValue,remainingAfterMs,{careerRemaining:afterRemaining});
     updateCareerBar(afterRemaining,lifeEls.afterBar,lifeEls.afterBarFill,'은퇴일 ~ 80세 기준일 · 은퇴 이후 계획시간 중');
-    setProgressDuration(lifeEls.usedHours,Math.min(ms,age80Ms)-LIFE.birth.getTime(),true);
+    setProgressDuration(lifeEls.usedHours,Math.min(ms,age80Ms)-birthMs,true);
     setProgressDuration(lifeEls.remainingHours,age80Ms-ms);
     const values=[
       ['retireMeta','65세 기준'],
@@ -719,7 +743,7 @@
   }
   function syncWeatherRegion() {
     const next=localWeatherRegion||legacyWeatherRegion();
-    if(weatherRegionKey(next)===weatherRegionKey(WEATHER))return;
+    if(next===WEATHER||weatherRegionKey(next)===weatherRegionKey(WEATHER))return;
     weatherRequest?.abort();weatherRequest=null;weatherLastAttempt=0;
     WEATHER=next;
     if(next)setWeather('◌','날씨 조회','loading');
@@ -1035,7 +1059,7 @@
     // Use that native keyboard path only when a declared popup stayed closed.
     if (wasClosed && control.hasAttribute('aria-haspopup')) {
       requestAnimationFrame(() => {
-        if (control.isConnected && control.getAttribute('aria-expanded') === 'false') {
+        if (!disposed && control.isConnected && control.getAttribute('aria-expanded') === 'false') {
           control.dispatchEvent(new KeyboardEvent('keydown', {
             key: 'ArrowDown', code: 'ArrowDown', bubbles: true, cancelable: true
           }));
@@ -1160,6 +1184,9 @@
     const density = host.dataset.jarooWidth;
     if (sidebar.getAttribute('data-jaroo-sidebar-width') !== density)
       sidebar.setAttribute('data-jaroo-sidebar-width', density);
+    for(const old of densitySidebars)if(!old.isConnected){
+      old.removeAttribute('data-jaroo-sidebar-width');densitySidebars.delete(old);
+    }
     densitySidebars.add(sidebar);
     // In narrow mode CSS max-width can reduce the used box below maxWidth.
     // Fit to the actual rendered width, not the optimistic requested width.
@@ -1313,8 +1340,9 @@
   }
 
   function refresh() {
+    const now=new Date();
     const parts = Object.fromEntries(
-      formatter.formatToParts(new Date())
+      formatter.formatToParts(now)
         .filter(part => part.type !== 'literal')
         .map(part => [part.type, part.value])
     );
@@ -1322,12 +1350,12 @@
     if(dateMainEl.textContent !== dateMain) dateMainEl.textContent = dateMain;
     updateWeather();
     // Visible glyphs are lightweight monospace text; screen readers receive the full label.
-    clockEl.setAttribute('aria-label',
-      `한국 표준시 ${parts.hour}시 ${parts.minute}분 ${parts.second}초`);
+    const clockLabel=`한국 표준시 ${parts.hour}시 ${parts.minute}분 ${parts.second}초`;
+    if(clockEl.getAttribute('aria-label')!==clockLabel)clockEl.setAttribute('aria-label',clockLabel);
     const numbers = parts.hour + parts.minute + parts.second;
     for (let i = 0; i < digits.length; i++) setDigit(digits[i], numbers[i]);
     const hour = Number(parts.hour);
-    updateLifeClock(new Date());
+    updateLifeClock(now);
     // Simple fixed day/night rule in Korea, not astronomical sunrise/sunset.
     const phase=hour>=6&&hour<18?'day':'night';
     if(host.dataset.phase!==phase)host.dataset.phase=phase;
@@ -1351,7 +1379,7 @@
   let observedHeader = null;
 
   function schedulePlacement() {
-    if (queued || disposed) return;
+    if (queued || disposed || document.hidden) return;
     queued = true;
     frameHandle = requestAnimationFrame(() => {
       queued = false;
@@ -1364,8 +1392,25 @@
     });
   }
 
-  function onVisibility() { if (!document.hidden && !disposed) { refresh(); schedulePlacement(); } }
-  function onFocus() { if (!disposed) { refresh(); schedulePlacement(); } }
+  function syncClockTimers() {
+    if(disposed||document.hidden){
+      clearInterval(tickHandle);tickHandle=0;
+      clearInterval(recoveryHandle);recoveryHandle=0;
+      if(frameHandle)cancelAnimationFrame(frameHandle);
+      frameHandle=0;queued=false;
+      return;
+    }
+    if(!tickHandle)tickHandle=setInterval(()=>{if(!disposed&&!document.hidden)refresh();},1000);
+    if(!recoveryHandle)recoveryHandle=setInterval(()=>{
+      if(!disposed&&!document.hidden&&(!hiddenSource?.isConnected||!observedMutationSidebar?.isConnected))schedulePlacement();
+    },7000);
+  }
+  function onVisibility() {
+    if(disposed)return;
+    syncClockTimers();
+    if(!document.hidden){refresh();schedulePlacement();}
+  }
+  function onFocus() { if (!disposed&&!document.hidden) { refresh(); schedulePlacement(); } }
 
   function bindSidebarObserver(sidebar) {
     if(!observer || sidebar===observedMutationSidebar) return;
@@ -1390,13 +1435,8 @@
     host.setAttribute('data-ebook-clock-ready','true');
     schedulePlacement();
     document.fonts?.ready.then(() => { if (!disposed) schedulePlacement(); });
-    tickHandle = setInterval(() => { if (!disposed && !document.hidden) refresh(); }, 1000);
-    // Rare React-side sidebar replacements are recovered without observing
-    // every message mutation on the entire page.
-    recoveryHandle = setInterval(() => {
-      if(!disposed && !document.hidden && (!hiddenSource?.isConnected || !observedMutationSidebar?.isConnected))
-        schedulePlacement();
-    }, 7000);
+    // Same foreground cadence; pause UI timers while hidden.
+    syncClockTimers();
     window.addEventListener('resize', schedulePlacement, { passive: true });
     window.addEventListener('focus', onFocus);
     window.addEventListener('storage',onLifeSettingsStorage);
@@ -1409,9 +1449,7 @@
     disposed = true;
     observer?.disconnect();
     resizeObserver?.disconnect();
-    clearInterval(tickHandle);
-    clearInterval(recoveryHandle);
-    cancelAnimationFrame(frameHandle);
+    syncClockTimers();
     window.removeEventListener('resize', schedulePlacement);
     window.removeEventListener('focus', onFocus);
     window.removeEventListener('storage',onLifeSettingsStorage);
@@ -1430,9 +1468,9 @@
     if (PAGE[RUNTIME_KEY]?.dispose === dispose) delete PAGE[RUNTIME_KEY];
   }
   PAGE[RUNTIME_KEY] = {
-    version: '3.11.53', dispose,
+    version: '3.11.54', dispose,
     diagnostics: () => ({
-      version: '3.11.53', ...placementReport,
+      version: '3.11.54', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),

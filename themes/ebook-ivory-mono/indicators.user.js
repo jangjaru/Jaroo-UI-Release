@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.3.20
+// @version      0.3.21
 // @description  E-book role markers, sidebar presentation, outline and safe composer attachment layout. No editable text mutation; Clock owns its first paint.
 // @match        https://chatgpt.com/*
 // @run-at       document-start
@@ -55,12 +55,8 @@
     return changed.length>0&&changed.every(n=>isOwnNode(n));
   }
   const observer=new MutationObserver(records=>{
-    let mask=0;
-    for(const m of records){
-      if(ownMutation(m))continue;
-      mask|=PASS.NAV|PASS.HEADER;
-    }
-    if(mask)schedule(mask);
+    if(document.hidden){dirty|=PASS.NAV|PASS.HEADER;return;}
+    if(records.some(m=>!ownMutation(m)))schedule(PASS.NAV|PASS.HEADER);
   });
   let pageObserver=null;
   const touched = new Set();
@@ -91,15 +87,15 @@
       checked++;
       if (!node.nodeValue || !node.nodeValue.trim()) continue;
       if (node.parentElement?.closest?.(`${CLEANUP_GLYPH},script,style,svg,[aria-hidden="true"]`)) continue;
-      if (roleIn(node.nodeValue)) return { node, match: roleIn(node.nodeValue) };
+      const match=roleIn(node.nodeValue);
+      if(match)return {node,match};
     }
     return null;
   }
 
-  function titleNode(anchor) {
+  function titleNode(anchor,candidates) {
     // Prefer the native text container; never process buttons/icons inside the row.
-    const options = [...anchor.querySelectorAll(TITLE_SELECTORS)]
-      .filter(el => !el.closest('button,[role="button"],svg'));
+    const options = Array.from(candidates).filter(el => !el.closest('button,[role="button"],svg'));
     for (const el of options) if (el.matches('[data-ebook-role]') || firstValidText(el)) return el;
     return firstValidText(anchor) ? anchor : null;
   }
@@ -110,9 +106,9 @@
     const tag=/^\s*\[(완료|중단)\]/u.exec(text||'')?.[1];
     return tag==='완료'?'done':tag==='중단'?'stopped':null;
   }
-  function syncChatLifecycle(anchor) {
+  function syncChatLifecycle(anchor,candidates) {
     const excluded='button,[role="button"],svg,[aria-hidden="true"],.sr-only,.jaroo-native-badge,[data-jaroo-status-slot]';
-    const options=[...anchor.querySelectorAll(TITLE_SELECTORS)].filter(el=>!el.closest(excluded));
+    const options=Array.from(candidates).filter(el=>!el.closest(excluded));
     const title=options.find(el=>chatLifecycle(el.textContent))||
       (chatLifecycle(anchor.textContent)?anchor:null);
     for(const el of [anchor,...anchor.querySelectorAll('['+CHAT_LIFECYCLE_ATTR+']')]) {
@@ -133,9 +129,9 @@
     touched.add(title);
   }
 
-  function decorate(anchor) {
+  function decorate(anchor,candidates) {
     if (!anchor?.isConnected || !anchor.matches('a[href*="/c/"]')) return;
-    const title = titleNode(anchor);
+    const title = titleNode(anchor,candidates);
     if (!title) { errors.missingTitle++; return; }
     if (title.hasAttribute('data-ebook-role') && title.querySelector(CLEANUP_GLYPH)) {
       // A native rename can reuse the decorated DOM. Re-read the aggregate
@@ -1393,7 +1389,10 @@
     for (const root of observedRoots) {
       if (!root.isConnected) continue;
       const anchors = root.querySelectorAll('a[href*="/c/"]');
-      for (const anchor of anchors) { decorate(anchor); syncChatLifecycle(anchor); }
+      for(const anchor of anchors){
+        const candidates=anchor.querySelectorAll(TITLE_SELECTORS);
+        decorate(anchor,candidates);syncChatLifecycle(anchor,candidates);
+      }
     }
   }
 
@@ -1503,15 +1502,13 @@
   const composerResizeObserver=typeof ResizeObserver==='function'?
     new ResizeObserver(()=>schedule(PASS.DIVIDER)):null;
   const composerObserver=new MutationObserver(records=>{
-    let mask=0;
+    if(document.hidden){dirty|=PASS.COMPOSER|PASS.DIVIDER;return;}
     for(const m of records){
       if(ownMutation(m))continue;
       const target=m.target.nodeType===1?m.target:m.target.parentElement;
-      // Native editor text, new paragraphs and IME composition never trigger styling.
       if(composerEditor?.contains(target)||isEditableTarget(target))continue;
-      mask|=PASS.COMPOSER|PASS.DIVIDER;
+      schedule(PASS.COMPOSER|PASS.DIVIDER);break;
     }
-    if(mask)schedule(mask);
   });
   function activeComposer() {
     const editor=document.querySelector('#prompt-textarea')||
@@ -1590,12 +1587,21 @@
     for(const el of chosen)if(!el.hasAttribute('data-ebook-effort-picker'))
       el.setAttribute('data-ebook-effort-picker','true');
   }
+  // Skip whole message/sidebar subtrees before traversing their leaves.
+  function* headerFallbackNodes(main) {
+    const excluded=SIDE_ROOTS+', [data-message-author-role]';
+    if(main.closest(excluded))return;
+    const walker=document.createTreeWalker(main,NodeFilter.SHOW_ELEMENT,{acceptNode:el=>
+      el.matches(excluded)?NodeFilter.FILTER_REJECT:
+      el.matches('span,h1,h2,button,[role="button"]')?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_SKIP});
+    let node;
+    while((node=walker.nextNode()))yield node;
+  }
   function markCurrentChatTitle() {
     // Infer the active chat from the selected sidebar link and address.
     // Only mark one visible text leaf in the top header/breadcrumb.
     const id=(location.pathname.match(/\/c\/([^/?#]+)/)||[])[1]||'';
-    const selected=[...document.querySelectorAll('a[href*="/c/"]')].find(a=>
-      id && (a.getAttribute('href')||'').includes('/c/'+id))||
+    const selected=(id?document.querySelector('a[href*="/c/'+CSS.escape(id)+'"]'):null)||
       document.querySelector('[data-jaroo-selected="true"] a[href*="/c/"],a[aria-current="page"][href*="/c/"]');
     const normalize=s=>(s||'').replace(/^\[(?:RUN|DONE)[^\]]*\]\s*/iu,'')
       .replace(/^[☆★▷▶○●>›]\s*/u,'').replace(/\s+/g,'').trim();
@@ -1620,8 +1626,7 @@
     // As a fallback, inspect only visible nodes at the very top of main.
     if(!candidates.length&&names.length){
       const main=document.querySelector('main,[role="main"]');
-      if(main)for(const el of main.querySelectorAll('span,h1,h2,button,[role="button"]')){
-        if(el.closest(SIDE_ROOTS+', [data-message-author-role]'))continue;
+      if(main)for(const el of headerFallbackNodes(main)){
         const title=normalize(el.textContent);
         if(title.length<7||title.length>95||!names.some(n=>title===n||n.endsWith(title)&&title.length>=10))continue;
         const rect=el.getBoundingClientRect();
@@ -2555,12 +2560,25 @@
     if (window[RUNTIME]?.dispose === dispose) delete window[RUNTIME];
   }
 
-  function onVisibility() { if (!document.hidden) schedule(); }
+  function syncIndicatorVisibility() {
+    if(disposed)return;
+    if(document.hidden){
+      // UI-only; Status retains its independent evidence observers.
+      pageObserver?.disconnect();
+      clearInterval(recoverTimer);recoverTimer=0;
+      if(frame){cancelAnimationFrame(frame);frame=0;}
+      dirty|=ALL;
+      return;
+    }
+    pageObserver?.observe(document,{childList:true,subtree:true});
+    if(!recoverTimer)recoverTimer=setInterval(recoverLightly,5000);
+    schedule(ALL);
+  }
+  function onVisibility() { syncIndicatorVisibility(); }
 
   // document-start: CSS handles first paint, this observer catches native
   // elements as they appear. The helper does not block app hydration.
   pageObserver=new MutationObserver(onPageMutation);
-  pageObserver.observe(document,{childList:true,subtree:true});
   document.addEventListener('DOMContentLoaded',onRouteOrResize,{once:true});
   document.addEventListener('visibilitychange', onVisibility);
   document.addEventListener('click',onModeInteraction,true);
@@ -2574,8 +2592,7 @@
   window.addEventListener('popstate',onRouteOrResize);
   window.addEventListener('resize',onRouteOrResize);
   window.visualViewport?.addEventListener('resize',onRouteOrResize,{passive:true});
-  recoverTimer=setInterval(recoverLightly,5000);
-  schedule(ALL);
+  syncIndicatorVisibility();
 
   /* On-demand read-only font audit. Gives the actual computed CSS pixel size
      and family without collecting or returning private chat text. */
@@ -2611,7 +2628,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.3.20',dispose,refresh:schedule,outlineDiagnostic,
+    version:'0.3.21',dispose,refresh:schedule,outlineDiagnostic,
     diagnostics:() => ({...errors,sorting:{...sidebarSortDiagnostics,styledRows:sidebarSortSaved.size},roots:observedRoots.length,clockSkinned:document.getElementById(CLOCK_HOST)?.getAttribute('data-ebook-clock-ready')==='true',dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),firstPaintNav:getComputedStyle(document.documentElement).getPropertyValue('--eb-first-paint-nav').trim()==='1',opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-project-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:'css-only',mutedComposerFrames:0,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state'),overflow:n.getAttribute('data-ebook-count-overflow')==='true',confirmed:n.getAttribute('data-ebook-count-confirmed')===''?null:Number(n.getAttribute('data-ebook-count-confirmed'))})),lastPassMs:{...timings},performance:{events:{...perfEvents},passes:Object.fromEntries(Object.entries(perfPasses).map(([k,v])=>[k,{runs:v.runs,averageMs:Math.round(v.totalMs/v.runs*100)/100,peakMs:Math.round(v.peakMs*100)/100}]))},fixedSidebarTop:[...topBands.values()].map(n=>({height:n.height,visible:getComputedStyle(n.strip).visibility==='visible',pattern:getComputedStyle(n.strip).backgroundImage})),projectCountBorders:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({border:getComputedStyle(n).borderTopWidth,style:getComputedStyle(n).borderTopStyle,outline:getComputedStyle(n).outlineStyle})),projectCountLayers:countLayers.size,positionResizeTargets:navResizeTargets.size,visibleProjectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].filter(n=>getComputedStyle(n).visibility!=='hidden').length,projectCountAxis:findDotCountReference()?.circle.getBoundingClientRect().left??null,fontAudit:fontAudit()})
   };
 })();

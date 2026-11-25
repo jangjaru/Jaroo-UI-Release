@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo · Status & Command Center
 // @namespace    jaroo-company.local
-// @version      6.9.14
+// @version      6.9.15
 // @description  E-book RUN/DONE and ALL/ONLY; first-paint quiet controls, verified native-state detection and cross-tab synchronization.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -15,7 +15,7 @@
   const RUNTIME = '__jarooCommandCenterRuntimeV4';
   window[RUNTIME]?.dispose?.();
   window.__jarooNativeCapture?.stop?.();
-  const VERSION = '6.9.14';
+  const VERSION = '6.9.15';
   const HOVER_MS = 400;
   const ROOTS = '#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]';
   const ARCHIVE = '[data-sidebar-archive-chatgpt-id]';
@@ -306,9 +306,18 @@
     const latest = id => choose(allFor(id), time(), true);
     function get(id) { return validId(id) ? clone(choose(allFor(id.toLowerCase()), time())) : null; }
     function records() {
-      const ids = new Set(own.keys());
-      for (const snapshot of peers.values()) for (const id of snapshot.records.keys()) ids.add(id);
-      return [...ids].map(get).filter(Boolean).sort((a, b) => a.id.localeCompare(b.id));
+      // One traversal of records; retain own-first / peer insertion order
+      // and the exact existing choose() ranking/expiry logic.
+      const groups=new Map();
+      function add(id,item,visible,publishedAt){
+        let group=groups.get(id);
+        if(!group){group=[];groups.set(id,group);}
+        group.push({...item,visible,publishedAt});
+      }
+      for(const [id,item] of own)add(id,item,lastVisible,lastPublish);
+      for(const snapshot of peers.values())
+        for(const [id,item] of snapshot.records)add(id,item,snapshot.visible,snapshot.at);
+      return [...groups.values()].map(group=>clone(choose(group,time()))).filter(Boolean).sort((a,b)=>a.id.localeCompare(b.id));
     }
     function changed() {
       if (disposed) return;
@@ -529,9 +538,11 @@
     function tick() {
       if (disposed) return;
       const at = time(), visibilityChanged = isVisible() !== lastVisible;
-      for (const [id, item] of own) {
-        const effective = latest(id);
-        if (effective && (compareRun(effective.run, item.run) > 0 || effective.status !== 'working')) watching.delete(id);
+      for(const id of watching){
+        const item=own.get(id);
+        if(!item)continue;
+        const effective=latest(id);
+        if(effective&&(compareRun(effective.run,item.run)>0||effective.status!=='working'))watching.delete(id);
       }
       if ((own.size && at - lastPublish >= HEARTBEAT) || visibilityChanged) {
         for (const id of watching) {
@@ -1126,12 +1137,12 @@
     document.body.append(tooltip);
   }
   function closePanel() {panelOpen=false;panelSignature='';if(panel)panel.style.display='none';}
-  function openPanel(filter) {
+  function openPanel(filter,allRecords=validRecords()) {
     setupPanel();
     if (!dock?.isConnected) return;
     panelOpen=true;panel.dataset.filter=filter;
-    const records=validRecords().filter(r=>r.status===filter);
-    const signature=filter+'|'+records.map(r=>r.id+':'+r.status+':'+r.title+':'+r.href).join('|');
+    const records=allRecords.filter(r=>r.status===filter);
+    const signature=JSON.stringify([filter,records.map(r=>[r.id,r.status,r.title,r.href,r.run])]);
     if (panelSignature===signature && panel.style.display==='block') return;
     panelSignature=signature;
     panel.replaceChildren();
@@ -1191,7 +1202,7 @@
     focusBranch=null;
     // Do not retain fallback row clipping after switching back to ALL.
     for(const sidebar of watchedSidebars)
-      sidebar.removeAttribute('data-jaroo-focus-fallback');
+      if(sidebar.hasAttribute('data-jaroo-focus-fallback'))sidebar.removeAttribute('data-jaroo-focus-fallback');
   }
   function createFocusStatusIcon(status) {
     const running=status==='working';
@@ -1272,25 +1283,25 @@
   }
   function syncFocusView(records) {
     const modeButton=dock?.querySelector('[data-jaroo-filter-toggle]');
-    const branch=findNativeMenuBranch();
     // A missing React navigation wrapper must not disable the visible switch.
     const ready=Boolean(modeButton && focusList?.isConnected);
     if (modeButton) {
-      modeButton.disabled=!ready;
-      modeButton.setAttribute('aria-pressed',String(ready && focusWanted));
+      if(modeButton.disabled===ready)modeButton.disabled=!ready;
+      setAttr(modeButton,'aria-pressed',String(ready && focusWanted));
       const label=ready && focusWanted ? '확인할 작업만 표시 중 · 누르면 전체 보기' :
         ready ? '전체 표시 중 · 누르면 확인할 작업만 표시' : '기본 목록 구조가 확인되지 않아 필터 사용 불가';
-      modeButton.setAttribute('aria-label',label);modeButton.title=label;
+      setAttr(modeButton,'aria-label',label);if(modeButton.title!==label)modeButton.title=label;
     }
     if (!ready || !focusWanted) {
-      focusList && (focusList.hidden=true);
+      if(focusList&&!focusList.hidden)focusList.hidden=true;
       releaseFocusBranch();
       return;
     }
+    const branch=findNativeMenuBranch();
     // Native navigation stays connected and discoverable; it is only clipped.
     if (focusBranch!==branch) releaseFocusBranch();
     renderFocusEntries(records);
-    focusList.hidden=false;
+    if(focusList.hidden)focusList.hidden=false;
     if (branch) {
       focusBranch=branch;
       setAttr(branch,FOCUS_MENU_ATTR,'clipped');
@@ -1328,7 +1339,6 @@
       }
     }
     alignDockToClock();
-    if (panelOpen) openPanel(panel.dataset.filter || 'working');
   }
 
 
@@ -1383,8 +1393,8 @@
     }
   });
 
-  function applyNativeValue(row, value, { oldValue = undefined, mutation = false } = {}) {
-    if (!rowReadable(row)) return;
+  function applyNativeValue(row, value, { oldValue = undefined, mutation = false, readable = undefined } = {}) {
+    if (!(readable===undefined?rowReadable(row):readable)) return;
     const id = getRowId(row);
     if (!validId(id)) return;
     const previous = nativeSeen.get(row);
@@ -1417,6 +1427,20 @@
     // Absence is only a loss of a local observation. It never writes DONE/ACK.
   }
 
+  function nativeTransitions(changes,idsChanged) {
+    // Reverse index recovers next oldValue in linear time, including null.
+    const nextOld=new Map(),result=[];
+    for(let index=changes.length-1;index>=0;index--){
+      const event=changes[index],row=event.target;
+      if(idsChanged.has(row))continue;
+      const id=getRowId(row);
+      if(!validId(id))continue;
+      const value=nextOld.has(row)?nextOld.get(row):row.getAttribute('data-sidebar-indicator');
+      result.push({row,id,oldValue:event.oldValue,value});
+      nextOld.set(row,event.oldValue);
+    }
+    return result.reverse();
+  }
   function captureNativeChanges(events) {
     const idsChanged = new Set(events.filter(event => event.type === 'attributes' &&
       ['data-sidebar-archive-chatgpt-id', 'href'].includes(event.attributeName)).map(event =>
@@ -1432,14 +1456,7 @@
       pendingNative = pendingNative.filter(entry => !idsChanged.has(entry.row));
     }
     const changes = events.filter(event => event.type === 'attributes' && event.attributeName === 'data-sidebar-indicator');
-    for (let index = 0; index < changes.length; index++) {
-      const event = changes[index], row = event.target;
-      if (idsChanged.has(row)) continue;
-      if (!validId(getRowId(row))) continue;
-      const next = changes.slice(index + 1).find(item => item.target === row);
-      pendingNative.push({ row, id: getRowId(row), oldValue: event.oldValue,
-        value: next ? next.oldValue : row.getAttribute('data-sidebar-indicator') });
-    }
+    for(const transition of nativeTransitions(changes,idsChanged))pendingNative.push(transition);
     // Pathological batches fall back to snapshots instead of guessing history.
     if (pendingNative.length > 400) { pendingNative = []; nativeSeen = new WeakMap(); }
   }
@@ -1449,19 +1466,25 @@
       composerProbe.suspend('route-changed'); signalRoute = route;
     }
     probeSnapshot = composerProbe.scan(refreshReason);
-    const active = new Set(rows().filter(row => rowReadable(row) && nativeStatus(row) === 'working').map(getRowId));
+    const currentRows=rows(),readability=new Map();
+    const readable=row=>{
+      if(!readability.has(row))readability.set(row,rowReadable(row));
+      return readability.get(row);
+    };
+    const active=new Set(currentRows.filter(row=>nativeStatus(row)==='working'&&readable(row)).map(getRowId));
     if (probeSnapshot.id && (probeSnapshot.stop || probeSnapshot.work?.active)) active.add(probeSnapshot.id);
     for (const id of localObservations) if (!active.has(id)) {
       statusBus.releaseObservation(id); localObservations.delete(id);
     }
-    const pending = pendingNative; pendingNative = [];
-    for (const entry of pending) {
-      if (getRowId(entry.row) !== entry.id || !rows().includes(entry.row)) continue;
-      applyNativeValue(entry.row, entry.value, { oldValue: entry.oldValue, mutation: true });
+    const pending=pendingNative;pendingNative=[];
+    const currentSet=pending.length?new Set(currentRows):null;
+    for(const entry of pending){
+      if(getRowId(entry.row)!==entry.id||!currentSet.has(entry.row))continue;
+      applyNativeValue(entry.row,entry.value,{oldValue:entry.oldValue,mutation:true,readable:readable(entry.row)});
     }
     // Reconcile mounts and refresh leases. Snapshot differences are deliberately
     // not execution edges: stale DOM in a resumed tab cannot restart DONE.
-    for (const row of rows()) applyNativeValue(row, row.getAttribute('data-sidebar-indicator'));
+    for(const row of currentRows)applyNativeValue(row,row.getAttribute('data-sidebar-indicator'),{readable:readable(row)});
     bindProbeObservers();
     statusBus.tick();
   }
@@ -1483,7 +1506,7 @@
       else alignDockToClock();
       syncFocusView(list);
       syncMotionVisibility();
-      if (panelOpen) openPanel(panel.dataset.filter || 'working');
+      if(panelOpen)openPanel(panel.dataset.filter||'working',list);
       observeClock();
       lastSignature = signature; lastRoute = route; lastError = '';
     } catch (error) { lastError = String(error); }
