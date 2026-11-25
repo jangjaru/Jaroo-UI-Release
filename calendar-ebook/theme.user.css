@@ -1,7 +1,7 @@
 /* ==UserStyle==
 @name         Jaroo Google Calendar E-Book
 @namespace    jaroo.calendar.ebook
-@version      0.4.3
+@version      0.4.4
 @description  Cool E-Ink Graph Paper · paired with Calendar E-Book Companion
 @author       Jaroo
 @license      UNLICENSED
@@ -42,7 +42,7 @@
 /* Light appearance is selected in Google Calendar itself. No layout,
    event text, native date/colour data, or click targets are rewritten. */
 html[data-jaroo-calendar-theme="ebook"] {
-  --jaroo-cal-style-version: 0.4.3;
+  --jaroo-cal-style-version: 0.4.4;
   --jaroo-cal-bg:#EFF1F2;
   --jaroo-cal-sidebar:#E7EAEB;
   --jaroo-cal-surface:#F5F6F6;
@@ -565,4 +565,64 @@ html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-surface="more"] :is(h1,h
   html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-event="true"][data-jaroo-cal-color="true"]{background-color:Canvas!important;color:CanvasText!important;box-shadow:none!important}
   html[data-jaroo-calendar-theme="ebook"] :is([data-jaroo-cal-today="true"],[data-jaroo-cal-event="true"][data-jaroo-cal-priority="true"],[data-jaroo-cal-event="true"][data-jaroo-cal-deadline="true"]){outline:1px solid Highlight!important;outline-offset:-1px!important}
 }
+
+/* v0.4.4 — direct date ring fallback and separately layered month rail.
+   Scope to verified native month/date markers only. The fine grid survives. */
+@media (forced-colors: none) {
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [data-jaroo-cal-date-label="true"],
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [data-jaroo-cal-date-tone="outside"]:not([data-jaroo-cal-today-label]):not([data-jaroo-cal-today="true"]):not([data-jaroo-cal-selected="true"]){
+    font-weight:700!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-week-gutter="true"]{
+    background-color:transparent!important;background-image:none!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-week-gutter="true"]::before,
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-week-gutter="true"]::after{
+    background-color:transparent!important;background-image:none!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-week-number="true"]{
+    min-inline-size:18px!important;min-block-size:18px!important;
+    background-color:transparent!important;
+    background-image:radial-gradient(circle at center,#D0D5D7 0 8.5px,transparent 9px)!important;
+    background-size:18px 18px!important;background-position:center!important;background-repeat:no-repeat!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-today-layer="true"],
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-today-cell="true"],
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [data-jaroo-cal-today="true"]:not([data-jaroo-cal-date-label]):not([data-jaroo-cal-today-ring]):not([data-jaroo-cal-today-ring-part]){
+    background-color:transparent!important;background-image:none!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-today-layer="true"]:not([data-jaroo-cal-month-today-cell]){
+    box-shadow:none!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [role="gridcell"][data-jaroo-cal-today="true"],
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-today-cell="true"]{
+    background-color:transparent!important;background-image:none!important;
+    box-shadow:inset 0 0 0 1px #303438!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [data-jaroo-cal-today-ring-part="true"]:not([data-jaroo-cal-today-ring]),
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] [data-jaroo-cal-today-ring] [data-jaroo-cal-date-label="true"]:not([data-jaroo-cal-today-ring]){
+    background-color:transparent!important;background-image:none!important;
+    border-color:transparent!important;box-shadow:none!important;color:#303438!important;
+  }
+  /* Even if the compact native date control cannot be discovered, the
+     existing verified today text marker must still draw the circle. */
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] :is(
+    [data-jaroo-cal-today-ring="true"],
+    [data-jaroo-cal-today-label="true"]:not([data-jaroo-cal-today-ring] *):not(:has([data-jaroo-cal-today-ring]))
+  ):not([data-jaroo-cal-month-today-cell]){
+    background-color:transparent!important;
+    background-image:radial-gradient(circle at center,transparent 0 8.8px,#303438 9px 10.8px,transparent 11px)!important;
+    background-size:22px 22px!important;background-repeat:no-repeat!important;background-position:center!important;
+    min-inline-size:22px!important;min-block-size:22px!important;
+    border-color:transparent!important;box-shadow:none!important;outline-color:transparent;
+    color:#303438!important;font-weight:700!important;
+  }
+  html[data-jaroo-calendar-theme="ebook"] [data-jaroo-cal-month-grid="true"] :is(
+    [data-jaroo-cal-today-ring="true"],
+    [data-jaroo-cal-today-label="true"]:not([data-jaroo-cal-today-ring] *):not(:has([data-jaroo-cal-today-ring]))
+  ):not([data-jaroo-cal-month-today-cell]):not(:is(button,[role="button"],a,[role="link"],[tabindex])){
+    display:inline-grid!important;place-items:center!important;line-height:1!important;
+  }
+}
+
 }
