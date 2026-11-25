@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.3.22
+// @version      0.3.23
 // @description  E-book role markers, sidebar presentation, outline and safe composer attachment layout. No editable text mutation; Clock owns its first paint.
 // @match        https://chatgpt.com/*
 // @run-at       document-start
@@ -15,6 +15,33 @@
 
   const RUNTIME = '__jarooEbookIvoryMonoV1';
   try { window[RUNTIME]?.dispose?.(); } catch (_) {}
+  // Short, low-specificity first-paint bridge while Stylus is being injected.
+  // No page hiding, network, periodic polling or durable style override.
+  function installFirstPaint(css, readyToken, id) {
+    let style=null, wait=null, timer=0, stopped=false;
+    function stop(){
+      if(stopped)return;
+      stopped=true;wait?.disconnect();wait=null;
+      if(timer)clearTimeout(timer);timer=0;style?.remove();style=null;
+    }
+    function check(){
+      if(stopped)return true;
+      const root=document.documentElement;
+      if(!root)return false;
+      if(getComputedStyle(root).getPropertyValue(readyToken).trim()){stop();return true;}
+      return false;
+    }
+    function attach(){
+      if(stopped||!document.documentElement||check()||style)return;
+      style=document.createElement('style');style.id=id;style.textContent=css;
+      (document.head||document.documentElement).appendChild(style);
+    }
+    timer=setTimeout(stop,1600);
+    if(document.documentElement)attach();
+    else{wait=new MutationObserver(()=>{if(document.documentElement){wait?.disconnect();wait=null;attach();}});wait.observe(document,{childList:true});}
+    return {check,dispose:stop};
+  }
+  const firstPaint=installFirstPaint("@font-face {\n    font-family:\"Jaroo Plex Latin\";\n    src:local(\"IBM Plex Mono Regular\"),local(\"IBMPlexMono-Regular\"),local(\"IBM Plex Mono\");\n    font-weight:400;\n    font-style:normal;\n    unicode-range:U+0021-007E,U+00A1-024F,U+1E00-1EFF,U+20AC;\n  }\n  @font-face {\n    font-family:\"Jaroo Plex Latin\";\n    src:local(\"IBM Plex Mono Medium\"),local(\"IBMPlexMono-Medium\"),local(\"IBM Plex Mono\");\n    font-weight:500;\n    font-style:normal;\n    unicode-range:U+0021-007E,U+00A1-024F,U+1E00-1EFF,U+20AC;\n  }\n  @font-face {\n    font-family:\"Jaroo Plex Latin\";\n    src:local(\"IBM Plex Mono SemiBold\"),local(\"IBMPlexMono-SemiBold\"),local(\"IBM Plex Mono\");\n    font-weight:600;\n    font-style:normal;\n    unicode-range:U+0021-007E,U+00A1-024F,U+1E00-1EFF,U+20AC;\n  }\n  @font-face {\n    font-family:\"Jaroo Plex Latin\";\n    src:local(\"IBM Plex Mono Bold\"),local(\"IBMPlexMono-Bold\"),local(\"IBM Plex Mono\");\n    font-weight:700;\n    font-style:normal;\n    unicode-range:U+0021-007E,U+00A1-024F,U+1E00-1EFF,U+20AC;\n  }\n@media(forced-colors:none){\n:where(html){color-scheme:light!important;--jaroo-boot-font:\"Jaroo Plex Latin\",\"Pretendard Variable\",\"Pretendard\",sans-serif;--font-sans:var(--jaroo-boot-font)!important;--main-surface-primary:#EFF1F2!important;--main-surface-primary-inverse:#292D30!important;--main-surface-secondary:#F5F6F6!important;--main-surface-tertiary:#E4E8EA!important;--sidebar-surface-primary:#E7EAEB!important;--sidebar-surface-secondary:#E4E8EA!important;--sidebar-surface-tertiary:#F5F6F6!important;--bg-primary:#EFF1F2!important;--bg-secondary:#F5F6F6!important;--bg-tertiary:#E4E8EA!important;--text-primary:#292D30!important;--text-secondary:#535B60!important;--border-light:#C5CDD0!important;--border-medium:#89979E!important}\n:where(html,body){background-color:#EFF1F2!important;color:#292D30!important;font-family:var(--jaroo-boot-font)!important}\n:where(#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid=\"sidebar\"]){background-color:#E7EAEB!important;color:#292D30!important}\n:where(#page-header,[data-testid=\"conversation-header\"]){background-color:#EFF1F2!important;color:#292D30!important}\n:where(#thread,[data-testid=\"conversation-panel\"],[data-testid=\"conversation-thread\"],main,[role=\"main\"]){background-color:#EFF1F2!important;background-image:linear-gradient(to right,rgba(85,97,105,.09) 1px,transparent 1px),linear-gradient(to bottom,rgba(85,97,105,.09) 1px,transparent 1px)!important;background-size:22px 22px!important;background-repeat:repeat!important}\n:where(#composer-background:has(:is(#prompt-textarea,[data-testid=\"prompt-textarea\"],.ProseMirror[contenteditable=\"true\"]))){background-color:#F5F6F6!important;border:2.5px solid #303438!important;border-radius:24px!important;box-shadow:none!important}\n:where(#prompt-textarea,[data-testid=\"prompt-textarea\"]){font-family:var(--jaroo-boot-font)!important;color:#292D30!important}\n}",'--ebook-theme-version','jaroo-ebook-first-paint');
   const CLOCK_HOST = 'jaroo-clock-overlay-v25';
   const SIDE_ROOTS = '#stage-sidebar,#stage-slideover-sidebar,#slate-sidebar,[data-testid="sidebar"]';
   const TITLE_SELECTORS = '[data-thread-title="true"],[data-marquee-text],span.truncate,div.truncate,span[dir="auto"]';
@@ -2437,6 +2464,7 @@
     frame=window.requestAnimationFrame(()=>{
       frame=0;
       if(document.hidden)return;
+      firstPaint.check();
       const work=dirty;dirty=0;
       if(document.body&&document.documentElement)update(work);
       else dirty|=work;
@@ -2480,6 +2508,10 @@
       }
     }
     if(mask)schedule(mask);
+  }
+  function onNavigationEntry() {
+    if(location.pathname===lastRoute)return;
+    lastRoute=location.pathname;schedule(ALL);
   }
   function onRouteOrResize(event) {
     if(event?.type==='resize') {
@@ -2528,6 +2560,7 @@
 
   function dispose() {
     disposed = true;
+    firstPaint.dispose();
     disposeRoleDotPixels();
     disposeConversationOutline();
     observer.disconnect();
@@ -2560,6 +2593,7 @@
     document.removeEventListener('load',onComposerImageLoad,true);
     document.removeEventListener('DOMContentLoaded',onRouteOrResize);
     window.removeEventListener('popstate',onRouteOrResize);
+    window.navigation?.removeEventListener('currententrychange',onNavigationEntry);
     window.removeEventListener('resize',onRouteOrResize);
     window.visualViewport?.removeEventListener('resize',onRouteOrResize);
     window.removeEventListener('focus', schedule);
@@ -2608,6 +2642,7 @@
   document.addEventListener('scroll',onRoleDotScroll,{capture:true,passive:true});
   window.addEventListener('focus',schedule);
   window.addEventListener('popstate',onRouteOrResize);
+  window.navigation?.addEventListener('currententrychange',onNavigationEntry);
   window.addEventListener('resize',onRouteOrResize);
   window.visualViewport?.addEventListener('resize',onRouteOrResize,{passive:true});
   syncIndicatorVisibility();
@@ -2646,7 +2681,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.3.22',dispose,refresh:schedule,outlineDiagnostic,
+    version:'0.3.23',dispose,refresh:schedule,outlineDiagnostic,
     diagnostics:() => ({...errors,sorting:{...sidebarSortDiagnostics,styledRows:sidebarSortSaved.size},roots:observedRoots.length,clockSkinned:document.getElementById(CLOCK_HOST)?.getAttribute('data-ebook-clock-ready')==='true',dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),firstPaintNav:getComputedStyle(document.documentElement).getPropertyValue('--eb-first-paint-nav').trim()==='1',opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-project-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:'css-only',mutedComposerFrames:0,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state'),overflow:n.getAttribute('data-ebook-count-overflow')==='true',confirmed:n.getAttribute('data-ebook-count-confirmed')===''?null:Number(n.getAttribute('data-ebook-count-confirmed'))})),lastPassMs:{...timings},performance:{events:{...perfEvents},passes:Object.fromEntries(Object.entries(perfPasses).map(([k,v])=>[k,{runs:v.runs,averageMs:Math.round(v.totalMs/v.runs*100)/100,peakMs:Math.round(v.peakMs*100)/100}]))},fixedSidebarTop:[...topBands.values()].map(n=>({height:n.height,visible:getComputedStyle(n.strip).visibility==='visible',pattern:getComputedStyle(n.strip).backgroundImage})),projectCountBorders:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({border:getComputedStyle(n).borderTopWidth,style:getComputedStyle(n).borderTopStyle,outline:getComputedStyle(n).outlineStyle})),projectCountLayers:countLayers.size,positionResizeTargets:navResizeTargets.size,visibleProjectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].filter(n=>getComputedStyle(n).visibility!=='hidden').length,projectCountAxis:findDotCountReference()?.circle.getBoundingClientRect().left??null,fontAudit:fontAudit()})
   };
 })();

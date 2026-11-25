@@ -1,3 +1,9 @@
+# Indicators v0.3.23 — 초기 화면 전환 완화
+
+- 기준 4953b38ac8f4ee64b0ecaf5c0139761493237897. 기존 E-Book CSS v0.3.7, Clock/Status/Mapper, 모든 레이아웃과 상태 통신 불변. document-start에서 Stylus의 실제 CSS 버전 토큰이 아직 없다면 기존 색·로컬 글꼴·22px 모눈·확인된 입력창 외곽선의 경량 임시 CSS만 적용. 실제 Stylus가 인식되면 제거하며 최대 1.6초 후 무조건 제거. 화면을 숨기거나 원격 CSS를 가져오지 않음. 낮은 선택자 우선순위로 정식 CSS 우선. Stylus를 의도적으로 비활성화한 경우 잠시 임시 스타일이 나타날 수 있으므로 Indicators도 함께 비활성화.
+- Navigation API currententrychange에서 실제 pathname 변경을 기존 rAF 스케줄러에 전달; 같은 경로 중복 생략. 기존 MutationObserver와 복귀 경로 유지. 상태 신호·입력·IME·스크롤·디자인·개인정보 변경 없음.
+- 구문, 임시 CSS 즉시/지연 루트·정식 CSS 발견·타임아웃·dispose 4가지 모의 검증, 경로 변경 중복 억제 검사. 실제 로그인 Chrome의 cold reload/SPA 프레임 시간은 미측정. Chrome 또는 확장 프로그램 주입 이전 프레임 및 실제 DOM 생성 이후의 동적 표시 차이는 완전 제거 보장하지 않음.
+
 # 성능 최적화 2차 — Clock v3.11.55 / Indicators v0.3.22 / Status v6.9.18 / Mapper v1.3.7 (2026-11-25)
 
 - 기준: 25292b482cd477e6db0645c323a525b4c89a41d7. Stylus CSS v0.3.7 및 기존 JS의 디자인 CSS, 글꼴, 애니메이션, 설치 URL 유지. Calendar 및 Dracula CSS/Clock/Status 미변경. 공용 Mapper만 표시 전용 최적화 적용.
