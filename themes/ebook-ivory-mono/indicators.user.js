@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo E-book · Role Indicators & Clock Skin
 // @namespace    jaroo.theme.ebook.ivory-mono
-// @version      0.3.3
+// @version      0.3.4
 // @description  E-book role markers, sidebar presentation, outline and safe composer attachment layout. No editable text mutation; Clock owns its first paint.
 // @match        https://chatgpt.com/*
 // @run-at       document-start
@@ -288,7 +288,9 @@
     const found=new Map();
     const selector='button span,a span,[role="button"] span,[role="link"] span,'+
       'button [data-d-component="text"],a [data-d-component="text"]';
-    function scan(leaves) {
+    function scan(leaves,rail=null) {
+      const railRect=rail&&visibleBox(rail);
+      const clockRect=rail&&visibleBox(rail.querySelector('#'+CLOCK_HOST));
       for(const el of leaves) {
         if(el.children.length>0)continue;
         const raw=normalizeLabel(el.textContent);
@@ -299,12 +301,17 @@
         const nav=el.closest('button,a,[role="button"],[role="link"]');
         if(!nav)continue;
         const rect=el.getBoundingClientRect(),nrect=nav.getBoundingClientRect();
+        // New Chat moves down when the dashboard expands. Only relax the
+        // old viewport bound for an exact native action in the verified rail.
+        const afterClock=railRect&&clockRect&&clockRect.top>=railRect.top-3&&
+          rect.top>=clockRect.bottom-3&&rect.top<=clockRect.bottom+180;
+        const topLimit=afterClock?Math.min(railRect.bottom,clockRect.bottom+180):360;
         if(rect.width<=0||rect.height<=0||rect.left<0||rect.left>410||
-           rect.top<32||rect.top>360||nrect.left>400)continue;
+           rect.top<32||rect.top>topLimit||nrect.left>400)continue;
         found.set(el,'new-chat');
       }
     }
-    for(const root of navigationQueryRoots())scan(root.querySelectorAll(selector));
+    for(const root of navigationQueryRoots())scan(root.querySelectorAll(selector),root);
     if(!found.size)scan(document.querySelectorAll(selector));
     const newChatLabels=[...found.keys()];
     for(const el of collectDotLabels(newChatLabels))found.set(el,'dot');
@@ -380,12 +387,19 @@
   const topBands=new Map();
   const topBandContent='[data-app-action-sidebar-project-row],[data-sidebar-cycle-item],'+
     '[data-sidebar-archive-chatgpt-id],a[href*="/c/"],[data-app-action-sidebar-section-heading]';
-  function topBandHeight(rr,nr,dr,end) {
+  function topBandHeight(rr,nr,dr,end,cr=null) {
     if(!rr||!nr||!dr||rr.width<130||rr.width>720||rr.height<125||
-       nr.top<rr.top-3||dr.top<nr.top-2||dr.bottom>rr.top+310||
+       nr.top<rr.top-3||dr.top<nr.top-2||
        !Number.isFinite(end)||end<dr.bottom-2||end>dr.bottom+64)return null;
+    // A real in-flow dashboard above the two quick actions is part of the
+    // fixed header. Reject floating/overlapping clocks instead of covering
+    // project rows. Retain the original small-header limits without it.
+    const dashboard=!!(cr&&cr.top>=rr.top-3&&cr.bottom<=nr.top+6&&cr.bottom>cr.top);
+    if(cr&&cr.top<end&&!dashboard)return null;
+    const max=dashboard?rr.height-40:Math.min(340,rr.height-40);
+    if(dr.bottom>rr.top+(dashboard?rr.height-40:310))return null;
     const h=end-rr.top;
-    return h>=55&&h<=340&&h<rr.height-40?Math.round(h*10)/10:null;
+    return h>=55&&h<=max?Math.round(h*10)/10:null;
   }
   function topBandRail(n,dot) {
     // Reuse the same rail finder as the working project count overlay.
@@ -402,6 +416,7 @@
   }
   function findTopBand(root,newChat,dot) {
     const rr=visibleBox(root),nr=visibleBox(newChat),dr=visibleBox(dot);
+    const cr=visibleBox(root.querySelector('#'+CLOCK_HOST));
     if(!rr||!nr||!dr)return null;
     if(Math.abs(nr.left-dr.left)>100)return null;
     const first=root.querySelector('[data-app-action-sidebar-section-heading="Projects"]')||
@@ -411,7 +426,7 @@
       const r=visibleBox(p);
       if(!r||r.width<rr.width*.60||r.height<48||p.contains(newChat)||p.contains(dot))continue;
       if(!/^(auto|scroll|overlay)$/u.test(getComputedStyle(p).overflowY))continue;
-      if(topBandHeight(rr,nr,dr,r.top)!==null)scrollEdges.push(r.top);
+      if(topBandHeight(rr,nr,dr,r.top,cr)!==null)scrollEdges.push(r.top);
     }
     let rowBottom=dr.bottom;
     // Dot's actual control/row is often a separate sibling from New Chat.
@@ -423,17 +438,15 @@
       if(r.width>=rr.width*.50&&r.top>=dr.top-30&&r.bottom<=dr.bottom+30&&
          r.height<=64&&!p.contains(newChat))rowBottom=Math.max(rowBottom,r.bottom);
       if(p.contains(newChat)&&r.width>=rr.width*.70&&r.top<=nr.top+2&&
-         topBandHeight(rr,nr,dr,r.bottom)!==null)wrapperEdges.push(r.bottom);
+         topBandHeight(rr,nr,dr,r.bottom,cr)!==null)wrapperEdges.push(r.bottom);
     }
     let edge;
     if(scrollEdges.length)edge=Math.min(...scrollEdges);
     else if(wrapperEdges.length)edge=Math.max(...wrapperEdges);
     else edge=Math.min(rowBottom+6,dr.bottom+35);
-    const height=topBandHeight(rr,nr,dr,edge);
+    const height=topBandHeight(rr,nr,dr,edge,cr);
     if(height===null)return null;
-    const clock=root.querySelector('#'+CLOCK_HOST);
-    if(clock&&visibleBox(clock)&&clock.getBoundingClientRect().top<rr.top+height)return null;
-    return {rr,height};
+    return {rr,height,tail:edge-dr.bottom};
   }
   function topBandCoordinates(rr,height,lr,lw,lh) {
     if(!rr||!lr||lr.width<=0||lr.height<=0||lw<=0||lh<=0||!Number.isFinite(height))return null;
@@ -448,7 +461,7 @@
     // Explicitly preserve the correction even if Stylus still has the
     // previous CSS cached. The two new nodes are not native controls.
     layer.style.cssText='position:fixed!important;inset:0!important;display:block!important;width:auto!important;height:auto!important;padding:0!important;margin:0!important;border:0!important;background:transparent!important;pointer-events:none!important;z-index:10!important;';
-    strip.style.cssText='position:absolute!important;display:block!important;visibility:hidden!important;pointer-events:none!important;box-sizing:border-box!important;border:0!important;border-bottom:1px solid rgba(90,98,105,.12)!important;border-radius:0!important;background-color:rgba(242,244,245,.13)!important;background-image:repeating-linear-gradient(135deg,transparent 0px,transparent 9px,rgba(108,116,124,.09) 9px,rgba(108,116,124,.09) 10px)!important;box-shadow:none!important;';
+    strip.style.cssText='position:absolute!important;display:block!important;visibility:hidden!important;pointer-events:none!important;box-sizing:border-box!important;border:0!important;border-bottom:1px solid rgba(90,98,105,.12)!important;border-radius:0!important;background-color:rgba(242,244,245,.13)!important;background-image:var(--eb-top-hatch,repeating-linear-gradient(135deg,transparent 0px,transparent 9px,rgba(108,116,124,.09) 9px,rgba(108,116,124,.09) 10px))!important;box-shadow:none!important;';
     layer.appendChild(strip);
     root.appendChild(layer);
     return {root,n,dot,height,layer,strip,prior:root.getAttribute('data-ebook-sidebar-top'),
@@ -465,14 +478,19 @@
   }
   function positionFixedSidebarTop() {
     for(const [root,record] of topBands) {
-      const {n,dot,height,layer,strip}=record;
+      const {n,dot,tail,layer,strip}=record;
       if(!root.isConnected||!n.isConnected||!dot.isConnected) {
         makeImportant(strip,'visibility','hidden');continue;
       }
       const rr=visibleBox(root),nr=visibleBox(n),dr=visibleBox(dot);
-      const valid=rr&&nr&&dr&&topBandHeight(rr,nr,dr,rr.top+height)!==null;
-      const p=valid&&topBandCoordinates(rr,height,layer.getBoundingClientRect(),layer.offsetWidth,layer.offsetHeight);
+      const cr=visibleBox(root.querySelector('#'+CLOCK_HOST));
+      // During a resize or collapse use the actual Dot position, not the
+      // previous band height. The debounced NAV pass rechecks the boundary.
+      const height=rr&&nr&&dr&&Number.isFinite(tail)?topBandHeight(rr,nr,dr,dr.bottom+tail,cr):null;
+      const p=height!==null&&topBandCoordinates(rr,height,layer.getBoundingClientRect(),layer.offsetWidth,layer.offsetHeight);
       if(!p){makeImportant(strip,'visibility','hidden');continue;}
+      record.height=height;
+      makeImportant(root,'--eb-sidebar-top-height',height+'px');
       for(const [k,v] of Object.entries(p))makeImportant(strip,k,Math.round(v*10)/10+'px');
       makeImportant(strip,'visibility','visible');
     }
@@ -489,7 +507,7 @@
         const root=topBandRail(n,dot);
         if(!root||wanted.has(root))continue;
         const band=findTopBand(root,n,dot);
-        if(band){wanted.set(root,{n,dot,height:band.height});break;}
+        if(band){wanted.set(root,{n,dot,height:band.height,tail:band.tail});break;}
       }
     }
     for(const [root,record] of topBands)if(!wanted.has(root)||!root.isConnected)removeTopBand(root,record);
@@ -1421,8 +1439,8 @@
     if(disposed||document.hidden||(!countHosts.size&&!topBands.size))return;
     if(countPositionFrame){cancelAnimationFrame(countPositionFrame);countPositionFrame=0;}
     timed('position',()=>{
-      positionProjectCounts();
       positionFixedSidebarTop();
+      positionProjectCounts();
     });
   }
   function scheduleResizeReconcile() {
@@ -1443,6 +1461,12 @@
   function syncPositionResizeTargets(ref=cachedCountReference) {
     if(!navResizeObserver)return;
     const next=new Set([...observedRoots,...countLayers.keys(),...countLayers.values(),...topBands.keys()]);
+    for(const [rail,{n,dot}] of topBands){
+      const clock=rail.querySelector('#'+CLOCK_HOST);
+      if(clock)next.add(clock);
+      if(n?.isConnected)next.add(n.closest(quickControl)||n);
+      if(dot?.isConnected)next.add(dot.closest(quickControl)||dot);
+    }
     // Watch the native Dot row/flex ancestors as well: the badge can move
     // inside a wrapper whose outer sidebar dimensions remain unchanged.
     for(let el=ref?.circle,depth=0;el&&depth<8&&el!==document.body&&el!==document.documentElement;el=el.parentElement,depth++) {
@@ -2559,7 +2583,7 @@
   }
 
   window[RUNTIME] = {
-    version:'0.3.3',dispose,refresh:schedule,outlineDiagnostic,
+    version:'0.3.4',dispose,refresh:schedule,outlineDiagnostic,
     diagnostics:() => ({...errors,sorting:{...sidebarSortDiagnostics,styledRows:sidebarSortSaved.size},roots:observedRoots.length,clockSkinned:document.getElementById(CLOCK_HOST)?.getAttribute('data-ebook-clock-ready')==='true',dotMarkers:document.querySelectorAll('[data-ebook-dot-counter="true"]').length,quickNavMarkers:[...document.querySelectorAll('[data-ebook-quick-label]')].map(n=>({kind:n.getAttribute('data-ebook-quick-label'),font:getComputedStyle(n).fontSize,weight:getComputedStyle(n).fontWeight,color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundImage})),effortMarkers:document.querySelectorAll('[data-ebook-effort-picker="true"]').length,headerMarkers:document.querySelectorAll('[data-ebook-active-title="true"]').length,uploadDivider:!!document.querySelector('[data-ebook-upload-divider="true"]'),firstPaintNav:getComputedStyle(document.documentElement).getPropertyValue('--eb-first-paint-nav').trim()==='1',opticalLeaves:opticalFontOriginal.size,opticalProjectTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-project-optical-size').trim(),opticalChatTarget:'15.333px',projectWeightLeaves:projectWeightOriginal.size,composerFrames:'css-only',mutedComposerFrames:0,promptTextLeaves:promptTypeOriginal.size,promptOpticalTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-prompt-optical-size').trim(),sentPromptTarget:getComputedStyle(document.documentElement).getPropertyValue('--eb-user-sent-optical-size').trim(),projectMarkers:[...document.querySelectorAll('[data-ebook-project-marker]')].map(n=>n.getAttribute('data-ebook-project-marker')),sidebarSeams:document.querySelectorAll('[data-ebook-sidebar-seam="true"]').length,workSwitcher: [...document.querySelectorAll('[data-ebook-switch-tab]')].map(n=>n.getAttribute('data-ebook-switch-tab')),projectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({value:n.textContent,state:n.getAttribute('data-ebook-count-state'),overflow:n.getAttribute('data-ebook-count-overflow')==='true',confirmed:n.getAttribute('data-ebook-count-confirmed')===''?null:Number(n.getAttribute('data-ebook-count-confirmed'))})),lastPassMs:{...timings},performance:{events:{...perfEvents},passes:Object.fromEntries(Object.entries(perfPasses).map(([k,v])=>[k,{runs:v.runs,averageMs:Math.round(v.totalMs/v.runs*100)/100,peakMs:Math.round(v.peakMs*100)/100}]))},fixedSidebarTop:[...topBands.values()].map(n=>({height:n.height,visible:getComputedStyle(n.strip).visibility==='visible',pattern:getComputedStyle(n.strip).backgroundImage})),projectCountBorders:[...document.querySelectorAll('[data-ebook-project-count]')].map(n=>({border:getComputedStyle(n).borderTopWidth,style:getComputedStyle(n).borderTopStyle,outline:getComputedStyle(n).outlineStyle})),projectCountLayers:countLayers.size,positionResizeTargets:navResizeTargets.size,visibleProjectCounts:[...document.querySelectorAll('[data-ebook-project-count]')].filter(n=>getComputedStyle(n).visibility!=='hidden').length,projectCountAxis:findDotCountReference()?.circle.getBoundingClientRect().left??null,fontAudit:fontAudit()})
   };
 })();
