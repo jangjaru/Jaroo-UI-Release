@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jaroo's Company · Sidebar Live Clock
 // @namespace    jaroo.local.chatgpt
-// @version      3.11.51
+// @version      3.11.52
 // @description  E-book first-paint dashboard, local Life Clock profile and LCD clock; no legacy theme or remote font.
 // @match        https://chatgpt.com/*
 // @run-at       document-idle
@@ -297,26 +297,18 @@
         .life-head,.life-progress-head{gap:0}
       }
       @container jaroo-dashboard (max-width:159px){.life-head{gap:9px}.life-title{font-size:13px}.life-setup-toggle{padding-inline:3px}}
-      /* All Life Clock metrics: compact width uses two shared baselines; wider width keeps the full duration inline. */
-      .life-duration-tail::before{content:" : ";word-spacing:normal}
-      .life-card .life-card-main{grid-template-columns:minmax(0,1fr) auto auto;align-items:baseline;gap:var(--life-metric-row-gap,3px) 0}
+      /* Use the approved compact two-baseline Life Clock layout at every normal width. */
+      .life-card .life-card-main{grid-template-columns:minmax(0,1fr) auto;align-items:baseline;gap:var(--life-metric-row-gap,3px) 4px}
       .life-card .life-caption{display:contents}
-      .life-card .life-label{grid-column:1/-1;grid-row:1;align-self:baseline}
+      .life-card .life-label{grid-column:1;grid-row:1;align-self:baseline}
       .life-card .life-meta{grid-column:1;grid-row:2;align-self:baseline;padding-inline-end:4px}
-      .life-card .life-value{grid-column:2/-1;grid-row:2;align-self:baseline}
+      .life-card .life-value{grid-column:2;grid-row:1;align-self:baseline}
       .life-card .life-value:has(>.life-duration-hours){display:contents}
-      .life-card .life-duration-hours{grid-column:2;grid-row:2;justify-self:end;align-self:baseline}
-      .life-card .life-duration-tail{grid-column:3;grid-row:2;justify-self:end;align-self:baseline;line-height:1.02}
+      .life-card .life-duration-hours{grid-column:2;grid-row:1;justify-self:end;align-self:baseline}
+      .life-card .life-duration-tail{grid-column:2;grid-row:2;justify-self:end;align-self:baseline;line-height:1.02}
+      .life-card .life-duration-tail::before{content:none}
       /* Unit only: 60% of the hour digits; .8333ch at that size is about half the old full-size space. */
       .life-card .life-duration-hours::after{content:"시간";font:inherit;font-size:60%;letter-spacing:inherit;margin-inline-start:.8333ch}
-      @container jaroo-dashboard (max-width:379px){
-        .life-card .life-card-main{grid-template-columns:minmax(0,1fr) auto;column-gap:4px}
-        .life-card .life-label{grid-column:1;grid-row:1}
-        .life-card .life-value{grid-column:2;grid-row:1}
-        .life-card .life-duration-hours{grid-column:2;grid-row:1}
-        .life-card .life-duration-tail{grid-column:2;grid-row:2}
-        .life-card .life-duration-tail::before{content:none}
-      }
       @container jaroo-dashboard (max-width:179px){
         .life-card .life-label{grid-column:1/-1}
         .life-card .life-value,.life-card .life-duration-hours{grid-column:2;grid-row:2}
@@ -334,7 +326,7 @@
       .career-bar[hidden]{display:none}
       .career-bar-fill{width:var(--career-remaining,0%)}
       .career-remaining-percent{font:450 100%/1.2 var(--font);letter-spacing:-.04em;word-spacing:normal;color:var(--muted);white-space:nowrap;margin-inline-start:3px}
-      .life-card .career-remaining-percent{line-height:1.02}
+      .life-card .career-remaining-percent{line-height:1.02;margin-inline-start:2px}
       .career-remaining-percent[hidden]{display:none}
       @container jaroo-dashboard (max-width:220px){.career-remaining-percent{margin-inline-start:2px}}
       /* An old Status installation cannot briefly paint a neon dock here. */
@@ -1434,9 +1426,9 @@
     if (PAGE[RUNTIME_KEY]?.dispose === dispose) delete PAGE[RUNTIME_KEY];
   }
   PAGE[RUNTIME_KEY] = {
-    version: '3.11.51', dispose,
+    version: '3.11.52', dispose,
     diagnostics: () => ({
-      version: '3.11.51', ...placementReport,
+      version: '3.11.52', ...placementReport,
       hostConnected: host.isConnected,
       display: getComputedStyle(host).display,
       clockPresent: Boolean(shadow.querySelector('.clock')),
